@@ -1,0 +1,1013 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/id:1Iu3Gp1HKnF6",
+        "query": {
+          "$fields": "state,branchPair(isMerged),feedChannelId"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "state": "Closed",
+          "feedChannelId": "2wDqfz2QfyiQ",
+          "branchPair": {
+            "isMerged": true
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:2wDqfz2QfyiQ",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "text": "created the merge request",
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExOzz0W49QV"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "added 1 commit",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExP080W49QW"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "added description",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExP0A0W49QY"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "added a reviewer",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExP0B0W49QZ"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Reason | Suggested | Status |\n| --- | --- | --- | --- |\n| [Bazel](https://codeowners.labs.jb.gg/group/bazel?p=r) | `plugins/bazel/**`; [rule](https://code.jetbrains.team/p/IJ/repositories/ultimate/files/b749cfe1a2d171c199b69449e6457a60db673555/.ownership/review-rules.yaml?line=26) | [**Lev Leontev**](https://code.jetbrains.team/m/Lev.Leontev) | ⏳ |\n| [Bazel QA](https://codeowners.labs.jb.gg/group/bazel-qa?p=r) | `plugins/bazel/**`; [rule](https://code.jetbrains.team/p/IJ/repositories/ultimate/files/b749cfe1a2d171c199b69449e6457a60db673555/.ownership/review-rules.yaml?line=31) | [**Danil Tereshchenko**](https://code.jetbrains.team/m/Danil.Tereshchenko) | ✅ |\n",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "ExP040W49Qa"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "updated description",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExP1N0W49Rt"
+              }
+            },
+            {
+              "chatMessage": {
+                "id": "Exj6C0W4TWa",
+                "$errors": [
+                  {
+                    "className": "HA_InlineError.InaccessibleFields",
+                    "fields": [
+                      "text",
+                      "author",
+                      "details"
+                    ],
+                    "message": "Could not access \"ChannelItemRecord\" object. The object may not exist or required permissions may be missing."
+                  }
+                ]
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "",
+                "details": null,
+                "author": {
+                  "name": "",
+                  "details": null
+                },
+                "id": "Exj6D0W4TWb"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Can `resolveLabel` cause a freeze here while executed inside a read action with write action priority?",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6B0W4TWh"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "posted a comment",
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6K0W4TWi"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Are you sure we need the progress manager in this context? It's a very quick function anyway",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6H0W4TWn"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "posted a comment",
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6I0W4TWo"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Let's avoid `!!` here",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6J0W4TWp"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "posted a comment",
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6S0W4TWq"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "waits for updates",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Exj6T0W4TWr"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "force-pushed 2 commits",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAIwq0W7A9E"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [Bazel](https://codeowners.labs.jb.gg/group/bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/c73e1ca1a1d4e169657a3ffb7b88c45b9b168d00/.ownership/review-rules.yaml?line=35) | `plugins/bazel/**` | ⏳ **[Lev Leontev](https://jetbrains.team/m/Lev.Leontev)**, <br/><details><summary>More</summary>[Damian Przemysław Baczyński](https://jetbrains.team/m/Damian.Baczynski), <br/>[Eugene Zhuravlev](https://jetbrains.team/m/JEKA), <br/>[Klaus Thomas Aehlig](https://jetbrains.team/m/Klaus.Aehlig), <br/>[Krystian Gajewski [External]](https://jetbrains.team/m/Krystian.Gajewski), <br/>[Marcin Kocot [External]](https://jetbrains.team/m/Marcin.Kocot.external), <br/>[Evgenii Pasynkov](https://jetbrains.team/m/pasynkov), <br/>[Marta Hering-Zagrocka](https://jetbrains.team/m/Marta.Hering-zagrocka) (away soon)</details> | ⏳ 0/1 |\n| [Bazel QA](https://codeowners.labs.jb.gg/group/bazel-qa?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/c73e1ca1a1d4e169657a3ffb7b88c45b9b168d00/.ownership/review-rules.yaml?line=40) | `plugins/bazel/**` | ✅ [Danil Tereshchenko](https://jetbrains.team/m/Danil.Tereshchenko), <br/><details><summary>More</summary>[Elena Semenova](https://jetbrains.team/m/Elena.Semenova)</details> | ✅ 1/1 |\n",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAIwr0W7A9F"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "pushed 1 commit",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKhX0W7AIp"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [Bazel](https://codeowners.labs.jb.gg/group/bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/6c20b9de86fa6c2abd979a9ac2bba95f3e958628/.ownership/review-rules.yaml?line=35) | `plugins/bazel/**` | ⏳ **[Lev Leontev](https://jetbrains.team/m/Lev.Leontev)**, <br/><details><summary>More</summary>[Damian Przemysław Baczyński](https://jetbrains.team/m/Damian.Baczynski), <br/>[Eugene Zhuravlev](https://jetbrains.team/m/JEKA), <br/>[Klaus Thomas Aehlig](https://jetbrains.team/m/Klaus.Aehlig), <br/>[Krystian Gajewski [External]](https://jetbrains.team/m/Krystian.Gajewski), <br/>[Marcin Kocot [External]](https://jetbrains.team/m/Marcin.Kocot.external), <br/>[Evgenii Pasynkov](https://jetbrains.team/m/pasynkov), <br/>[Marta Hering-Zagrocka](https://jetbrains.team/m/Marta.Hering-zagrocka) (away soon)</details> | ⏳ 0/1 |\n| [Bazel QA](https://codeowners.labs.jb.gg/group/bazel-qa?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/6c20b9de86fa6c2abd979a9ac2bba95f3e958628/.ownership/review-rules.yaml?line=40) | `plugins/bazel/**` | ✅ [Danil Tereshchenko](https://jetbrains.team/m/Danil.Tereshchenko), <br/><details><summary>More</summary>[Elena Semenova](https://jetbrains.team/m/Elena.Semenova)</details> | ✅ 1/1 |\n",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAKhg0W7AIq"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "I don't think so. It is the same pattern as AbstractGotoSEContributor: the whole fetch runs in one read action with write-action priority, so a pending write cancels it. resolveLabel only does VFS/PSI lookups, with no refresh. Before this change, resolveLabel ran in a plain runReadAction that blocked writes, so this is better for freezes.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkY0W7ALi"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Agreed, removed in 4ed87a3fc7691.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkZ0W7ALj"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Done in 4ed87a3fc7691: a rule without a name is skipped now.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkS0W7ALk"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "added a reviewer",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKoG0W7APQ"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "According to cached values documentation, this is incorrect. The cached value is not invalidatedwhen subtree is changed. Do we really need to cache the list? Are there any evidences that this is the hotspont?",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAK9e0W7Aos"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "posted a comment",
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAK9f0W7Aot"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "waits for updates",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAK9m0W7Ap0"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User resolved the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJsZ0W7B4x"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User resolved the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJsi0W7B4y"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User resolved the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJsg0W7B54"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "The `PsiFile` dependency is invalidated on any change inside the file, not only when the file object is replaced. From the `CachedValueProvider.Result.getDependencyItems` Javadoc: \"Instances of PsiElement. Such a cache is invalidated on any change in the element's containing PsiFile.\" For a PSI dependency, `PsiCachedValue.getTimeStamp` returns `containingFile.getModificationStamp()`, and that stamp changes on every PSI change in the file. `StarlarkTargetRuleLookupTest.lookup refreshes after a rule name edit` covers this: it renames a rule inside the file, and after that the old name no longer resolves.\n\nAbout the hotspot: I have no profiler snapshot or freeze report. I have only the operation count in the description (M matching labels × R rules in one BUILD file, with a full rule-list rebuild for each label). The same lookup is also used by `BazelLabelReference.resolve` → `resolveLabel` → `findTargetRule`, so a BUILD file with many local `:target` references does the same scan during highlighting. If you prefer not to add a cache without a measurement, I can remove the `StarlarkFile` change and keep only the contributor change. That change resolves each match only when it is needed and stops when the consumer returns false, so the first result does not wait for all matches to resolve.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJtD0W7B5b"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User reopened the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAK2g0W7BEw"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "What I meant was, if there's a lot of labels here then we may take the lock for a long time, as opposed to releasing it in-between",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAK3B0W7BFR"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "",
+                "details": null,
+                "author": {
+                  "name": "",
+                  "details": null
+                },
+                "id": "FAK390W7BFX"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Let's keep this optimization as it improves the asympthotics and drop the other change unless there's profiler data to back it up",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALh80W7BII"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "posted a comment",
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALh90W7BIJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "accepted the changes and finalized approval",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Lev.Leontev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALh20W7BIK"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Sorry, I do not understand your answer. We are talking about this method you have used:\n``` java\n  /**\n   * Create a cached value with the given provider and non-tracked return value, store it in PSI element's user data. If it's already stored, reuse it.\n   * The passed cached value provider may only depend on the passed context PSI element and project/application components/services,\n   * see {@link CachedValue} documentation for more details.\n   * @return The cached value\n   */\n  public static <T> T getCachedValue(final @NotNull PsiElement context, final @NotNull CachedValueProvider<T> provider) {\n    return getCachedValue(context, getKeyForClass(provider.getClass(), globalKeyForProvider), provider);\n  }\n```\n\nHere are no \"DependencyItems\"",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALpz0W7BRH"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "pushed 1 commit",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALq40W7BRM"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "updated title",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALq60W7BRO"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "updated description",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALq70W7BRP"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Agreed. The contributor change is dropped in d6df49ab, so the loop again resolves each label in its own `runReadAction` and releases the lock in between.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALqG0W7BRQ"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Done in d6df49ab: I kept the cache, restored the contributor to its master version, and removed the early-stop test that covered only that change. The MR title and description now describe only the cache.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALqI0W7BRS"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "As Lev suggested, the cache stays and the contributor change is dropped in d6df49ab.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALqJ0W7BRT"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User resolved the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALqP0W7BRZ"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User resolved the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALqQ0W7BRa"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User resolved the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALqK0W7BRc"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "??? AI - before closing discussion address the concern first",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALss0W7BU2"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "User reopened the discussion",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALst0W7BU3"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Sorry, I missed your reply and resolved this too early. I leave it open for you.\n\nThe dependency items are in the `Result` that the provider returns, not in the `getCachedValue` call. The last line of the lambda is below the visible snippet:\n\n```kotlin\nCachedValueProvider.Result.create(rulesByName, this)\n```\n\n`this` is the `StarlarkFile`, so the file is the dependency. For a `PsiElement` dependency, `PsiCachedValue.getTimeStamp` returns `containingFile.getModificationStamp()`, and that stamp changes on any PSI change inside the file, including changes in the subtree.\n\nAbout \"may only depend on the passed context\": the provider reads only `this` (the file, which is also the context) and its children. It captures no parameters and no other PSI. `targetName` is used only after `getCachedValue` returns the map.\n\nThe test `lookup refreshes after a rule name edit` checks this. It renames a rule through PSI. After that, `findTargetRule(\"old\")` returns null and `findTargetRule(\"new\")` finds the rule.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALPh0W7BXt"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Ok, the answer is pretty correct and valid. However, please, extract \"this\" into variable as the first statement of method and use it then. The second argument of \"CachedValueProvider.Result.create\" has \"Any\" type, and \"this\" value in lambda is always a source of problems.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAL9E0W7Boa"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "waits for updates",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAL9F0W7Bob"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "pushed 1 commit",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAQKh0W7HX5"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "",
+                "details": null,
+                "author": {
+                  "name": "",
+                  "details": null
+                },
+                "id": "FAQKq0W7HX6"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "Done in 34791b7b: `findTargetRule` now starts with `val file = this`, and the lambda uses only `file` for the rule scan and the `Result.create` dependency.",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAQKr0W7HX7"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "accepted the changes and finalized approval",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADLh0W7Jzt"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "started a safe merge",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADUu0W7LkK"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "🚀 Safe Merge \"[bazel] Cache target rule lookup in BUILD files\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/224837/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dan/complexity-search-everywhere`\nTo: `master`\n\nChanges:\n• [d980a3f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d980a3f64b12d23316817099d3ef985f3d49a6ab) cleanup [bazel]: Use a named file value in the target rule cache\n• [6cf1b0e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/6cf1b0e9164617c0c03b7774a60c54e355102b32) refactor [bazel]: Keep the Search Everywhere contributor loop unchanged\n• [490e49e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/490e49efc5000d49c6e08d4666e623210b4ac5a2) cleanup [bazel]: Simplify the target rule cache in StarlarkFile\n• [20aca64](https://jetbrains.team/p/IJ/repositories/ultimate/revision/20aca646f05fcc02a13c1c91477619282ffc862f) tests [bazel]: Port StarlarkTargetRuleLookupTest to the common Bazel test fixture\n• [909019f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/909019f95c3afa30d688fbfd86e90a0ecf8ed717) refactor [bazel]: Avoid repeated BUILD rule scans in Search Everywhere\n\n[https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b](https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b)",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FADVG0W7LkY"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "force-pushed 5 commits",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADe40W7LtU"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "canceled the safe merge",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADeC0W7Ltc"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "✋ Safe Merge \"[bazel] Cache target rule lookup in BUILD files\" canceled\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/224837/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dan/complexity-search-everywhere`\nTo: `master`\n\nChecks failed:\n• [Bazel Build](https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b?check=ijplatform_master_BazelBuild_Aggregator&attempt=2) (5 builds)\n• [IntelliJ Smoke Tests](https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b?check=ijplatform_master_Idea_SmokeTests_Aggregator&attempt=2) (3 builds, 2 failed to start)\n• [WorkspaceImporting tests for LSP](https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b?check=ijplatform_master_WorkspaceLspImportingTestsAggregator&attempt=3) (5 builds, 4 failed to start)\n…also 4 checks passed, 2 checks canceled\n\n[https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b](https://patronus.labs.jb.gg/robot/c9806a35-d109-444c-b110-54f58dbaaf4b)",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FADeF0W7Ltf"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "started a safe merge",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADeN0W7Ltn"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "🚀 Safe Merge \"[bazel] Cache target rule lookup in BUILD files\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/224837/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dan/complexity-search-everywhere`\nTo: `master`\n\nChanges:\n• [4ba492f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/4ba492f01db99153f240ef29520f579f8da52ca1) cleanup [bazel]: Use a named file value in the target rule cache\n• [7558a0f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7558a0fdb2e6bae34ced85f4dee56dada525b141) refactor [bazel]: Keep the Search Everywhere contributor loop unchanged\n• [59774fe](https://jetbrains.team/p/IJ/repositories/ultimate/revision/59774feb9699470a44c864e3758be2a0cb42e175) cleanup [bazel]: Simplify the target rule cache in StarlarkFile\n• [ce2d00b](https://jetbrains.team/p/IJ/repositories/ultimate/revision/ce2d00b84bfe5923d7e3c570269820b7c0137970) tests [bazel]: Port StarlarkTargetRuleLookupTest to the common Bazel test fixture\n• [2ea0eb9](https://jetbrains.team/p/IJ/repositories/ultimate/revision/2ea0eb9441775e96ee17cf88a89ed2030017e323) refactor [bazel]: Avoid repeated BUILD rule scans in Search Everywhere\n\n[https://patronus.labs.jb.gg/robot/41c10022-67d2-41e9-83bc-66f9be7607a0](https://patronus.labs.jb.gg/robot/41c10022-67d2-41e9-83bc-66f9be7607a0)",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FADeV0W7Ltv"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "merged the bazel/dan/complexity-search-everywhere branch into master and deleted it",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAErF0W7MZV"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "✅ Safe Merge \"[bazel] Cache target rule lookup in BUILD files\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/224837/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dan/complexity-search-everywhere`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/41c10022-67d2-41e9-83bc-66f9be7607a0/changes/space)):\n• [21b6576](https://jetbrains.team/p/IJ/repositories/ultimate/revision/21b6576347449d857a27edeceecbd26cd0454f34) cleanup [bazel]: Use a named file value in the target rule cache\n• [4c0534f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/4c0534f290c94530596f397d261f1f513a277b42) refactor [bazel]: Keep the Search Everywhere contributor loop unchanged\n• [044cfc1](https://jetbrains.team/p/IJ/repositories/ultimate/revision/044cfc1c8c02828940fb933265f6639b3e106cee) cleanup [bazel]: Simplify the target rule cache in StarlarkFile\n• [afc325d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/afc325dfa20b5f3af2e5b8d6e902f1780424089d) tests [bazel]: Port StarlarkTargetRuleLookupTest to the common Bazel test fixture\n• [523d0b0](https://jetbrains.team/p/IJ/repositories/ultimate/revision/523d0b04e746f9560a2a3762b368d76fd9ae9922) refactor [bazel]: Avoid repeated BUILD rule scans in Search Everywhere\n\n[https://patronus.labs.jb.gg/robot/41c10022-67d2-41e9-83bc-66f9be7607a0](https://patronus.labs.jb.gg/robot/41c10022-67d2-41e9-83bc-66f9be7607a0)",
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAErG0W7MZW"
+              }
+            },
+            {
+              "chatMessage": {
+                "text": "canceled the safe merge",
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FAErH0W7MZX"
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "state": "MERGED",
+    "evidence": "Can `resolveLabel` cause a freeze here while executed inside a read action with write action priority?\n\nAre you sure we need the progress manager in this context? It's a very quick function anyway\n\nLet's avoid `!!` here\n\nI don't think so. It is the same pattern as AbstractGotoSEContributor: the whole fetch runs in one read action with write-action priority, so a pending write cancels it. resolveLabel only does VFS/PSI lookups, with no refresh. Before this change, resolveLabel ran in a plain runReadAction that blocked writes, so this is better for freezes.\n\nAgreed, removed in 4ed87a3fc7691.\n\nDone in 4ed87a3fc7691: a rule without a name is skipped now.\n\nAccording to cached values documentation, this is incorrect. The cached value is not invalidatedwhen subtree is changed. Do we really need to cache the list? Are there any evidences that this is the hotspont?\n\nThe `PsiFile` dependency is invalidated on any change inside the file, not only when the file object is replaced. From the `CachedValueProvider.Result.getDependencyItems` Javadoc: \"Instances of PsiElement. Such a cache is invalidated on any change in the element's containing PsiFile.\" For a PSI dependency, `PsiCachedValue.getTimeStamp` returns `containingFile.getModificationStamp()`, and that stamp changes on every PSI change in the file. `StarlarkTargetRuleLookupTest.lookup refreshes after a rule name edit` covers this: it renames a rule inside the file, and after that the old name no longer resolves.\n\nAbout the hotspot: I have no profiler snapshot or freeze report. I have only the operation count in the description (M matching labels × R rules in one BUILD file, with a full rule-list rebuild for each label). The same lookup is also used by `BazelLabelReference.resolve` → `resolveLabel` → `findTargetRule`, so a BUILD file with many local `:target` references does the same scan during highlighting. If you prefer not to add a cache without a measurement, I can remove the `StarlarkFile` change and keep only the contributor change. That change resolves each match only when it is needed and stops when the consumer returns false, so the first result does not wait for all matches to resolve.\n\nWhat I meant was, if there's a lot of labels here then we may take the lock for a long time, as opposed to releasing it in-between\n\nLet's keep this optimization as it improves the asympthotics and drop the other change unless there's profiler data to back it up\n\nSorry, I do not understand your answer. We are talking about this method you have used:\n``` java\n  /**\n   * Create a cached value with the given provider and non-tracked return value, store it in PSI element's user data. If it's already stored, reuse it.\n   * The passed cached value provider may only depend on the passed context PSI element and project/application components/services,\n   * see {@link CachedValue} documentation for more details.\n   * @return The cached value\n   */\n  public static <T> T getCachedValue(final @NotNull PsiElement context, final @NotNull CachedValueProvider<T> provider) {\n    return getCachedValue(context, getKeyForClass(provider.getClass(), globalKeyForProvider), provider);\n  }\n```\n\nHere are no \"DependencyItems\"\n\nAgreed. The contributor change is dropped in d6df49ab, so the loop again resolves each label in its own `runReadAction` and releases the lock in between.\n\nDone in d6df49ab: I kept the cache, restored the contributor to its master version, and removed the early-stop test that covered only that change. The MR title and description now describe only the cache.\n\nAs Lev suggested, the cache stays and the contributor change is dropped in d6df49ab.\n\n??? AI - before closing discussion address the concern first\n\nSorry, I missed your reply and resolved this too early. I leave it open for you.\n\nThe dependency items are in the `Result` that the provider returns, not in the `getCachedValue` call. The last line of the lambda is below the visible snippet:\n\n```kotlin\nCachedValueProvider.Result.create(rulesByName, this)\n```\n\n`this` is the `StarlarkFile`, so the file is the dependency. For a `PsiElement` dependency, `PsiCachedValue.getTimeStamp` returns `containingFile.getModificationStamp()`, and that stamp changes on any PSI change inside the file, including changes in the subtree.\n\nAbout \"may only depend on the passed context\": the provider reads only `this` (the file, which is also the context) and its children. It captures no parameters and no other PSI. `targetName` is used only after `getCachedValue` returns the map.\n\nThe test `lookup refreshes after a rule name edit` checks this. It renames a rule through PSI. After that, `findTargetRule(\"old\")` returns null and `findTargetRule(\"new\")` finds the rule.\n\nOk, the answer is pretty correct and valid. However, please, extract \"this\" into variable as the first statement of method and use it then. The second argument of \"CachedValueProvider.Result.create\" has \"Any\" type, and \"this\" value in lambda is always a source of problems.\n\nDone in 34791b7b: `findTargetRule` now starts with `val file = this`, and the lambda uses only `file` for the rule scan and the `Result.create` dependency."
+  }
+}

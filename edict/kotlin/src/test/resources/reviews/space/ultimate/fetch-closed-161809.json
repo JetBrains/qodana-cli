@@ -1,0 +1,30 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:161809",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "number": 161809,
+          "state": "Closed",
+          "branchPair": {
+            "repository": "ultimate",
+            "isMerged": false
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [],
+    "problems": []
+  }
+}

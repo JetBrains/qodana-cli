@@ -1,0 +1,208 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7185",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/7185",
+          "number": 7185,
+          "title": "[KT-88154] [2.4.20] swift pm lock file is ignored on switching version from exact to from",
+          "user": {
+            "login": "rbbozkurt",
+            "type": "User"
+          },
+          "body": "- Add repro IT\r\n- Fix by not including versions into fingerprinting for package generation.\r\n\r\n^KT-88154 ",
+          "merged_at": "2026-08-10T11:47:15Z",
+          "assignee": {
+            "login": "rbbozkurt",
+            "type": "User"
+          },
+          "assignees": [
+            {
+              "login": "rbbozkurt",
+              "type": "User"
+            }
+          ],
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "49f9a3f39e22a10e4e96c568d626affc75ce99d3",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "cff3a6b5f93b920dae776605d5cd8af7b840f708",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "Nina0295",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7185/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 3701804217,
+            "path": "libraries/tools/kotlin-gradle-plugin-integration-tests/src/test/kotlin/org/jetbrains/kotlin/gradle/apple/FetchSyntheticImportProjectPackagesTests.kt",
+            "original_commit_id": "bf1df91bea0ecf784a457464aeb0ce5aaf31cfdf",
+            "user": {
+              "login": "Copilot",
+              "type": "Bot"
+            },
+            "body": "Unused import `FingerprintSyntheticPackage` (no references in this test file). This can fail compilation when warnings are treated as errors and should be removed.\n\nThis issue also appears in the following locations of the same file:\n- line 24\n- line 29\n- line 39\n- line 58",
+            "created_at": "2026-08-03T06:34:48Z",
+            "original_line": 18
+          },
+          {
+            "id": 3721437321,
+            "path": "libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/plugin/mpp/apple/swiftimport/GenerateSyntheticLinkageImportProject.kt",
+            "original_commit_id": "a070369458ce21e1201e7134d02bc5998be9fdb3",
+            "user": {
+              "login": "timofeys1",
+              "type": "User"
+            },
+            "body": "Same as in master, let's avoid this change if possible",
+            "created_at": "2026-08-05T14:32:37Z",
+            "original_line": 193
+          },
+          {
+            "id": 3727326337,
+            "path": "libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/plugin/mpp/apple/swiftimport/GenerateSyntheticLinkageImportProject.kt",
+            "original_commit_id": "a070369458ce21e1201e7134d02bc5998be9fdb3",
+            "user": {
+              "login": "rbbozkurt",
+              "type": "User"
+            },
+            "body": "They are addressed. ",
+            "created_at": "2026-08-06T08:53:58Z",
+            "original_line": 193,
+            "in_reply_to_id": 3721437321
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7185/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 4841378221,
+            "user": {
+              "login": "copilot-pull-request-reviewer[bot]",
+              "type": "Bot"
+            }
+          },
+          {
+            "id": 4865494904,
+            "user": {
+              "login": "timofeys1",
+              "type": "User"
+            }
+          },
+          {
+            "id": 4865496018,
+            "user": {
+              "login": "timofeys1",
+              "type": "User"
+            }
+          },
+          {
+            "id": 4872814056,
+            "user": {
+              "login": "rbbozkurt",
+              "type": "User"
+            }
+          },
+          {
+            "id": 4896363250,
+            "user": {
+              "login": "Nina0295",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 7185,
+        "url": "https://github.com/JetBrains/kotlin/pull/7185",
+        "title": "[KT-88154] [2.4.20] swift pm lock file is ignored on switching version from exact to from",
+        "body": "- Add repro IT\r\n- Fix by not including versions into fingerprinting for package generation.\r\n\r\n^KT-88154 ",
+        "baseRevision": "cff3a6b5f93b920dae776605d5cd8af7b840f708",
+        "headRevision": "49f9a3f39e22a10e4e96c568d626affc75ce99d3",
+        "closeTimestamp": 1786362435000,
+        "threads": [
+          {
+            "threadId": "github-7185-3721437321",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/7185#discussion_r3721437321",
+            "filePath": "libraries/tools/kotlin-gradle-plugin/src/common/kotlin/org/jetbrains/kotlin/gradle/plugin/mpp/apple/swiftimport/GenerateSyntheticLinkageImportProject.kt",
+            "originalCommitSha": "a070369458ce21e1201e7134d02bc5998be9fdb3",
+            "anchorLine": 193,
+            "anchorEndLine": 193,
+            "messages": [
+              {
+                "author": "timofeys1",
+                "body": "Same as in master, let's avoid this change if possible",
+                "createdAt": "2026-08-05T14:32:37Z"
+              },
+              {
+                "author": "rbbozkurt",
+                "body": "They are addressed. ",
+                "createdAt": "2026-08-06T08:53:58Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": []
+  }
+}

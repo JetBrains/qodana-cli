@@ -1,0 +1,1680 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:232019",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "id": "3hxBlO2OjDie",
+          "number": 232019,
+          "title": "bazel/dbaczynski/BAZEL-3699",
+          "state": "Closed",
+          "timestamp": 1793620846639,
+          "feedChannelId": "2eiGne2NMDoT",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "e83f292b6348ddcc7d1f32d6a5f1e0aa02ab15a3",
+            "targetBranchInfo": {
+              "ref": "aa73fca7a789a3b6ed0f7216481b6472c527937c"
+            },
+            "isMerged": true
+          },
+          "description": "Review this PR commit by commit. \n\nMain changes:\n- The sync console shows all project view problems, with their file and line. An error stops the sync.\n- The editor highlights a required import that has no file.\n- Inspect Code shows the quick fixes of project view problems.\n- A `# suppress: <id>` comment above an item or a section suppresses its warning. \n- The monorepo `.bazelproject` files suppress the warnings of the sections that the Bazel plugin before 263 still needs."
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:2eiGne2NMDoT",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "etag": "1669849982462",
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALpa0W7BQs"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALpb0W7BQt"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FALpk0W7BQu"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALrq0W7BT0"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FALsO0W7BTg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALue0W7BVo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALvm0W7BX4"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALvy0W7BX8"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALPe0W7BXy"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALYS0W7Bge"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FALYU0W7Bgg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALYb0W7Bgn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FALYc0W7Bgo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALYd0W7Bgp"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FALYW0W7Bgq"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALau0W7Bj6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALaq0W7BjA"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALas0W7BjC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeSuggestedEditHeadContentDetails",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
+                      "filename": "/plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/flow/open/ValidateProjectViewPreSyncHook.kt",
+                      "line": 21,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "Mu2N71MgQxt"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALO70W7C3T"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
+                      "filename": "/plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/flow/open/ValidateProjectViewPreSyncHook.kt",
+                      "line": 21,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "Mu2N71MgQxt"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FALOG0W7C3U"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAL3T0W7CFr"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAL6I0W7CIg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
+                      "filename": "/plugins/bazel/intellij.bazel.commons/src/org/jetbrains/bazel/progress/util.kt",
+                      "line": 30,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "3I6OC04agaQ0"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAL6J0W7CIh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAL6S0W7CIi"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAMXY0W7Cfs"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FAMXZ0W7Cft"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAP2q0W7Ee0"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "cc94f6cc07602e6066a2d6d11fdfb9e9ffd1365a",
+                      "filename": "/plugins/bazel/intellij.bazel.projectview/src/org/jetbrains/bazel/languages/projectview/ProjectViewService.kt",
+                      "line": null,
+                      "oldLine": 8
+                    },
+                    "endAnchor": {
+                      "oldLine": 9
+                    },
+                    "channel": {
+                      "id": "1ZxkI1dPWUi"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAP2r0W7Ee1"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAP3E0W7EeO"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAP4O0W7EfY"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FARDk0W7Gp2"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FARDw0W7Gp6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FARDy0W7Gp8"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FARDu0W7GpC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FARED0W7GpN"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAQkj0W7Gt3"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAQkl0W7Gt5"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Krystian.Gajewski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAQkv0W7Gt7"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "pasynkov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAQnI0W7Gvc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FABGN0W7Huh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FABGo0W7Hv0"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Daniel.Brauner",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAzL0W7IAh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "a85123d43875f88025749de6aef82164fd8ac59e",
+                      "filename": "/.bazelproject",
+                      "line": 45,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "1aYZZT0awN6g"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Daniel.Brauner",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAzU0W7IAi"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Daniel.Brauner",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAXH0W7IFX"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAgA0W7IOQ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Evgenii.Ilichev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAGo0W7IWE"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAJo0W7IZ6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAJl0W7IZB"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAAJt0W7IZJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAMx0W7IcF"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAMr0W7IcH"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Danil.Tereshchenko",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAAN10W7IcR"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FABQc0W7Jfu"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FABVh0W7Jl7"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FABVi0W7Jl8"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Daniel.Brauner",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADQB0W7Lfb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADVC0W7Lkc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADVX0W7Lkp"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FADVi0W7Ll8"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FADVq0W7LlG"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAErw0W7MaK"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAErz0W7MaN"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAEsf0W7Mav"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAEsc0W7Mb0"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAEsp0W7Mb5"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAEuL0W7Mcb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FAEuM0W7Mcc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAEud0W7Mct"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAEug0W7Md4"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAEvI0W7Mdg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FAEvJ0W7Mdh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAEzH0W7MhX"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAEzd0W7Mht"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAEzZ0W7Mhx"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAEUr0W7MkH"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FAEUy0W7MkO"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9Nk30W7b7X"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9NkG0W7b7k"
+              }
+            }
+          ],
+          "hasMore": true
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:2eiGne2NMDoT",
+          "batchInfo": "{etag:1669849982462,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Damian.Baczynski",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:Mu2N71MgQxt",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "",
+              "details": {
+                "className": "CodeSuggestedEditHeadContentDetails"
+              },
+              "author": {
+                "name": "Krystian.Gajewski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793269509083
+              },
+              "id": "FALO70W7C3T"
+            },
+            {
+              "text": "I changed it to `ProjectViewService.getInstance` because IDE suggests that when .service is used.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Damian.Baczynski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793294101163
+              },
+              "id": "FARDk0W7Gp2"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3I6OC04agaQ0",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "Since you already touched this, it'd be great to refactor the TaskConsole and get rid of `registerException` method from console API. The method is ugly and was introduced as a quick and dirty fix to prevent the same error displayed on multiple levels. It would be better to handle this case inside console implementation based on provided failed result, and prevent displaying error if previously the same failure result was displayed",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "pasynkov",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793210313934
+              },
+              "id": "FAL6I0W7CIg"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Damian.Baczynski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793294122676
+              },
+              "id": "FARDy0W7Gp8"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:1ZxkI1dPWUi",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "Why `StateFlow<...>` here got removed?",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Krystian.Gajewski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793269511708
+              },
+              "id": "FAP2q0W7Ee0"
+            },
+            {
+              "text": "It does not seem to have any purpose here. It was updated like regular field (not using e.g. update {}) and never collected.  Current implementation seems to have the same properties as the previous one, just does not provide observability, which was not used. Do you have any plans for that?",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Damian.Baczynski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793269946214
+              },
+              "id": "FAP4O0W7EfY"
+            },
+            {
+              "text": "Let's leave it this way, we can add it back when needed.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Krystian.Gajewski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793295276572
+              },
+              "id": "FAQkj0W7Gt3"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Krystian.Gajewski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793295278107
+              },
+              "id": "FAQkl0W7Gt5"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:1aYZZT0awN6g",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "I'd still prefer it, if we'd drop this option for the CLion specific part.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Daniel.Brauner",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793355172411
+              },
+              "id": "FAAzL0W7IAh"
+            },
+            {
+              "text": "Your comment is on the main monorepo `.bazelproject`. The `clwb.bazelproject` dose not contain this option. \n\nAlso, if there are no \"pre 263 Bazel plugin\" consumers of the `clwb.bazelproject` I can migrate/remove those old options already.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Damian.Baczynski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793357219368
+              },
+              "id": "FAAgA0W7IOQ"
+            },
+            {
+              "text": "Wait sorry, probably got lost in the diff.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Daniel.Brauner",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793369777720
+              },
+              "id": "FADQB0W7Lfb"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Damian.Baczynski",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793370585902
+              },
+              "id": "FADVC0W7Lkc"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 232019,
+        "url": "https://jetbrains.team/p/ij/reviews/232019",
+        "title": "bazel/dbaczynski/BAZEL-3699",
+        "body": "Review this PR commit by commit. \n\nMain changes:\n- The sync console shows all project view problems, with their file and line. An error stops the sync.\n- The editor highlights a required import that has no file.\n- Inspect Code shows the quick fixes of project view problems.\n- A `# suppress: <id>` comment above an item or a section suppresses its warning. \n- The monorepo `.bazelproject` files suppress the warnings of the sections that the Bazel plugin before 263 still needs.",
+        "baseRevision": "aa73fca7a789a3b6ed0f7216481b6472c527937c",
+        "headRevision": "e83f292b6348ddcc7d1f32d6a5f1e0aa02ab15a3",
+        "closeTimestamp": 1793620846639,
+        "threads": [
+          {
+            "threadId": "space-232019-FAL6J0W7CIh",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FAL6J0W7CIh&channel=2eiGne2NMDoT",
+            "filePath": "plugins/bazel/intellij.bazel.commons/src/org/jetbrains/bazel/progress/util.kt",
+            "originalCommitSha": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
+            "anchorLine": 31,
+            "anchorEndLine": 31,
+            "messages": [
+              {
+                "author": "pasynkov",
+                "body": "Since you already touched this, it'd be great to refactor the TaskConsole and get rid of `registerException` method from console API. The method is ugly and was introduced as a quick and dirty fix to prevent the same error displayed on multiple levels. It would be better to handle this case inside console implementation based on provided failed result, and prevent displaying error if previously the same failure result was displayed",
+                "createdAt": "2026-10-28T17:58:33.934Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-232019-FAP2r0W7Ee1",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FAP2r0W7Ee1&channel=2eiGne2NMDoT",
+            "filePath": "plugins/bazel/intellij.bazel.projectview/src/org/jetbrains/bazel/languages/projectview/ProjectViewService.kt",
+            "originalCommitSha": "cc94f6cc07602e6066a2d6d11fdfb9e9ffd1365a",
+            "anchorLine": 9,
+            "anchorEndLine": 10,
+            "messages": [
+              {
+                "author": "Krystian.Gajewski",
+                "body": "Why `StateFlow<...>` here got removed?",
+                "createdAt": "2026-10-29T10:25:11.708Z"
+              },
+              {
+                "author": "Damian.Baczynski",
+                "body": "It does not seem to have any purpose here. It was updated like regular field (not using e.g. update {}) and never collected.  Current implementation seems to have the same properties as the previous one, just does not provide observability, which was not used. Do you have any plans for that?",
+                "createdAt": "2026-10-29T10:32:26.214Z"
+              },
+              {
+                "author": "Krystian.Gajewski",
+                "body": "Let's leave it this way, we can add it back when needed.",
+                "createdAt": "2026-10-29T17:34:36.572Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-232019-FALOG0W7C3U",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FALOG0W7C3U&channel=2eiGne2NMDoT",
+            "filePath": "plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/flow/open/ValidateProjectViewPreSyncHook.kt",
+            "originalCommitSha": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
+            "anchorLine": 22,
+            "anchorEndLine": 22,
+            "messages": [
+              {
+                "author": "Damian.Baczynski",
+                "body": "I changed it to `ProjectViewService.getInstance` because IDE suggests that when .service is used.",
+                "createdAt": "2026-10-29T17:15:01.163Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-232019-FAAzU0W7IAi",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FAAzU0W7IAi&channel=2eiGne2NMDoT",
+            "filePath": ".bazelproject",
+            "originalCommitSha": "a85123d43875f88025749de6aef82164fd8ac59e",
+            "anchorLine": 46,
+            "anchorEndLine": 46,
+            "messages": [
+              {
+                "author": "Daniel.Brauner",
+                "body": "I'd still prefer it, if we'd drop this option for the CLion specific part.",
+                "createdAt": "2026-10-30T10:12:52.411Z"
+              },
+              {
+                "author": "Damian.Baczynski",
+                "body": "Your comment is on the main monorepo `.bazelproject`. The `clwb.bazelproject` dose not contain this option. \n\nAlso, if there are no \"pre 263 Bazel plugin\" consumers of the `clwb.bazelproject` I can migrate/remove those old options already.",
+                "createdAt": "2026-10-30T10:46:59.368Z"
+              },
+              {
+                "author": "Daniel.Brauner",
+                "body": "Wait sorry, probably got lost in the diff.",
+                "createdAt": "2026-10-30T14:16:17.720Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": []
+  }
+}

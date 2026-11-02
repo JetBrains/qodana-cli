@@ -1,0 +1,22 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/files",
+        "query": {
+          "commit": "0000000000000000000000000000000000000000",
+          "path": "plugins/bazel/intellij.bazel.languages/src/org/jetbrains/bazel/languages/starlark/psi/StarlarkFile.kt"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "error_description": "Missing unknown 0000000000000000000000000000000000000000"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Space API returned HTTP 404: Missing unknown 0000000000000000000000000000000000000000"
+}

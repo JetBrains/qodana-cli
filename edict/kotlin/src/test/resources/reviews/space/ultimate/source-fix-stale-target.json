@@ -1,0 +1,39 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2Fedict%2Fweak-w-cccccccccccccccccccccccc",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": null,
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2F191",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "lastCommit": {
+            "message": "set majorReleaseDate for RubyMine\n\nSpace-RevId: 0789542778d35e2bc9140e695ff123c67ec53f34",
+            "author": {
+              "name": "Andrey Vokin"
+            },
+            "committer": {
+              "name": "Andrey Vokin"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Target branch changed since true-positive analysis; analyze the current revision before publishing fixes"
+}

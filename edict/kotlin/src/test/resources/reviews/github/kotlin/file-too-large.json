@@ -1,0 +1,22 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/compiler/fir/resolve/tests/org/jetbrains/kotlin/fir/FirOldFrontendDiagnosticsTestGenerated.java",
+        "query": {
+          "ref": "00708e800293156c9c4acaaaa7c06cb78e96ae69"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "name": "FirOldFrontendDiagnosticsTestGenerated.java",
+          "type": "file"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: GitHub did not return complete base64 file content"
+}

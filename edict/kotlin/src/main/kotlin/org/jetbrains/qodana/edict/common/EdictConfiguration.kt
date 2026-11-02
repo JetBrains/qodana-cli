@@ -29,6 +29,8 @@ internal data class EdictConfiguration(
   val generation: GenerationConfiguration = GenerationConfiguration(),
   val calculatePrice: Boolean = false,
   val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
+  /** Review accounts that post as users but are bots, such as a build server's; providers mark their apps themselves. */
+  val bots: Set<String> = emptySet(),
 ) {
   /** Where promotion PRs are opened: `edict.promotion.url`, else the `edict.ci.url` repository reviews are read from. */
   val promotionRepository: ReviewRepository? = promotion?.repository ?: ci
@@ -118,6 +120,8 @@ internal data class PromotionConfiguration(
         it.isNotBlank() && !it.startsWith('-') && !it.endsWith('.') &&
           ".." !in it && it.none { character -> character in " ~^:?*[\\\u0000\r\n" },
       ) { "Promotion target branch is invalid" }
+      // Branches are hashed into promotion ids and looked up by name, so one branch must have one spelling.
+      require(!it.startsWith("refs/")) { "Name the promotion target branch without refs/heads/" }
     }
     val path = Path.of(inspectionsDirectory)
     require(inspectionsDirectory.isNotBlank() && !path.isAbsolute && path.none { it.toString() == ".." }) {
@@ -132,12 +136,7 @@ internal object EdictYamlConfiguration {
     require(path.isRegularFile()) { "Qodana configuration does not exist or is not a file: $path" }
     require(Files.size(path) <= MAX_YAML_BYTES) { "Qodana configuration exceeds 2 MiB: $path" }
 
-    val options = LoaderOptions().apply {
-      isAllowDuplicateKeys = false
-      maxAliasesForCollections = 50
-      nestingDepthLimit = 50
-      codePointLimit = MAX_YAML_BYTES
-    }
+    val options = LoaderOptions().apply { isAllowDuplicateKeys = false }
     val constructor = Constructor(QodanaYaml::class.java, options).apply { propertyUtils = QodanaPropertyUtils() }
     val yaml = try {
       Files.newBufferedReader(path).use { reader -> Yaml(constructor).load<QodanaYaml?>(reader) }
@@ -165,6 +164,7 @@ internal class EdictYaml {
   var generation: GenerationYaml? = null
   var calculatePrice: Boolean? = null
   var projectAnalysisTimeoutMinutes: Long? = null
+  var bots: List<String>? = null
 
   fun toConfiguration() = EdictConfiguration(
     mcpPort = mcpPort ?: DEFAULT_EDICT_MCP_PORT,
@@ -176,6 +176,7 @@ internal class EdictYaml {
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
     calculatePrice = calculatePrice ?: false,
     projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes ?: DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
+    bots = bots.orEmpty().map { it.required("edict.bots") }.toSet(),
   )
 }
 
@@ -255,10 +256,10 @@ internal fun reviewRepository(url: String, path: String): ReviewRepository {
     "$path must be an https URL without a port, credentials, query or fragment: $url"
   }
   val host = uri.host.lowercase()
-  val segments = uri.path.trim('/').split('/').filter(String::isNotEmpty)
+  val segments = uri.path.trim('/').split('/')
   return when {
     segments.size == 2 -> ReviewRepository(CiProviderId.GITHUB, host, segments[0], segments[1].removeSuffix(".git"))
-    segments[0] == "p" && segments[2] == "repositories" && segments.size == 4 ->
+    segments.size == 4 && segments[0] == "p" && segments[2] == "repositories" ->
       ReviewRepository(CiProviderId.SPACE, host, segments[1], segments[3].removeSuffix(".git"))
     else -> throw IllegalArgumentException(
       "$path must end with /<owner>/<repository> for GitHub or /p/<project-key>/repositories/<repository> for Space: $url",

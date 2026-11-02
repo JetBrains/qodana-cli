@@ -14,7 +14,8 @@ import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
 import org.jetbrains.qodana.edict.integration.support.historyPath
-import org.jetbrains.qodana.edict.integration.support.reviews.ReviewProviderFixture
+import org.jetbrains.qodana.edict.ci.CiProviderId
+import org.jetbrains.qodana.edict.integration.support.reviews.MergedReviewFixture
 import org.jetbrains.qodana.edict.integration.support.signalFiles
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.jetbrains.qodana.edict.signals.SignalValidation
@@ -30,39 +31,38 @@ import kotlin.test.assertTrue
 class LivePrExtractionTest : IntegrationTest() {
     @Test
     fun `managed skills extract a Space review evidence pair with real native workers`() {
-        ReviewProviderFixture("space", workspace.repository).use { fixture ->
-            val qodanaYaml = workspace.output.resolve("qodana.yaml")
-            Files.writeString(
-                qodanaYaml,
-                """
-                edict:
-                  statePath: ${JsonPrimitive(workspace.state.toString())}
-                  ci:
-                    url: https://jetbrains.team/p/owner/repositories/repo
-                """.trimIndent() + "\n",
-            )
-            workspace.withCodex(
-                """
-                Extract Signals from configured CI review #7 with PR limit 1
-                """.trimIndent(),
-                provider = fixture.client,
-                configuration = EdictYamlConfiguration.load(qodanaYaml),
-            ) { store, runtime, _ ->
-                val plan = assertNotNull(store.plan())
-                assertEquals(2, plan.tasks.size, "One PR coordinator and one discussion worker required")
-                val coordinator = plan.tasks.single { it.skill == "edict-pr-signal-analysis" }
-                val worker = plan.tasks.single { it.skill == "edict-signal-analysis" }
-                assertEquals("", coordinator.parentId)
-                assertEquals(coordinator.id, worker.parentId)
-                verifyReviewSignals(fixture)
-                fixture.verifyRequests()
-                verifyReviewCalls()
-                verifyManagedRun(workspace, runtime, plan)
-            }
+        val fixture = MergedReviewFixture(CiProviderId.SPACE, workspace.repository)
+        val qodanaYaml = workspace.output.resolve("qodana.yaml")
+        Files.writeString(
+            qodanaYaml,
+            """
+            edict:
+              statePath: ${JsonPrimitive(workspace.state.toString())}
+              ci:
+                url: https://jetbrains.team/p/owner/repositories/repo
+            """.trimIndent() + "\n",
+        )
+        workspace.withCodex(
+            """
+            Extract Signals from configured CI review #7 with PR limit 1
+            """.trimIndent(),
+            provider = fixture.client,
+            configuration = EdictYamlConfiguration.load(qodanaYaml),
+        ) { store, runtime, _ ->
+            val plan = assertNotNull(store.plan())
+            assertEquals(2, plan.tasks.size, "One PR coordinator and one discussion worker required")
+            val coordinator = plan.tasks.single { it.skill == "edict-pr-signal-analysis" }
+            val worker = plan.tasks.single { it.skill == "edict-signal-analysis" }
+            assertEquals("", coordinator.parentId)
+            assertEquals(coordinator.id, worker.parentId)
+            verifyReviewSignals(fixture)
+            fixture.verifyRequests()
+            verifyReviewCalls()
+            verifyManagedRun(workspace, runtime, plan)
         }
     }
 
-    private fun verifyReviewSignals(fixture: ReviewProviderFixture) {
+    private fun verifyReviewSignals(fixture: MergedReviewFixture) {
         val files = signalFiles(workspace.state.resolve("inbox"))
         assertEquals(2, files.size, "Review correction must retain both evidence sides")
         val diff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))

@@ -1,0 +1,3711 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "$skip": "0",
+          "$top": "100",
+          "state": "Merged",
+          "repository": "ultimate",
+          "sort": "LastUpdatedDesc",
+          "to": "2026-11-01",
+          "$fields": "data(review(number,timestamp))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232282,
+                "timestamp": 1793656353720
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232645,
+                "timestamp": 1793654197328
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230680,
+                "timestamp": 1793654180242
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232651,
+                "timestamp": 1793652255461
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232742,
+                "timestamp": 1793649204981
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232624,
+                "timestamp": 1793648214803
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232445,
+                "timestamp": 1793646459983
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232094,
+                "timestamp": 1793644878126
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232382,
+                "timestamp": 1793643175519
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231590,
+                "timestamp": 1793643078532
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 227269,
+                "timestamp": 1793642952461
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232613,
+                "timestamp": 1793642700655
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232355,
+                "timestamp": 1793642315081
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231299,
+                "timestamp": 1793640455205
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232538,
+                "timestamp": 1793640240496
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231455,
+                "timestamp": 1793640217175
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231667,
+                "timestamp": 1793639602329
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232404,
+                "timestamp": 1793638426929
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231894,
+                "timestamp": 1793638111537
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232375,
+                "timestamp": 1793638021860
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 225782,
+                "timestamp": 1793637984754
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231791,
+                "timestamp": 1793637914617
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231755,
+                "timestamp": 1793637891703
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232468,
+                "timestamp": 1793637818021
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 228519,
+                "timestamp": 1793637786739
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232727,
+                "timestamp": 1793637675506
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232331,
+                "timestamp": 1793637518701
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231364,
+                "timestamp": 1793636994289
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232238,
+                "timestamp": 1793636793920
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231805,
+                "timestamp": 1793636745207
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231404,
+                "timestamp": 1793636141612
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232314,
+                "timestamp": 1793635791604
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231261,
+                "timestamp": 1793635577450
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230373,
+                "timestamp": 1793635201666
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232730,
+                "timestamp": 1793635143733
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232663,
+                "timestamp": 1793634795834
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232525,
+                "timestamp": 1793634082782
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230379,
+                "timestamp": 1793634048162
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231151,
+                "timestamp": 1793633885339
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231312,
+                "timestamp": 1793633873820
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 222772,
+                "timestamp": 1793633510872
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232498,
+                "timestamp": 1793633398348
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230880,
+                "timestamp": 1793633372581
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232446,
+                "timestamp": 1793633321216
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232249,
+                "timestamp": 1793633263664
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 225737,
+                "timestamp": 1793633136902
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232713,
+                "timestamp": 1793632760439
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231668,
+                "timestamp": 1793632655286
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231421,
+                "timestamp": 1793632612041
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 227612,
+                "timestamp": 1793632481526
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232518,
+                "timestamp": 1793632342849
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230646,
+                "timestamp": 1793632153853
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231704,
+                "timestamp": 1793632124871
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232332,
+                "timestamp": 1793632101225
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230046,
+                "timestamp": 1793631945650
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232571,
+                "timestamp": 1793631780784
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232643,
+                "timestamp": 1793631160780
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230023,
+                "timestamp": 1793630378655
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 229928,
+                "timestamp": 1793629044028
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232185,
+                "timestamp": 1793628798876
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232677,
+                "timestamp": 1793628054685
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232703,
+                "timestamp": 1793627384271
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231923,
+                "timestamp": 1793627058231
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232731,
+                "timestamp": 1793626881551
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232666,
+                "timestamp": 1793626651961
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232635,
+                "timestamp": 1793626618781
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232439,
+                "timestamp": 1793626388894
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232634,
+                "timestamp": 1793626348661
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232557,
+                "timestamp": 1793625956243
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232562,
+                "timestamp": 1793625654557
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232364,
+                "timestamp": 1793624788872
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232116,
+                "timestamp": 1793624273434
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232667,
+                "timestamp": 1793623989465
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231220,
+                "timestamp": 1793623628887
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232696,
+                "timestamp": 1793623579642
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232596,
+                "timestamp": 1793623542849
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232160,
+                "timestamp": 1793623454601
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232490,
+                "timestamp": 1793623147694
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232296,
+                "timestamp": 1793622943482
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232259,
+                "timestamp": 1793622900354
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232629,
+                "timestamp": 1793622143378
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232656,
+                "timestamp": 1793621767754
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232675,
+                "timestamp": 1793621051958
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232019,
+                "timestamp": 1793620846639
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 227169,
+                "timestamp": 1793620188252
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230785,
+                "timestamp": 1793619987780
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232148,
+                "timestamp": 1793619493869
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232618,
+                "timestamp": 1793619438158
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232544,
+                "timestamp": 1793619291261
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232517,
+                "timestamp": 1793619010935
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232429,
+                "timestamp": 1793618453361
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231488,
+                "timestamp": 1793616911353
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 227289,
+                "timestamp": 1793615111235
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231929,
+                "timestamp": 1793614782556
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232448,
+                "timestamp": 1793614654547
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231850,
+                "timestamp": 1793614528315
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232182,
+                "timestamp": 1793612910497
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232692,
+                "timestamp": 1793612675238
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232487,
+                "timestamp": 1793612602316
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231374,
+                "timestamp": 1793610932469
+              }
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "$skip": "100",
+          "$top": "100",
+          "state": "Merged",
+          "repository": "ultimate",
+          "sort": "LastUpdatedDesc",
+          "to": "2026-11-01",
+          "$fields": "data(review(number,timestamp))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232591,
+                "timestamp": 1793608831955
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230881,
+                "timestamp": 1793599021923
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232747,
+                "timestamp": 1793591962223
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232751,
+                "timestamp": 1793579579849
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230194,
+                "timestamp": 1793576575757
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232745,
+                "timestamp": 1793569199900
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232735,
+                "timestamp": 1793568579039
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232744,
+                "timestamp": 1793564218189
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232706,
+                "timestamp": 1793558801829
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232682,
+                "timestamp": 1793556821027
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232659,
+                "timestamp": 1793555155891
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232611,
+                "timestamp": 1793545117786
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232359,
+                "timestamp": 1793544909571
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232665,
+                "timestamp": 1793537883110
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232694,
+                "timestamp": 1793533995516
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232712,
+                "timestamp": 1793533498756
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232670,
+                "timestamp": 1793532738069
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 226983,
+                "timestamp": 1793531342969
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232114,
+                "timestamp": 1793528707477
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232709,
+                "timestamp": 1793498960223
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232630,
+                "timestamp": 1793495707508
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 226648,
+                "timestamp": 1793494865905
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232497,
+                "timestamp": 1793494776114
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232714,
+                "timestamp": 1793490563829
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232705,
+                "timestamp": 1793483735756
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232646,
+                "timestamp": 1793483618995
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232397,
+                "timestamp": 1793480284839
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232662,
+                "timestamp": 1793475395409
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232619,
+                "timestamp": 1793474651754
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232697,
+                "timestamp": 1793469262551
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232698,
+                "timestamp": 1793469000828
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232122,
+                "timestamp": 1793464597362
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232693,
+                "timestamp": 1793462943709
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232680,
+                "timestamp": 1793461855188
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231372,
+                "timestamp": 1793458090580
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232640,
+                "timestamp": 1793454925854
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232512,
+                "timestamp": 1793454198227
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232272,
+                "timestamp": 1793451802503
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232642,
+                "timestamp": 1793448964236
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232607,
+                "timestamp": 1793447723429
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232655,
+                "timestamp": 1793444531873
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232230,
+                "timestamp": 1793443711674
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232636,
+                "timestamp": 1793436701673
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232632,
+                "timestamp": 1793430035635
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232612,
+                "timestamp": 1793417826201
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231877,
+                "timestamp": 1793406995080
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232516,
+                "timestamp": 1793405988829
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231829,
+                "timestamp": 1793404654204
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232599,
+                "timestamp": 1793403973965
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232559,
+                "timestamp": 1793403868268
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 229277,
+                "timestamp": 1793403221493
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232644,
+                "timestamp": 1793402873871
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232326,
+                "timestamp": 1793401359219
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232033,
+                "timestamp": 1793401104323
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230695,
+                "timestamp": 1793400195821
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232014,
+                "timestamp": 1793400036213
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232623,
+                "timestamp": 1793397339254
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231243,
+                "timestamp": 1793396820945
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232183,
+                "timestamp": 1793395448179
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232639,
+                "timestamp": 1793394788377
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232443,
+                "timestamp": 1793394268041
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231410,
+                "timestamp": 1793393687936
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232111,
+                "timestamp": 1793393313687
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232620,
+                "timestamp": 1793393039476
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231890,
+                "timestamp": 1793392980474
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232383,
+                "timestamp": 1793392377779
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232087,
+                "timestamp": 1793392170579
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232384,
+                "timestamp": 1793391582829
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232414,
+                "timestamp": 1793391480462
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 225250,
+                "timestamp": 1793390713891
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232529,
+                "timestamp": 1793390481075
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232546,
+                "timestamp": 1793390253630
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232537,
+                "timestamp": 1793389986655
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232542,
+                "timestamp": 1793389870579
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232125,
+                "timestamp": 1793389787743
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232345,
+                "timestamp": 1793389302017
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232277,
+                "timestamp": 1793389251784
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232459,
+                "timestamp": 1793389162218
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232504,
+                "timestamp": 1793388607556
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232494,
+                "timestamp": 1793388276188
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232252,
+                "timestamp": 1793387465095
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231925,
+                "timestamp": 1793386066277
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232570,
+                "timestamp": 1793385962243
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232437,
+                "timestamp": 1793384722110
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232323,
+                "timestamp": 1793384533054
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232474,
+                "timestamp": 1793384063715
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232593,
+                "timestamp": 1793383341805
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 224967,
+                "timestamp": 1793382535639
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231983,
+                "timestamp": 1793381989509
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231747,
+                "timestamp": 1793379579697
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 229983,
+                "timestamp": 1793379431786
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232584,
+                "timestamp": 1793379364602
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 227315,
+                "timestamp": 1793379304230
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232412,
+                "timestamp": 1793379031763
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231757,
+                "timestamp": 1793378965773
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230290,
+                "timestamp": 1793378508047
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232521,
+                "timestamp": 1793378206216
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232598,
+                "timestamp": 1793378084019
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232453,
+                "timestamp": 1793378036755
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230559,
+                "timestamp": 1793377832335
+              }
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:230194",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "id": "fEcR60hDomc",
+          "number": 230194,
+          "title": "CPP-24696: per-file invalidation - fixing performance issue",
+          "state": "Closed",
+          "timestamp": 1793576575757,
+          "feedChannelId": "3egtv936oWWt",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "ead1819d13cb1c9e6a9ed3b5588cf3f0bfb88b74",
+            "targetBranchInfo": {
+              "ref": "ee27accdd04f6e45839bfe4dfab1dd23fd25d38f"
+            },
+            "isMerged": true
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:3egtv936oWWt",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "etag": "1669849953602",
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F95Df0W6DT5"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F95Do0W6DT6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F95Dl0W6DTB"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F95Hm0W6DXC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F95Ht0W6DXJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F96vn0W6E71"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F96wH0W6E7V"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F96Jp0W6EZ7"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F96Jq0W6EZ8"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F97V80W6FDO"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F97YU0W6FGk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F97YV0W6FGl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F97dp0W6FMD"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F97e40W6FMS"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F97e50W6FMT"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9ARh0W6Igz"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9ARj0W6Ih1"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iB90W6eVb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F8iEL0W6eYn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iJV0W6edx"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextManager.kt",
+                      "line": 90
+                    },
+                    "endAnchor": {
+                      "line": 91
+                    },
+                    "channel": {
+                      "id": "3R2HYj4YFNea"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iJW0W6edy"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK70W6eeR"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextProvider.kt",
+                      "line": 23
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "1CCOfM1BrFzN"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK00W6eeS"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK80W6eea"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 69
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "26D9F91XL8dK"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK90W6eeb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iKT0W6een"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 71
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "4QT6Ws2mS8bb"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iKU0W6eeo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iLT0W6efv"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 115
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "4QhmzD43OJZi"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iLc0W6efw"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iNS0W6ehm"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 132
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "3W6D352n7gyl"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iNT0W6ehn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iNy0W6eiI"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iO40W6eiO"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iOx0W6ejP"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTe0W6nOA"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTo0W6nOC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTn0W6nOJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTw0W6nOK"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTy0W6nOM"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTz0W6nON"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZU10W6nOX"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZU90W6nOf"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZUL0W6nOj"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZUM0W6nOk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZUN0W6nOl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZYM0W6nSk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZYG0W6nSm"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZE90W6nfh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA0wO0W78ee"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA0wP0W78ef"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA12a0W78kq"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "816863f4c2a622f8164714207584c4392a6fadc6",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 158
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "16dt8T0xZjlz"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA12b0W78kr"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA13M0W78lc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA13Q0W78lo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJSu0W79b6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAJSv0W79b7"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJTa0W79bm"
+              }
+            }
+          ],
+          "hasMore": true
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:3egtv936oWWt",
+          "batchInfo": "{etag:1669849953602,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAJTb0W79bn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJTi0W79bu"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAIwR0W7A8h"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "052fd2004a456b1733be98ce5947f4692d847f69",
+                      "filename": "/community/platform/analysis-impl/src/com/intellij/codeInsight/multiverse/EditorContextManagerImpl.kt",
+                      "line": 43
+                    },
+                    "channel": {
+                      "id": "ZVjKz0kapMw"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAIwK0W7A8i"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKgR0W7AHb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "894d425c4c81ef6f13ca8dacbab8dc8e254b7a83",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 116
+                    },
+                    "channel": {
+                      "id": "3PyLHV2fflY8"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKgK0W7AHc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkT0W7ALl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkU0W7ALm"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkb0W7ALt"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9Vk10W7T8X"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9Vk20W7T8Y"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9VkC0W7T8a"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Vkt0W7T9H"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9Vkm0W7T9I"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9VqL0W7TEr"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9VuI0W7TIg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9VuJ0W7TIh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Xcp0W7TQF"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9Xcz0W7TQH"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Xd00W7TQI"
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3R2HYj4YFNea",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "> Nothing cached depends on the empty answer, so this comes on any thread, with no lock.\n\nI cannot understand this without knowing context, could you apply some AI to the doc? :)",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iJV0W6edx"
+            },
+            {
+              "text": "Done, let me know if it's still not clear",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003250965
+              },
+              "id": "F8ZTn0W6nOJ"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003257427
+              },
+              "id": "F8ZTw0W6nOK"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:1CCOfM1BrFzN",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "Maybe we could invent some DSL here? \nSomething like \n```\ninterface ContextResult  { // name TBD\n  object FileIsNotMine : ContextResult\n  class Contexts(val contexts: List<CodeInsightContext>) // assert non-empty in CodeInsightManagerImpl\n  object ContextAreBeingLoaded \n}",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iK70W6eeR"
+            },
+            {
+              "text": "Good point, DSL is much cleaner, thanks!",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003271923
+              },
+              "id": "F8ZTy0W6nOM"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003273403
+              },
+              "id": "F8ZTz0W6nON"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:26D9F91XL8dK",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "let's maybe assert not-empty? I mean it might be non-obvious that emptyList is noop and not \"invalidate everything\"",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iK80W6eea"
+            },
+            {
+              "text": "IMO, empty here is completely fine. As a user, I expect API to be intuitive. For example, `requestInvalidation(X) + requestInvalidation(Y)` is same as `requestInvalidation(X + Y)`. And in this sense `emptySet()` is zero element of this operation.\n\nAlso, it makes usage more clear, for example you don't need to handle the `requestInvalidation(someListOfFiles.filter { someCondition(it) })` separately.\n\nI added a comment about behavior for empty `files` instead.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003434099
+              },
+              "id": "F8ZU10W6nOX"
+            },
+            {
+              "text": "LGTM",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793113445066
+              },
+              "id": "FA0wO0W78ee"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793113445120
+              },
+              "id": "FA0wP0W78ef"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:4QT6Ws2mS8bb",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "[major] I think we need a flow and mmerging requsts here so that recheck don't compete with each other",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iKT0W6een"
+            },
+            {
+              "text": "Thanks, I rewrote to the `Channel` (TIL, `ChannelIterator#hasNext` can be `suspend`) - looks simpler than flows.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003547038
+              },
+              "id": "F8ZU90W6nOf"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003567699
+              },
+              "id": "F8ZUL0W6nOj"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:4QhmzD43OJZi",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "result might be stale by the time this runs. \n\nconsider using `readAndBackgroundWriteAction`. it guarantees that the world hasn't changed after read-action finished",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iLT0W6efv"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003573079
+              },
+              "id": "F8ZUM0W6nOk"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3W6D352n7gyl",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "let's use LinkedHashSet here. It would save us from potential nasty ordering problems.\n(a lot of places in platform already swiched to LHS, also kotlin's default is also LHS)",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iNS0W6ehm"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003581271
+              },
+              "id": "F8ZUN0W6nOl"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:16dt8T0xZjlz",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "unfortunately `cached == null` can mean that cached contexts existed, preferred context was inferred and cached, but later `cached` was gc-ed. So there is no guarantee that preferred context is not set in this case",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793114902441
+              },
+              "id": "FA12a0W78kq"
+            },
+            {
+              "text": "also i'm not sure it's correct to just skip the file when `fresh == null` because of this.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793115194003
+              },
+              "id": "FA13M0W78lc"
+            },
+            {
+              "text": "apparently it's kinda expected that provider returns the actual value for the given file at all times. So if it returns \"loading\" then probably it is the current value and we should drop previous contexts",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793115268999
+              },
+              "id": "FA13Q0W78lo"
+            },
+            {
+              "text": "Thanks, both are fixed:\n\n1. A file with no cached contexts now counts as changed, so the recheck drops it in the write action. The same happens when only the cached preferred context is gone.\n2. `Loading` is gone, together with the \"do not cache the contexts of a loading file\" commit. A provider now returns only `NotOwned` or `Contexts`, so there is no `fresh == null` case.\n\nI also moved the typed `Answer` commit to the start of the branch.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793134795236
+              },
+              "id": "FAJTi0W79bu"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177615540
+              },
+              "id": "FAKkT0W7ALl"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:ZVjKz0kapMw",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "minor: maybe we want `log.trace { print all invalidated editors here }`",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177619980
+              },
+              "id": "FAIwR0W7A8h"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3PyLHV2fflY8",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "minor: runSafely rethrows control-flow exceptions. instead we should log-error them here",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177619980
+              },
+              "id": "FAKgR0W7AHb"
+            },
+            {
+              "text": "otherwise, the coroutine processing updates dies",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177670180
+              },
+              "id": "FAKkb0W7ALt"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:232745",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "number": 232745,
+          "title": "leonya/long",
+          "state": "Closed",
+          "timestamp": 1793569199900,
+          "feedChannelId": "2iCLnx3TI25W",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "35735d23d9cd3becf6dcbdeb5019b374c5dab712",
+            "targetBranchInfo": {
+              "ref": "054b2357cbb969a3b239103a847a57ebe641dbba"
+            },
+            "isMerged": true
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:2iCLnx3TI25W",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Leonid.Khachaturov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Leonid.Khachaturov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Leonid.Khachaturov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Leonid.Khachaturov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Leonid.Khachaturov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 230194,
+        "url": "https://jetbrains.team/p/ij/reviews/230194",
+        "title": "CPP-24696: per-file invalidation - fixing performance issue",
+        "body": "",
+        "baseRevision": "ee27accdd04f6e45839bfe4dfab1dd23fd25d38f",
+        "headRevision": "ead1819d13cb1c9e6a9ed3b5588cf3f0bfb88b74",
+        "closeTimestamp": 1793576575757,
+        "threads": [
+          {
+            "threadId": "space-230194-F8iJW0W6edy",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iJW0W6edy&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextManager.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 91,
+            "anchorEndLine": 92,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "> Nothing cached depends on the empty answer, so this comes on any thread, with no lock.\n\nI cannot understand this without knowing context, could you apply some AI to the doc? :)",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Done, let me know if it's still not clear",
+                "createdAt": "2026-10-26T08:27:30.965Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iK00W6eeS",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iK00W6eeS&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextProvider.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 24,
+            "anchorEndLine": 24,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "Maybe we could invent some DSL here? \nSomething like \n```\ninterface ContextResult  { // name TBD\n  object FileIsNotMine : ContextResult\n  class Contexts(val contexts: List<CodeInsightContext>) // assert non-empty in CodeInsightManagerImpl\n  object ContextAreBeingLoaded \n}",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Good point, DSL is much cleaner, thanks!",
+                "createdAt": "2026-10-26T08:27:51.923Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iK90W6eeb",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iK90W6eeb&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 70,
+            "anchorEndLine": 70,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "let's maybe assert not-empty? I mean it might be non-obvious that emptyList is noop and not \"invalidate everything\"",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "IMO, empty here is completely fine. As a user, I expect API to be intuitive. For example, `requestInvalidation(X) + requestInvalidation(Y)` is same as `requestInvalidation(X + Y)`. And in this sense `emptySet()` is zero element of this operation.\n\nAlso, it makes usage more clear, for example you don't need to handle the `requestInvalidation(someListOfFiles.filter { someCondition(it) })` separately.\n\nI added a comment about behavior for empty `files` instead.",
+                "createdAt": "2026-10-26T08:30:34.099Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "LGTM",
+                "createdAt": "2026-10-27T15:04:05.066Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iKU0W6eeo",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iKU0W6eeo&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 72,
+            "anchorEndLine": 72,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "[major] I think we need a flow and mmerging requsts here so that recheck don't compete with each other",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Thanks, I rewrote to the `Channel` (TIL, `ChannelIterator#hasNext` can be `suspend`) - looks simpler than flows.",
+                "createdAt": "2026-10-26T08:32:27.038Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iLc0W6efw",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iLc0W6efw&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 116,
+            "anchorEndLine": 116,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "result might be stale by the time this runs. \n\nconsider using `readAndBackgroundWriteAction`. it guarantees that the world hasn't changed after read-action finished",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iNT0W6ehn",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iNT0W6ehn&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 133,
+            "anchorEndLine": 133,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "let's use LinkedHashSet here. It would save us from potential nasty ordering problems.\n(a lot of places in platform already swiched to LHS, also kotlin's default is also LHS)",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-FA12b0W78kr",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=FA12b0W78kr&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "816863f4c2a622f8164714207584c4392a6fadc6",
+            "anchorLine": 159,
+            "anchorEndLine": 159,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "unfortunately `cached == null` can mean that cached contexts existed, preferred context was inferred and cached, but later `cached` was gc-ed. So there is no guarantee that preferred context is not set in this case",
+                "createdAt": "2026-10-27T15:28:22.441Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "also i'm not sure it's correct to just skip the file when `fresh == null` because of this.",
+                "createdAt": "2026-10-27T15:33:14.003Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "apparently it's kinda expected that provider returns the actual value for the given file at all times. So if it returns \"loading\" then probably it is the current value and we should drop previous contexts",
+                "createdAt": "2026-10-27T15:34:28.999Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Thanks, both are fixed:\n\n1. A file with no cached contexts now counts as changed, so the recheck drops it in the write action. The same happens when only the cached preferred context is gone.\n2. `Loading` is gone, together with the \"do not cache the contexts of a loading file\" commit. A provider now returns only `NotOwned` or `Contexts`, so there is no `fresh == null` case.\n\nI also moved the typed `Answer` commit to the start of the branch.",
+                "createdAt": "2026-10-27T20:59:55.236Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-FAIwK0W7A8i",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=FAIwK0W7A8i&channel=3egtv936oWWt",
+            "filePath": "community/platform/analysis-impl/src/com/intellij/codeInsight/multiverse/EditorContextManagerImpl.kt",
+            "originalCommitSha": "052fd2004a456b1733be98ce5947f4692d847f69",
+            "anchorLine": 44,
+            "anchorEndLine": 44,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "minor: maybe we want `log.trace { print all invalidated editors here }`",
+                "createdAt": "2026-10-28T08:53:39.980Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-FAKgK0W7AHc",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=FAKgK0W7AHc&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "894d425c4c81ef6f13ca8dacbab8dc8e254b7a83",
+            "anchorLine": 117,
+            "anchorEndLine": 117,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "minor: runSafely rethrows control-flow exceptions. instead we should log-error them here",
+                "createdAt": "2026-10-28T08:53:39.980Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "otherwise, the coroutine processing updates dies",
+                "createdAt": "2026-10-28T08:54:30.180Z"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "number": 232745,
+        "url": "https://jetbrains.team/p/ij/reviews/232745",
+        "title": "leonya/long",
+        "body": "",
+        "baseRevision": "054b2357cbb969a3b239103a847a57ebe641dbba",
+        "headRevision": "35735d23d9cd3becf6dcbdeb5019b374c5dab712",
+        "closeTimestamp": 1793569199900,
+        "threads": []
+      }
+    ],
+    "problems": []
+  }
+}

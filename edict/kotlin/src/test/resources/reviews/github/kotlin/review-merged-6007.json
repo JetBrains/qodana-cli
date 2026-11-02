@@ -1,0 +1,56 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user": {
+            "login": "alfonsocvu",
+            "type": "User"
+          },
+          "merged_at": "2026-09-03T14:08:08Z",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "alfonsocvu",
+                "type": "User"
+              }
+            },
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "state": "MERGED",
+    "evidence": ""
+  }
+}

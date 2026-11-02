@@ -1,0 +1,8 @@
+Cannot parse Qodana configuration <path>: while parsing a flow node
+ in 'reader', line 2, column 1:
+    
+    ^
+expected the node content, but found '<stream end>'
+ in 'reader', line 2, column 1:
+    
+    ^

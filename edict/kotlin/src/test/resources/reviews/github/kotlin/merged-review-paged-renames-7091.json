@@ -1,0 +1,1247 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7091",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "title": "[Build] Rename `test-inputs-check-v2` to `test-inputs-check`",
+          "user": {
+            "login": "radoslaw-panuszewski",
+            "type": "User"
+          },
+          "merged_at": "2026-07-30T22:33:54Z",
+          "merge_commit_sha": "e40661a69e849d8723b75daf2c42e869e7e58043",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          },
+          "commits": 1
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/commits/e40661a69e849d8723b75daf2c42e869e7e58043",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "sha": "e40661a69e849d8723b75daf2c42e869e7e58043",
+          "commit": {
+            "author": {
+              "name": "Radoslaw Panuszewski"
+            },
+            "committer": {
+              "name": "Build Server"
+            },
+            "message": "[Build] Rename `test-inputs-check-v2` to `test-inputs-check`\n\nKTI-3394\n\n^affects: *"
+          },
+          "author": {
+            "login": "radoslaw-panuszewski",
+            "type": "User"
+          },
+          "committer": {
+            "login": "KotlinBuild",
+            "type": "User"
+          },
+          "parents": [
+            {
+              "sha": "45f12141234f2a8c2714a968c27c2520c10137f8"
+            }
+          ],
+          "files": [
+            {
+              "filename": "analysis/analysis-api-fir/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/analysis-api-impl-base/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/analysis-api-platform-interface/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/analysis-api-standalone/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/analysis-api/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/low-level-api-fir/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/low-level-api-fir/low-level-api-fir-compiler-tests/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/stubs/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/symbol-light-classes/build.gradle.kts"
+            },
+            {
+              "filename": "analysis/test-data-manager/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/android-tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/arguments/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/build-tools/kotlin-build-tools-api-forward-tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/build-tools/kotlin-build-tools-api-tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/build-tools/kotlin-build-tools-impl/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/build-tools/kotlin-build-tools-version-coverage-check/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/cli/cli-base/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/cli/cli-jvm/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/container/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/daemon/daemon-tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/fir/analysis-tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/fir/analysis-tests/legacy-fir-tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/fir/fir2ir/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/incremental-compilation-impl/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/ir/backend.common/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/ir/backend.jvm/lower/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/ir/ir.validation/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/ir/serialization.js/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/ir/serialization.native/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/java-direct/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/jklib.tests/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/psi/psi-api/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/psi/psi-frontend-utils/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/psi/psi-impl/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/psi/psi-utils/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/tests-common-new/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/tests-different-jdk/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/tests-java8/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/tests-spec/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/util-io/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/util-klib-abi/build.gradle.kts"
+            },
+            {
+              "filename": "compiler/util/build.gradle.kts"
+            },
+            {
+              "filename": "core/descriptors.runtime/build.gradle.kts"
+            },
+            {
+              "filename": "core/language.version-settings/build.gradle.kts"
+            },
+            {
+              "filename": "js/js.tests/build.gradle.kts"
+            },
+            {
+              "filename": "js/js.tests/klib-compatibility/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/Interop/Indexer/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/Interop/StubGenerator/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/backend.native/compiler/ir/backend.native/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/common/env/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/common/files/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/endorsedLibraries/kotlinx.cli/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/libclangInterop/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/libllvmext/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/llvmInterop/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/prepare/kotlin-native-compiler-embeddable/build.gradle.kts"
+            },
+            {
+              "filename": "kotlin-native/tools/kdumputil/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/analysis-api-based-klib-reader/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/gradle/generators/native-cache-kotlin-version/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/jdk-api-validator/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/kotlin-gradle-plugin-idea-proto/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/kotlin-gradle-plugin-idea/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/kotlin-tooling-core/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/kotlin-tooling-metadata/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/kotlinp/jvm/build.gradle.kts"
+            },
+            {
+              "filename": "libraries/tools/stats-analyser/build.gradle.kts"
+            },
+            {
+              "filename": "native/commonizer-api/build.gradle.kts"
+            },
+            {
+              "filename": "native/commonizer/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/cli-tests/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/codegen-box/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/driver/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/gc-fuzzing-tests/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/gc-fuzzing-tests/engine/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/klib-compatibility/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/klib-ir-inliner/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/litmus-tests/build.gradle.kts"
+            },
+            {
+              "filename": "native/native.tests/stress/build.gradle.kts"
+            },
+            {
+              "filename": "native/objcexport-header-generator/build.gradle.kts"
+            },
+            {
+              "filename": "native/objcexport-header-generator/impl/analysis-api/build.gradle.kts"
+            },
+            {
+              "filename": "native/objcexport-header-generator/impl/k1/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/sir-light-classes/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/sir-printer/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/swift-export-embeddable/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/swift-export-ide/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/swift-export-standalone-integration-tests/coroutines/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/swift-export-standalone-integration-tests/external/build.gradle.kts"
+            },
+            {
+              "filename": "native/swift/swift-export-standalone-integration-tests/simple/build.gradle.kts"
+            },
+            {
+              "filename": "native/unsafe-mem/build.gradle.kts"
+            },
+            {
+              "filename": "native/utils/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/allopen/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/assign-plugin/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/atomicfu/atomicfu-compiler/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/compose/compiler-hosted/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/js-plain-objects/compiler-plugin/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/jvm-abi-gen/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/kapt/kapt-cli/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/kotlin-dataframe/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/kotlinx-serialization/build.gradle.kts"
+            }
+          ]
+        },
+        "hasNext": true
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/commits/e40661a69e849d8723b75daf2c42e869e7e58043",
+        "query": {
+          "per_page": "100",
+          "page": "2"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "sha": "e40661a69e849d8723b75daf2c42e869e7e58043",
+          "commit": {
+            "author": {
+              "name": "Radoslaw Panuszewski"
+            },
+            "committer": {
+              "name": "Build Server"
+            },
+            "message": "[Build] Rename `test-inputs-check-v2` to `test-inputs-check`\n\nKTI-3394\n\n^affects: *"
+          },
+          "author": {
+            "login": "radoslaw-panuszewski",
+            "type": "User"
+          },
+          "committer": {
+            "login": "KotlinBuild",
+            "type": "User"
+          },
+          "parents": [
+            {
+              "sha": "45f12141234f2a8c2714a968c27c2520c10137f8"
+            }
+          ],
+          "files": [
+            {
+              "filename": "plugins/lombok/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/noarg/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/parcelize/parcelize-compiler/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/plugin-sandbox/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/plugin-sandbox/plugin-sandbox-ic-test/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/plugins-interactions-testing/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/power-assert/power-assert-compiler/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/sam-with-receiver/build.gradle.kts"
+            },
+            {
+              "filename": "plugins/scripting/scripting-compiler/build.gradle.kts"
+            },
+            {
+              "filename": "prepare/compiler-native-image/build.gradle.kts"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/common-configuration.gradle.kts"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/java-flight-recorder/README.md"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/project-tests-convention/src/main/kotlin/nativeTest.kt"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/settings.gradle.kts"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-data-manager-convention/src/main/kotlin/test-data-manager.gradle.kts"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/README.md",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/README.md"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/build.gradle.kts",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/build.gradle.kts"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/docs/error-message.png",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/docs/error-message.png"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/docs/jfr-snapshot.png",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/docs/jfr-snapshot.png"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/src/main/kotlin/CheckTestInputs.kt",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/src/main/kotlin/CheckTestInputs.kt"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/src/main/kotlin/TestInputsCheckExtension.kt",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/src/main/kotlin/TestInputsCheckExtensionV2.kt"
+            },
+            {
+              "filename": "repo/gradle-build-conventions/test-inputs-check/src/main/kotlin/test-inputs-check.gradle.kts",
+              "previous_filename": "repo/gradle-build-conventions/test-inputs-check-v2/src/main/kotlin/test-inputs-check-v2.gradle.kts"
+            },
+            {
+              "filename": "repo/test-federation-runtime/build.gradle.kts"
+            },
+            {
+              "filename": "test-instrumenter/README.md"
+            },
+            {
+              "filename": "test-instrumenter/src/org/jetbrains/kotlin/testFramework/inputchecking/InputCheckingFileExistsAdvice.java"
+            },
+            {
+              "filename": "wasm/wasm.ir/build.gradle.kts"
+            },
+            {
+              "filename": "wasm/wasm.tests/build.gradle.kts"
+            },
+            {
+              "filename": "wasm/wasm.tests/klib-compatibility/build.gradle.kts"
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/issues/7091/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "kotlin-safemerge[bot]",
+              "type": "Bot"
+            },
+            "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>**.​gradle.​kts</code>, <code>/​repo/​</code></td><td><a href=\"https://github.com/sellmair\"><b><code>sellmair</code></b></a><br><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-build-infrastructure\">kotlin-build-infrastructure</a></summary><ul><li><a href=\"https://github.com/goodwinnk\"><b><code>goodwinnk</code></b></a></li><li><a href=\"https://github.com/Badya\"><b><code>Badya</code></b></a></li><li><a href=\"https://github.com/4u7\"><b><code>4u7</code></b></a></li><li><a href=\"https://github.com/CristianGM\"><b><code>CristianGM</code></b></a></li><li><a href=\"https://github.com/radoslaw-panuszewski\"><b><code>radoslaw-panuszewski</code></b></a></li><li><a href=\"https://github.com/SmialyKot\"><b><code>SmialyKot</code></b></a></li><li><a href=\"https://github.com/ozzush\"><b><code>ozzush</code></b></a></li><li><a href=\"https://github.com/kbrgnj\"><b><code>kbrgnj</code></b></a></li></ul></details></td><td align=\"center\">✅<br><a href=\"https://github.com/CristianGM\"><b><code>CristianGM</code></b></a> 🔒</td></tr><tr><td><code>/​kotlin-​native/​tools/​**/​*.​gradle.​kts</code>, <code>/​native/​native.​tests/​*.​gradle.​kts</code>, <code>/​native/​swift/​**/​*.​gradle.​kts</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-native\">kotlin-native</a></summary><ul><li><a href=\"https://github.com/mMaxy\"><b><code>mMaxy</code></b></a></li><li><a href=\"https://github.com/projedi\"><b><code>projedi</code></b></a></li><li><a href=\"https://github.com/anton-bannykh\"><b><code>anton-bannykh</code></b></a></li><li><a href=\"https://github.com/DmT021\"><b><code>DmT021</code></b></a></li><li><a href=\"https://github.com/haitaka\"><b><code>haitaka</code></b></a></li><li><a href=\"https://github.com/glukianets\"><b><code>glukianets</code></b></a></li><li><a href=\"https://github.com/azakharenko\"><b><code>azakharenko</code></b></a></li><li><a href=\"https://github.com/SvyatoslavScherbina\"><b><code>SvyatoslavScherbina</code></b></a></li><li><a href=\"https://github.com/OlgaSemakina\"><b><code>OlgaSemakina</code></b></a> (QA)</li><li><a href=\"https://github.com/zeks07\"><b><code>zeks07</code></b></a></li></ul></details></td><td align=\"center\">✅<br><a href=\"https://github.com/projedi\"><b><code>projedi</code></b></a> 🔒</td></tr><tr><td><code>/​test-​instrumenter/​</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-build-infrastructure\">kotlin-build-infrastructure</a></summary><ul><li><a href=\"https://github.com/goodwinnk\"><b><code>goodwinnk</code></b></a></li><li><a href=\"https://github.com/Badya\"><b><code>Badya</code></b></a></li><li><a href=\"https://github.com/4u7\"><b><code>4u7</code></b></a></li><li><a href=\"https://github.com/CristianGM\"><b><code>CristianGM</code></b></a></li><li><a href=\"https://github.com/radoslaw-panuszewski\"><b><code>radoslaw-panuszewski</code></b></a></li><li><a href=\"https://github.com/SmialyKot\"><b><code>SmialyKot</code></b></a></li><li><a href=\"https://github.com/ozzush\"><b><code>ozzush</code></b></a></li><li><a href=\"https://github.com/kbrgnj\"><b><code>kbrgnj</code></b></a></li></ul></details></td><td align=\"center\">✅<br><a href=\"https://github.com/CristianGM\"><b><code>CristianGM</code></b></a> 🔒</td></tr></table>\n\n<details><summary><b>PR commands for maintainers</b></summary><table><tr><th>Command</th><th>Description</th><th>Parameters</th></tr><tr><td><code>/safe-merge</code></td><td>Rebase-merges with automatic fixup commit squashing</td><td><code>--fixup</code> Autosquash fixup commits (on by default)</td></tr><tr><td><code>/safe-squash-merge</code></td><td>Squash-merges with optional commit title/body override</td><td><code>--title</code> Title of the squashed commit<br><code>--message</code> Body of the squashed commit</td></tr><tr><td><code>/dry-run</code></td><td>Runs the test pipeline with changes rebased on latest master</td><td><code>--retry</code> Retry the CI run on failure</td></tr><tr><td><code>/test-public</code></td><td>Triggers the public test suite without rebasing on latest master</td><td>—</td></tr><tr><td><code>/test-private</code></td><td>Triggers the private test suite without rebasing on latest master</td><td>—</td></tr><tr><td><code>/codeowners</code></td><td>Triggers code owners check and comment update</td><td>—</td></tr><tr><td><code>/fixup</code></td><td>Squashes fixup commits and force pushes the branch</td><td>—</td></tr><tr><td><code>/cancel-coordinator</code></td><td>Cancels the merge coordinator currently running for this branch</td><td>—</td></tr></table></details><!-- KPR_COMMANDS:eyJjb21tYW5kcyI6W3sidmFsdWUiOiIvc2FmZS1tZXJnZSIsImRlc2NyaXB0aW9uIjoiUmViYXNlLW1lcmdlcyB3aXRoIGF1dG9tYXRpYyBmaXh1cCBjb21taXQgc3F1YXNoaW5nIiwicGFyYW1ldGVycyI6W3siZmxhZyI6Ii0tZml4dXAiLCJraW5kIjoidG9nZ2xlIiwiZGVzY3JpcHRpb24iOiJBdXRvc3F1YXNoIGZpeHVwIGNvbW1pdHMiLCJkZWZhdWx0Ijp0cnVlfV19LHsidmFsdWUiOiIvc2FmZS1zcXVhc2gtbWVyZ2UiLCJkZXNjcmlwdGlvbiI6IlNxdWFzaC1tZXJnZXMgd2l0aCBvcHRpb25hbCBjb21taXQgdGl0bGUvYm9keSBvdmVycmlkZSIsInBhcmFtZXRlcnMiOlt7ImZsYWciOiItLXRpdGxlIiwia2luZCI6InZhbHVlIiwiZGVzY3JpcHRpb24iOiJUaXRsZSBvZiB0aGUgc3F1YXNoZWQgY29tbWl0In0seyJmbGFnIjoiLS1tZXNzYWdlIiwia2luZCI6InZhbHVlIiwiZGVzY3JpcHRpb24iOiJCb2R5IG9mIHRoZSBzcXVhc2hlZCBjb21taXQifV19LHsidmFsdWUiOiIvZHJ5LXJ1biIsImRlc2NyaXB0aW9uIjoiUnVucyB0aGUgdGVzdCBwaXBlbGluZSB3aXRoIGNoYW5nZXMgcmViYXNlZCBvbiBsYXRlc3QgbWFzdGVyIiwicGFyYW1ldGVycyI6W3siZmxhZyI6Ii0tcmV0cnkiLCJraW5kIjoidG9nZ2xlIiwiZGVzY3JpcHRpb24iOiJSZXRyeSB0aGUgQ0kgcnVuIG9uIGZhaWx1cmUifV19LHsidmFsdWUiOiIvdGVzdC1wdWJsaWMiLCJkZXNjcmlwdGlvbiI6IlRyaWdnZXJzIHRoZSBwdWJsaWMgdGVzdCBzdWl0ZSB3aXRob3V0IHJlYmFzaW5nIG9uIGxhdGVzdCBtYXN0ZXIiLCJwYXJhbWV0ZXJzIjpbXX0seyJ2YWx1ZSI6Ii90ZXN0LXByaXZhdGUiLCJkZXNjcmlwdGlvbiI6IlRyaWdnZXJzIHRoZSBwcml2YXRlIHRlc3Qgc3VpdGUgd2l0aG91dCByZWJhc2luZyBvbiBsYXRlc3QgbWFzdGVyIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvY29kZW93bmVycyIsImRlc2NyaXB0aW9uIjoiVHJpZ2dlcnMgY29kZSBvd25lcnMgY2hlY2sgYW5kIGNvbW1lbnQgdXBkYXRlIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvZml4dXAiLCJkZXNjcmlwdGlvbiI6IlNxdWFzaGVzIGZpeHVwIGNvbW1pdHMgYW5kIGZvcmNlIHB1c2hlcyB0aGUgYnJhbmNoIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvY2FuY2VsLWNvb3JkaW5hdG9yIiwiZGVzY3JpcHRpb24iOiJDYW5jZWxzIHRoZSBtZXJnZSBjb29yZGluYXRvciBjdXJyZW50bHkgcnVubmluZyBmb3IgdGhpcyBicmFuY2giLCJwYXJhbWV0ZXJzIjpbXX1dfQ== -->\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
+            "performed_via_github_app": {
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "name": "Kotlin SafeMerge"
+            }
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/dry-run",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/1015834415 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-7091/safe-merge`\n> Commit: [05a71a4](https://github.com/JetBrains/kotlin/commit/05a71a4f2164bb4685fbd3edb8aff71d6f99b6e2)\n\n",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/cancel-coordinator",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/dry-run",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/1015888523 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-7091/safe-merge`\n> Commit: [9272e3e](https://github.com/JetBrains/kotlin/commit/9272e3ea1ceebe03594cc95c82e06ccd80d33dbb)\n\n",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/cancel-coordinator",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/dry-run",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/1015946386 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-7091/safe-merge`\n> Commit: [3d36b20](https://github.com/JetBrains/kotlin/commit/3d36b2078355dfc75b5ccbc8f873afec532febf5)\n\n\n\n---\n\nQuality gate failed. See https://buildserver.labs.intellij.net/build/1015946386 to get full insight.",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/dry-run",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/1016719523 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-7091/safe-merge`\n> Commit: [3d36b20](https://github.com/JetBrains/kotlin/commit/3d36b2078355dfc75b5ccbc8f873afec532febf5)\n\n\n\n---\n\nQuality gate finished successfully.",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "just a rebase ⬆️ ",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "just a rebase ⬆️ ",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "body": "/safe-merge",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "Quality gate is triggered at https://buildserver.labs.intellij.net/build/1017826820 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-7091/safe-merge`\n> Commit: [7df04c6](https://github.com/JetBrains/kotlin/commit/7df04c6845ae4e7a2c357ff48c82e2fd64b67981)\n\n\n\n---\n\nQuality gate finished successfully.",
+            "performed_via_github_app": null
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7091/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "CristianGM",
+              "type": "User"
+            },
+            "body": "/final"
+          },
+          {
+            "user": {
+              "login": "projedi",
+              "type": "User"
+            },
+            "body": "/final"
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7091/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "title": "[Build] Rename `test-inputs-check-v2` to `test-inputs-check`",
+    "discussionMessages": [
+      "/dry-run",
+      "/cancel-coordinator",
+      "/dry-run",
+      "/cancel-coordinator",
+      "/dry-run",
+      "/dry-run",
+      "just a rebase ⬆️ ",
+      "just a rebase ⬆️ ",
+      "/safe-merge",
+      "/final",
+      "/final"
+    ],
+    "beforeRevision": "45f12141234f2a8c2714a968c27c2520c10137f8",
+    "mergedRevision": "e40661a69e849d8723b75daf2c42e869e7e58043",
+    "changes": [
+      {
+        "beforePath": "analysis/analysis-api-fir/build.gradle.kts",
+        "afterPath": "analysis/analysis-api-fir/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/analysis-api-impl-base/build.gradle.kts",
+        "afterPath": "analysis/analysis-api-impl-base/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/analysis-api-platform-interface/build.gradle.kts",
+        "afterPath": "analysis/analysis-api-platform-interface/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/analysis-api-standalone/build.gradle.kts",
+        "afterPath": "analysis/analysis-api-standalone/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/analysis-api/build.gradle.kts",
+        "afterPath": "analysis/analysis-api/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/low-level-api-fir/build.gradle.kts",
+        "afterPath": "analysis/low-level-api-fir/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/low-level-api-fir/low-level-api-fir-compiler-tests/build.gradle.kts",
+        "afterPath": "analysis/low-level-api-fir/low-level-api-fir-compiler-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/stubs/build.gradle.kts",
+        "afterPath": "analysis/stubs/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/symbol-light-classes/build.gradle.kts",
+        "afterPath": "analysis/symbol-light-classes/build.gradle.kts"
+      },
+      {
+        "beforePath": "analysis/test-data-manager/build.gradle.kts",
+        "afterPath": "analysis/test-data-manager/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/android-tests/build.gradle.kts",
+        "afterPath": "compiler/android-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/arguments/build.gradle.kts",
+        "afterPath": "compiler/arguments/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/build-tools/kotlin-build-tools-api-forward-tests/build.gradle.kts",
+        "afterPath": "compiler/build-tools/kotlin-build-tools-api-forward-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/build-tools/kotlin-build-tools-api-tests/build.gradle.kts",
+        "afterPath": "compiler/build-tools/kotlin-build-tools-api-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/build-tools/kotlin-build-tools-impl/build.gradle.kts",
+        "afterPath": "compiler/build-tools/kotlin-build-tools-impl/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/build-tools/kotlin-build-tools-version-coverage-check/build.gradle.kts",
+        "afterPath": "compiler/build-tools/kotlin-build-tools-version-coverage-check/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/build.gradle.kts",
+        "afterPath": "compiler/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/cli/cli-base/build.gradle.kts",
+        "afterPath": "compiler/cli/cli-base/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/cli/cli-jvm/build.gradle.kts",
+        "afterPath": "compiler/cli/cli-jvm/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/container/build.gradle.kts",
+        "afterPath": "compiler/container/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/daemon/daemon-tests/build.gradle.kts",
+        "afterPath": "compiler/daemon/daemon-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/fir/analysis-tests/build.gradle.kts",
+        "afterPath": "compiler/fir/analysis-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/fir/analysis-tests/legacy-fir-tests/build.gradle.kts",
+        "afterPath": "compiler/fir/analysis-tests/legacy-fir-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/fir/fir2ir/build.gradle.kts",
+        "afterPath": "compiler/fir/fir2ir/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/incremental-compilation-impl/build.gradle.kts",
+        "afterPath": "compiler/incremental-compilation-impl/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/ir/backend.common/build.gradle.kts",
+        "afterPath": "compiler/ir/backend.common/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/ir/backend.jvm/lower/build.gradle.kts",
+        "afterPath": "compiler/ir/backend.jvm/lower/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/ir/ir.validation/build.gradle.kts",
+        "afterPath": "compiler/ir/ir.validation/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/ir/serialization.js/build.gradle.kts",
+        "afterPath": "compiler/ir/serialization.js/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/ir/serialization.native/build.gradle.kts",
+        "afterPath": "compiler/ir/serialization.native/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/java-direct/build.gradle.kts",
+        "afterPath": "compiler/java-direct/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/jklib.tests/build.gradle.kts",
+        "afterPath": "compiler/jklib.tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/psi/psi-api/build.gradle.kts",
+        "afterPath": "compiler/psi/psi-api/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/psi/psi-frontend-utils/build.gradle.kts",
+        "afterPath": "compiler/psi/psi-frontend-utils/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/psi/psi-impl/build.gradle.kts",
+        "afterPath": "compiler/psi/psi-impl/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/psi/psi-utils/build.gradle.kts",
+        "afterPath": "compiler/psi/psi-utils/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/tests-common-new/build.gradle.kts",
+        "afterPath": "compiler/tests-common-new/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/tests-different-jdk/build.gradle.kts",
+        "afterPath": "compiler/tests-different-jdk/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/tests-java8/build.gradle.kts",
+        "afterPath": "compiler/tests-java8/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/tests-spec/build.gradle.kts",
+        "afterPath": "compiler/tests-spec/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/util-io/build.gradle.kts",
+        "afterPath": "compiler/util-io/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/util-klib-abi/build.gradle.kts",
+        "afterPath": "compiler/util-klib-abi/build.gradle.kts"
+      },
+      {
+        "beforePath": "compiler/util/build.gradle.kts",
+        "afterPath": "compiler/util/build.gradle.kts"
+      },
+      {
+        "beforePath": "core/descriptors.runtime/build.gradle.kts",
+        "afterPath": "core/descriptors.runtime/build.gradle.kts"
+      },
+      {
+        "beforePath": "core/language.version-settings/build.gradle.kts",
+        "afterPath": "core/language.version-settings/build.gradle.kts"
+      },
+      {
+        "beforePath": "js/js.tests/build.gradle.kts",
+        "afterPath": "js/js.tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "js/js.tests/klib-compatibility/build.gradle.kts",
+        "afterPath": "js/js.tests/klib-compatibility/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/Interop/Indexer/build.gradle.kts",
+        "afterPath": "kotlin-native/Interop/Indexer/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/Interop/StubGenerator/build.gradle.kts",
+        "afterPath": "kotlin-native/Interop/StubGenerator/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/backend.native/compiler/ir/backend.native/build.gradle.kts",
+        "afterPath": "kotlin-native/backend.native/compiler/ir/backend.native/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/common/env/build.gradle.kts",
+        "afterPath": "kotlin-native/common/env/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/common/files/build.gradle.kts",
+        "afterPath": "kotlin-native/common/files/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/endorsedLibraries/kotlinx.cli/build.gradle.kts",
+        "afterPath": "kotlin-native/endorsedLibraries/kotlinx.cli/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/libclangInterop/build.gradle.kts",
+        "afterPath": "kotlin-native/libclangInterop/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/libllvmext/build.gradle.kts",
+        "afterPath": "kotlin-native/libllvmext/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/llvmInterop/build.gradle.kts",
+        "afterPath": "kotlin-native/llvmInterop/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/prepare/kotlin-native-compiler-embeddable/build.gradle.kts",
+        "afterPath": "kotlin-native/prepare/kotlin-native-compiler-embeddable/build.gradle.kts"
+      },
+      {
+        "beforePath": "kotlin-native/tools/kdumputil/build.gradle.kts",
+        "afterPath": "kotlin-native/tools/kdumputil/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/analysis-api-based-klib-reader/build.gradle.kts",
+        "afterPath": "libraries/tools/analysis-api-based-klib-reader/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/gradle/generators/native-cache-kotlin-version/build.gradle.kts",
+        "afterPath": "libraries/tools/gradle/generators/native-cache-kotlin-version/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/jdk-api-validator/build.gradle.kts",
+        "afterPath": "libraries/tools/jdk-api-validator/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/kotlin-gradle-plugin-idea-proto/build.gradle.kts",
+        "afterPath": "libraries/tools/kotlin-gradle-plugin-idea-proto/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/kotlin-gradle-plugin-idea/build.gradle.kts",
+        "afterPath": "libraries/tools/kotlin-gradle-plugin-idea/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/kotlin-tooling-core/build.gradle.kts",
+        "afterPath": "libraries/tools/kotlin-tooling-core/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/kotlin-tooling-metadata/build.gradle.kts",
+        "afterPath": "libraries/tools/kotlin-tooling-metadata/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/kotlinp/jvm/build.gradle.kts",
+        "afterPath": "libraries/tools/kotlinp/jvm/build.gradle.kts"
+      },
+      {
+        "beforePath": "libraries/tools/stats-analyser/build.gradle.kts",
+        "afterPath": "libraries/tools/stats-analyser/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/commonizer-api/build.gradle.kts",
+        "afterPath": "native/commonizer-api/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/commonizer/build.gradle.kts",
+        "afterPath": "native/commonizer/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/build.gradle.kts",
+        "afterPath": "native/native.tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/cli-tests/build.gradle.kts",
+        "afterPath": "native/native.tests/cli-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/codegen-box/build.gradle.kts",
+        "afterPath": "native/native.tests/codegen-box/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/driver/build.gradle.kts",
+        "afterPath": "native/native.tests/driver/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/gc-fuzzing-tests/build.gradle.kts",
+        "afterPath": "native/native.tests/gc-fuzzing-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/gc-fuzzing-tests/engine/build.gradle.kts",
+        "afterPath": "native/native.tests/gc-fuzzing-tests/engine/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/klib-compatibility/build.gradle.kts",
+        "afterPath": "native/native.tests/klib-compatibility/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/klib-ir-inliner/build.gradle.kts",
+        "afterPath": "native/native.tests/klib-ir-inliner/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/litmus-tests/build.gradle.kts",
+        "afterPath": "native/native.tests/litmus-tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/native.tests/stress/build.gradle.kts",
+        "afterPath": "native/native.tests/stress/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/objcexport-header-generator/build.gradle.kts",
+        "afterPath": "native/objcexport-header-generator/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/objcexport-header-generator/impl/analysis-api/build.gradle.kts",
+        "afterPath": "native/objcexport-header-generator/impl/analysis-api/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/objcexport-header-generator/impl/k1/build.gradle.kts",
+        "afterPath": "native/objcexport-header-generator/impl/k1/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/sir-light-classes/build.gradle.kts",
+        "afterPath": "native/swift/sir-light-classes/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/sir-printer/build.gradle.kts",
+        "afterPath": "native/swift/sir-printer/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/swift-export-embeddable/build.gradle.kts",
+        "afterPath": "native/swift/swift-export-embeddable/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/swift-export-ide/build.gradle.kts",
+        "afterPath": "native/swift/swift-export-ide/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/swift-export-standalone-integration-tests/coroutines/build.gradle.kts",
+        "afterPath": "native/swift/swift-export-standalone-integration-tests/coroutines/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/swift-export-standalone-integration-tests/external/build.gradle.kts",
+        "afterPath": "native/swift/swift-export-standalone-integration-tests/external/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/swift/swift-export-standalone-integration-tests/simple/build.gradle.kts",
+        "afterPath": "native/swift/swift-export-standalone-integration-tests/simple/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/unsafe-mem/build.gradle.kts",
+        "afterPath": "native/unsafe-mem/build.gradle.kts"
+      },
+      {
+        "beforePath": "native/utils/build.gradle.kts",
+        "afterPath": "native/utils/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/allopen/build.gradle.kts",
+        "afterPath": "plugins/allopen/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/assign-plugin/build.gradle.kts",
+        "afterPath": "plugins/assign-plugin/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/atomicfu/atomicfu-compiler/build.gradle.kts",
+        "afterPath": "plugins/atomicfu/atomicfu-compiler/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/compose/compiler-hosted/build.gradle.kts",
+        "afterPath": "plugins/compose/compiler-hosted/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/js-plain-objects/compiler-plugin/build.gradle.kts",
+        "afterPath": "plugins/js-plain-objects/compiler-plugin/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/jvm-abi-gen/build.gradle.kts",
+        "afterPath": "plugins/jvm-abi-gen/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/kapt/kapt-cli/build.gradle.kts",
+        "afterPath": "plugins/kapt/kapt-cli/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/kotlin-dataframe/build.gradle.kts",
+        "afterPath": "plugins/kotlin-dataframe/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/kotlinx-serialization/build.gradle.kts",
+        "afterPath": "plugins/kotlinx-serialization/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/lombok/build.gradle.kts",
+        "afterPath": "plugins/lombok/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/noarg/build.gradle.kts",
+        "afterPath": "plugins/noarg/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/parcelize/parcelize-compiler/build.gradle.kts",
+        "afterPath": "plugins/parcelize/parcelize-compiler/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/plugin-sandbox/build.gradle.kts",
+        "afterPath": "plugins/plugin-sandbox/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/plugin-sandbox/plugin-sandbox-ic-test/build.gradle.kts",
+        "afterPath": "plugins/plugin-sandbox/plugin-sandbox-ic-test/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/plugins-interactions-testing/build.gradle.kts",
+        "afterPath": "plugins/plugins-interactions-testing/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/power-assert/power-assert-compiler/build.gradle.kts",
+        "afterPath": "plugins/power-assert/power-assert-compiler/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/sam-with-receiver/build.gradle.kts",
+        "afterPath": "plugins/sam-with-receiver/build.gradle.kts"
+      },
+      {
+        "beforePath": "plugins/scripting/scripting-compiler/build.gradle.kts",
+        "afterPath": "plugins/scripting/scripting-compiler/build.gradle.kts"
+      },
+      {
+        "beforePath": "prepare/compiler-native-image/build.gradle.kts",
+        "afterPath": "prepare/compiler-native-image/build.gradle.kts"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/common-configuration.gradle.kts",
+        "afterPath": "repo/gradle-build-conventions/buildsrc-compat/src/main/kotlin/common-configuration.gradle.kts"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/java-flight-recorder/README.md",
+        "afterPath": "repo/gradle-build-conventions/java-flight-recorder/README.md"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/project-tests-convention/src/main/kotlin/nativeTest.kt",
+        "afterPath": "repo/gradle-build-conventions/project-tests-convention/src/main/kotlin/nativeTest.kt"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/settings.gradle.kts",
+        "afterPath": "repo/gradle-build-conventions/settings.gradle.kts"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-data-manager-convention/src/main/kotlin/test-data-manager.gradle.kts",
+        "afterPath": "repo/gradle-build-conventions/test-data-manager-convention/src/main/kotlin/test-data-manager.gradle.kts"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/README.md",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/README.md"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/build.gradle.kts",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/build.gradle.kts"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/docs/error-message.png",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/docs/error-message.png"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/docs/jfr-snapshot.png",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/docs/jfr-snapshot.png"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/src/main/kotlin/CheckTestInputs.kt",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/src/main/kotlin/CheckTestInputs.kt"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/src/main/kotlin/TestInputsCheckExtensionV2.kt",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/src/main/kotlin/TestInputsCheckExtension.kt"
+      },
+      {
+        "beforePath": "repo/gradle-build-conventions/test-inputs-check-v2/src/main/kotlin/test-inputs-check-v2.gradle.kts",
+        "afterPath": "repo/gradle-build-conventions/test-inputs-check/src/main/kotlin/test-inputs-check.gradle.kts"
+      },
+      {
+        "beforePath": "repo/test-federation-runtime/build.gradle.kts",
+        "afterPath": "repo/test-federation-runtime/build.gradle.kts"
+      },
+      {
+        "beforePath": "test-instrumenter/README.md",
+        "afterPath": "test-instrumenter/README.md"
+      },
+      {
+        "beforePath": "test-instrumenter/src/org/jetbrains/kotlin/testFramework/inputchecking/InputCheckingFileExistsAdvice.java",
+        "afterPath": "test-instrumenter/src/org/jetbrains/kotlin/testFramework/inputchecking/InputCheckingFileExistsAdvice.java"
+      },
+      {
+        "beforePath": "wasm/wasm.ir/build.gradle.kts",
+        "afterPath": "wasm/wasm.ir/build.gradle.kts"
+      },
+      {
+        "beforePath": "wasm/wasm.tests/build.gradle.kts",
+        "afterPath": "wasm/wasm.tests/build.gradle.kts"
+      },
+      {
+        "beforePath": "wasm/wasm.tests/klib-compatibility/build.gradle.kts",
+        "afterPath": "wasm/wasm.tests/klib-compatibility/build.gradle.kts"
+      }
+    ]
+  }
+}

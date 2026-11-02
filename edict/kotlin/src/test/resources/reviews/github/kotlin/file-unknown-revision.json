@@ -1,0 +1,21 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+        "query": {
+          "ref": "0000000000000000000000000000000000000000"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "No commit found for the ref 0000000000000000000000000000000000000000"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: GitHub file read returned HTTP 404: No commit found for the ref 0000000000000000000000000000000000000000"
+}

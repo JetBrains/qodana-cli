@@ -67,14 +67,10 @@ data class ReviewSelectionInput(
   val endDate: String = "",
 ) {
   fun validate() {
-    require(prNumbers.all { it > 0 } && prNumbers.distinct().size == prNumbers.size && prNumbers.size <= 1000) {
-      "PR numbers must be distinct, positive, and contain at most 1000 entries"
-    }
     require((startDate.isEmpty() && endDate.isEmpty()) || (startDate.isNotEmpty() && endDate.isNotEmpty())) {
       "Specify both startDate and endDate, or neither"
     }
     require(prNumbers.isEmpty() || startDate.isEmpty()) { "Select either PR numbers or a date range" }
-    if (startDate.isNotEmpty()) PrAnalysisDateRange(startDate, endDate).validate()
   }
 }
 

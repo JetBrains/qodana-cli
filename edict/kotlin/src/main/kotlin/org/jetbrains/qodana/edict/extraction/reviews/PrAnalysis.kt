@@ -61,8 +61,8 @@ internal class PrAnalysis(
     input.validate()
     val repository = reviews().repository
     return when {
-      input.prNumbers.isNotEmpty() -> prepareNumberBatch(token, repository, input.prNumbers)
-      input.startDate.isNotEmpty() -> prepareDateBatch(token, repository, input.startDate, input.endDate)
+      input.prNumbers.isNotEmpty() -> prepareNumberBatch(repository, input.prNumbers)
+      input.startDate.isNotEmpty() -> prepareDateBatch(repository, input.startDate, input.endDate)
       else -> prepareDefaultBatch(token, repository)
     }
   }
@@ -77,14 +77,13 @@ internal class PrAnalysis(
     val date = generateSequence(today().minusDays(1)) { it.minusDays(1) }
       .takeWhile { !it.isBefore(MIN_REVIEW_DATE) }
       .firstOrNull { !coverage.includes(it) }
-      ?: return registerBatch(token, repository, emptyList(), "${json.encodeToString(repository)}:history-exhausted")
+      ?: return registerBatch(repository, emptyList(), "${json.encodeToString(repository)}:history-exhausted")
     val fetched = fetchCompleteRange(date, date)
     val prs = fetched.pullRequests
       .filterNot { it.number in coverage.analyzedPrNumbers }
       .sortedByDescending(PullRequest::closeTimestamp)
     val ranges = listOf(PrAnalysisDateRange(date.toString(), date.toString()))
     return registerBatch(
-      token,
       repository,
       prs,
       json.encodeToString(repository) + json.encodeToString(ranges),
@@ -94,7 +93,6 @@ internal class PrAnalysis(
   }
 
   private fun prepareDateBatch(
-    token: String,
     repository: ReviewRepository,
     startDate: String,
     endDate: String,
@@ -105,7 +103,6 @@ internal class PrAnalysis(
     val fetched = fetchCompleteRange(start, end)
     val ranges = listOf(PrAnalysisDateRange(startDate, endDate))
     return registerBatch(
-      token,
       repository,
       fetched.pullRequests.sortedByDescending(PullRequest::closeTimestamp),
       json.encodeToString(repository) + json.encodeToString(ranges),
@@ -115,14 +112,12 @@ internal class PrAnalysis(
   }
 
   private fun prepareNumberBatch(
-    token: String,
     repository: ReviewRepository,
     prNumbers: List<Int>,
   ): PrBatchSummary {
     val selection = ReviewSelection(maxPrs = prNumbers.size, prNumbers = prNumbers)
     val fetched = fetch(selection)
     return registerBatch(
-      token,
       repository,
       fetched.pullRequests,
       json.encodeToString(repository) + json.encodeToString(selection),
@@ -152,7 +147,6 @@ internal class PrAnalysis(
   }
 
   private fun registerBatch(
-    token: String,
     repository: ReviewRepository,
     prs: List<PullRequest>,
     selectionIdentity: String,
@@ -179,7 +173,6 @@ internal class PrAnalysis(
     val chunks = items.chunked(CHUNK_SIZE)
     val summary = PrBatchSummary(id, chunks.size)
     return synchronized(store) {
-      store.requirePrAnalysisCaller(token, coordinator = true)
       batches.getOrPut(id) {
         Batch(
           summary = summary,
@@ -314,7 +307,6 @@ internal class PrAnalysis(
     val canonical = reviews().diff(diff.before, diff.after, diff.beforePath, diff.afterPath)
     val excerpt = UnifiedDiff.excerpt(canonical, draft.label, draft.fileRevision.expectedRanges.orEmpty(), SignalValidation.MAX_DIFF_CHARS)
       ?: error("The changes at the Signal's lines do not fit ${SignalValidation.MAX_DIFF_CHARS} characters; narrow its ranges")
-    UnifiedDiff.validateExcerpt(excerpt, canonical)
     return EdictNextSignal(
       id = stableSignalId(key),
       idempotencyKey = key,
@@ -395,7 +387,8 @@ internal class PrAnalysis(
   // TODO(R11): each read appends to `notes` from `onFailure`; give each read a result with its own note and collect them.
   fun evidence(item: PrItem): PrItemEvidence {
     val thread = item.thread
-    val anchor = thread.anchorLine?.let { it..(thread.anchorEndLine ?: it) }
+    // Valid threads have both anchor ends or neither.
+    val anchor = thread.anchorLine?.let { it..thread.anchorEndLine!! }
     val notes = mutableListOf<String>()
     val diff = runCatching {
       reviews().diff(thread.originalCommitSha, item.pr.headRevision, thread.filePath, thread.filePath, DIFF_CONTEXT)
@@ -439,8 +432,7 @@ internal class PrAnalysis(
     return reviews().diff(before, after, beforePath, afterPath)
   }
 
-  fun complete(token: String) {
-    store.requirePrAnalysisCaller(token, coordinator = true)
+  fun complete() {
     require(batches.isNotEmpty()) { "Prepare and inspect requested PR selection before finishing" }
     var totalChunkCount = 0
     var failedChunkCount = 0
@@ -480,16 +472,18 @@ internal class PrAnalysis(
 }
 
 /** Drops PRs without exact revisions and threads with an invalid path, revision or anchor, reporting each. */
-private fun ReviewFetchResult.withValidThreads(): ReviewFetchResult {
+internal fun ReviewFetchResult.withValidThreads(): ReviewFetchResult {
   val (exact, inexact) = pullRequests.partition { validRevision(it.baseRevision) && validRevision(it.headRevision) }
   val checked = exact.map { it to it.threads.partition(ReviewThread::isValid) }
   return ReviewFetchResult(
     checked.map { (pr, threads) -> pr.copy(threads = threads.first) },
-      buildList {
-          addAll(this@withValidThreads.problems)
-          inexact.mapTo(this) { "PR ${it.number}: lacks exact base/head revisions" }
-          checked.flatMapTo(this) { (pr, threads) -> threads.second.map { "PR ${pr.number} discussion ${it.threadId}: invalid path, revision or anchors" } }
-      },
+    buildList {
+      addAll(this@withValidThreads.problems)
+      inexact.mapTo(this) { "PR ${it.number}: lacks exact base/head revisions" }
+      checked.flatMapTo(this) { (pr, threads) ->
+        threads.second.map { "PR ${pr.number} discussion ${it.threadId}: invalid path, revision or anchors" }
+      }
+    },
   )
 }
 

@@ -1,0 +1,332 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "title": "KT-86199 Fix scalability problems with packageFragmentProviderImpl",
+          "user": {
+            "login": "alfonsocvu",
+            "type": "User"
+          },
+          "merged_at": "2026-09-03T14:08:08Z",
+          "merge_commit_sha": "a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "alfonsocvu",
+                "type": "User"
+              }
+            },
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          },
+          "commits": 1
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/commits/a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "sha": "a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "commit": {
+            "author": {
+              "name": "Alfonso Villalobos Ulate"
+            },
+            "committer": {
+              "name": "Build Server"
+            },
+            "message": "Frontend: Grouping the fragments to avoid linear searches and avoid allocations\n\n^KT-86199 Fixed"
+          },
+          "author": {
+            "login": "alfonsocvu",
+            "type": "User"
+          },
+          "committer": {
+            "login": "KotlinBuild",
+            "type": "User"
+          },
+          "parents": [
+            {
+              "sha": "e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff"
+            }
+          ],
+          "files": [
+            {
+              "filename": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt"
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/issues/6007/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "ghost",
+              "type": "User"
+            },
+            "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​core/​descriptors/​</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-frontend\">kotlin-frontend</a></summary><ul><li><a href=\"https://github.com/ligee\"><b><code>@ligee</code></b></a></li><li><a href=\"https://github.com/dzharkov\"><b><code>@dzharkov</code></b></a></li><li><a href=\"https://github.com/bnorm\"><b><code>@bnorm</code></b></a></li><li><a href=\"https://github.com/mglukhikh\"><b><code>@mglukhikh</code></b></a></li><li><a href=\"https://github.com/KvanTTT\"><b><code>@KvanTTT</code></b></a></li><li><a href=\"https://github.com/cypressious\"><b><code>@cypressious</code></b></a></li><li><a href=\"https://github.com/demiurg906\"><b><code>@demiurg906</code></b></a></li><li><a href=\"https://github.com/FenstonSingel\"><b><code>@FenstonSingel</code></b></a></li><li><a href=\"https://github.com/lunakoly\"><b><code>@lunakoly</code></b></a></li><li><a href=\"https://github.com/agamzikova\"><b><code>@agamzikova</code></b></a></li><li><a href=\"https://github.com/GrigoriiSolnyshkin\"><b><code>@GrigoriiSolnyshkin</code></b></a></li><li><a href=\"https://github.com/Aleksandra-Arsenteva\"><b><code>@Aleksandra-Arsenteva</code></b></a></li></ul></details></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "kotlin-safemerge[bot]",
+              "type": "Bot"
+            },
+            "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​core/​descriptors/​</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-frontend\">kotlin-frontend</a></summary><ul><li><a href=\"https://github.com/ligee\"><b><code>ligee</code></b></a></li><li><a href=\"https://github.com/dzharkov\"><b><code>dzharkov</code></b></a> 🌴</li><li><a href=\"https://github.com/bnorm\"><b><code>bnorm</code></b></a></li><li><a href=\"https://github.com/mglukhikh\"><b><code>mglukhikh</code></b></a></li><li><a href=\"https://github.com/KvanTTT\"><b><code>KvanTTT</code></b></a></li><li><a href=\"https://github.com/cypressious\"><b><code>cypressious</code></b></a></li><li><a href=\"https://github.com/demiurg906\"><b><code>demiurg906</code></b></a></li><li><a href=\"https://github.com/FenstonSingel\"><b><code>FenstonSingel</code></b></a> (QA) 🌴</li><li><a href=\"https://github.com/lunakoly\"><b><code>lunakoly</code></b></a></li><li><a href=\"https://github.com/GrigoriiSolnyshkin\"><b><code>GrigoriiSolnyshkin</code></b></a></li><li><a href=\"https://github.com/agamzikova-jb\"><b><code>agamzikova-jb</code></b></a> (QA)</li><li><a href=\"https://github.com/Aleksandra-Arsenteva\"><b><code>Aleksandra-Arsenteva</code></b></a> (QA) 🌴</li></ul></details></td><td align=\"center\">✅<br><a href=\"https://github.com/ligee\"><b><code>ligee</code></b></a></td></tr></table>\n\n<details><summary><b>PR commands for maintainers</b></summary><table><tr><th>Command</th><th>Description</th><th>Parameters</th></tr><tr><td><code>/safe-merge</code></td><td>Rebase-merges with automatic fixup commit squashing</td><td><code>--fixup</code> Autosquash fixup commits (on by default)</td></tr><tr><td><code>/safe-squash-merge</code></td><td>Squash-merges with optional commit title/body override</td><td><code>--title</code> Title of the squashed commit<br><code>--message</code> Body of the squashed commit</td></tr><tr><td><code>/dry-run</code></td><td>Runs the test pipeline with changes rebased on latest master</td><td><code>--retry</code> Retry the CI run on failure</td></tr><tr><td><code>/test-public</code></td><td>Triggers the public test suite without rebasing on latest master</td><td>—</td></tr><tr><td><code>/test-private</code></td><td>Triggers the private test suite without rebasing on latest master</td><td>—</td></tr><tr><td><code>/codeowners</code></td><td>Triggers code owners check and comment update</td><td>—</td></tr><tr><td><code>/fixup</code></td><td>Squashes fixup commits and force pushes the branch</td><td>—</td></tr><tr><td><code>/cancel-coordinator</code></td><td>Cancels the merge coordinator currently running for this branch</td><td>—</td></tr><tr><td><code>/cherry-pick</code></td><td>Cherry-picks this pull request onto a target release branch</td><td><code>--target</code> Release version to cherry-pick onto</td></tr></table></details><!-- KPR_COMMANDS:eyJjb21tYW5kcyI6W3sidmFsdWUiOiIvc2FmZS1tZXJnZSIsImRlc2NyaXB0aW9uIjoiUmViYXNlLW1lcmdlcyB3aXRoIGF1dG9tYXRpYyBmaXh1cCBjb21taXQgc3F1YXNoaW5nIiwicGFyYW1ldGVycyI6W3siZmxhZyI6Ii0tZml4dXAiLCJraW5kIjoidG9nZ2xlIiwiZGVzY3JpcHRpb24iOiJBdXRvc3F1YXNoIGZpeHVwIGNvbW1pdHMiLCJkZWZhdWx0Ijp0cnVlfV19LHsidmFsdWUiOiIvc2FmZS1zcXVhc2gtbWVyZ2UiLCJkZXNjcmlwdGlvbiI6IlNxdWFzaC1tZXJnZXMgd2l0aCBvcHRpb25hbCBjb21taXQgdGl0bGUvYm9keSBvdmVycmlkZSIsInBhcmFtZXRlcnMiOlt7ImZsYWciOiItLXRpdGxlIiwia2luZCI6InZhbHVlIiwiZGVzY3JpcHRpb24iOiJUaXRsZSBvZiB0aGUgc3F1YXNoZWQgY29tbWl0In0seyJmbGFnIjoiLS1tZXNzYWdlIiwia2luZCI6InZhbHVlIiwiZGVzY3JpcHRpb24iOiJCb2R5IG9mIHRoZSBzcXVhc2hlZCBjb21taXQifV19LHsidmFsdWUiOiIvZHJ5LXJ1biIsImRlc2NyaXB0aW9uIjoiUnVucyB0aGUgdGVzdCBwaXBlbGluZSB3aXRoIGNoYW5nZXMgcmViYXNlZCBvbiBsYXRlc3QgbWFzdGVyIiwicGFyYW1ldGVycyI6W3siZmxhZyI6Ii0tcmV0cnkiLCJraW5kIjoidG9nZ2xlIiwiZGVzY3JpcHRpb24iOiJSZXRyeSB0aGUgQ0kgcnVuIG9uIGZhaWx1cmUifV19LHsidmFsdWUiOiIvdGVzdC1wdWJsaWMiLCJkZXNjcmlwdGlvbiI6IlRyaWdnZXJzIHRoZSBwdWJsaWMgdGVzdCBzdWl0ZSB3aXRob3V0IHJlYmFzaW5nIG9uIGxhdGVzdCBtYXN0ZXIiLCJwYXJhbWV0ZXJzIjpbXX0seyJ2YWx1ZSI6Ii90ZXN0LXByaXZhdGUiLCJkZXNjcmlwdGlvbiI6IlRyaWdnZXJzIHRoZSBwcml2YXRlIHRlc3Qgc3VpdGUgd2l0aG91dCByZWJhc2luZyBvbiBsYXRlc3QgbWFzdGVyIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvY29kZW93bmVycyIsImRlc2NyaXB0aW9uIjoiVHJpZ2dlcnMgY29kZSBvd25lcnMgY2hlY2sgYW5kIGNvbW1lbnQgdXBkYXRlIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvZml4dXAiLCJkZXNjcmlwdGlvbiI6IlNxdWFzaGVzIGZpeHVwIGNvbW1pdHMgYW5kIGZvcmNlIHB1c2hlcyB0aGUgYnJhbmNoIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvY2FuY2VsLWNvb3JkaW5hdG9yIiwiZGVzY3JpcHRpb24iOiJDYW5jZWxzIHRoZSBtZXJnZSBjb29yZGluYXRvciBjdXJyZW50bHkgcnVubmluZyBmb3IgdGhpcyBicmFuY2giLCJwYXJhbWV0ZXJzIjpbXX0seyJ2YWx1ZSI6Ii9jaGVycnktcGljayIsImRlc2NyaXB0aW9uIjoiQ2hlcnJ5LXBpY2tzIHRoaXMgcHVsbCByZXF1ZXN0IG9udG8gYSB0YXJnZXQgcmVsZWFzZSBicmFuY2giLCJwYXJhbWV0ZXJzIjpbeyJmbGFnIjoiLS10YXJnZXQiLCJraW5kIjoidmFsdWUiLCJkZXNjcmlwdGlvbiI6IlJlbGVhc2UgdmVyc2lvbiB0byBjaGVycnktcGljayBvbnRvIn1dfV19 -->\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
+            "performed_via_github_app": {
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "name": "Kotlin SafeMerge"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "/safe-merge",
+            "performed_via_github_app": null
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "Quality gate is triggered at https://buildserver.labs.intellij.net/build/1050419085 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-6007/safe-merge`\n> Commit: [4a4ebd3](https://github.com/JetBrains/kotlin/commit/4a4ebd39a44ffb5bd56e308f15285412461ab30f)\n\n\n\n---\n\nQuality gate finished successfully.",
+            "performed_via_github_app": null
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "ligee",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Does it affect memory consumption?"
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "Not that much. I just ran a benchmark of the same framework action as the one use for the issue report (10k klib). Here are the results\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50      | p90      | p95      |\r\n|----------------------|----------|----------|----------|\r\n| Action A wall time   |   294.84 |   432.46 |   451.81 |\r\n| Action B wall time   |   431.30 |   669.46 |   747.36 |\r\n| Action A CPU time    |   512.10 |   677.11 |   695.66 |\r\n| Action B CPU time    |   636.70 |   917.02 |  1012.21 |\r\n| Action A peak memory | 17.62GiB | 17.68GiB | 17.70GiB |\r\n| Action B peak memory | 17.19GiB | 17.26GiB | 17.28GiB |\r\n\r\nTotal wall time ratio (B / A): 1.48\r\nTotal CPU time ratio (B / A): 1.28\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```"
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Formatting: should be `.map { it.fqName }`."
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Interesting. What does the action include? Is it only the Objective-C header generation, or something more?"
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "Nice catch, sorry."
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "This is the full framework it generates the Objective-C header, stubs and bridges"
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "What are the numbers when compiling with `-Xomit-framework-binary`? It basically limits the compilation to generating the header and skips the rest."
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "Here you go. This is only the `FremeworkHeaderOnly`\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50     | p90     | p95     |\r\n|----------------------|---------|---------|---------|\r\n| Action A wall time   |   65.44 |   73.24 |   75.62 |\r\n| Action B wall time   |   87.64 |  102.25 |  125.46 |\r\n| Action A CPU time    |  102.35 |  118.24 |  121.70 |\r\n| Action B CPU time    |  135.60 |  156.19 |  182.90 |\r\n| Action A peak memory | 4.51GiB | 4.53GiB | 4.53GiB |\r\n| Action B peak memory | 4.45GiB | 4.51GiB | 4.52GiB |\r\n\r\nTotal wall time ratio (B / A): 1.39\r\nTotal CPU time ratio (B / A): 1.33\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```"
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Ok, seems reasonable, thanks!"
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "title": "KT-86199 Fix scalability problems with packageFragmentProviderImpl",
+    "discussionMessages": [
+      "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​core/​descriptors/​</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-frontend\">kotlin-frontend</a></summary><ul><li><a href=\"https://github.com/ligee\"><b><code>@ligee</code></b></a></li><li><a href=\"https://github.com/dzharkov\"><b><code>@dzharkov</code></b></a></li><li><a href=\"https://github.com/bnorm\"><b><code>@bnorm</code></b></a></li><li><a href=\"https://github.com/mglukhikh\"><b><code>@mglukhikh</code></b></a></li><li><a href=\"https://github.com/KvanTTT\"><b><code>@KvanTTT</code></b></a></li><li><a href=\"https://github.com/cypressious\"><b><code>@cypressious</code></b></a></li><li><a href=\"https://github.com/demiurg906\"><b><code>@demiurg906</code></b></a></li><li><a href=\"https://github.com/FenstonSingel\"><b><code>@FenstonSingel</code></b></a></li><li><a href=\"https://github.com/lunakoly\"><b><code>@lunakoly</code></b></a></li><li><a href=\"https://github.com/agamzikova\"><b><code>@agamzikova</code></b></a></li><li><a href=\"https://github.com/GrigoriiSolnyshkin\"><b><code>@GrigoriiSolnyshkin</code></b></a></li><li><a href=\"https://github.com/Aleksandra-Arsenteva\"><b><code>@Aleksandra-Arsenteva</code></b></a></li></ul></details></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
+      "/safe-merge",
+      "Does it affect memory consumption?",
+      "Not that much. I just ran a benchmark of the same framework action as the one use for the issue report (10k klib). Here are the results\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50      | p90      | p95      |\r\n|----------------------|----------|----------|----------|\r\n| Action A wall time   |   294.84 |   432.46 |   451.81 |\r\n| Action B wall time   |   431.30 |   669.46 |   747.36 |\r\n| Action A CPU time    |   512.10 |   677.11 |   695.66 |\r\n| Action B CPU time    |   636.70 |   917.02 |  1012.21 |\r\n| Action A peak memory | 17.62GiB | 17.68GiB | 17.70GiB |\r\n| Action B peak memory | 17.19GiB | 17.26GiB | 17.28GiB |\r\n\r\nTotal wall time ratio (B / A): 1.48\r\nTotal CPU time ratio (B / A): 1.28\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+      "Formatting: should be `.map { it.fqName }`.",
+      "Interesting. What does the action include? Is it only the Objective-C header generation, or something more?",
+      "Nice catch, sorry.",
+      "This is the full framework it generates the Objective-C header, stubs and bridges",
+      "What are the numbers when compiling with `-Xomit-framework-binary`? It basically limits the compilation to generating the header and skips the rest.",
+      "Here you go. This is only the `FremeworkHeaderOnly`\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50     | p90     | p95     |\r\n|----------------------|---------|---------|---------|\r\n| Action A wall time   |   65.44 |   73.24 |   75.62 |\r\n| Action B wall time   |   87.64 |  102.25 |  125.46 |\r\n| Action A CPU time    |  102.35 |  118.24 |  121.70 |\r\n| Action B CPU time    |  135.60 |  156.19 |  182.90 |\r\n| Action A peak memory | 4.51GiB | 4.53GiB | 4.53GiB |\r\n| Action B peak memory | 4.45GiB | 4.51GiB | 4.52GiB |\r\n\r\nTotal wall time ratio (B / A): 1.39\r\nTotal CPU time ratio (B / A): 1.33\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+      "Ok, seems reasonable, thanks!"
+    ],
+    "beforeRevision": "e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff",
+    "mergedRevision": "a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+    "changes": [
+      {
+        "beforePath": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+        "afterPath": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt"
+      }
+    ]
+  }
+}

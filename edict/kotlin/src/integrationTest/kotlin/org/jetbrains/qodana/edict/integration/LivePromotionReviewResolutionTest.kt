@@ -2,15 +2,13 @@
 package org.jetbrains.qodana.edict.integration
 
 import org.jetbrains.qodana.edict.ci.*
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.edictnext.*
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
+import org.jetbrains.qodana.edict.support.FakeReviewApi
 import org.junit.jupiter.api.Test
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -27,24 +25,22 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
         val merged = createGeneratedCluster(repository, "merged-rule", "1")
         val revise = createGeneratedCluster(repository, "revise-rule", "2")
         val discontinue = createGeneratedCluster(repository, "discontinue-rule", "3")
-        val reviews = ResolutionReviews(
-            mapOf(
-                merged.pullRequest.id to ReviewStatus(ReviewState.MERGED),
-                revise.pullRequest.id to ReviewStatus(
-                    ReviewState.CLOSED_UNMERGED,
-                    "The rule is valuable, but this version is too broad. Narrow it and generate a revised inspection.",
-                ),
-                discontinue.pullRequest.id to ReviewStatus(
-                    ReviewState.CLOSED_UNMERGED,
-                    "The proposed rule is based on a false premise. Abandon it permanently; it must not be regenerated.",
-                ),
-            ),
-        )
+        val reviews = FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.test", "JetBrains", "qodana-cli")).apply {
+            statuses[merged.pullRequest] = ReviewStatus(ReviewState.MERGED)
+            statuses[revise.pullRequest] = ReviewStatus(
+                ReviewState.CLOSED_UNMERGED,
+                "The rule is valuable, but this version is too broad. Narrow it and generate a revised inspection.",
+            )
+            statuses[discontinue.pullRequest] = ReviewStatus(
+                ReviewState.CLOSED_UNMERGED,
+                "The proposed rule is based on a false premise. Abandon it permanently; it must not be regenerated.",
+            )
+        }
 
         workspace.withPromotionCodex(
             prompt = "Check all edict promotion reviews",
             configuration = EdictConfiguration(
-                ci = EdictCIConfiguration("https://github.com/JetBrains/qodana-cli"),
+                ci = ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "qodana-cli"),
             ),
             reviews = reviews,
         ) { store, runtime, result ->
@@ -76,9 +72,10 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
             assertFalse(repository.paths.inspectionPath("discontinue-rule").exists())
             assertContains(discontinuedCluster.historyPath.readText(), "moved cluster to Discontinued")
 
-            assertEquals(1, reviews.calls(merged.pullRequest.id))
-            assertEquals(2, reviews.calls(revise.pullRequest.id))
-            assertEquals(2, reviews.calls(discontinue.pullRequest.id))
+            assertEquals(1, reviews.statusReads.count { it == merged.pullRequest })
+            assertEquals(2, reviews.statusReads.count { it == revise.pullRequest })
+            assertEquals(2, reviews.statusReads.count { it == discontinue.pullRequest })
+            assertEquals(emptyList(), reviews.requests, "Review creation is outside this scenario")
             verifyManagedRun(workspace, runtime, plan)
         }
     }
@@ -123,24 +120,5 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
         repository.paths.inspectionsDirectory.createDirectories()
         repository.paths.inspectionPath(clusterId).writeText(content)
         return promotion
-    }
-
-    private class ResolutionReviews(
-        private val reviews: Map<String, ReviewStatus>,
-    ) : ReviewManagementApi {
-        private val calls = ConcurrentHashMap<String, AtomicInteger>()
-
-        override fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String =
-            error("Review creation is outside this scenario")
-
-        override fun ensureReview(request: CreateReviewRequest): CreatedReview =
-            error("Review creation is outside this scenario")
-
-        override fun review(reference: ReviewReference): ReviewStatus {
-            calls.computeIfAbsent(reference.id) { AtomicInteger() }.incrementAndGet()
-            return reviews.getValue(reference.id)
-        }
-
-        fun calls(reviewId: String): Int = calls[reviewId]?.get() ?: 0
     }
 }

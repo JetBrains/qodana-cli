@@ -1,0 +1,123 @@
+// Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
+package org.jetbrains.qodana.edict.ci.github
+
+import org.jetbrains.qodana.edict.ci.ReviewFetchResult
+import org.jetbrains.qodana.edict.ci.ReviewSelection
+import org.jetbrains.qodana.edict.ci.support.FIRST_TWO_MERGED_SELECTION
+import org.jetbrains.qodana.edict.ci.support.MISSING_PULL_REQUEST
+import org.jetbrains.qodana.edict.ci.support.SEVERAL_NUMBERS_SELECTION
+import org.jetbrains.qodana.edict.ci.support.WEEKEND_SELECTION
+import org.jetbrains.qodana.edict.ci.support.kotlinRecording
+import org.jetbrains.qodana.edict.extraction.reviews.withValidThreads
+import kotlin.test.Test
+import kotlin.test.assertEquals
+
+/** Fetching pull requests of JetBrains/kotlin with their review threads, replaying what GitHub answered. */
+internal class GitHubFetchTest {
+  @Test
+  fun `a merged pull request has its threads, each with its replies in the order they were written`() {
+    // PR 6007, merged: a thread of seven replies and one of a single reply, interleaved in time.
+    val recording = kotlinRecording("fetch-merged-6007")
+
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(selectionOf(6007)) })
+  }
+
+  @Test
+  fun `a comment on a whole file starts a thread without anchor lines`() {
+    // PR 7832: its threads include a comment on a whole file and its reply.
+    val recording = kotlinRecording("fetch-file-comments-7832")
+
+    val fetched = recording.replay { fetch(selectionOf(7832)) }
+
+    val thread = fetched.pullRequests.single().threads.single { it.threadId == FILE_THREAD }
+
+    assertEquals(null to null, thread.anchorLine to thread.anchorEndLine)
+  }
+
+  @Test
+  fun `threads on whole files pass the thread validation`() {
+    // PR 7832: its threads include a comment on a whole file and its reply.
+    val recording = kotlinRecording("fetch-file-comments-7832")
+
+    assertEquals(
+      recording.result<ReviewFetchResult>(),
+      recording.replay { fetch(selectionOf(7832)) }.withValidThreads(),
+    )
+  }
+
+  @Test
+  fun `a pull request closed without merging is left out without a problem`() {
+    // PR 5976, closed without merging.
+    val recording = kotlinRecording("fetch-closed-5976")
+
+    assertEquals(ReviewFetchResult(emptyList()), recording.replay { fetch(selectionOf(5976)) })
+  }
+
+  @Test
+  fun `a missing pull request is a problem that names what GitHub doesn't have`() {
+    // A pull request number GitHub doesn't have.
+    val recording = kotlinRecording("fetch-missing-$MISSING_PULL_REQUEST")
+
+    val fetched = recording.replay { fetch(selectionOf(MISSING_PULL_REQUEST)) }
+
+    assertEquals(ReviewFetchResult(emptyList(), listOf(MISSING_PROBLEM)), fetched)
+  }
+
+  @Test
+  fun `pull requests are fetched in the requested order, past missing and unmerged ones`() {
+    // SEVERAL_NUMBERS_SELECTION: two merged PRs, a missing one and one closed unmerged.
+    val recording = kotlinRecording("fetch-several-numbers")
+
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(SEVERAL_NUMBERS_SELECTION) })
+  }
+
+  @Test
+  fun `a thread only a bot took part in is left out`() {
+    // PR 7185: a thread Copilot started that nobody answered, and a thread of people.
+    val recording = kotlinRecording("fetch-bot-thread-7185")
+
+    val threads = recording.replay { fetch(selectionOf(7185)) }.pullRequests.single().threads
+
+    assertEquals(listOf("github-7185-3721437321"), threads.map { it.threadId })
+  }
+
+  @Test
+  fun `review comments on two pages make complete threads, each opened by the body of its review`() {
+    // PR 6231: 131 review comments on two pages, and reviews with bodies.
+    val recording = kotlinRecording("fetch-paged-comments-6231")
+
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(selectionOf(6231)) })
+  }
+
+  @Test
+  fun `pull requests merged in a date range are discovered until one was updated before the range`() {
+    // WEEKEND_SELECTION: discovery stops at the first PR updated before the weekend.
+    val recording = kotlinRecording("fetch-merged-on-weekend")
+
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(WEEKEND_SELECTION) })
+  }
+
+  @Test
+  fun `discovery stops at the maximum number of pull requests`() {
+    // FIRST_TWO_MERGED_SELECTION: discovery stops after 9417, the second PR merged in the range.
+    val recording = kotlinRecording("fetch-first-two-merged")
+
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(FIRST_TWO_MERGED_SELECTION) })
+  }
+
+  @Test
+  fun `a pull request listed again on the next discovery page is fetched once and reported`() {
+    // WEEKEND_SELECTION with scripted discovery pages: 9413 moves to the next page meanwhile.
+    val recording = kotlinRecording("fetch-repeated-on-next-page")
+
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(WEEKEND_SELECTION) })
+  }
+}
+
+/** Why the fetch leaves out [MISSING_PULL_REQUEST]. */
+private const val MISSING_PROBLEM = "GitHub PR 999999: GitHub read of /repos/JetBrains/kotlin/pulls/999999 returned HTTP 404: Not Found"
+
+/** The thread of pull request 7832 on the whole of `KaScopeProvider.kt`. */
+private const val FILE_THREAD = "github-7832-3904783992"
+
+private fun selectionOf(number: Int) = ReviewSelection(maxPrs = 1, prNumbers = listOf(number))

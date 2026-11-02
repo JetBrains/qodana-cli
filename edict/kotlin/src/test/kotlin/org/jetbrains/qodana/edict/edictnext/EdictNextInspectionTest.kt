@@ -1,7 +1,7 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.support.FakeInspectionKtsClient
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.test.Test
@@ -16,13 +16,13 @@ class EdictNextInspectionTest {
   @Test
   fun `scores raw IDE findings against strong examples`() = runBlocking {
     val cluster = cluster()
-    val client = FakeInspectionClient(
-      examplesResult = batchResult(
+    val client = ideClient(
+      examples = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
         InspectionKtsFileResult("negative", "Negative.kt"),
       ),
     )
-    val result = EdictNextInspection({ client }, { client.projectResult }).validate(cluster, "inspection")
+    val result = EdictNextInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
 
     assertTrue(result.compilationSuccess)
     assertTrue(result.overallSuccess)
@@ -34,13 +34,13 @@ class EdictNextInspectionTest {
   @Test
   fun `reports uncovered positives and reported negatives independently`() = runBlocking {
     val cluster = cluster()
-    val client = FakeInspectionClient(
-      examplesResult = batchResult(
+    val client = ideClient(
+      examples = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt"),
         InspectionKtsFileResult("negative", "Negative.kt", listOf(problem(1))),
       ),
     )
-    val result = EdictNextInspection({ client }, { client.projectResult }).validate(cluster, "inspection")
+    val result = EdictNextInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
 
     assertTrue(result.overallSuccess)
     assertFalse(result.strongExamplesSatisfied)
@@ -53,12 +53,12 @@ class EdictNextInspectionTest {
   @Test
   fun `rejects compiled metadata that does not match cluster`() = runBlocking {
     val cluster = cluster()
-    val client = FakeInspectionClient(
-      examplesResult = batchResult().copy(
+    val client = ideClient(
+      examples = batchResult().copy(
         compilation = successfulCompilation().copy(inspectionId = "different-rule"),
       ),
     )
-    val result = EdictNextInspection({ client }, { client.projectResult }).validate(cluster, "inspection")
+    val result = EdictNextInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
 
     assertFalse(result.compilationSuccess)
     assertFalse(result.overallSuccess)
@@ -82,8 +82,8 @@ class EdictNextInspectionTest {
       ),
     )
     for (result in results) {
-      val client = FakeInspectionClient(result)
-      val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+      val client = ideClient(result)
+      val (validation, evaluation) = EdictNextInspection({ client }, client::analyzeProject)
         .evaluate(cluster(), "inspection", EdictNextInspectionAction.GENERATE)
       assertFalse(validation.overallSuccess)
       assertFalse(validation.strongExamplesSatisfied)
@@ -99,8 +99,8 @@ class EdictNextInspectionTest {
       successfulCompilation(),
       listOf(InspectionKtsFileResult(path = "src/Sample.kt", foundProblems = listOf(problem(7)))),
     )
-    val client = FakeInspectionClient(batchResult(), projectResult)
-    val result = EdictNextInspection({ client }, { client.projectResult })
+    val client = ideClient(batchResult(), projectResult)
+    val result = EdictNextInspection({ client }, client::analyzeProject)
       .analyzeProject(cluster, "inspection bytes", "abcdef")
 
     assertEquals("sample-rule", result.clusterId)
@@ -115,8 +115,8 @@ class EdictNextInspectionTest {
       example("weak-missed", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))),
       example("weak-reported", EdictNextSignalLabel.NEGATIVE, null),
     )
-    val client = FakeInspectionClient(
-      examplesResult = batchResult(
+    val client = ideClient(
+      examples = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
         InspectionKtsFileResult("negative", "Negative.kt"),
         InspectionKtsFileResult("weak-missed", "WeakMissed.kt"),
@@ -126,7 +126,7 @@ class EdictNextInspectionTest {
     val review = EdictNextProjectReview("abcdef", totalFindings = 40, reviewedFindings = 12, uncertain = 1, unassigned = 0, unreproduced = 0)
     fun assigned(exampleId: String, count: Int, classification: EdictNextFindingClassification) =
       List(count) { EdictNextFindingAssignment(exampleId, classification, stillReported = false) }
-    val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult }).evaluate(
+    val (validation, evaluation) = EdictNextInspection({ client }, client::analyzeProject).evaluate(
       cluster,
       "inspection",
       EdictNextInspectionAction.GENERATE,
@@ -161,14 +161,14 @@ class EdictNextInspectionTest {
   @Test
   fun `a still reported finding its example does not reproduce counts by its classification`() = runBlocking {
     val cluster = cluster()
-    val client = FakeInspectionClient(
-      examplesResult = batchResult(
+    val client = ideClient(
+      examples = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
         InspectionKtsFileResult("negative", "Negative.kt"),
       ),
     )
     val review = EdictNextProjectReview("abcdef", totalFindings = 10, reviewedFindings = 3, uncertain = 0, unassigned = 0, unreproduced = 0)
-    val (_, evaluation) = EdictNextInspection({ client }, { client.projectResult }).evaluate(
+    val (_, evaluation) = EdictNextInspection({ client }, client::analyzeProject).evaluate(
       cluster,
       "inspection",
       EdictNextInspectionAction.GENERATE,
@@ -191,14 +191,14 @@ class EdictNextInspectionTest {
   @Test
   fun `without review data every example weighs 1`() = runBlocking {
     val cluster = cluster(example("weak-missed", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))))
-    val client = FakeInspectionClient(
-      examplesResult = batchResult(
+    val client = ideClient(
+      examples = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
         InspectionKtsFileResult("negative", "Negative.kt"),
         InspectionKtsFileResult("weak-missed", "WeakMissed.kt"),
       ),
     )
-    val (_, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+    val (_, evaluation) = EdictNextInspection({ client }, client::analyzeProject)
       .evaluate(cluster, "inspection", EdictNextInspectionAction.SKIP)
 
     checkNotNull(evaluation)
@@ -209,13 +209,13 @@ class EdictNextInspectionTest {
 
   @Test
   fun `evaluation records failing strong positive and negative examples without blocking generation`() = runBlocking {
-    val client = FakeInspectionClient(
-      examplesResult = batchResult(
+    val client = ideClient(
+      examples = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt"),
         InspectionKtsFileResult("negative", "Negative.kt", listOf(problem(1))),
       ),
     )
-    val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+    val (validation, evaluation) = EdictNextInspection({ client }, client::analyzeProject)
       .evaluate(cluster(), "inspection", EdictNextInspectionAction.GENERATE)
 
     assertTrue(validation.overallSuccess)
@@ -304,15 +304,10 @@ class EdictNextInspectionTest {
     InspectionKtsBatchRunResult(successfulCompilation(), files.toList())
 
   private fun problem(line: Int) = InspectionKtsProblem("problem", line, "WARNING")
-
-  private class FakeInspectionClient(
-    private val examplesResult: InspectionKtsBatchRunResult,
-    val projectResult: InspectionKtsProjectRunResult = InspectionKtsProjectRunResult(examplesResult.compilation),
-  ) : InspectionKtsClient {
-    override suspend fun compile(code: String): InspectionKtsCompileResult = examplesResult.compilation
-    override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult = examplesResult
-    override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult = projectResult
-    override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = error("not used")
-    override fun close() = Unit
-  }
 }
+
+/** An IDE that compiles every inspection as [examples] did, finds [examples] in the examples and [project] in the project. */
+private fun ideClient(
+  examples: InspectionKtsBatchRunResult,
+  project: InspectionKtsProjectRunResult = InspectionKtsProjectRunResult(examples.compilation),
+) = FakeInspectionKtsClient(compilation = { examples.compilation }, examples = { _, _ -> examples }, projectAnalysis = { project })

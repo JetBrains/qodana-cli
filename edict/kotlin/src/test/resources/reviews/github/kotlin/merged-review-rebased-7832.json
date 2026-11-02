@@ -1,0 +1,91 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7832",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user": {
+            "login": "yanex",
+            "type": "User"
+          },
+          "merged_at": "2026-09-02T01:33:01Z",
+          "merge_commit_sha": "9f27f51dd5349129c08e300c1957a9085c313853",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/commits/9f27f51dd5349129c08e300c1957a9085c313853",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "sha": "9f27f51dd5349129c08e300c1957a9085c313853",
+          "commit": {
+            "author": {
+              "name": "Yan Zhulanow"
+            },
+            "committer": {
+              "name": "Build Server"
+            },
+            "message": "[Analysis API] Introduce 'possibleSmartCasts' in 'KaScopeContext'\n\nThe new endpoint makes it possible to track potential smart casts in a\nparticular position, even if a real cast isn't yet present in the\nsource code.\n\n^KT-84255 Fixed"
+          },
+          "author": {
+            "login": "yanex",
+            "type": "User"
+          },
+          "committer": {
+            "login": "KotlinBuild",
+            "type": "User"
+          },
+          "parents": [
+            {}
+          ]
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Cannot unambiguously identify the complete merged change for this single-parent, multi-commit PR"
+}

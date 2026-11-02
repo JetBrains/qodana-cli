@@ -1,0 +1,8 @@
+Cannot parse Qodana configuration <path>: while constructing a mapping
+ in 'reader', line 3, column 5:
+        url: https://github.com/JetBrain ... 
+        ^
+found duplicate key url
+ in 'reader', line 4, column 5:
+        url: https://github.com/JetBrain ... 
+        ^
