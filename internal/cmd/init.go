@@ -112,6 +112,7 @@ func newInitCommand() *cobra.Command {
 		"",
 		"Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.",
 	)
+
 	return cmd
 }
 
