@@ -7,10 +7,11 @@ import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
+import org.jetbrains.qodana.edict.support.FakeInspectionKtsClient
+import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
 import org.junit.jupiter.api.io.TempDir
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -1032,11 +1033,12 @@ class EdictNextGenerationServiceTest {
     for ((clusterId, evidence) in clusters) pendingCluster(repository, clusterId, evidence.first, evidence.second, predecessorId)
     val inspection = IntellijMcpServerService(
       projectPath = project,
-      clientFactory = InspectionKtsClientFactory { FakeIdeClient(analyses) },
-      serverLifecycle = object : IntellijMcpServerLifecycle {
-        override suspend fun start(): URI = URI("http://127.0.0.1:1/mcp")
-        override suspend fun stop() = Unit
+      clientFactory = InspectionKtsClientFactory {
+        FakeInspectionKtsClient(examples = ::markedExamples, projectAnalysis = { code ->
+          markedProjectAnalysis(code).also { synchronized(analyses) { analyses += checkNotNull(it.compilation.inspectionId) } }
+        })
       },
+      serverLifecycle = FakeIntellijMcpServerLifecycle(),
     )
     return EdictNextGenerationService(
       repository,
@@ -1093,35 +1095,26 @@ class EdictNextGenerationServiceTest {
       ),
     )
   }
+}
 
-  /**
-   * A candidate `// <cluster id> [report] [skip=<example id>] [findings=N]` names its cluster, unless it has an `id = "<id>"`, and reports line 1 of every
-   * example except a skipped one when it says ` report`, and reports lines 1..N of `src/Found.java` in a project analysis.
-   */
-  private class FakeIdeClient(private val analyses: MutableList<String>) : InspectionKtsClient {
-    override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult {
-      val problems = if (" report" in code) listOf(InspectionKtsProblem("found", 1, "WARNING")) else emptyList()
-      return InspectionKtsBatchRunResult(
-        compilation(code),
-        examples.map { InspectionKtsFileResult(it.id, it.targetFilePath, if (" skip=${it.id}" in code) emptyList() else problems) },
-      )
-    }
+// A candidate `// <cluster id> [report] [skip=<example id>] [findings=N]` names its cluster, unless it has an
+// `id = "<id>"`, and reports line 1 of every example except a skipped one when it says ` report`, and reports lines
+// 1..N of `src/Found.java` in a project analysis.
+private fun markedExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult {
+  val problems = if (" report" in code) listOf(InspectionKtsProblem("found", 1, "WARNING")) else emptyList()
+  return InspectionKtsBatchRunResult(
+    markedCompilation(code),
+    examples.map { InspectionKtsFileResult(it.id, it.targetFilePath, if (" skip=${it.id}" in code) emptyList() else problems) },
+  )
+}
 
-    override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult {
-      val compilation = compilation(code)
-      synchronized(analyses) { analyses += checkNotNull(compilation.inspectionId) }
-      val findings = Regex("findings=(\\d+)").find(code)?.groupValues?.get(1)?.toInt() ?: 0
-      val problems = (1..findings).map { InspectionKtsProblem("found", it, "WARNING") }
-      return InspectionKtsProjectRunResult(compilation, listOf(InspectionKtsFileResult(path = "src/Found.java", foundProblems = problems)))
-    }
+private fun markedProjectAnalysis(code: String): InspectionKtsProjectRunResult {
+  val findings = Regex("findings=(\\d+)").find(code)?.groupValues?.get(1)?.toInt() ?: 0
+  val problems = (1..findings).map { InspectionKtsProblem("found", it, "WARNING") }
+  return InspectionKtsProjectRunResult(markedCompilation(code), listOf(InspectionKtsFileResult(path = "src/Found.java", foundProblems = problems)))
+}
 
-    private fun compilation(code: String): InspectionKtsCompileResult {
-      val clusterId = Regex("id = \"([^\"]+)\"").find(code)?.groupValues?.get(1) ?: code.removePrefix("// ").substringBefore(' ')
-      return InspectionKtsCompileResult(true, inspectionId = clusterId, inspectionName = clusterId, inspectionDescription = clusterId)
-    }
-
-    override suspend fun compile(code: String): InspectionKtsCompileResult = error("not used")
-    override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = error("not used")
-    override fun close() = Unit
-  }
+private fun markedCompilation(code: String): InspectionKtsCompileResult {
+  val clusterId = Regex("id = \"([^\"]+)\"").find(code)?.groupValues?.get(1) ?: code.removePrefix("// ").substringBefore(' ')
+  return InspectionKtsCompileResult(true, inspectionId = clusterId, inspectionName = clusterId, inspectionDescription = clusterId)
 }

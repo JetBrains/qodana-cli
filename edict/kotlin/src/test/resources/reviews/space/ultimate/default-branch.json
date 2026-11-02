@@ -1,0 +1,22 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "name": "ultimate",
+          "defaultBranch": {
+            "head": "refs/heads/master"
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "master"
+}

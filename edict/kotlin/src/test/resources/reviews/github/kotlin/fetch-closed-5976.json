@@ -1,0 +1,52 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/5976",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "number": 5976,
+          "user": {
+            "login": "fzhinkin",
+            "type": "User"
+          },
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [],
+    "problems": []
+  }
+}

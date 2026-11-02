@@ -1,0 +1,16 @@
+Cannot parse Qodana configuration <path>: Cannot create property=edict for JavaBean=org.jetbrains.qodana.edict.common.QodanaYaml@<hash>
+ in 'reader', line 1, column 1:
+    edict:
+    ^
+Cannot create property=ciRepository for JavaBean=org.jetbrains.qodana.edict.common.EdictYaml@<hash>
+ in 'reader', line 2, column 3:
+      ciRepository: qodana-cli
+      ^
+Unable to find property 'ciRepository' on class: org.jetbrains.qodana.edict.common.EdictYaml
+ in 'reader', line 2, column 17:
+      ciRepository: qodana-cli
+                    ^
+
+ in 'reader', line 2, column 3:
+      ciRepository: qodana-cli
+      ^

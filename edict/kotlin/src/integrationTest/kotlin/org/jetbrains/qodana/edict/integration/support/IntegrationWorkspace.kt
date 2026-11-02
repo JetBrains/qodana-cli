@@ -1,15 +1,16 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support
 
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.EdictServer
-import org.jetbrains.qodana.edict.ci.ReviewClient
-import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
-import org.jetbrains.qodana.edict.ci.ReviewManagementApi
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.common.*
 import org.jetbrains.qodana.edict.edictnext.*
 import org.jetbrains.qodana.edict.extraction.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.extraction.git.SignalFinding
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
+import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import java.io.IOException
@@ -19,6 +20,7 @@ import java.nio.channels.OverlappingFileLockException
 import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
+import java.net.URI
 import java.nio.file.Path
 import java.nio.file.SimpleFileVisitor
 import java.nio.file.StandardOpenOption.CREATE
@@ -49,14 +51,15 @@ internal class IntegrationWorkspace private constructor(
 
     @Suppress("UNUSED_PARAMETER")
     fun withCodex(
-        prompt: String, provider: ReviewExtractionApi = ReviewClient(), inspectionServer: InspectionServer? = null,
+        prompt: String, provider: ReviewApi? = null, inspectionServer: InspectionServer? = null,
         timeoutMinutes: Long = 20, configuration: EdictConfiguration = EdictConfiguration(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) = withEdictNextCodex(
         prompt,
         timeoutMinutes,
         inspectionServer,
-        provider,
+        ciReviews = provider,
+        promotionReviews = provider,
         configuration = configuration,
         verify = verify
     )
@@ -71,8 +74,9 @@ internal class IntegrationWorkspace private constructor(
         prompt,
         timeoutMinutes,
         null,
-        ReviewClient(),
-        additionalWritableRoots,
+        ciReviews = null,
+        promotionReviews = null,
+        additionalWritableRoots = additionalWritableRoots,
         verify = verify,
     )
 
@@ -80,40 +84,40 @@ internal class IntegrationWorkspace private constructor(
     fun withPromotionCodex(
         prompt: String,
         configuration: EdictConfiguration,
-        reviews: ReviewManagementApi,
+        reviews: ReviewApi,
         timeoutMinutes: Long = 20,
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) = withEdictNextCodex(
         prompt = prompt,
         timeoutMinutes = timeoutMinutes,
         inspectionServer = null,
-        reviewProvider = reviews as? ReviewExtractionApi ?: ReviewClient(),
+        ciReviews = reviews,
+        promotionReviews = reviews,
         configuration = configuration,
-        reviewManagement = reviews,
         verify = verify,
     )
 
     private fun withEdictNextCodex(
         prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
-        reviewProvider: ReviewExtractionApi,
+        ciReviews: ReviewApi?,
+        promotionReviews: ReviewApi?,
         additionalWritableRoots: List<Path> = emptyList(),
         configuration: EdictConfiguration = EdictConfiguration(
-            ci = EdictCIConfiguration("https://jetbrains.team/p/owner/repositories/repo"),
+            ci = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "owner", "repo"),
         ),
-        reviewManagement: ReviewManagementApi = reviewProvider as? ReviewManagementApi ?: ReviewClient(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
         try {
-            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = it) }
+            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = FakeIntellijMcpServerLifecycle(URI.create(it.url))) }
                 ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = lifecycle!!.qodanaExecutable.toString())
             EdictServer.start(
                 layout = layout,
                 port = 0,
                 inspectionServer = inspections,
                 configuration = configuration,
-                reviewProvider = reviewProvider,
-                reviewManagement = reviewManagement,
+                ciReviews = ciReviews,
+                promotionReviews = promotionReviews,
             ).use { server ->
                 val store = server.store
                 val runtime = CodexRunner(

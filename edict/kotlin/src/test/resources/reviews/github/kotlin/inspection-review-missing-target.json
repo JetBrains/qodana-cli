@@ -1,0 +1,33 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/edict%2Favoid-thread-sleep-9cc450caa078",
+        "query": {}
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "Not Found"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/edict-missing-branch",
+        "query": {}
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "Not Found"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: GitHub target branch lookup returned HTTP 404: Not Found"
+}

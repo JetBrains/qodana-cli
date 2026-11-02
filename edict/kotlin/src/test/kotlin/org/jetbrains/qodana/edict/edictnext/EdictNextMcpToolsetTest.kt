@@ -1,5 +1,7 @@
 package org.jetbrains.qodana.edict.edictnext
 
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.CiProviderId
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
@@ -17,7 +19,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.ExtractionConfiguration
 import org.jetbrains.qodana.edict.common.array
@@ -26,10 +27,12 @@ import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.ci.ReviewClient
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
+import org.jetbrains.qodana.edict.support.FakeInspectionKtsClient
+import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
+import org.jetbrains.qodana.edict.support.NoRedaction
 import org.jetbrains.qodana.edict.support.edictNextToolset
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
@@ -91,7 +94,7 @@ class EdictNextMcpToolsetTest {
         layout,
         management,
         configuration = EdictConfiguration(
-          ci = EdictCIConfiguration("https://jetbrains.team/p/owner/repositories/repo"),
+          ci = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "owner", "repo"),
           extraction = ExtractionConfiguration(defaultSignalCount = 17),
         ),
       )
@@ -234,7 +237,8 @@ class EdictNextMcpToolsetTest {
         .single { it["id"].toString() == "5" }.obj("result").obj("structuredContent")
       assertEquals("space", context.obj("reviewRepository").text("provider"))
       assertEquals("owner", context.obj("reviewRepository").text("owner"))
-      assertEquals("repo", context.obj("reviewRepository").text("repo"))
+      assertEquals("repo", context.obj("reviewRepository").text("repository"))
+      assertEquals("jetbrains.team", context.obj("reviewRepository").text("host"))
       assertEquals(JsonPrimitive(17), context["defaultSignalCount"])
       assertEquals(layout.taskScratchDirectory(EdictLayout.MANAGER_SCRATCH_ID).toString(), context.text("scratchDirectory"))
       assertEquals("Extract", store.plan()?.request)
@@ -364,8 +368,8 @@ class EdictNextMcpToolsetTest {
         layout, inspection, management,
         EdictNextDistributionService(repository, layout.neighboursResponsePath), generation,
         EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, project.root)),
-        EdictSourceFileService(project.root, ReviewClient(), null),
-        promotion = PromotionService({ repository }, EdictConfiguration()),
+        EdictSourceFileService(project.root, null),
+        promotion = PromotionService(repository, EdictConfiguration(), null, NoRedaction),
       ).createServer().createSession(transport)
       closed.await()
       val responses = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
@@ -556,11 +560,11 @@ class EdictNextMcpToolsetTest {
 
   @Test
   fun `inspection kts authoring tools are forwarded to the IDE verbatim`() = runBlocking {
-    val client = ProxyInspectionClient()
+    val client = FakeInspectionKtsClient(tools = ::psiTreeOnly)
     val inspection = IntellijMcpServerService(
       projectPath = directory,
       clientFactory = InspectionKtsClientFactory { client },
-      serverLifecycle = FixedEndpointLifecycle,
+      serverLifecycle = FakeIntellijMcpServerLifecycle(),
     )
     val layout = EdictLayout(gitRepository(), gitRepository())
     try {
@@ -596,7 +600,7 @@ class EdictNextMcpToolsetTest {
             "generate_inspection_kts_api" to buildJsonObject { put("language", "Cobol") },
             "run_inspection_kts" to buildJsonObject { put("inspectionKtsCode", "listOf()"); put("contextPath", "A.kt") },
           ),
-          client.calls,
+          client.toolCalls,
         )
       }
     } finally {
@@ -689,8 +693,8 @@ class EdictNextMcpToolsetTest {
 
     val inspection = IntellijMcpServerService(
       projectPath = repository,
-      clientFactory = InspectionKtsClientFactory { EmptyInspectionClient() },
-      serverLifecycle = FixedEndpointLifecycle,
+      clientFactory = InspectionKtsClientFactory { FakeInspectionKtsClient(tools = { _, _ -> textResult("inspection api") }) },
+      serverLifecycle = FakeIntellijMcpServerLifecycle(),
     )
     val layout = EdictLayout(repository, repository, directory.resolve("log"))
     try {
@@ -727,46 +731,6 @@ class EdictNextMcpToolsetTest {
     }
   }
 
-  private class EmptyInspectionClient : InspectionKtsClient {
-    override suspend fun compile(code: String): InspectionKtsCompileResult = error("not used")
-    override suspend fun runExamples(
-      code: String,
-      examples: List<InspectionKtsExampleRequest>,
-    ): InspectionKtsBatchRunResult = error("not used")
-    override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult = error("not used")
-    override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = buildJsonObject {
-      put("isError", false)
-      put("content", JsonArray(listOf(buildJsonObject {
-        put("type", "text")
-        put("text", "inspection api")
-      })))
-    }
-    override fun close() = Unit
-  }
-
-  private class ProxyInspectionClient : InspectionKtsClient {
-    val calls = mutableListOf<Pair<String, JsonObject>>()
-    override suspend fun compile(code: String): InspectionKtsCompileResult = error("not used")
-    override suspend fun runExamples(
-      code: String,
-      examples: List<InspectionKtsExampleRequest>,
-    ): InspectionKtsBatchRunResult = error("not used")
-    override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult = error("not used")
-    override suspend fun callTool(name: String, arguments: JsonObject): JsonObject {
-      calls += name to arguments
-      return if (name == "generate_psi_tree") {
-        buildJsonObject { putJsonArray("content") { addJsonObject { put("type", "text"); put("text", "tree of class A") } } }
-      }
-      else {
-        buildJsonObject {
-          putJsonArray("content") { addJsonObject { put("type", "text"); put("text", "Unsupported language") } }
-          put("isError", true)
-        }
-      }
-    }
-    override fun close() = Unit
-  }
-
   private class DelayedEofInputStream(
     input: InputStream,
     private val beforeEof: () -> Unit = { Thread.sleep(500) },
@@ -788,7 +752,11 @@ class EdictNextMcpToolsetTest {
   }
 }
 
-private object FixedEndpointLifecycle : IntellijMcpServerLifecycle {
-  override suspend fun start(): URI = URI("http://127.0.0.1:1/mcp")
-  override suspend fun stop() = Unit
+/** The IDE's answer to a tool call: the PSI tree for `generate_psi_tree`, an unsupported language for any other tool. */
+private fun psiTreeOnly(name: String, arguments: JsonObject): JsonObject =
+  if (name == "generate_psi_tree") textResult("tree of class A") else textResult("Unsupported language", isError = true)
+
+private fun textResult(text: String, isError: Boolean = false): JsonObject = buildJsonObject {
+  putJsonArray("content") { addJsonObject { put("type", "text"); put("text", text) } }
+  put("isError", isError)
 }

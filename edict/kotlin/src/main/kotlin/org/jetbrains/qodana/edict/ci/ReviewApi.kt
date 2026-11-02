@@ -11,15 +11,19 @@ interface ReviewApi {
   val repository: ReviewRepository
   fun fetch(selection: ReviewSelection): ReviewFetchResult
 
-  /** The file's text at [revision]; throws [NoSuchFileException] when it doesn't exist there. */
+  /**
+   * The file's text at [revision]; throws [NoSuchFileException] when it doesn't exist there, and fails when the
+   * revision doesn't exist.
+   */
   fun file(revision: String, path: String): String
 
   /** The branch to open reviews against: the [configured] branch name, or the repository's default branch when null. */
   fun resolveTargetBranch(configured: String?): String
 
   /**
-   * Pushes the [request]'s branch and returns its review: the one already opened from that branch, in any state, or a
-   * new one. Requests the configured reviewer either way, so a retry after an interrupted creation is safe.
+   * Pushes the [request]'s branch and returns its review: the one already opened from that branch into its target
+   * branch, in any state, or a new one. Requests the configured reviewer either way, so a retry after an interrupted
+   * creation is safe.
    */
   fun findOrCreateReview(request: CreateReviewRequest): ReviewReference
   fun review(reference: ReviewReference): ReviewStatus
@@ -33,10 +37,13 @@ interface ReviewApi {
     error("Exact merged-change evidence is unavailable for ${reference.url}")
 }
 
-/** Creates the client for [repository], with the provider token from the server environment. */
-internal fun getReviewAPI(repository: ReviewRepository): ReviewApi = when (repository.provider) {
-  CiProviderId.GITHUB -> gitHubReviewApi(repository)
-  CiProviderId.SPACE -> spaceReviewApi(repository)
+/**
+ * Creates the client for [repository], with the provider token from the server environment. It leaves out what the
+ * provider marks as a bot's, and what the accounts named in [bots] wrote.
+ */
+internal fun getReviewAPI(repository: ReviewRepository, bots: Set<String>): ReviewApi = when (repository.provider) {
+  CiProviderId.GITHUB -> gitHubReviewApi(repository, bots)
+  CiProviderId.SPACE -> spaceReviewApi(repository, bots)
 }
 
 private fun ReviewApi.fileOrNull(revision: String, path: String): String? = try {

@@ -1,0 +1,4623 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls",
+        "query": {
+          "state": "closed",
+          "sort": "updated",
+          "direction": "desc",
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "number": 9464,
+            "user": {
+              "login": "4u7",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T20:38:59Z",
+            "merged_at": "2026-11-02T20:38:56Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8817,
+            "user": {
+              "login": "nikolaykasyanov",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T20:12:41Z",
+            "merged_at": "2026-11-02T17:33:22Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9070,
+            "user": {
+              "login": "AYastrebov",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T18:06:42Z",
+            "merged_at": "2026-11-02T18:06:40Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "antohaby",
+                "id": 3123432,
+                "node_id": "MDQ6VXNlcjMxMjM0MzI=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/3123432?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/antohaby",
+                "html_url": "https://github.com/antohaby",
+                "followers_url": "https://api.github.com/users/antohaby/followers",
+                "following_url": "https://api.github.com/users/antohaby/following{/other_user}",
+                "gists_url": "https://api.github.com/users/antohaby/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/antohaby/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/antohaby/subscriptions",
+                "organizations_url": "https://api.github.com/users/antohaby/orgs",
+                "repos_url": "https://api.github.com/users/antohaby/repos",
+                "events_url": "https://api.github.com/users/antohaby/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/antohaby/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9423,
+            "user": {
+              "login": "AYastrebov",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T17:47:23Z",
+            "merged_at": "2026-11-02T17:47:20Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "timofeys1",
+                "id": 8717108,
+                "node_id": "MDQ6VXNlcjg3MTcxMDg=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/8717108?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/timofeys1",
+                "html_url": "https://github.com/timofeys1",
+                "followers_url": "https://api.github.com/users/timofeys1/followers",
+                "following_url": "https://api.github.com/users/timofeys1/following{/other_user}",
+                "gists_url": "https://api.github.com/users/timofeys1/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/timofeys1/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/timofeys1/subscriptions",
+                "organizations_url": "https://api.github.com/users/timofeys1/orgs",
+                "repos_url": "https://api.github.com/users/timofeys1/repos",
+                "events_url": "https://api.github.com/users/timofeys1/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/timofeys1/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9175,
+            "user": {
+              "login": "ivandev0",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T17:36:30Z",
+            "merged_at": "2026-11-02T17:36:27Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9356,
+            "user": {
+              "login": "JSMonk",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T17:23:08Z",
+            "merged_at": "2026-11-02T17:23:04Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9463,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T17:11:22Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9453,
+            "user": {
+              "login": "GeorgeChernyshov",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T17:04:01Z",
+            "merged_at": "2026-11-02T17:04:01Z",
+            "assignees": [
+              {
+                "login": "nikolaykasyanov",
+                "id": 136644,
+                "node_id": "MDQ6VXNlcjEzNjY0NA==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/136644?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/nikolaykasyanov",
+                "html_url": "https://github.com/nikolaykasyanov",
+                "followers_url": "https://api.github.com/users/nikolaykasyanov/followers",
+                "following_url": "https://api.github.com/users/nikolaykasyanov/following{/other_user}",
+                "gists_url": "https://api.github.com/users/nikolaykasyanov/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/nikolaykasyanov/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/nikolaykasyanov/subscriptions",
+                "organizations_url": "https://api.github.com/users/nikolaykasyanov/orgs",
+                "repos_url": "https://api.github.com/users/nikolaykasyanov/repos",
+                "events_url": "https://api.github.com/users/nikolaykasyanov/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/nikolaykasyanov/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "GeorgeChernyshov",
+                "type": "User"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "GeorgeChernyshov",
+                  "type": "User"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "nikolaykasyanov",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9278,
+            "user": {
+              "login": "JSMonk",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T16:20:42Z",
+            "merged_at": "2026-11-02T16:20:38Z",
+            "assignees": [
+              {
+                "login": "antohaby",
+                "id": 3123432,
+                "node_id": "MDQ6VXNlcjMxMjM0MzI=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/3123432?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/antohaby",
+                "html_url": "https://github.com/antohaby",
+                "followers_url": "https://api.github.com/users/antohaby/followers",
+                "following_url": "https://api.github.com/users/antohaby/following{/other_user}",
+                "gists_url": "https://api.github.com/users/antohaby/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/antohaby/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/antohaby/subscriptions",
+                "organizations_url": "https://api.github.com/users/antohaby/orgs",
+                "repos_url": "https://api.github.com/users/antohaby/repos",
+                "events_url": "https://api.github.com/users/antohaby/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/antohaby/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "antohaby",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9242,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T15:38:14Z",
+            "merged_at": "2026-11-02T15:38:09Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 6411,
+            "user": {
+              "login": "broadwaylamb",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T15:24:31Z",
+            "merged_at": "2026-11-02T15:24:27Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9414,
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T15:05:42Z",
+            "merged_at": "2026-11-02T15:05:38Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8724,
+            "user": {
+              "login": "haitaka",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T15:03:34Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9277,
+            "user": {
+              "login": "haitaka",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T15:03:18Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9460,
+            "user": {
+              "login": "AYastrebov",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T14:37:43Z",
+            "merged_at": "2026-11-02T14:37:39Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9441,
+            "user": {
+              "login": "jetbrains-air[bot]",
+              "type": "Bot"
+            },
+            "updated_at": "2026-11-02T14:35:56Z",
+            "merged_at": "2026-11-02T14:35:52Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9226,
+            "user": {
+              "login": "Egorand",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T14:35:20Z",
+            "merged_at": "2026-11-02T14:35:17Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "AYastrebov",
+                "id": 739037,
+                "node_id": "MDQ6VXNlcjczOTAzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/739037?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/AYastrebov",
+                "html_url": "https://github.com/AYastrebov",
+                "followers_url": "https://api.github.com/users/AYastrebov/followers",
+                "following_url": "https://api.github.com/users/AYastrebov/following{/other_user}",
+                "gists_url": "https://api.github.com/users/AYastrebov/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/AYastrebov/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/AYastrebov/subscriptions",
+                "organizations_url": "https://api.github.com/users/AYastrebov/orgs",
+                "repos_url": "https://api.github.com/users/AYastrebov/repos",
+                "events_url": "https://api.github.com/users/AYastrebov/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/AYastrebov/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              {
+                "login": "Tapchicoma",
+                "id": 1595262,
+                "node_id": "MDQ6VXNlcjE1OTUyNjI=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1595262?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/Tapchicoma",
+                "html_url": "https://github.com/Tapchicoma",
+                "followers_url": "https://api.github.com/users/Tapchicoma/followers",
+                "following_url": "https://api.github.com/users/Tapchicoma/following{/other_user}",
+                "gists_url": "https://api.github.com/users/Tapchicoma/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/Tapchicoma/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/Tapchicoma/subscriptions",
+                "organizations_url": "https://api.github.com/users/Tapchicoma/orgs",
+                "repos_url": "https://api.github.com/users/Tapchicoma/repos",
+                "events_url": "https://api.github.com/users/Tapchicoma/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/Tapchicoma/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8983,
+            "user": {
+              "login": "zeks07",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T14:31:38Z",
+            "merged_at": "2026-11-02T14:31:36Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9424,
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T13:12:28Z",
+            "merged_at": "2026-11-02T13:12:25Z",
+            "assignees": [
+              {
+                "login": "ywett02",
+                "id": 14801604,
+                "node_id": "MDQ6VXNlcjE0ODAxNjA0",
+                "avatar_url": "https://avatars.githubusercontent.com/u/14801604?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/ywett02",
+                "html_url": "https://github.com/ywett02",
+                "followers_url": "https://api.github.com/users/ywett02/followers",
+                "following_url": "https://api.github.com/users/ywett02/following{/other_user}",
+                "gists_url": "https://api.github.com/users/ywett02/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/ywett02/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/ywett02/subscriptions",
+                "organizations_url": "https://api.github.com/users/ywett02/orgs",
+                "repos_url": "https://api.github.com/users/ywett02/repos",
+                "events_url": "https://api.github.com/users/ywett02/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/ywett02/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "ywett02",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9381,
+            "user": {
+              "login": "cypressious",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T13:03:12Z",
+            "merged_at": "2026-11-02T13:03:09Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "lunakoly",
+                "id": 23314483,
+                "node_id": "MDQ6VXNlcjIzMzE0NDgz",
+                "avatar_url": "https://avatars.githubusercontent.com/u/23314483?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/lunakoly",
+                "html_url": "https://github.com/lunakoly",
+                "followers_url": "https://api.github.com/users/lunakoly/followers",
+                "following_url": "https://api.github.com/users/lunakoly/following{/other_user}",
+                "gists_url": "https://api.github.com/users/lunakoly/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/lunakoly/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/lunakoly/subscriptions",
+                "organizations_url": "https://api.github.com/users/lunakoly/orgs",
+                "repos_url": "https://api.github.com/users/lunakoly/repos",
+                "events_url": "https://api.github.com/users/lunakoly/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/lunakoly/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9205,
+            "user": {
+              "login": "timofeys1",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T12:51:06Z",
+            "merged_at": "2026-11-02T12:51:04Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "adam-enko",
+                "id": 152864218,
+                "node_id": "U_kgDOCRyF2g",
+                "avatar_url": "https://avatars.githubusercontent.com/u/152864218?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/adam-enko",
+                "html_url": "https://github.com/adam-enko",
+                "followers_url": "https://api.github.com/users/adam-enko/followers",
+                "following_url": "https://api.github.com/users/adam-enko/following{/other_user}",
+                "gists_url": "https://api.github.com/users/adam-enko/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/adam-enko/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/adam-enko/subscriptions",
+                "organizations_url": "https://api.github.com/users/adam-enko/orgs",
+                "repos_url": "https://api.github.com/users/adam-enko/repos",
+                "events_url": "https://api.github.com/users/adam-enko/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/adam-enko/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9371,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T12:34:39Z",
+            "merged_at": "2026-11-02T12:34:36Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9353,
+            "user": {
+              "login": "Badya",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T11:54:28Z",
+            "merged_at": "2026-11-02T11:54:24Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8883,
+            "user": {
+              "login": "ivandev0",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T11:41:27Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 5896,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T10:10:18Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 5976,
+            "user": {
+              "login": "fzhinkin",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T10:09:54Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9183,
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T09:51:15Z",
+            "merged_at": "2026-11-02T09:51:12Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9386,
+            "user": {
+              "login": "cypressious",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T09:27:55Z",
+            "merged_at": "2026-11-02T09:27:52Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9422,
+            "user": {
+              "login": "ywett02",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T09:09:18Z",
+            "merged_at": "2026-11-02T09:09:15Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8942,
+            "user": {
+              "login": "vsukharev",
+              "type": "User"
+            },
+            "updated_at": "2026-11-02T08:14:04Z",
+            "merged_at": "2026-10-27T16:13:57Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 4690,
+            "user": {
+              "login": "baseballyama",
+              "type": "User"
+            },
+            "updated_at": "2026-10-31T13:04:37Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "baseballyama",
+                "type": "User"
+              },
+              "repo": null
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9413,
+            "user": {
+              "login": "BlaBlaHuman",
+              "type": "User"
+            },
+            "updated_at": "2026-10-31T00:07:38Z",
+            "merged_at": "2026-10-31T00:07:35Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9173,
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T22:16:51Z",
+            "merged_at": "2026-10-30T22:16:48Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "kunyavskiy",
+                "id": 5610819,
+                "node_id": "MDQ6VXNlcjU2MTA4MTk=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/5610819?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/kunyavskiy",
+                "html_url": "https://github.com/kunyavskiy",
+                "followers_url": "https://api.github.com/users/kunyavskiy/followers",
+                "following_url": "https://api.github.com/users/kunyavskiy/following{/other_user}",
+                "gists_url": "https://api.github.com/users/kunyavskiy/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/kunyavskiy/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/kunyavskiy/subscriptions",
+                "organizations_url": "https://api.github.com/users/kunyavskiy/orgs",
+                "repos_url": "https://api.github.com/users/kunyavskiy/repos",
+                "events_url": "https://api.github.com/users/kunyavskiy/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/kunyavskiy/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9417,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T21:51:02Z",
+            "merged_at": "2026-10-30T21:50:59Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9432,
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T20:57:48Z",
+            "merged_at": "2026-10-30T20:57:45Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9438,
+            "user": {
+              "login": "OlgaSemakina",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T20:28:59Z",
+            "merged_at": "2026-10-30T20:28:57Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "glukianets",
+                "id": 8758971,
+                "node_id": "MDQ6VXNlcjg3NTg5NzE=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/8758971?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/glukianets",
+                "html_url": "https://github.com/glukianets",
+                "followers_url": "https://api.github.com/users/glukianets/followers",
+                "following_url": "https://api.github.com/users/glukianets/following{/other_user}",
+                "gists_url": "https://api.github.com/users/glukianets/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/glukianets/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/glukianets/subscriptions",
+                "organizations_url": "https://api.github.com/users/glukianets/orgs",
+                "repos_url": "https://api.github.com/users/glukianets/repos",
+                "events_url": "https://api.github.com/users/glukianets/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/glukianets/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              {
+                "login": "mMaxy",
+                "id": 119245,
+                "node_id": "MDQ6VXNlcjExOTI0NQ==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/119245?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/mMaxy",
+                "html_url": "https://github.com/mMaxy",
+                "followers_url": "https://api.github.com/users/mMaxy/followers",
+                "following_url": "https://api.github.com/users/mMaxy/following{/other_user}",
+                "gists_url": "https://api.github.com/users/mMaxy/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/mMaxy/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/mMaxy/subscriptions",
+                "organizations_url": "https://api.github.com/users/mMaxy/orgs",
+                "repos_url": "https://api.github.com/users/mMaxy/repos",
+                "events_url": "https://api.github.com/users/mMaxy/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/mMaxy/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9375,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T20:00:03Z",
+            "merged_at": "2026-10-30T20:00:00Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9326,
+            "user": {
+              "login": "jetbrains-air[bot]",
+              "type": "Bot"
+            },
+            "updated_at": "2026-10-30T19:40:51Z",
+            "merged_at": "2026-10-30T19:40:47Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9412,
+            "user": {
+              "login": "ilmirus",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T18:38:07Z",
+            "merged_at": "2026-10-30T18:38:04Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9405,
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T18:37:24Z",
+            "merged_at": "2026-10-30T18:37:22Z",
+            "assignees": [
+              {
+                "login": "broadwaylamb",
+                "id": 16309982,
+                "node_id": "MDQ6VXNlcjE2MzA5OTgy",
+                "avatar_url": "https://avatars.githubusercontent.com/u/16309982?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/broadwaylamb",
+                "html_url": "https://github.com/broadwaylamb",
+                "followers_url": "https://api.github.com/users/broadwaylamb/followers",
+                "following_url": "https://api.github.com/users/broadwaylamb/following{/other_user}",
+                "gists_url": "https://api.github.com/users/broadwaylamb/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/broadwaylamb/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/broadwaylamb/subscriptions",
+                "organizations_url": "https://api.github.com/users/broadwaylamb/orgs",
+                "repos_url": "https://api.github.com/users/broadwaylamb/repos",
+                "events_url": "https://api.github.com/users/broadwaylamb/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/broadwaylamb/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "broadwaylamb",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9359,
+            "user": {
+              "login": "AYastrebov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T18:09:35Z",
+            "merged_at": "2026-10-30T18:09:32Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9369,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T17:04:24Z",
+            "merged_at": "2026-10-30T17:04:21Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9358,
+            "user": {
+              "login": "AYastrebov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T16:53:24Z",
+            "merged_at": "2026-10-30T16:53:20Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "antohaby",
+                "id": 3123432,
+                "node_id": "MDQ6VXNlcjMxMjM0MzI=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/3123432?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/antohaby",
+                "html_url": "https://github.com/antohaby",
+                "followers_url": "https://api.github.com/users/antohaby/followers",
+                "following_url": "https://api.github.com/users/antohaby/following{/other_user}",
+                "gists_url": "https://api.github.com/users/antohaby/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/antohaby/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/antohaby/subscriptions",
+                "organizations_url": "https://api.github.com/users/antohaby/orgs",
+                "repos_url": "https://api.github.com/users/antohaby/repos",
+                "events_url": "https://api.github.com/users/antohaby/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/antohaby/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9347,
+            "user": {
+              "login": "broadwaylamb",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T16:38:12Z",
+            "merged_at": "2026-10-30T16:38:08Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9295,
+            "user": {
+              "login": "bnorm",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T16:32:22Z",
+            "merged_at": "2026-10-30T16:32:20Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9224,
+            "user": {
+              "login": "alex28sh",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T16:24:58Z",
+            "merged_at": "2026-10-30T16:24:54Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9389,
+            "user": {
+              "login": "udalov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T16:13:32Z",
+            "merged_at": "2026-10-30T16:13:29Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9112,
+            "user": {
+              "login": "JSMonk",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T16:08:01Z",
+            "merged_at": "2026-10-30T16:07:57Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "adam-enko",
+                "id": 152864218,
+                "node_id": "U_kgDOCRyF2g",
+                "avatar_url": "https://avatars.githubusercontent.com/u/152864218?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/adam-enko",
+                "html_url": "https://github.com/adam-enko",
+                "followers_url": "https://api.github.com/users/adam-enko/followers",
+                "following_url": "https://api.github.com/users/adam-enko/following{/other_user}",
+                "gists_url": "https://api.github.com/users/adam-enko/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/adam-enko/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/adam-enko/subscriptions",
+                "organizations_url": "https://api.github.com/users/adam-enko/orgs",
+                "repos_url": "https://api.github.com/users/adam-enko/repos",
+                "events_url": "https://api.github.com/users/adam-enko/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/adam-enko/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9437,
+            "user": {
+              "login": "dzharkov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T15:52:10Z",
+            "merged_at": "2026-10-30T15:52:07Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9436,
+            "user": {
+              "login": "ywett02",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T15:41:54Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "CherepanovAleksei",
+                "id": 22175941,
+                "node_id": "MDQ6VXNlcjIyMTc1OTQx",
+                "avatar_url": "https://avatars.githubusercontent.com/u/22175941?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/CherepanovAleksei",
+                "html_url": "https://github.com/CherepanovAleksei",
+                "followers_url": "https://api.github.com/users/CherepanovAleksei/followers",
+                "following_url": "https://api.github.com/users/CherepanovAleksei/following{/other_user}",
+                "gists_url": "https://api.github.com/users/CherepanovAleksei/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/CherepanovAleksei/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/CherepanovAleksei/subscriptions",
+                "organizations_url": "https://api.github.com/users/CherepanovAleksei/orgs",
+                "repos_url": "https://api.github.com/users/CherepanovAleksei/repos",
+                "events_url": "https://api.github.com/users/CherepanovAleksei/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/CherepanovAleksei/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              {
+                "login": "shinkai-tester",
+                "id": 57576102,
+                "node_id": "MDQ6VXNlcjU3NTc2MTAy",
+                "avatar_url": "https://avatars.githubusercontent.com/u/57576102?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/shinkai-tester",
+                "html_url": "https://github.com/shinkai-tester",
+                "followers_url": "https://api.github.com/users/shinkai-tester/followers",
+                "following_url": "https://api.github.com/users/shinkai-tester/following{/other_user}",
+                "gists_url": "https://api.github.com/users/shinkai-tester/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/shinkai-tester/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/shinkai-tester/subscriptions",
+                "organizations_url": "https://api.github.com/users/shinkai-tester/orgs",
+                "repos_url": "https://api.github.com/users/shinkai-tester/repos",
+                "events_url": "https://api.github.com/users/shinkai-tester/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/shinkai-tester/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9435,
+            "user": {
+              "login": "ywett02",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T15:41:54Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "CherepanovAleksei",
+                "id": 22175941,
+                "node_id": "MDQ6VXNlcjIyMTc1OTQx",
+                "avatar_url": "https://avatars.githubusercontent.com/u/22175941?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/CherepanovAleksei",
+                "html_url": "https://github.com/CherepanovAleksei",
+                "followers_url": "https://api.github.com/users/CherepanovAleksei/followers",
+                "following_url": "https://api.github.com/users/CherepanovAleksei/following{/other_user}",
+                "gists_url": "https://api.github.com/users/CherepanovAleksei/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/CherepanovAleksei/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/CherepanovAleksei/subscriptions",
+                "organizations_url": "https://api.github.com/users/CherepanovAleksei/orgs",
+                "repos_url": "https://api.github.com/users/CherepanovAleksei/repos",
+                "events_url": "https://api.github.com/users/CherepanovAleksei/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/CherepanovAleksei/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              {
+                "login": "shinkai-tester",
+                "id": 57576102,
+                "node_id": "MDQ6VXNlcjU3NTc2MTAy",
+                "avatar_url": "https://avatars.githubusercontent.com/u/57576102?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/shinkai-tester",
+                "html_url": "https://github.com/shinkai-tester",
+                "followers_url": "https://api.github.com/users/shinkai-tester/followers",
+                "following_url": "https://api.github.com/users/shinkai-tester/following{/other_user}",
+                "gists_url": "https://api.github.com/users/shinkai-tester/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/shinkai-tester/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/shinkai-tester/subscriptions",
+                "organizations_url": "https://api.github.com/users/shinkai-tester/orgs",
+                "repos_url": "https://api.github.com/users/shinkai-tester/repos",
+                "events_url": "https://api.github.com/users/shinkai-tester/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/shinkai-tester/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9374,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T15:39:19Z",
+            "merged_at": "2026-10-30T15:39:16Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9185,
+            "user": {
+              "login": "OlgaSemakina",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T15:35:23Z",
+            "merged_at": "2026-10-30T15:35:20Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "glukianets",
+                "id": 8758971,
+                "node_id": "MDQ6VXNlcjg3NTg5NzE=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/8758971?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/glukianets",
+                "html_url": "https://github.com/glukianets",
+                "followers_url": "https://api.github.com/users/glukianets/followers",
+                "following_url": "https://api.github.com/users/glukianets/following{/other_user}",
+                "gists_url": "https://api.github.com/users/glukianets/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/glukianets/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/glukianets/subscriptions",
+                "organizations_url": "https://api.github.com/users/glukianets/orgs",
+                "repos_url": "https://api.github.com/users/glukianets/repos",
+                "events_url": "https://api.github.com/users/glukianets/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/glukianets/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9430,
+            "user": {
+              "login": "CherepanovAleksei",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T14:52:23Z",
+            "merged_at": "2026-10-30T14:52:20Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9433,
+            "user": {
+              "login": "radoslaw-panuszewski",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T14:50:16Z",
+            "merged_at": "2026-10-30T14:50:12Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9401,
+            "user": {
+              "login": "ilgonmic",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T14:28:56Z",
+            "merged_at": "2026-10-30T14:28:52Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9393,
+            "user": {
+              "login": "dzharkov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T14:18:21Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9370,
+            "user": {
+              "login": "bnorm",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T13:34:13Z",
+            "merged_at": "2026-10-30T13:34:10Z",
+            "assignees": [
+              {
+                "login": "bnorm",
+                "id": 1074449,
+                "node_id": "MDQ6VXNlcjEwNzQ0NDk=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1074449?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/bnorm",
+                "html_url": "https://github.com/bnorm",
+                "followers_url": "https://api.github.com/users/bnorm/followers",
+                "following_url": "https://api.github.com/users/bnorm/following{/other_user}",
+                "gists_url": "https://api.github.com/users/bnorm/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/bnorm/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/bnorm/subscriptions",
+                "organizations_url": "https://api.github.com/users/bnorm/orgs",
+                "repos_url": "https://api.github.com/users/bnorm/repos",
+                "events_url": "https://api.github.com/users/bnorm/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/bnorm/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "bnorm",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9115,
+            "user": {
+              "login": "JSMonk",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T13:13:26Z",
+            "merged_at": "2026-10-30T13:13:23Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "adam-enko",
+                "id": 152864218,
+                "node_id": "U_kgDOCRyF2g",
+                "avatar_url": "https://avatars.githubusercontent.com/u/152864218?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/adam-enko",
+                "html_url": "https://github.com/adam-enko",
+                "followers_url": "https://api.github.com/users/adam-enko/followers",
+                "following_url": "https://api.github.com/users/adam-enko/following{/other_user}",
+                "gists_url": "https://api.github.com/users/adam-enko/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/adam-enko/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/adam-enko/subscriptions",
+                "organizations_url": "https://api.github.com/users/adam-enko/orgs",
+                "repos_url": "https://api.github.com/users/adam-enko/repos",
+                "events_url": "https://api.github.com/users/adam-enko/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/adam-enko/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9421,
+            "user": {
+              "login": "ilgonmic",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T12:56:41Z",
+            "merged_at": "2026-10-30T12:56:38Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9404,
+            "user": {
+              "login": "broadwaylamb",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T12:56:33Z",
+            "merged_at": "2026-10-30T12:56:30Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9233,
+            "user": {
+              "login": "reuben",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T12:11:03Z",
+            "merged_at": "2026-10-30T11:07:18Z",
+            "assignees": [
+              {
+                "login": "anton-bannykh",
+                "id": 1115872,
+                "node_id": "MDQ6VXNlcjExMTU4NzI=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1115872?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/anton-bannykh",
+                "html_url": "https://github.com/anton-bannykh",
+                "followers_url": "https://api.github.com/users/anton-bannykh/followers",
+                "following_url": "https://api.github.com/users/anton-bannykh/following{/other_user}",
+                "gists_url": "https://api.github.com/users/anton-bannykh/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/anton-bannykh/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/anton-bannykh/subscriptions",
+                "organizations_url": "https://api.github.com/users/anton-bannykh/orgs",
+                "repos_url": "https://api.github.com/users/anton-bannykh/repos",
+                "events_url": "https://api.github.com/users/anton-bannykh/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/anton-bannykh/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "voize-gmbh",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "voize-gmbh",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "anton-bannykh",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9078,
+            "user": {
+              "login": "antohaby",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T11:42:40Z",
+            "merged_at": "2026-10-30T11:42:37Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9415,
+            "user": {
+              "login": "antohaby",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T11:39:19Z",
+            "merged_at": "2026-10-30T11:39:15Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9204,
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T11:33:11Z",
+            "merged_at": "2026-10-30T11:33:07Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9363,
+            "user": {
+              "login": "JSMonk",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T11:29:12Z",
+            "merged_at": "2026-10-30T11:29:10Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9372,
+            "user": {
+              "login": "Tapchicoma",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T11:05:53Z",
+            "merged_at": "2026-10-30T11:05:50Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9408,
+            "user": {
+              "login": "4u7",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T11:03:24Z",
+            "merged_at": "2026-10-30T11:03:22Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8336,
+            "user": {
+              "login": "mole828",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T10:07:49Z",
+            "merged_at": "2026-10-30T10:07:49Z",
+            "assignees": [
+              {
+                "login": "fzhinkin",
+                "id": 13045611,
+                "node_id": "MDQ6VXNlcjEzMDQ1NjEx",
+                "avatar_url": "https://avatars.githubusercontent.com/u/13045611?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/fzhinkin",
+                "html_url": "https://github.com/fzhinkin",
+                "followers_url": "https://api.github.com/users/fzhinkin/followers",
+                "following_url": "https://api.github.com/users/fzhinkin/following{/other_user}",
+                "gists_url": "https://api.github.com/users/fzhinkin/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/fzhinkin/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/fzhinkin/subscriptions",
+                "organizations_url": "https://api.github.com/users/fzhinkin/orgs",
+                "repos_url": "https://api.github.com/users/fzhinkin/repos",
+                "events_url": "https://api.github.com/users/fzhinkin/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/fzhinkin/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "mole828",
+                "type": "User"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "mole828",
+                  "type": "User"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "fzhinkin",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9387,
+            "user": {
+              "login": "vsukharev",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T09:32:33Z",
+            "merged_at": "2026-10-30T09:32:29Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9354,
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T09:03:34Z",
+            "merged_at": "2026-10-30T09:03:31Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 7989,
+            "user": {
+              "login": "mpiekutowski",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T08:51:28Z",
+            "merged_at": "2026-10-30T08:51:25Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9368,
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-30T07:34:19Z",
+            "merged_at": "2026-10-30T07:34:16Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9332,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T23:10:00Z",
+            "merged_at": null,
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9390,
+            "user": {
+              "login": "udalov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T23:09:11Z",
+            "merged_at": "2026-10-29T23:09:08Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9396,
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T21:38:37Z",
+            "merged_at": "2026-10-29T21:38:33Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9214,
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T21:17:50Z",
+            "merged_at": "2026-10-29T21:17:46Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9286,
+            "user": {
+              "login": "bnorm",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T20:51:48Z",
+            "merged_at": "2026-10-29T20:51:45Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9213,
+            "user": {
+              "login": "adam-enko",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T20:29:54Z",
+            "merged_at": "2026-10-29T20:29:51Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "ywett02",
+                "id": 14801604,
+                "node_id": "MDQ6VXNlcjE0ODAxNjA0",
+                "avatar_url": "https://avatars.githubusercontent.com/u/14801604?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/ywett02",
+                "html_url": "https://github.com/ywett02",
+                "followers_url": "https://api.github.com/users/ywett02/followers",
+                "following_url": "https://api.github.com/users/ywett02/following{/other_user}",
+                "gists_url": "https://api.github.com/users/ywett02/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/ywett02/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/ywett02/subscriptions",
+                "organizations_url": "https://api.github.com/users/ywett02/orgs",
+                "repos_url": "https://api.github.com/users/ywett02/repos",
+                "events_url": "https://api.github.com/users/ywett02/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/ywett02/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9395,
+            "user": {
+              "login": "ilmirus",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T20:05:40Z",
+            "merged_at": "2026-10-29T20:05:36Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9409,
+            "user": {
+              "login": "MaxVerevkin",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T20:05:00Z",
+            "merged_at": "2026-10-29T20:04:57Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9376,
+            "user": {
+              "login": "BlaBlaHuman",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T19:53:11Z",
+            "merged_at": "2026-10-29T19:53:08Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9045,
+            "user": {
+              "login": "wojtek-kalicinski",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T19:10:34Z",
+            "merged_at": "2026-10-29T19:10:26Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8891,
+            "user": {
+              "login": "ZacSweers",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T18:50:44Z",
+            "merged_at": "2026-10-29T18:50:44Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "ZacSweers",
+                "type": "User"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "ZacSweers",
+                  "type": "User"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9186,
+            "user": {
+              "login": "GrigoriiSolnyshkin",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T18:31:46Z",
+            "merged_at": "2026-10-29T18:31:42Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8461,
+            "user": {
+              "login": "ilgonmic",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T17:47:29Z",
+            "merged_at": "2026-10-29T17:47:26Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "adam-enko",
+                "id": 152864218,
+                "node_id": "U_kgDOCRyF2g",
+                "avatar_url": "https://avatars.githubusercontent.com/u/152864218?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/adam-enko",
+                "html_url": "https://github.com/adam-enko",
+                "followers_url": "https://api.github.com/users/adam-enko/followers",
+                "following_url": "https://api.github.com/users/adam-enko/following{/other_user}",
+                "gists_url": "https://api.github.com/users/adam-enko/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/adam-enko/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/adam-enko/subscriptions",
+                "organizations_url": "https://api.github.com/users/adam-enko/orgs",
+                "repos_url": "https://api.github.com/users/adam-enko/repos",
+                "events_url": "https://api.github.com/users/adam-enko/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/adam-enko/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9344,
+            "user": {
+              "login": "cypressious",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T17:32:08Z",
+            "merged_at": "2026-10-29T17:32:05Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9220,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T17:22:37Z",
+            "merged_at": "2026-10-29T17:22:34Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9338,
+            "user": {
+              "login": "udalov",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T17:13:06Z",
+            "merged_at": "2026-10-29T17:13:03Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9263,
+            "user": {
+              "login": "4u7",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T17:08:23Z",
+            "merged_at": "2026-10-29T17:08:19Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9265,
+            "user": {
+              "login": "4u7",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T16:33:35Z",
+            "merged_at": "2026-10-29T16:33:32Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8876,
+            "user": {
+              "login": "ilya-g",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T16:13:13Z",
+            "merged_at": "2026-10-29T16:13:10Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9398,
+            "user": {
+              "login": "goodwinnk",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T15:33:51Z",
+            "merged_at": "2026-10-29T15:33:48Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9324,
+            "user": {
+              "login": "mglukhikh",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T14:28:19Z",
+            "merged_at": "2026-10-29T14:28:16Z",
+            "assignees": [
+              {
+                "login": "mglukhikh",
+                "id": 1127631,
+                "node_id": "MDQ6VXNlcjExMjc2MzE=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1127631?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/mglukhikh",
+                "html_url": "https://github.com/mglukhikh",
+                "followers_url": "https://api.github.com/users/mglukhikh/followers",
+                "following_url": "https://api.github.com/users/mglukhikh/following{/other_user}",
+                "gists_url": "https://api.github.com/users/mglukhikh/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/mglukhikh/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/mglukhikh/subscriptions",
+                "organizations_url": "https://api.github.com/users/mglukhikh/orgs",
+                "repos_url": "https://api.github.com/users/mglukhikh/repos",
+                "events_url": "https://api.github.com/users/mglukhikh/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/mglukhikh/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": {
+              "login": "mglukhikh",
+              "type": "User"
+            }
+          },
+          {
+            "number": 9159,
+            "user": {
+              "login": "ilmirus",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T13:41:27Z",
+            "merged_at": "2026-10-29T13:41:23Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9074,
+            "user": {
+              "login": "mMaxy",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T12:55:19Z",
+            "merged_at": "2026-10-29T12:55:15Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "glukianets",
+                "id": 8758971,
+                "node_id": "MDQ6VXNlcjg3NTg5NzE=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/8758971?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/glukianets",
+                "html_url": "https://github.com/glukianets",
+                "followers_url": "https://api.github.com/users/glukianets/followers",
+                "following_url": "https://api.github.com/users/glukianets/following{/other_user}",
+                "gists_url": "https://api.github.com/users/glukianets/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/glukianets/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/glukianets/subscriptions",
+                "organizations_url": "https://api.github.com/users/glukianets/orgs",
+                "repos_url": "https://api.github.com/users/glukianets/repos",
+                "events_url": "https://api.github.com/users/glukianets/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/glukianets/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9155,
+            "user": {
+              "login": "alex28sh",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T12:44:51Z",
+            "merged_at": "2026-10-29T12:44:48Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "agamzikova-jb",
+                "id": 113186242,
+                "node_id": "U_kgDOBr8Vwg",
+                "avatar_url": "https://avatars.githubusercontent.com/u/113186242?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/agamzikova-jb",
+                "html_url": "https://github.com/agamzikova-jb",
+                "followers_url": "https://api.github.com/users/agamzikova-jb/followers",
+                "following_url": "https://api.github.com/users/agamzikova-jb/following{/other_user}",
+                "gists_url": "https://api.github.com/users/agamzikova-jb/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/agamzikova-jb/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/agamzikova-jb/subscriptions",
+                "organizations_url": "https://api.github.com/users/agamzikova-jb/orgs",
+                "repos_url": "https://api.github.com/users/agamzikova-jb/repos",
+                "events_url": "https://api.github.com/users/agamzikova-jb/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/agamzikova-jb/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 8945,
+            "user": {
+              "login": "MaxVerevkin",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T12:44:16Z",
+            "merged_at": "2026-10-29T12:44:12Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9312,
+            "user": {
+              "login": "jmrtsh",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T12:13:27Z",
+            "merged_at": "2026-10-29T12:13:24Z",
+            "assignees": [],
+            "requested_reviewers": [],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          },
+          {
+            "number": 9193,
+            "user": {
+              "login": "JSMonk",
+              "type": "User"
+            },
+            "updated_at": "2026-10-29T11:59:00Z",
+            "merged_at": "2026-10-29T11:58:57Z",
+            "assignees": [],
+            "requested_reviewers": [
+              {
+                "login": "adam-enko",
+                "id": 152864218,
+                "node_id": "U_kgDOCRyF2g",
+                "avatar_url": "https://avatars.githubusercontent.com/u/152864218?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/adam-enko",
+                "html_url": "https://github.com/adam-enko",
+                "followers_url": "https://api.github.com/users/adam-enko/followers",
+                "following_url": "https://api.github.com/users/adam-enko/following{/other_user}",
+                "gists_url": "https://api.github.com/users/adam-enko/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/adam-enko/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/adam-enko/subscriptions",
+                "organizations_url": "https://api.github.com/users/adam-enko/orgs",
+                "repos_url": "https://api.github.com/users/adam-enko/repos",
+                "events_url": "https://api.github.com/users/adam-enko/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/adam-enko/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              {
+                "login": "wojtek-kalicinski",
+                "id": 1135907,
+                "node_id": "MDQ6VXNlcjExMzU5MDc=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/1135907?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/wojtek-kalicinski",
+                "html_url": "https://github.com/wojtek-kalicinski",
+                "followers_url": "https://api.github.com/users/wojtek-kalicinski/followers",
+                "following_url": "https://api.github.com/users/wojtek-kalicinski/following{/other_user}",
+                "gists_url": "https://api.github.com/users/wojtek-kalicinski/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/wojtek-kalicinski/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/wojtek-kalicinski/subscriptions",
+                "organizations_url": "https://api.github.com/users/wojtek-kalicinski/orgs",
+                "repos_url": "https://api.github.com/users/wojtek-kalicinski/repos",
+                "events_url": "https://api.github.com/users/wojtek-kalicinski/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/wojtek-kalicinski/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              }
+            ],
+            "head": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "base": {
+              "user": {
+                "login": "JetBrains",
+                "type": "Organization"
+              },
+              "repo": {
+                "name": "kotlin",
+                "owner": {
+                  "login": "JetBrains",
+                  "type": "Organization"
+                }
+              }
+            },
+            "assignee": null
+          }
+        ],
+        "hasNext": true
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/9413",
+          "number": 9413,
+          "title": "KT-88617 [Analysis API] Adjust return type of `KaTypeCreator.capturedType`",
+          "user": {
+            "login": "BlaBlaHuman",
+            "type": "User"
+          },
+          "merged_at": "2026-10-31T00:07:35Z",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "27ff017ae49d78b6b6d18bf70654ceb3e3b27e8e",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "d9b08aa7eab8d19d3d6f7d3d31c0fa49898e8194",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 9413,
+        "url": "https://github.com/JetBrains/kotlin/pull/9413",
+        "title": "KT-88617 [Analysis API] Adjust return type of `KaTypeCreator.capturedType`",
+        "body": "",
+        "baseRevision": "d9b08aa7eab8d19d3d6f7d3d31c0fa49898e8194",
+        "headRevision": "27ff017ae49d78b6b6d18bf70654ceb3e3b27e8e",
+        "closeTimestamp": 1793405255000,
+        "threads": []
+      }
+    ],
+    "problems": []
+  }
+}

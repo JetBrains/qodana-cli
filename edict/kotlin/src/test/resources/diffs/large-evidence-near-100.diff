@@ -1,0 +1,45 @@
+--- a/src/Example.kt
++++ b/src/Example.kt
+@@ -80,41 +80,41 @@
+ context 80 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 81 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 82 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 83 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 84 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 85 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 86 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 87 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 88 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 89 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 90 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 91 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 92 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 93 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 94 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 95 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 96 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 97 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 98 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 99 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+-bad()
++good()
+ context 101 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 102 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 103 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 104 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 105 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 106 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 107 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 108 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 109 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 110 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 111 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 112 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 113 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 114 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 115 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 116 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 117 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 118 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 119 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 120 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

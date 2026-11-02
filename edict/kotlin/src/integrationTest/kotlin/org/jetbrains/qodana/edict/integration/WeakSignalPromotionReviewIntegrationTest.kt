@@ -24,7 +24,7 @@ class WeakSignalPromotionReviewIntegrationTest : IntegrationTest() {
         assertEquals(PromotionPrState.ON_REVIEW, previous.state)
         val inspection = repository.paths.inspectionPath(Fixture.clusterId).readText()
         val feedback = "Removing the redundant delay is correct: get still waits for the future. Accepted."
-        val reviews = Fixture.Reviews(ReviewStatus(ReviewState.MERGED, feedback))
+        val reviews = Fixture.reviews(ReviewStatus(ReviewState.MERGED, feedback))
 
         workspace.withPromotionCodex(
             prompt = "Check weak signal promotion reviews",
@@ -33,8 +33,8 @@ class WeakSignalPromotionReviewIntegrationTest : IntegrationTest() {
         ) { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
             assertEquals(listOf("edict-check-weak-signal-promotion"), plan.tasks.map { it.skill })
-            assertTrue(reviews.checked.isNotEmpty())
-            assertTrue(reviews.checked.all { it == Fixture.pullRequest })
+            assertTrue(reviews.statusReads.isNotEmpty())
+            assertTrue(reviews.statusReads.all { it == Fixture.pullRequest })
             assertTrue(reviews.requests.isEmpty(), "Checking must not create another PR")
 
             val cluster = repository.loadCluster(Fixture.clusterId)

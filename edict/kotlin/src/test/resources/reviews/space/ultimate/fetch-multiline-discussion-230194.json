@@ -1,0 +1,2037 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:230194",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "id": "fEcR60hDomc",
+          "number": 230194,
+          "title": "CPP-24696: per-file invalidation - fixing performance issue",
+          "state": "Closed",
+          "timestamp": 1793576575757,
+          "feedChannelId": "3egtv936oWWt",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "ead1819d13cb1c9e6a9ed3b5588cf3f0bfb88b74",
+            "targetBranchInfo": {
+              "ref": "ee27accdd04f6e45839bfe4dfab1dd23fd25d38f"
+            },
+            "isMerged": true
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:3egtv936oWWt",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "etag": "1669849953602",
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F95Df0W6DT5"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F95Do0W6DT6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F95Dl0W6DTB"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F95Hm0W6DXC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F95Ht0W6DXJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F96vn0W6E71"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F96wH0W6E7V"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F96Jp0W6EZ7"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F96Jq0W6EZ8"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F97V80W6FDO"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F97YU0W6FGk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F97YV0W6FGl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F97dp0W6FMD"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F97e40W6FMS"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F97e50W6FMT"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9ARh0W6Igz"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9ARj0W6Ih1"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iB90W6eVb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F8iEL0W6eYn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iJV0W6edx"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextManager.kt",
+                      "line": 90
+                    },
+                    "endAnchor": {
+                      "line": 91
+                    },
+                    "channel": {
+                      "id": "3R2HYj4YFNea"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iJW0W6edy"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK70W6eeR"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextProvider.kt",
+                      "line": 23
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "1CCOfM1BrFzN"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK00W6eeS"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK80W6eea"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 69
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "26D9F91XL8dK"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iK90W6eeb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iKT0W6een"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 71
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "4QT6Ws2mS8bb"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iKU0W6eeo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iLT0W6efv"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 115
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "4QhmzD43OJZi"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iLc0W6efw"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iNS0W6ehm"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 132
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "3W6D352n7gyl"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iNT0W6ehn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iNy0W6eiI"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iO40W6eiO"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8iOx0W6ejP"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTe0W6nOA"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTo0W6nOC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTn0W6nOJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTw0W6nOK"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTy0W6nOM"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZTz0W6nON"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZU10W6nOX"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZU90W6nOf"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZUL0W6nOj"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZUM0W6nOk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZUN0W6nOl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZYM0W6nSk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZYG0W6nSm"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F8ZE90W6nfh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA0wO0W78ee"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA0wP0W78ef"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA12a0W78kq"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "816863f4c2a622f8164714207584c4392a6fadc6",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 158
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "16dt8T0xZjlz"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA12b0W78kr"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA13M0W78lc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FA13Q0W78lo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJSu0W79b6"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAJSv0W79b7"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJTa0W79bm"
+              }
+            }
+          ],
+          "hasMore": true
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:3egtv936oWWt",
+          "batchInfo": "{etag:1669849953602,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAJTb0W79bn"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJTi0W79bu"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAIwR0W7A8h"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "052fd2004a456b1733be98ce5947f4692d847f69",
+                      "filename": "/community/platform/analysis-impl/src/com/intellij/codeInsight/multiverse/EditorContextManagerImpl.kt",
+                      "line": 43
+                    },
+                    "channel": {
+                      "id": "ZVjKz0kapMw"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAIwK0W7A8i"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKgR0W7AHb"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "894d425c4c81ef6f13ca8dacbab8dc8e254b7a83",
+                      "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+                      "line": 116
+                    },
+                    "channel": {
+                      "id": "3PyLHV2fflY8"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKgK0W7AHc"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkT0W7ALl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkU0W7ALm"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Maxim.Medvedev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAKkb0W7ALt"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9Vk10W7T8X"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9Vk20W7T8Y"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9VkC0W7T8a"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Vkt0W7T9H"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9Vkm0W7T9I"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9VqL0W7TEr"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Alexander.Karaev",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9VuI0W7TIg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9VuJ0W7TIh"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Xcp0W7TQF"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9Xcz0W7TQH"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Xd00W7TQI"
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3R2HYj4YFNea",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "> Nothing cached depends on the empty answer, so this comes on any thread, with no lock.\n\nI cannot understand this without knowing context, could you apply some AI to the doc? :)",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iJV0W6edx"
+            },
+            {
+              "text": "Done, let me know if it's still not clear",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003250965
+              },
+              "id": "F8ZTn0W6nOJ"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003257427
+              },
+              "id": "F8ZTw0W6nOK"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:1CCOfM1BrFzN",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "Maybe we could invent some DSL here? \nSomething like \n```\ninterface ContextResult  { // name TBD\n  object FileIsNotMine : ContextResult\n  class Contexts(val contexts: List<CodeInsightContext>) // assert non-empty in CodeInsightManagerImpl\n  object ContextAreBeingLoaded \n}",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iK70W6eeR"
+            },
+            {
+              "text": "Good point, DSL is much cleaner, thanks!",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003271923
+              },
+              "id": "F8ZTy0W6nOM"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003273403
+              },
+              "id": "F8ZTz0W6nON"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:26D9F91XL8dK",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "let's maybe assert not-empty? I mean it might be non-obvious that emptyList is noop and not \"invalidate everything\"",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iK80W6eea"
+            },
+            {
+              "text": "IMO, empty here is completely fine. As a user, I expect API to be intuitive. For example, `requestInvalidation(X) + requestInvalidation(Y)` is same as `requestInvalidation(X + Y)`. And in this sense `emptySet()` is zero element of this operation.\n\nAlso, it makes usage more clear, for example you don't need to handle the `requestInvalidation(someListOfFiles.filter { someCondition(it) })` separately.\n\nI added a comment about behavior for empty `files` instead.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003434099
+              },
+              "id": "F8ZU10W6nOX"
+            },
+            {
+              "text": "LGTM",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793113445066
+              },
+              "id": "FA0wO0W78ee"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793113445120
+              },
+              "id": "FA0wP0W78ef"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:4QT6Ws2mS8bb",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "[major] I think we need a flow and mmerging requsts here so that recheck don't compete with each other",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iKT0W6een"
+            },
+            {
+              "text": "Thanks, I rewrote to the `Channel` (TIL, `ChannelIterator#hasNext` can be `suspend`) - looks simpler than flows.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003547038
+              },
+              "id": "F8ZU90W6nOf"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003567699
+              },
+              "id": "F8ZUL0W6nOj"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:4QhmzD43OJZi",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "result might be stale by the time this runs. \n\nconsider using `readAndBackgroundWriteAction`. it guarantees that the world hasn't changed after read-action finished",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iLT0W6efv"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003573079
+              },
+              "id": "F8ZUM0W6nOk"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3W6D352n7gyl",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "let's use LinkedHashSet here. It would save us from potential nasty ordering problems.\n(a lot of places in platform already swiched to LHS, also kotlin's default is also LHS)",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1792758972623
+              },
+              "id": "F8iNS0W6ehm"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793003581271
+              },
+              "id": "F8ZUN0W6nOl"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:16dt8T0xZjlz",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "unfortunately `cached == null` can mean that cached contexts existed, preferred context was inferred and cached, but later `cached` was gc-ed. So there is no guarantee that preferred context is not set in this case",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793114902441
+              },
+              "id": "FA12a0W78kq"
+            },
+            {
+              "text": "also i'm not sure it's correct to just skip the file when `fresh == null` because of this.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793115194003
+              },
+              "id": "FA13M0W78lc"
+            },
+            {
+              "text": "apparently it's kinda expected that provider returns the actual value for the given file at all times. So if it returns \"loading\" then probably it is the current value and we should drop previous contexts",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793115268999
+              },
+              "id": "FA13Q0W78lo"
+            },
+            {
+              "text": "Thanks, both are fixed:\n\n1. A file with no cached contexts now counts as changed, so the recheck drops it in the write action. The same happens when only the cached preferred context is gone.\n2. `Loading` is gone, together with the \"do not cache the contexts of a loading file\" commit. A provider now returns only `NotOwned` or `Contexts`, so there is no `fresh == null` case.\n\nI also moved the typed `Answer` commit to the start of the branch.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Alexander.Karaev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793134795236
+              },
+              "id": "FAJTi0W79bu"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177615540
+              },
+              "id": "FAKkT0W7ALl"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:ZVjKz0kapMw",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "minor: maybe we want `log.trace { print all invalidated editors here }`",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177619980
+              },
+              "id": "FAIwR0W7A8h"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3PyLHV2fflY8",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "minor: runSafely rethrows control-flow exceptions. instead we should log-error them here",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177619980
+              },
+              "id": "FAKgR0W7AHb"
+            },
+            {
+              "text": "otherwise, the coroutine processing updates dies",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Maxim.Medvedev",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793177670180
+              },
+              "id": "FAKkb0W7ALt"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 230194,
+        "url": "https://jetbrains.team/p/ij/reviews/230194",
+        "title": "CPP-24696: per-file invalidation - fixing performance issue",
+        "body": "",
+        "baseRevision": "ee27accdd04f6e45839bfe4dfab1dd23fd25d38f",
+        "headRevision": "ead1819d13cb1c9e6a9ed3b5588cf3f0bfb88b74",
+        "closeTimestamp": 1793576575757,
+        "threads": [
+          {
+            "threadId": "space-230194-F8iJW0W6edy",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iJW0W6edy&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextManager.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 91,
+            "anchorEndLine": 92,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "> Nothing cached depends on the empty answer, so this comes on any thread, with no lock.\n\nI cannot understand this without knowing context, could you apply some AI to the doc? :)",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Done, let me know if it's still not clear",
+                "createdAt": "2026-10-26T08:27:30.965Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iK00W6eeS",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iK00W6eeS&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextProvider.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 24,
+            "anchorEndLine": 24,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "Maybe we could invent some DSL here? \nSomething like \n```\ninterface ContextResult  { // name TBD\n  object FileIsNotMine : ContextResult\n  class Contexts(val contexts: List<CodeInsightContext>) // assert non-empty in CodeInsightManagerImpl\n  object ContextAreBeingLoaded \n}",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Good point, DSL is much cleaner, thanks!",
+                "createdAt": "2026-10-26T08:27:51.923Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iK90W6eeb",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iK90W6eeb&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 70,
+            "anchorEndLine": 70,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "let's maybe assert not-empty? I mean it might be non-obvious that emptyList is noop and not \"invalidate everything\"",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "IMO, empty here is completely fine. As a user, I expect API to be intuitive. For example, `requestInvalidation(X) + requestInvalidation(Y)` is same as `requestInvalidation(X + Y)`. And in this sense `emptySet()` is zero element of this operation.\n\nAlso, it makes usage more clear, for example you don't need to handle the `requestInvalidation(someListOfFiles.filter { someCondition(it) })` separately.\n\nI added a comment about behavior for empty `files` instead.",
+                "createdAt": "2026-10-26T08:30:34.099Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "LGTM",
+                "createdAt": "2026-10-27T15:04:05.066Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iKU0W6eeo",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iKU0W6eeo&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 72,
+            "anchorEndLine": 72,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "[major] I think we need a flow and mmerging requsts here so that recheck don't compete with each other",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Thanks, I rewrote to the `Channel` (TIL, `ChannelIterator#hasNext` can be `suspend`) - looks simpler than flows.",
+                "createdAt": "2026-10-26T08:32:27.038Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iLc0W6efw",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iLc0W6efw&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 116,
+            "anchorEndLine": 116,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "result might be stale by the time this runs. \n\nconsider using `readAndBackgroundWriteAction`. it guarantees that the world hasn't changed after read-action finished",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-F8iNT0W6ehn",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=F8iNT0W6ehn&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
+            "anchorLine": 133,
+            "anchorEndLine": 133,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "let's use LinkedHashSet here. It would save us from potential nasty ordering problems.\n(a lot of places in platform already swiched to LHS, also kotlin's default is also LHS)",
+                "createdAt": "2026-10-23T12:36:12.623Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-FA12b0W78kr",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=FA12b0W78kr&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "816863f4c2a622f8164714207584c4392a6fadc6",
+            "anchorLine": 159,
+            "anchorEndLine": 159,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "unfortunately `cached == null` can mean that cached contexts existed, preferred context was inferred and cached, but later `cached` was gc-ed. So there is no guarantee that preferred context is not set in this case",
+                "createdAt": "2026-10-27T15:28:22.441Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "also i'm not sure it's correct to just skip the file when `fresh == null` because of this.",
+                "createdAt": "2026-10-27T15:33:14.003Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "apparently it's kinda expected that provider returns the actual value for the given file at all times. So if it returns \"loading\" then probably it is the current value and we should drop previous contexts",
+                "createdAt": "2026-10-27T15:34:28.999Z"
+              },
+              {
+                "author": "Alexander.Karaev",
+                "body": "Thanks, both are fixed:\n\n1. A file with no cached contexts now counts as changed, so the recheck drops it in the write action. The same happens when only the cached preferred context is gone.\n2. `Loading` is gone, together with the \"do not cache the contexts of a loading file\" commit. A provider now returns only `NotOwned` or `Contexts`, so there is no `fresh == null` case.\n\nI also moved the typed `Answer` commit to the start of the branch.",
+                "createdAt": "2026-10-27T20:59:55.236Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-FAIwK0W7A8i",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=FAIwK0W7A8i&channel=3egtv936oWWt",
+            "filePath": "community/platform/analysis-impl/src/com/intellij/codeInsight/multiverse/EditorContextManagerImpl.kt",
+            "originalCommitSha": "052fd2004a456b1733be98ce5947f4692d847f69",
+            "anchorLine": 44,
+            "anchorEndLine": 44,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "minor: maybe we want `log.trace { print all invalidated editors here }`",
+                "createdAt": "2026-10-28T08:53:39.980Z"
+              }
+            ]
+          },
+          {
+            "threadId": "space-230194-FAKgK0W7AHc",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/fEcR60hDomc?message=FAKgK0W7AHc&channel=3egtv936oWWt",
+            "filePath": "community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
+            "originalCommitSha": "894d425c4c81ef6f13ca8dacbab8dc8e254b7a83",
+            "anchorLine": 117,
+            "anchorEndLine": 117,
+            "messages": [
+              {
+                "author": "Maxim.Medvedev",
+                "body": "minor: runSafely rethrows control-flow exceptions. instead we should log-error them here",
+                "createdAt": "2026-10-28T08:53:39.980Z"
+              },
+              {
+                "author": "Maxim.Medvedev",
+                "body": "otherwise, the coroutine processing updates dies",
+                "createdAt": "2026-10-28T08:54:30.180Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": []
+  }
+}

@@ -1,0 +1,909 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/9413",
+          "number": 9413,
+          "title": "KT-88617 [Analysis API] Adjust return type of `KaTypeCreator.capturedType`",
+          "user": {
+            "login": "BlaBlaHuman",
+            "type": "User"
+          },
+          "merged_at": "2026-10-31T00:07:35Z",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "27ff017ae49d78b6b6d18bf70654ceb3e3b27e8e",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "d9b08aa7eab8d19d3d6f7d3d31c0fa49898e8194",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9173",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/9173",
+          "number": 9173,
+          "title": "[JKlib] Hand the FIR2IR output to the consumer instead of round-tripping it through a KLIB",
+          "user": {
+            "login": "jDramaix",
+            "type": "User"
+          },
+          "body": "To produce the IR it hands to its consumer, the JKlib compiler serializes the module into a KLIB, then deserializes and relinks it. This PR removes that round trip: the consumer now gets the IR produced by FIR2IR and the first-phase lowerings directly, through `K2JKlibCompiler.compileToIr`.\r\n\r\nSince #8825, inline functions are inlined before serialization. The only thing the round trip still provided was linking the symbols referenced by the inlined bodies of the dependencies. Those are now resolved directly against the current compilation, which is possible because the consumer always passes the full set of transitive dependencies.\r\n\r\nThis makes compilation faster, removes the last part of JKlib that depended on the K1 frontend, and fixes the tests that were failing only because of the deserialization.\r\n\r\n^KT-86203 Fixed\r\n^KT-88375 Fixed\r\n^KT-89344 Fixed\r\n^KT-86172 Fixed\r\n^KT-86966 Fixed\r\n^KT-86861 Fixed\r\n^KT-86863 Fixed\r\n^KT-86351 Fixed\r\n^KT-87334 Fixed\r\n^KT-86160 Fixed\r\n^KT-85978 Fixed\r\n^KT-86252 Fixed",
+          "merged_at": "2026-10-30T22:16:48Z",
+          "requested_reviewers": [
+            {
+              "login": "kunyavskiy",
+              "type": "User"
+            }
+          ],
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "0acefbed2693f4d36eecaea77ea08ff951ad5e7a",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "eff4cdd7d574a24ea59cee97792f25796d95682a",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9173/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 4408454943,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            },
+            "body": "FileDeserializer's irFile's property is eagerly instantiated so here we would be instantiating them eagerly even if they are not used. That might be a worthy followup",
+            "created_at": "2026-10-29T03:39:40Z",
+            "original_start_line": null,
+            "original_line": 106
+          },
+          {
+            "id": 4408464960,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            },
+            "body": "Probably a non issue for this cl, but this would fail if @ JvmName() was ever used in an accessor function\n\nThis might be better\n```\nif (signature is IdSignature.AccessorSignature) {\n    val property = findProperty(signature.propertySignature)?.owner ?: return null\n    return listOfNotNull(property.getter, property.setter).matching(signature)?.symbol\n}\n```",
+            "created_at": "2026-10-29T03:41:48Z",
+            "original_start_line": null,
+            "original_line": 87
+          },
+          {
+            "id": 4409937612,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            },
+            "body": "Minor: you can use getOrPut for that. ",
+            "created_at": "2026-10-29T08:01:58Z",
+            "original_start_line": 61,
+            "original_line": 63
+          },
+          {
+            "id": 4409960296,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            },
+            "body": "That looks weird. \n1. For libraries compiled with recent versions it's just always true\n2. You can have a reference to other library in inline function, why we check only this?",
+            "created_at": "2026-10-29T08:05:25Z",
+            "original_start_line": null,
+            "original_line": 66
+          },
+          {
+            "id": 4409968968,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            },
+            "body": "It looks like, you haven't added the declaration to list of declarations of class. Probably no-one cares in that specifc case. ",
+            "created_at": "2026-10-29T08:06:42Z",
+            "original_start_line": null,
+            "original_line": 80
+          },
+          {
+            "id": 4410620598,
+            "path": "compiler/testData/ir/irText/declarations/inlineCollectionOfInlineClass.ir.jklib.patch",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "Do you need this *.patch file?",
+            "created_at": "2026-10-29T09:24:43Z",
+            "original_start_line": 1,
+            "original_line": 2
+          },
+          {
+            "id": 4410662404,
+            "path": "compiler/cli/cli-jklib/build.gradle.kts",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "Please add a comment that the only class you need from this module is `org.jetbrains.kotlin.ir.backend.jvm.serialization.JvmIrMangler`. There is a likehood that we'll drop all the usages of `JvmIrMangler` in our codebase, and then you'll be able to move it to JKlib and drop this dependency.",
+            "created_at": "2026-10-29T09:29:24Z",
+            "original_start_line": null,
+            "original_line": 15
+          },
+          {
+            "id": 4410684832,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "Yes, looks suspicious. I'd add `enclosingClass.declarations += it` at least.",
+            "created_at": "2026-10-29T09:31:43Z",
+            "original_start_line": null,
+            "original_line": 80,
+            "in_reply_to_id": 4409968968
+          },
+          {
+            "id": 4410699085,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "Same here: `topLevel.file.irFile.declarations += it`",
+            "created_at": "2026-10-29T09:33:19Z",
+            "original_start_line": null,
+            "original_line": 98
+          },
+          {
+            "id": 4410764341,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "We use this callback to memoize the (local) class that we need to build FOs for. If you are not going to support local classes in JKlib, please add an explicit comment to the empty lambda. This will make it more transparent and easier to maintain the code in the future.",
+            "created_at": "2026-10-29T09:40:40Z",
+            "original_start_line": null,
+            "original_line": 155
+          },
+          {
+            "id": 4410841837,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "Yep\n```\nreturn cache.getOrPut(signature) { resolveUncached(signature, symbolKind) }\n```",
+            "created_at": "2026-10-29T09:48:19Z",
+            "original_start_line": 61,
+            "original_line": 63,
+            "in_reply_to_id": 4409937612
+          },
+          {
+            "id": 4410886701,
+            "path": "compiler/testData/ir/irText/declarations/inlineCollectionOfInlineClass.ir.jklib.patch",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "BTW, there are more *.patch files among test data.",
+            "created_at": "2026-10-29T09:53:07Z",
+            "original_start_line": 1,
+            "original_line": 2,
+            "in_reply_to_id": 4410620598
+          },
+          {
+            "id": 4418180230,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "getOrPut does not cache null value. I do not want to go to `resolveUncached` again if it cannot resolve the signature.",
+            "created_at": "2026-10-29T21:39:14Z",
+            "original_start_line": 61,
+            "original_line": 63,
+            "in_reply_to_id": 4409937612
+          },
+          {
+            "id": 4418342590,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "1. The KDoc of `KlibComponentsContainer.inlinableFunctionsIr` says \"This component is optional: The [inlinableFunctionsIr] getter returns `null` if there is no IR of inlinable functions in the library.\" Is the documentation outdated ?\n\n\n2. The only declarations looked up here are the ones that exist in the IR of a KLIB but not in its metadata, i.e. the synthetic accessors generated by the first phase. Such a declaration in a library named  B is only generated for a non-private inline function of B, so B always has an `inlinableFunctionsIr` component. It can only end up in the inline body of another library A through B's inline function being inlined into A, which is why all the libraries with inline functions are searched. The filter is there to avoid indexing libraries that can't contain such declarations\n\n",
+            "created_at": "2026-10-29T21:58:42Z",
+            "original_start_line": null,
+            "original_line": 66,
+            "in_reply_to_id": 4409960296
+          },
+          {
+            "id": 4420922881,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "`@JvmName` doesn't affect this: the accessor part of the signature is built from the accessor's IR name, and FIR2IR always names accessors `<get-x>/<set-x>`. `@JvmName` only changes the JVM method name. I added a test with `@JvmName` on the getter and setter of a top-level and a member property (`crossModuleJvmNameAccessors.kt`). \n\nThat being said, matching on the signature is more consistent with the rest of the resolver and doesn't rely on the naming convention, so I've switched to your version.",
+            "created_at": "2026-10-30T06:09:49Z",
+            "original_start_line": null,
+            "original_line": 87,
+            "in_reply_to_id": 4408464960
+          },
+          {
+            "id": 4420969534,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "Done",
+            "created_at": "2026-10-30T06:18:34Z",
+            "original_start_line": null,
+            "original_line": 98,
+            "in_reply_to_id": 4410699085
+          },
+          {
+            "id": 4420970356,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "yep it's not an issue for this kind of synthetic member but for the sake of completeness I'll add the declaration to the list.",
+            "created_at": "2026-10-30T06:18:44Z",
+            "original_start_line": null,
+            "original_line": 80,
+            "in_reply_to_id": 4409968968
+          },
+          {
+            "id": 4421939139,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "You're right but making that lazy feels like premature optimization to me, though (\"premature optimization is the root of all evil\"), and I think the cost here is limited:\n- it is referenced for creating `symbolDeserializer` that is used in this function\n- Indexing is lazy per library. `deserializeMember` only indexes the library of the enclosing class. `deserializeTopLevel` indexes the libraries one at a time and stops at the first one that declares the signature.\n- It only happens for synthetic declaration that exists only in IR is actually requested, which I expect to be rare.\n- I do not think the bigger cost is the IrFile when indexing a library: it's parsing every file and decoding its top-level signatures, which the index needs anyway.\n\nIf it ever shows up in a profile, we can reconsider that.",
+            "created_at": "2026-10-30T08:52:29Z",
+            "original_start_line": null,
+            "original_line": 106,
+            "in_reply_to_id": 4408454943
+          },
+          {
+            "id": 4422586527,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "Only function headers of synthetic accessors are deserialized here. Their bodies are skipped since those functions are never inline, and I don;t think their return type can't leak a local type. \n\nSo no class is ever deserialized and there are no fake overrides to build. I changed the callback to throw, so this assumption gets checked.",
+            "created_at": "2026-10-30T10:17:53Z",
+            "original_start_line": null,
+            "original_line": 155,
+            "in_reply_to_id": 4410764341
+          },
+          {
+            "id": 4422608826,
+            "path": "compiler/cli/cli-jklib/build.gradle.kts",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "Done",
+            "created_at": "2026-10-30T10:20:52Z",
+            "original_start_line": null,
+            "original_line": 15,
+            "in_reply_to_id": 4410662404
+          },
+          {
+            "id": 4422670720,
+            "path": "compiler/testData/ir/irText/declarations/inlineCollectionOfInlineClass.ir.jklib.patch",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "These patches are needed because the JKlib tests don't compile against the same JDK as the JVM tests (See JKlibEnvironmentConfigurator that replaces the mock JDK with JDK 17). Do we have more default methods and so more FOs that aren't in the shared dumps\nI'm working on that right now and ll follow up with a separate PR to align the JDK used by the JKlib tests with the JVM ones, which should let us drop these patches.",
+            "created_at": "2026-10-30T10:29:02Z",
+            "original_start_line": 1,
+            "original_line": 2,
+            "in_reply_to_id": 4410620598
+          },
+          {
+            "id": 4424036649,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            },
+            "body": "@jDramaix If you add a part about synthetic accessors to the comment above val, it becomes much more clear.",
+            "created_at": "2026-10-30T13:19:33Z",
+            "original_start_line": null,
+            "original_line": 66,
+            "in_reply_to_id": 4409960296
+          },
+          {
+            "id": 4425893655,
+            "path": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "original_commit_id": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            },
+            "body": "Done",
+            "created_at": "2026-10-30T16:22:49Z",
+            "original_start_line": null,
+            "original_line": 66,
+            "in_reply_to_id": 4409960296
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9173/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 5626372773,
+            "user": {
+              "login": "sellmair",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5665205975,
+            "user": {
+              "login": "sellmair",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5692332634,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5692565604,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5692577899,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5694508387,
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5694538350,
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5694549756,
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5694586800,
+            "user": {
+              "login": "kunyavskiy",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5695441397,
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5695806858,
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5705331959,
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5711222358,
+            "user": {
+              "login": "sellmair",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5712819318,
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5712835664,
+            "user": {
+              "login": "ddolovov",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5715295189,
+            "user": {
+              "login": "zardilior",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5715298600,
+            "user": {
+              "login": "jDramaix",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/999999",
+        "query": {}
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "Not Found"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/5976",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "number": 5976,
+          "user": {
+            "login": "fzhinkin",
+            "type": "User"
+          },
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 9413,
+        "url": "https://github.com/JetBrains/kotlin/pull/9413",
+        "title": "KT-88617 [Analysis API] Adjust return type of `KaTypeCreator.capturedType`",
+        "body": "",
+        "baseRevision": "d9b08aa7eab8d19d3d6f7d3d31c0fa49898e8194",
+        "headRevision": "27ff017ae49d78b6b6d18bf70654ceb3e3b27e8e",
+        "closeTimestamp": 1793405255000,
+        "threads": []
+      },
+      {
+        "number": 9173,
+        "url": "https://github.com/JetBrains/kotlin/pull/9173",
+        "title": "[JKlib] Hand the FIR2IR output to the consumer instead of round-tripping it through a KLIB",
+        "body": "To produce the IR it hands to its consumer, the JKlib compiler serializes the module into a KLIB, then deserializes and relinks it. This PR removes that round trip: the consumer now gets the IR produced by FIR2IR and the first-phase lowerings directly, through `K2JKlibCompiler.compileToIr`.\r\n\r\nSince #8825, inline functions are inlined before serialization. The only thing the round trip still provided was linking the symbols referenced by the inlined bodies of the dependencies. Those are now resolved directly against the current compilation, which is possible because the consumer always passes the full set of transitive dependencies.\r\n\r\nThis makes compilation faster, removes the last part of JKlib that depended on the K1 frontend, and fixes the tests that were failing only because of the deserialization.\r\n\r\n^KT-86203 Fixed\r\n^KT-88375 Fixed\r\n^KT-89344 Fixed\r\n^KT-86172 Fixed\r\n^KT-86966 Fixed\r\n^KT-86861 Fixed\r\n^KT-86863 Fixed\r\n^KT-86351 Fixed\r\n^KT-87334 Fixed\r\n^KT-86160 Fixed\r\n^KT-85978 Fixed\r\n^KT-86252 Fixed",
+        "baseRevision": "eff4cdd7d574a24ea59cee97792f25796d95682a",
+        "headRevision": "0acefbed2693f4d36eecaea77ea08ff951ad5e7a",
+        "closeTimestamp": 1793398608000,
+        "threads": [
+          {
+            "threadId": "github-9173-4408454943",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4408454943",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 106,
+            "anchorEndLine": 106,
+            "messages": [
+              {
+                "author": "zardilior",
+                "body": "FileDeserializer's irFile's property is eagerly instantiated so here we would be instantiating them eagerly even if they are not used. That might be a worthy followup",
+                "createdAt": "2026-10-29T03:39:40Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "You're right but making that lazy feels like premature optimization to me, though (\"premature optimization is the root of all evil\"), and I think the cost here is limited:\n- it is referenced for creating `symbolDeserializer` that is used in this function\n- Indexing is lazy per library. `deserializeMember` only indexes the library of the enclosing class. `deserializeTopLevel` indexes the libraries one at a time and stops at the first one that declares the signature.\n- It only happens for synthetic declaration that exists only in IR is actually requested, which I expect to be rare.\n- I do not think the bigger cost is the IrFile when indexing a library: it's parsing every file and decoding its top-level signatures, which the index needs anyway.\n\nIf it ever shows up in a profile, we can reconsider that.",
+                "createdAt": "2026-10-30T08:52:29Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4408464960",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4408464960",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 87,
+            "anchorEndLine": 87,
+            "messages": [
+              {
+                "author": "zardilior",
+                "body": "Probably a non issue for this cl, but this would fail if @ JvmName() was ever used in an accessor function\n\nThis might be better\n```\nif (signature is IdSignature.AccessorSignature) {\n    val property = findProperty(signature.propertySignature)?.owner ?: return null\n    return listOfNotNull(property.getter, property.setter).matching(signature)?.symbol\n}\n```",
+                "createdAt": "2026-10-29T03:41:48Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "`@JvmName` doesn't affect this: the accessor part of the signature is built from the accessor's IR name, and FIR2IR always names accessors `<get-x>/<set-x>`. `@JvmName` only changes the JVM method name. I added a test with `@JvmName` on the getter and setter of a top-level and a member property (`crossModuleJvmNameAccessors.kt`). \n\nThat being said, matching on the signature is more consistent with the rest of the resolver and doesn't rely on the naming convention, so I've switched to your version.",
+                "createdAt": "2026-10-30T06:09:49Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4409937612",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4409937612",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibInlineFunctionSymbolResolver.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 61,
+            "anchorEndLine": 63,
+            "messages": [
+              {
+                "author": "kunyavskiy",
+                "body": "Minor: you can use getOrPut for that. ",
+                "createdAt": "2026-10-29T08:01:58Z"
+              },
+              {
+                "author": "ddolovov",
+                "body": "Yep\n```\nreturn cache.getOrPut(signature) { resolveUncached(signature, symbolKind) }\n```",
+                "createdAt": "2026-10-29T09:48:19Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "getOrPut does not cache null value. I do not want to go to `resolveUncached` again if it cannot resolve the signature.",
+                "createdAt": "2026-10-29T21:39:14Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4409960296",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4409960296",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 66,
+            "anchorEndLine": 66,
+            "messages": [
+              {
+                "author": "kunyavskiy",
+                "body": "That looks weird. \n1. For libraries compiled with recent versions it's just always true\n2. You can have a reference to other library in inline function, why we check only this?",
+                "createdAt": "2026-10-29T08:05:25Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "1. The KDoc of `KlibComponentsContainer.inlinableFunctionsIr` says \"This component is optional: The [inlinableFunctionsIr] getter returns `null` if there is no IR of inlinable functions in the library.\" Is the documentation outdated ?\n\n\n2. The only declarations looked up here are the ones that exist in the IR of a KLIB but not in its metadata, i.e. the synthetic accessors generated by the first phase. Such a declaration in a library named  B is only generated for a non-private inline function of B, so B always has an `inlinableFunctionsIr` component. It can only end up in the inline body of another library A through B's inline function being inlined into A, which is why all the libraries with inline functions are searched. The filter is there to avoid indexing libraries that can't contain such declarations\n\n",
+                "createdAt": "2026-10-29T21:58:42Z"
+              },
+              {
+                "author": "ddolovov",
+                "body": "@jDramaix If you add a part about synthetic accessors to the comment above val, it becomes much more clear.",
+                "createdAt": "2026-10-30T13:19:33Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "Done",
+                "createdAt": "2026-10-30T16:22:49Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4409968968",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4409968968",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 80,
+            "anchorEndLine": 80,
+            "messages": [
+              {
+                "author": "kunyavskiy",
+                "body": "It looks like, you haven't added the declaration to list of declarations of class. Probably no-one cares in that specifc case. ",
+                "createdAt": "2026-10-29T08:06:42Z"
+              },
+              {
+                "author": "ddolovov",
+                "body": "Yes, looks suspicious. I'd add `enclosingClass.declarations += it` at least.",
+                "createdAt": "2026-10-29T09:31:43Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "yep it's not an issue for this kind of synthetic member but for the sake of completeness I'll add the declaration to the list.",
+                "createdAt": "2026-10-30T06:18:44Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4410620598",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4410620598",
+            "filePath": "compiler/testData/ir/irText/declarations/inlineCollectionOfInlineClass.ir.jklib.patch",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 1,
+            "anchorEndLine": 2,
+            "messages": [
+              {
+                "author": "ddolovov",
+                "body": "Do you need this *.patch file?",
+                "createdAt": "2026-10-29T09:24:43Z"
+              },
+              {
+                "author": "ddolovov",
+                "body": "BTW, there are more *.patch files among test data.",
+                "createdAt": "2026-10-29T09:53:07Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "These patches are needed because the JKlib tests don't compile against the same JDK as the JVM tests (See JKlibEnvironmentConfigurator that replaces the mock JDK with JDK 17). Do we have more default methods and so more FOs that aren't in the shared dumps\nI'm working on that right now and ll follow up with a separate PR to align the JDK used by the JKlib tests with the JVM ones, which should let us drop these patches.",
+                "createdAt": "2026-10-30T10:29:02Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4410662404",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4410662404",
+            "filePath": "compiler/cli/cli-jklib/build.gradle.kts",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 15,
+            "anchorEndLine": 15,
+            "messages": [
+              {
+                "author": "ddolovov",
+                "body": "Please add a comment that the only class you need from this module is `org.jetbrains.kotlin.ir.backend.jvm.serialization.JvmIrMangler`. There is a likehood that we'll drop all the usages of `JvmIrMangler` in our codebase, and then you'll be able to move it to JKlib and drop this dependency.",
+                "createdAt": "2026-10-29T09:29:24Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "Done",
+                "createdAt": "2026-10-30T10:20:52Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4410699085",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4410699085",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 98,
+            "anchorEndLine": 98,
+            "messages": [
+              {
+                "author": "ddolovov",
+                "body": "Same here: `topLevel.file.irFile.declarations += it`",
+                "createdAt": "2026-10-29T09:33:19Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "Done",
+                "createdAt": "2026-10-30T06:18:34Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-9173-4410764341",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/9173#discussion_r4410764341",
+            "filePath": "compiler/cli/cli-jklib/src/org/jetbrains/kotlin/cli/jklib/pipeline/JKlibIrOnlyDeclarationDeserializer.kt",
+            "originalCommitSha": "03cb5a509caa53c5ca43f7ddabadb25d550e77e6",
+            "anchorLine": 155,
+            "anchorEndLine": 155,
+            "messages": [
+              {
+                "author": "ddolovov",
+                "body": "We use this callback to memoize the (local) class that we need to build FOs for. If you are not going to support local classes in JKlib, please add an explicit comment to the empty lambda. This will make it more transparent and easier to maintain the code in the future.",
+                "createdAt": "2026-10-29T09:40:40Z"
+              },
+              {
+                "author": "jDramaix",
+                "body": "Only function headers of synthetic accessors are deserialized here. Their bodies are skipped since those functions are never inline, and I don;t think their return type can't leak a local type. \n\nSo no class is ever deserialized and there are no fake overrides to build. I changed the callback to throw, so this assumption gets checked.",
+                "createdAt": "2026-10-30T10:17:53Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": [
+      "GitHub PR 999999: GitHub read of /repos/JetBrains/kotlin/pulls/999999 returned HTTP 404: Not Found"
+    ]
+  }
+}

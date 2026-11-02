@@ -1,0 +1,27 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:29541",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "CommitSetReviewRecord",
+          "number": 29541
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [],
+    "problems": [
+      "Space PR 29541: Space review is a review of commits, not a merge request"
+    ]
+  }
+}

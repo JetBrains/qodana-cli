@@ -184,9 +184,7 @@ internal class WeakSignalPromotionService(
       require(fix.lines.isNotEmpty() && fix.lines.distinct().size == fix.lines.size) { "Supply unique fixed lines for '${fix.path}'" }
       fix.lines.map { fix.path to it }
     }
-    require(fixed.size in 1..MAX_WEAK_SIGNAL_FIXES && fixed.all { it in selected }) {
-      "Fix only 1 to $MAX_WEAK_SIGNAL_FIXES selected true-positive locations"
-    }
+    require(fixed.all { it in selected }) { "Fix only selected true-positive locations" }
     val targetBranch = reviews.resolveTargetBranch(executionBranch())
     repository.loadActiveWeakSignalPromotions()[clusterId]?.firstOrNull()?.let { return it }
     val target = reviews.repository
@@ -194,7 +192,7 @@ internal class WeakSignalPromotionService(
     val fixesDigest = sha256Hex(
       fixes.sortedBy { it.path }.joinToString("\u0000") { "${it.path}\u0000${sha256Hex(it.content)}" },
     )
-    val id = "w-${sha256Hex("$clusterId\u0000$inspectionDigest\u0000${candidate.projectRevision}\u0000${target.provider}\u0000${target.owner}\u0000${target.repository}\u0000$targetBranch\u0000$fixesDigest").take(24)}"
+    val id = "w-${sha256Hex("$clusterId\u0000$inspectionDigest\u0000${candidate.projectRevision}\u0000${target.label()}\u0000$targetBranch\u0000$fixesDigest").take(24)}"
     val description = buildString {
       appendLine("## Inspection")
       appendLine()

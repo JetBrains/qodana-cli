@@ -1,712 +1,640 @@
+// Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.promotion
 
-import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
-import org.jetbrains.qodana.edict.ci.*
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
-import org.jetbrains.qodana.edict.common.EdictConfiguration
-import org.jetbrains.qodana.edict.common.PromotionConfiguration
-import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.common.flag
-import org.jetbrains.qodana.edict.edictnext.*
-import org.jetbrains.qodana.edict.support.edictNextToolset
-import org.jetbrains.qodana.edict.support.launch
+import org.jetbrains.qodana.edict.ci.ReviewState
+import org.jetbrains.qodana.edict.ci.ReviewStatus
+import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.PromotionPrState
+import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
+import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.promotion.support.CANDIDATE
+import org.jetbrains.qodana.edict.promotion.support.CHANGED_SOURCE_FIXES
+import org.jetbrains.qodana.edict.promotion.support.CHANGED_SOURCE_FIX_OPERATION_ID
+import org.jetbrains.qodana.edict.promotion.support.CHECKED_MERGED_SOURCE_FIX
+import org.jetbrains.qodana.edict.promotion.support.CORRECTIONS
+import org.jetbrains.qodana.edict.promotion.support.EquivalentPublication
+import org.jetbrains.qodana.edict.promotion.support.FINDINGS
+import org.jetbrains.qodana.edict.promotion.support.ForgedCorrection
+import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
+import org.jetbrains.qodana.edict.promotion.support.InvalidPublication
+import org.jetbrains.qodana.edict.promotion.support.POSITIVE_CORRECTION
+import org.jetbrains.qodana.edict.promotion.support.PROMOTION_REPOSITORY
+import org.jetbrains.qodana.edict.promotion.support.REVIEW_FEEDBACK
+import org.jetbrains.qodana.edict.promotion.support.SECRET
+import org.jetbrains.qodana.edict.promotion.support.SECRET_REDACTION
+import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIXES
+import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ACCEPTED
+import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ON_REVIEW
+import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_REQUEST
+import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_REVIEW
+import org.jetbrains.qodana.edict.promotion.support.UnpreparedCluster
+import org.jetbrains.qodana.edict.promotion.support.UnselectableFinding
+import org.jetbrains.qodana.edict.promotion.support.VALIDATION
+import org.jetbrains.qodana.edict.promotion.support.activeReviewsText
+import org.jetbrains.qodana.edict.promotion.support.checkedSourceFix
+import org.jetbrains.qodana.edict.promotion.support.correctableCluster
+import org.jetbrains.qodana.edict.promotion.support.correctedCluster
+import org.jetbrains.qodana.edict.promotion.support.finding
+import org.jetbrains.qodana.edict.promotion.support.mergeSourceFix
+import org.jetbrains.qodana.edict.promotion.support.projectReview
+import org.jetbrains.qodana.edict.promotion.support.promotionRepository
+import org.jetbrains.qodana.edict.promotion.support.referencedCluster
+import org.jetbrains.qodana.edict.promotion.support.replaceInspection
+import org.jetbrains.qodana.edict.promotion.support.storeActiveReview
+import org.jetbrains.qodana.edict.promotion.support.storeArchivedReview
+import org.jetbrains.qodana.edict.promotion.support.storeUnreadableArchive
+import org.jetbrains.qodana.edict.promotion.support.storeUnreadableCluster
+import org.jetbrains.qodana.edict.promotion.support.store
+import org.jetbrains.qodana.edict.promotion.support.unreferencedCluster
+import org.jetbrains.qodana.edict.promotion.support.weakCluster
+import org.jetbrains.qodana.edict.promotion.support.weakSignalService
+import org.jetbrains.qodana.edict.promotion.support.withEvaluation
+import org.jetbrains.qodana.edict.support.FakeReviewApi
+import org.jetbrains.qodana.edict.support.ReviewStep
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.EnumSource
 import java.nio.file.Path
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import kotlin.io.path.createDirectories
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
-class WeakSignalPromotionServiceTest {
-  @TempDir lateinit var directory: Path
-  private val revision = "a".repeat(40)
-  private val digest = sha256Hex("inspection")
-  private val configuration = EdictConfiguration(
-    ci = EdictCIConfiguration("https://github.com/owner/repo"),
-    promotion = PromotionConfiguration("reviewer", "main"),
-  )
+internal class WeakSignalPromotionServiceTest {
+  @TempDir
+  lateinit var directory: Path
+
+  private val repository by lazy { promotionRepository(directory) }
+  private val reviews = FakeReviewApi(PROMOTION_REPOSITORY)
+  private val service by lazy { weakSignalService(repository, reviews) }
+
+  // prepare
 
   @Test
-  fun `source fixes always target execution branch independently of inspection publication`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val service = PromotionService({ repository }, configuration.copy(
-      promotion = configuration.promotion!!.copy(targetBranch = "edict-2"),
-    ), provider, executionBranch = { "master" })
-    service.promoteWeakSignals("weak", digest,
-      listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    assertEquals("master", provider.requests.single().targetBranch)
+  fun `a weak cluster's candidate holds its true positives by path and line`() {
+    repository.store(weakCluster())
+
+    assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE), emptyList()), service.prepare())
   }
 
   @Test
-  fun `selects at most five distinct true positives only from eligible generated inspections`() {
-    val repository = repository()
-    cluster(repository, "weak", findings = (1..7).map(::finding) + finding(1))
-    cluster(repository, "strong", strongSignals = 5)
-    cluster(repository, "same-file", strongSignals = 6, sourceFiles = 1)
-    cluster(repository, "pending", status = EdictNextClusterStatus.Pending)
-    cluster(repository, "no-tp", findings = emptyList())
-    // Commit references qualify for normal promotion even without explicit URLs.
-    cluster(repository, "unreferenced", strongSignals = 6, references = false)
-    val result = service(repository).prepare()
+  fun `a candidate holds the first five distinct true positives`() {
+    repository.store(weakCluster(findings = (7 downTo 1).map(::finding) + finding(1)))
 
-    assertTrue(result.failures.isEmpty())
-    assertEquals(listOf("same-file", "weak"), result.candidates.map { it.clusterId })
-    val selected = result.candidates.single { it.clusterId == "weak" }
-    assertEquals((1..5).toList(), selected.findings.map { it.fileRevision.expectedRanges!!.first().start })
-    assertEquals(revision, selected.projectRevision)
-    assertEquals("Avoid busy waiting", selected.inspectionDescription)
-    assertEquals(digest, selected.inspectionDigest)
+    assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE.copy(findings = (1..5).map(::finding))), emptyList()), service.prepare())
+  }
+
+  @ParameterizedTest
+  @EnumSource(UnselectableFinding::class)
+  fun `a true positive a source fix cannot select is left out`(unselectable: UnselectableFinding) {
+    repository.store(weakCluster(findings = FINDINGS + unselectable.finding))
+
+    assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE), emptyList()), service.prepare())
   }
 
   @Test
-  fun `normal and weak promotion use the same positive source file threshold`() {
-    val repository = repository()
-    cluster(repository, "mixed", strongSignals = 5, negativeSignals = 1)
-    cluster(repository, "negative-only", strongSignals = 6, negativeSignals = 6)
-    cluster(repository, "positive-only", strongSignals = 5)
-    val provider = FakeReviews()
+  fun `a cluster whose strong signals have no references is a candidate`() {
+    repository.store(unreferencedCluster().withEvaluation(projectReview()))
 
-    val normalService = PromotionService({ repository }, configuration, provider)
-    val normal = normalService.promote(normalService.select().candidates.map { it.clusterId })
-    assertTrue(normal.failures.isEmpty())
-    assertEquals(listOf("inspections/positive-only.inspection.kts"), normal.created.map { it.targetPath })
-
-    val weak = service(repository, provider)
-    val selection = weak.prepare()
-    assertTrue(selection.failures.isEmpty())
-    assertEquals(listOf("mixed", "negative-only"), selection.candidates.map { it.clusterId })
-    val fixes = listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting"))
-    weak.publish("mixed", digest, fixes, "Reviewed diff")
-    assertEquals(mapOf("src/Worker.kt" to "fixed"), provider.requests.last().sourceFix!!.files)
-    assertFailsWith<IllegalArgumentException> {
-      weak.publish("positive-only", digest, fixes, "Reviewed diff")
-    }
+    assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE), emptyList()), service.prepare())
   }
 
   @Test
-  fun `publishes source improvements with inspection explanation and acceptance request once across restarts`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val fixes = listOf(WeakSignalFix("src/Worker.kt", listOf(1, 2), "fun waitForResult() = latch.await()", "Wait for completion instead of spinning"))
+  fun `a cluster with five referenced source files is no candidate`() {
+    repository.store(referencedCluster().withEvaluation(projectReview()))
 
-    val promotion = service(repository, provider).publish("weak", digest, fixes, "Reviewed diff; focused tests passed")
-    assertEquals(PromotionPrState.ON_REVIEW, promotion.state)
-    assertEquals(promotion, repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().single())
-    assertTrue(repository.loadCluster("weak").manifest.promotions.isEmpty())
-    assertEquals(EdictNextClusterStatus.Generated, repository.loadCluster("weak").manifest.status)
-    val request = provider.requests.single()
-    assertEquals(mapOf("src/Worker.kt" to fixes.single().content), request.sourceFix!!.files)
-    assertEquals(revision, request.sourceFix.baseRevision)
-    assertEquals(configuration.ci!!.reviewRepository, request.repository)
-    assertEquals("reviewer", request.reviewer)
-    assertContains(request.description, "Avoid busy waiting")
-    assertContains(request.description, "accept/merge this PR if you agree")
-    assertContains(request.description, "focused tests passed")
-    assertContains(request.description, "original lines 1, 2")
-
-    val restarted = service(EdictRepository(EdictRepositoryDirectory(repository.paths.root)), provider)
-    assertTrue(restarted.prepare().candidates.isEmpty())
-    assertEquals(promotion, restarted.publish("weak", digest, fixes, "Already validated"))
-    assertEquals(1, provider.requests.size)
+    assertEquals(WeakSignalPreparationResponse(emptyList(), emptyList()), service.prepare())
   }
 
   @Test
-  fun `rejects unselected paths and lines more than five locations duplicate files and changed inspection`() {
-    val repository = repository()
-    cluster(repository, "weak", findings = (1..8).map(::finding))
-    val provider = FakeReviews()
-    val service = service(repository, provider)
-    val fix = WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")
-    val invalid = listOf(
-      emptyList(),
-      listOf(fix.copy(path = "src/Other.kt")),
-      listOf(fix.copy(path = "../Other.kt")),
-      listOf(fix.copy(lines = listOf(6))),
-      listOf(fix.copy(lines = (1..6).toList())),
-      listOf(fix.copy(lines = listOf(1, 1))),
-      listOf(fix, fix.copy(lines = listOf(2))),
-      listOf(fix.copy(content = "")),
+  fun `a cluster that is not generated is no candidate`() {
+    repository.store(weakCluster().copy(status = EdictNextClusterStatus.Pending))
+
+    assertEquals(WeakSignalPreparationResponse(emptyList(), emptyList()), service.prepare())
+  }
+
+  @Test
+  fun `a cluster without true positives is no candidate`() {
+    repository.store(weakCluster(findings = emptyList()))
+
+    assertEquals(WeakSignalPreparationResponse(emptyList(), emptyList()), service.prepare())
+  }
+
+  @Test
+  fun `a cluster with an active source-fix review is no candidate`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+
+    assertEquals(WeakSignalPreparationResponse(emptyList(), emptyList()), service.prepare())
+  }
+
+  @ParameterizedTest
+  @EnumSource(UnpreparedCluster::class)
+  fun `a cluster whose evaluation offers no candidate fails`(unprepared: UnpreparedCluster) {
+    repository.store(unprepared.cluster)
+
+    assertEquals(WeakSignalPreparationResponse(emptyList(), listOf(PromotionFailure("rule", unprepared.message))), service.prepare())
+  }
+
+  @Test
+  fun `a cluster with an active review still reports its broken evaluation`() {
+    repository.store(UnpreparedCluster.STALE_EVALUATION.cluster)
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+
+    assertEquals(
+      WeakSignalPreparationResponse(emptyList(), listOf(PromotionFailure("rule", UnpreparedCluster.STALE_EVALUATION.message))),
+      service.prepare(),
     )
-    invalid.forEach { fixes ->
-      assertFailsWith<IllegalArgumentException> { service.publish("weak", digest, fixes, "Reviewed diff") }
-    }
-    repository.paths.inspectionPath("weak").writeText("changed inspection")
-    assertFailsWith<IllegalArgumentException> { service.publish("weak", digest, listOf(fix), "Reviewed diff") }
-    assertTrue(provider.requests.isEmpty())
   }
 
   @Test
-  fun `missing and stale persisted reviews are failures without blocking independent candidates`() {
-    val repository = repository()
-    cluster(repository, "good")
-    cluster(repository, "missing", review = null)
-    cluster(repository, "stale", evaluationDigest = sha256Hex("older inspection"))
-    val result = service(repository).prepare(listOf("missing", "good", "unknown", "stale"))
+  fun `a failing cluster does not keep the others from being prepared`() {
+    repository.store(weakCluster())
+    repository.store(UnpreparedCluster.NO_PROJECT_REVIEW.cluster.copy(id = "broken-rule"))
 
-    assertEquals(listOf("good"), result.candidates.map { it.clusterId })
-    assertEquals(setOf("missing", "unknown", "stale"), result.failures.map { it.clusterId }.toSet())
-    assertFailsWith<IllegalArgumentException> { service(repository).prepare(emptyList()) }
-  }
+    val result = service.prepare()
 
-  @Test
-  fun `provider failures leave no durable proposal and can be retried`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews().apply { fail = true }
-    val fixes = listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting"))
-    assertFailsWith<IllegalStateException> { service(repository, provider).publish("weak", digest, fixes, "Reviewed diff") }
-    assertTrue(repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().isEmpty())
-    provider.fail = false
-    service(repository, provider).publish("weak", digest, fixes, "Reviewed diff")
-    assertEquals(1, repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().size)
-  }
-
-  @Test
-  fun `changed fixes use a different branch after interrupted publication across restarts`() {
-    val repository = repository()
-    cluster(repository, "weak", findings = listOf(
-      finding(1),
-      finding(2).let { it.copy(fileRevision = it.fileRevision.copy(path = "src/Other.kt")) },
-    ))
-    val provider = FakeReviews().apply { failAfterCreation = true }
-    val fixes = listOf(
-      WeakSignalFix("src/Worker.kt", listOf(1), "first fix", "Fix waiting"),
-      WeakSignalFix("src/Other.kt", listOf(2), "other fix", "Fix another wait"),
+    assertEquals(
+      WeakSignalPreparationResponse(listOf(CANDIDATE), listOf(PromotionFailure("broken-rule", UnpreparedCluster.NO_PROJECT_REVIEW.message))),
+      result,
     )
-    assertFailsWith<IllegalStateException> {
-      service(repository, provider).publish("weak", digest, fixes, "Reviewed diff")
-    }
-    assertTrue(repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().isEmpty())
-
-    val restarted = service(EdictRepository(repository.paths), provider)
-    assertFailsWith<IllegalStateException> {
-      restarted.publish("weak", digest, fixes.reversed().map { it.copy(explanation = "Rechecked fix") }, "Rechecked diff")
-    }
-    assertEquals(provider.requests[0].branch, provider.requests[1].branch)
-
-    provider.failAfterCreation = false
-    val changedFixes = fixes.map { if (it.path == "src/Worker.kt") it.copy(content = "different fix") else it }
-    val promotion = service(EdictRepository(repository.paths), provider).publish("weak", digest, changedFixes, "Reviewed new diff")
-    assertNotEquals(provider.requests[0].branch, provider.requests[2].branch)
-    assertTrue(provider.requests[2].operationId.startsWith("w-"))
-    assertEquals(promotion, repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().single())
-    assertTrue(restarted.prepare().candidates.isEmpty())
-    assertEquals(promotion, restarted.publish("weak", digest, fixes, "Already published"))
-    assertEquals(3, provider.requests.size)
   }
 
   @Test
-  fun `signal extraction is independent of unchecked and failed promotion reviews across restarts`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    service(repository, provider).publish("weak", digest, listOf(
-      WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting"),
-    ), "Reviewed diff")
-    repeat(2) { run ->
-      EdictNextRepositoryState.open(repository.paths.root).use { store ->
-        val promotion = PromotionService({ repository }, configuration, provider)
-        val layout = EdictLayout(directory, repository.paths.root)
-        val management = EdictManagementService(store, layout, reviewProvider = provider, reviewRepository = configuration.ci!!.reviewRepository)
-        edictNextToolset(layout, management, configuration = configuration, promotion = promotion).createServer()
-        val plan = store.createPlan("Review signals", listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Review signals")))
-        val worker = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
-        val input = buildJsonObject {
-          put("token", worker.token)
-          put("prNumbers", JsonArray(listOf(JsonPrimitive(42))))
-        }
-        assertFalse(management.call("edict_fetch_pr_batch", input).flag("isError") == true)
-        assertEquals(run * 2 + 1, provider.fetchCalls)
-        provider.failReviews = true
-        assertEquals(1, promotion.checkWeakSignalReviews().failures.size)
-        assertFalse(management.call("edict_fetch_pr_batch", input).flag("isError") == true)
-        assertEquals(run * 2 + 2, provider.fetchCalls)
-        provider.failReviews = false
+  fun `only the selected clusters are prepared`() {
+    repository.store(weakCluster())
+    repository.store(weakCluster().copy(id = "other-rule"))
 
-        val checked = promotion.checkWeakSignalReviews()
-        assertTrue(checked.failures.isEmpty())
-        assertEquals(PromotionPrState.ON_REVIEW, checked.reviews.single().promotion.state)
-      }
-    }
-    val persisted = repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().single()
-    assertEquals(PromotionPrState.ON_REVIEW, persisted.state)
+    assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE), emptyList()), service.prepare(listOf("rule")))
   }
 
   @Test
-  fun `checks review states returning transient feedback without storing it on the promotion`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    service(repository, provider).publish("weak", digest, listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    val promotion = PromotionService({ repository }, configuration, provider)
-    assertFailsWith<IllegalArgumentException> {
-      service(repository, provider).completeReview("weak", repository.loadActiveWeakSignalPromotions().getValue("weak").single().pullRequest)
-    }
-    val expected = listOf(
-      ReviewState.OPEN to PromotionPrState.ON_REVIEW,
-      ReviewState.MERGED to PromotionPrState.ACCEPTED,
-      ReviewState.OPEN to PromotionPrState.ON_REVIEW,
-      ReviewState.CLOSED_UNMERGED to PromotionPrState.CLOSED,
+  fun `a selected cluster that does not exist fails`() {
+    assertEquals(
+      WeakSignalPreparationResponse(emptyList(), listOf(PromotionFailure("missing", "Cluster does not exist"))),
+      service.prepare(listOf("missing")),
     )
-    for ((remote, state) in expected) {
-      provider.reviewStatus = ReviewStatus(remote, "Feedback for $remote")
-      val result = promotion.checkWeakSignalReviews()
-      assertTrue(result.failures.isEmpty())
-      assertEquals(state, result.reviews.single().promotion.state)
-      assertEquals("Feedback for $remote", result.reviews.single().reviewEvidence)
-      assertFalse("reviewEvidence" in repository.loadCluster("weak").directory.manifestPath.readText())
-      assertEquals(EdictNextClusterStatus.Generated, repository.loadCluster("weak").manifest.status)
-      assertEquals(EdictNextSignalStrength.STRONG, repository.loadCluster("weak").signals.single().strength)
-    }
-    assertEquals(4, provider.reviewCalls)
-    assertTrue(repository.loadActiveWeakSignalPromotions().isEmpty())
-    assertEquals(PromotionPrState.CLOSED, repository.loadWeakSignalPromotionHistory("weak").single().state)
-    assertTrue(promotion.checkWeakSignalReviews().reviews.isEmpty())
-    assertEquals(4, provider.reviewCalls)
   }
 
   @Test
-  fun `transient review evidence is redacted and never persisted`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    service(repository, provider).publish("weak", digest, listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    provider.reviewStatus = ReviewStatus(ReviewState.OPEN, "Do not expose secret-token")
-    val result = PromotionService({ repository }, configuration, provider).checkWeakSignalReviews {
-      it.replace("secret-token", "[redacted]")
-    }
-
-    assertTrue(result.failures.isEmpty())
-    assertEquals("Do not expose [redacted]", result.reviews.single().reviewEvidence)
-    assertFalse("secret-token" in repository.loadCluster("weak").directory.manifestPath.readText())
+  fun `an empty cluster selection is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.prepare(emptyList()) }
+    assertEquals("clusterIds must be nonempty and unique when provided", error.message)
   }
 
   @Test
-  fun `failed review checks preserve state and transient evidence is bounded`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    service(repository, provider).publish("weak", digest, listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    val promotion = PromotionService({ repository }, configuration, provider)
-    provider.reviewStatus = ReviewStatus(ReviewState.OPEN, "x".repeat(40_000))
-    val result = promotion.checkWeakSignalReviews()
-    assertTrue(result.failures.isEmpty())
-    val previous = repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().single()
-    assertEquals(32_000, result.reviews.single().reviewEvidence.length)
-    provider.failReviews = true
-    assertEquals(1, promotion.checkWeakSignalReviews().failures.size)
-    assertEquals(previous, repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().single())
-    provider.failReviews = false
-    assertTrue(promotion.checkWeakSignalReviews().failures.isEmpty())
+  fun `a cluster selection with a repeated cluster is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.prepare(listOf("rule", "rule")) }
+    assertEquals("clusterIds must be nonempty and unique when provided", error.message)
+  }
+
+  // publish
+
+  @Test
+  fun `publishing requests the source-fix review`() {
+    repository.store(weakCluster())
+
+    service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION)
+
+    assertEquals(listOf(SOURCE_FIX_REQUEST), reviews.requests)
   }
 
   @Test
-  fun `inspection and weak-signal review checks affect only their own promotion kinds`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    cluster(repository, "other")
-    val other = repository.loadCluster("other").manifest
-    val provider = FakeReviews()
-    val weak = service(repository, provider).publish("weak", digest,
-      listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    val now = Instant.parse("2026-10-25T12:00:00Z")
-    val inspectionPromotion = InspectionPromotion(
-      "p-${"1".repeat(24)}", digest, "main", "inspections/weak.inspection.kts",
-      weak.pullRequest.copy(id = "43", url = "https://github.com/owner/repo/pull/43"),
-      PromotionPrState.ON_REVIEW, now.toString(), now.toString(),
+  fun `a published source-fix review is active on review`() {
+    repository.store(weakCluster())
+
+    val result = service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION)
+
+    assertEquals(SOURCE_FIX_ON_REVIEW, result)
+    assertEquals(activeReviewsText(SOURCE_FIX_ON_REVIEW), repository.paths.activeWeakSignalPromotionsPath.readText())
+  }
+
+  @Test
+  fun `publishing a cluster with an active review returns that review without a request`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+
+    assertEquals(SOURCE_FIX_ON_REVIEW, service.publish("rule", INSPECTION_DIGEST, CHANGED_SOURCE_FIXES, VALIDATION))
+    assertEquals(emptyList(), reviews.requests)
+  }
+
+  @ParameterizedTest
+  @EnumSource(EquivalentPublication::class)
+  fun `the review branch depends only on the fixed files and their contents`(publication: EquivalentPublication) {
+    repository.store(weakCluster())
+
+    service.publish("rule", INSPECTION_DIGEST, publication.fixes, publication.validation)
+
+    assertEquals(listOf(SOURCE_FIX_REQUEST.branch), reviews.requests.map { it.branch })
+  }
+
+  @Test
+  fun `changed fix contents use another review branch`() {
+    repository.store(weakCluster())
+
+    service.publish("rule", INSPECTION_DIGEST, CHANGED_SOURCE_FIXES, VALIDATION)
+
+    assertEquals(listOf("edict/weak-$CHANGED_SOURCE_FIX_OPERATION_ID"), reviews.requests.map { it.branch })
+  }
+
+  @ParameterizedTest
+  @EnumSource(InvalidPublication::class)
+  fun `invalid source fixes are rejected without a request`(invalid: InvalidPublication) {
+    repository.store(weakCluster())
+
+    val error = assertFailsWith<IllegalArgumentException> { service.publish("rule", INSPECTION_DIGEST, invalid.fixes, invalid.validation) }
+    assertEquals(invalid.message, error.message)
+    assertEquals(emptyList(), reviews.requests)
+  }
+
+  @Test
+  fun `source fixes for another inspection version are rejected`() {
+    repository.store(weakCluster())
+
+    val error = assertFailsWith<IllegalArgumentException> { service.publish("rule", sha256Hex("older"), SOURCE_FIXES, VALIDATION) }
+    assertEquals("Inspection changed since weak-signal selection", error.message)
+  }
+
+  @Test
+  fun `source fixes for an inspection changed after its evaluation are rejected`() {
+    repository.store(weakCluster())
+    repository.replaceInspection("rule", "changed inspection".toByteArray())
+
+    val error = assertFailsWith<IllegalArgumentException> { service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION) }
+    assertEquals("Evaluation does not match the generated inspection", error.message)
+  }
+
+  @Test
+  fun `publishing a cluster with five referenced source files is rejected`() {
+    repository.store(referencedCluster().withEvaluation(projectReview()))
+
+    val error = assertFailsWith<IllegalArgumentException> { service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION) }
+    assertEquals(
+      "Cluster 'rule' must be Generated with referenced strong positive Signals from fewer than five distinct source files",
+      error.message,
     )
-    repository.appendPromotion("weak", digest, inspectionPromotion)
-    provider.reviewStatus = ReviewStatus(ReviewState.MERGED, "Accepted source fix")
-    val promotion = PromotionService({ repository }, configuration, provider, Clock.fixed(now, ZoneOffset.UTC))
-
-    val normalResult = promotion.checkReviews()
-    assertEquals(listOf(inspectionPromotion.id), normalResult.accepted.map { it.id })
-    assertEquals(1, provider.reviewCalls)
-    assertEquals(weak, repository.loadActiveWeakSignalPromotions()["weak"].orEmpty().single())
-    val before = repository.loadCluster("weak")
-    val history = before.historyPath.readText()
-
-    val weakResult = promotion.checkWeakSignalReviews()
-    assertTrue(weakResult.failures.isEmpty())
-    assertEquals("weak", weakResult.reviews.single().clusterId)
-    val updated = weakResult.reviews.single().promotion
-    assertEquals(weak.copy(state = PromotionPrState.ACCEPTED), updated)
-    val after = repository.loadCluster("weak")
-    assertEquals(before.manifest, after.manifest)
-    assertEquals(before.signals, after.signals)
-    assertEquals(history, after.historyPath.readText())
-    assertEquals("inspection", repository.paths.inspectionPath("weak").readText())
-    assertEquals(other, repository.loadCluster("other").manifest)
-    assertTrue(repository.loadInboxSignals().isEmpty())
-    assertEquals(2, provider.reviewCalls)
   }
 
   @Test
-  fun `signal extraction proceeds while a weak-signal review check is in flight`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    service(repository, provider).publish("weak", digest,
-      listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    val checking = CountDownLatch(1)
-    val release = CountDownLatch(1)
-    provider.beforeReview = {
-      checking.countDown()
-      check(release.await(10, TimeUnit.SECONDS)) { "Review check was not released" }
+  fun `publishing without a promotion repository is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> {
+      weakSignalService(repository, null).publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION)
     }
-    val executor = Executors.newFixedThreadPool(2)
-    try {
-      EdictNextRepositoryState.open(repository.paths.root).use { store ->
-        val layout = EdictLayout(directory, repository.paths.root)
-        val promotion = PromotionService({ repository }, configuration, provider)
-        val management = EdictManagementService(store, layout, reviewProvider = provider, reviewRepository = configuration.ci!!.reviewRepository)
-        edictNextToolset(layout, management, configuration = configuration, promotion = promotion).createServer()
-        val plan = store.createPlan("Extract signals while checking feedback",
-          listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Review signals")))
-        val worker = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
-        val check = executor.submit<WeakSignalPromotionCheckReviewsResponse> { promotion.checkWeakSignalReviews() }
-        try {
-          assertTrue(checking.await(5, TimeUnit.SECONDS), "Review check must be in flight")
-          val extraction = executor.submit {
-            val response = management.call("edict_fetch_pr_batch", buildJsonObject {
-              put("token", worker.token)
-              put("prNumbers", JsonArray(listOf(JsonPrimitive(42))))
-            })
-            assertFalse(response.flag("isError") == true)
-          }
-          extraction.get(5, TimeUnit.SECONDS)
-          assertEquals(1, provider.fetchCalls)
-          assertFalse(check.isDone, "Extraction must not wait for review checking")
-        } finally {
-          release.countDown()
-        }
-        assertTrue(check.get(5, TimeUnit.SECONDS).failures.isEmpty())
-      }
-    } finally {
-      release.countDown()
-      executor.shutdownNow()
+    assertEquals("Weak-signal promotion requires edict.promotion.url or edict.ci.url configuration", error.message)
+  }
+
+  @Test
+  fun `publishing without a reviewer is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> {
+      weakSignalService(repository, reviews, promotion = null).publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION)
     }
-  }
-
-  private fun repository() = EdictRepository(EdictRepositoryDirectory(directory.resolve("state").createDirectories()))
-
-  @Test
-  fun `promotion serializes only the review reference and state and loads legacy records`() {
-    val reference = ReviewReference(CiProviderId.GITHUB, "owner", "repo", "42", "https://github.com/owner/repo/pull/42")
-    val old = """{"id":"old","inspectionDigest":"obsolete","projectRevision":"obsolete","findings":[],"reviewEvidence":"old feedback","lastCheckedAt":"old","pullRequest":${EdictNextJson.encodeToString(reference)},"state":"ACCEPTED"}"""
-    val promotion = EdictNextJson.decodeFromString<WeakSignalPromotion>(old)
-    val json = EdictNextJson.encodeToString(promotion)
-    assertEquals(WeakSignalPromotion(reference, PromotionPrState.ACCEPTED), promotion)
-    assertFalse(listOf("inspectionDigest", "projectRevision", "findings", "reviewEvidence", "lastCheckedAt").any { it in json })
+    assertEquals("Weak-signal promotion requires edict.promotion.reviewer configuration", error.message)
   }
 
   @Test
-  fun `active checks survive restarts without loading unrelated clusters or completed history`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    // Neither a broken unrelated cluster nor unreadable history is relevant to an active check.
-    repository.paths.clustersDirectory.resolve("broken").createDirectories().resolve("cluster.json").writeText("not JSON")
-    repository.paths.weakSignalPromotionHistoryPath("weak").parent.createDirectories()
-    repository.paths.weakSignalPromotionHistoryPath("weak").writeText("not JSON")
-    val result = service(EdictRepository(repository.paths), provider).checkReviews()
-    assertTrue(result.failures.isEmpty())
-    assertEquals(listOf(promotion.pullRequest), result.reviews.map { it.promotion.pullRequest })
-    assertFalse("weakSignalPromotions" in repository.loadCluster("weak").directory.manifestPath.readText())
-    assertContains(repository.paths.activeWeakSignalPromotionsPath.readText(), "activePromotions")
+  fun `a failed review creation stores no source-fix review`() {
+    repository.store(weakCluster())
+    reviews.failAt(ReviewStep.CREATION, "Provider unavailable")
+
+    val error = assertFailsWith<IllegalStateException> { service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION) }
+    assertEquals("Provider unavailable", error.message)
+    assertEquals(emptyMap(), repository.loadActiveWeakSignalPromotions())
+  }
+
+  // checkReviews
+
+  @ParameterizedTest
+  @CsvSource("OPEN, ON_REVIEW", "CLOSED_UNMERGED, CLOSED")
+  fun `an unmerged review is reported with its state and discussion`(remote: ReviewState, state: PromotionPrState) {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(remote, REVIEW_FEEDBACK)
+
+    assertEquals(WeakSignalPromotionCheckReviewsResponse(listOf(checkedSourceFix(state, REVIEW_FEEDBACK))), service.checkReviews())
   }
 
   @Test
-  fun `completed reviews are archived and no longer polled including a merged no-op`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    service(repository, provider).completeReview("weak", promotion.pullRequest)
-    val calls = provider.reviewCalls
-    val restarted = service(EdictRepository(repository.paths), provider)
-    assertTrue(restarted.checkReviews().reviews.isEmpty())
-    restarted.completeReview("weak", promotion.pullRequest)
-    assertEquals(calls, provider.reviewCalls)
-    assertTrue(repository.loadActiveWeakSignalPromotions().isEmpty())
-    assertEquals(listOf(promotion.copy(state = PromotionPrState.ACCEPTED)), repository.loadWeakSignalPromotionHistory("weak"))
-    assertEquals(1, repository.loadCluster("weak").signals.size)
+  fun `a merged review is reported with its merged change`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.mergeSourceFix()
+
+    assertEquals(WeakSignalPromotionCheckReviewsResponse(listOf(CHECKED_MERGED_SOURCE_FIX)), service.checkReviews())
   }
 
   @Test
-  fun `legacy cluster records migrate once to standalone active state without changing other fields`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val manifest = repository.loadCluster("weak").directory.manifestPath
-    val reference = ReviewReference(CiProviderId.GITHUB, "owner", "repo", "42", "https://github.com/owner/repo/pull/42")
-    val promotion = WeakSignalPromotion(reference)
-    val before = manifest.readText()
-    manifest.writeText(before.trimEnd().dropLast(1) + ",\"weakSignalPromotions\":[${EdictNextJson.encodeToString(promotion)}]}")
-    assertEquals(listOf(promotion), repository.loadActiveWeakSignalPromotions()["weak"])
-    assertFalse("weakSignalPromotions" in manifest.readText())
-    assertEquals(EdictNextJson.parseToJsonElement(before), EdictNextJson.parseToJsonElement(manifest.readText()))
-    assertEquals(listOf(promotion), EdictRepository(repository.paths).loadActiveWeakSignalPromotions()["weak"])
+  fun `an open review stays active on review without its discussion`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(ReviewState.OPEN, REVIEW_FEEDBACK)
+
+    service.checkReviews()
+
+    assertEquals(activeReviewsText(SOURCE_FIX_ON_REVIEW), repository.paths.activeWeakSignalPromotionsPath.readText())
   }
 
   @Test
-  fun `actual merged replacements go directly to source cluster and covered signals are processed across restarts`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    cluster(repository, "other")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    // The existing strong negative example has already been validated by generation.
-    val negative = repository.loadCluster("weak").signals.single().copy(id = "existing-negative", label = EdictNextSignalLabel.NEGATIVE, syntheticExampleId = "negative")
-    repository.loadCluster("weak").directory.signalPath(negative.id).writeText(EdictNextJson.encodeToString(negative))
-    val drafts = listOf(draft(provider), draft(provider, EdictNextSignalLabel.NEGATIVE))
-    val signals = service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, drafts)
-    val cluster = repository.loadCluster("weak")
-    assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
-    assertEquals(cluster.signalIds, cluster.manifest.processedSignalIds)
-    assertTrue(runBlocking { validateCluster(cluster, "Generated fixture") }.isEmpty(), "Processed evidence must preserve Generated cluster validation")
-    assertTrue(repository.loadInboxSignals().isEmpty())
-    assertEquals(1, repository.loadCluster("other").signals.size)
-    assertTrue(signals.all { it.strength == EdictNextSignalStrength.STRONG && it.source is EdictNextSignalSource.FromPR })
-    assertEquals(listOf(provider.merged.beforeRevision, provider.merged.mergedRevision), signals.map { it.fileRevision.revision })
-    assertEquals(signals, service(EdictRepository(repository.paths), provider).recordSignals("weak", promotion.pullRequest, digest, drafts))
-    assertEquals(cluster, repository.loadCluster("weak"))
+  fun `a merged review stays active as accepted`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.mergeSourceFix()
+
+    service.checkReviews()
+
+    assertEquals(mapOf("rule" to listOf(SOURCE_FIX_ACCEPTED)), repository.loadActiveWeakSignalPromotions())
   }
 
   @Test
-  fun `modified merged code not covered by the rule uses regular inbox publication without changing its source`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    val covered = draft(provider)
-    service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(covered))
-    val beforeInbox = repository.loadCluster("weak")
-    val uncovered = draft(provider, EdictNextSignalLabel.NEGATIVE).copy(syntheticExampleId = null)
-    publishInbox(repository, uncovered)
-    assertEquals(listOf(uncovered), repository.loadInboxSignals())
-    assertEquals(beforeInbox, repository.loadCluster("weak"))
-    assertEquals(EdictNextClusterStatus.Generated, beforeInbox.manifest.status)
-    assertContains(beforeInbox.manifest.processedSignalIds, covered.id)
-    assertFalse(uncovered.id in beforeInbox.signalIds)
-    assertEquals("inspection", repository.paths.inspectionPath("weak").readText())
-    service(EdictRepository(repository.paths), provider).completeReview("weak", promotion.pullRequest)
-    assertTrue(repository.loadActiveWeakSignalPromotions().isEmpty())
-    assertEquals(PromotionPrState.ACCEPTED, repository.loadWeakSignalPromotionHistory("weak").single().state)
+  fun `a review closed unmerged is archived`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(ReviewState.CLOSED_UNMERGED)
+
+    service.checkReviews()
+
+    assertEquals(emptyMap(), repository.loadActiveWeakSignalPromotions())
+    assertEquals(listOf(WeakSignalPromotion(SOURCE_FIX_REVIEW, PromotionPrState.CLOSED)), repository.loadWeakSignalPromotionHistory("rule"))
   }
 
   @Test
-  fun `proposed-only code forged excerpts stale inspection and wrong source cluster cannot publish`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    cluster(repository, "other")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    val original = repository.loadCluster("weak")
-    val correct = draft(provider)
-    val invalid = listOf(
-      correct.copy(fileRevision = correct.fileRevision.copy(revision = "c".repeat(40))),
-      correct.copy(fileRevision = correct.fileRevision.copy(path = "src/ProposedOnly.kt")),
-      correct.copy(fileRevision = correct.fileRevision.copy(expectedRanges = listOf(EdictNextLineRange(2, 2)))),
-      correct.copy(source = (correct.source as EdictNextSignalSource.FromPR).let { it.copy(diffPositiveToNegative = it.diffPositiveToNegative.replace("latch.await()", "proposedButNotMerged()")) }),
-      correct.copy(source = (correct.source as EdictNextSignalSource.FromPR).copy(title = "Invented review title")),
-      correct.copy(strength = EdictNextSignalStrength.WEAK),
+  fun `an archived review is not checked`() {
+    repository.store(weakCluster())
+    repository.storeArchivedReview(SOURCE_FIX_ACCEPTED)
+
+    assertEquals(WeakSignalPromotionCheckReviewsResponse(), service.checkReviews())
+    assertEquals(emptyList(), reviews.statusReads)
+  }
+
+  @Test
+  fun `review discussion is redacted`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(ReviewState.OPEN, "Do not expose $SECRET")
+
+    val result = weakSignalService(repository, reviews, redactor = SECRET_REDACTION).checkReviews()
+
+    assertEquals(
+      WeakSignalPromotionCheckReviewsResponse(listOf(checkedSourceFix(PromotionPrState.ON_REVIEW, "Do not expose [redacted]"))),
+      result,
     )
-    invalid.forEach { signal ->
-      assertFails { service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(signal)) }
-    }
-    assertFails { service(repository, provider).recordSignals("other", promotion.pullRequest, digest, listOf(correct)) }
-    assertFails { service(repository, provider).recordSignals("weak", promotion.pullRequest, sha256Hex("stale"), listOf(correct)) }
-    assertFails { service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(correct, correct)) }
-    assertEquals(original, repository.loadCluster("weak"))
-    assertTrue(repository.loadInboxSignals().isEmpty())
   }
 
   @Test
-  fun `unavailable actual merge evidence is retryable without inventing signals`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    provider.failMerge = true
-    val result = service(repository, provider).checkReviews()
-    assertEquals(PromotionPrState.ACCEPTED, result.reviews.single().promotion.state)
-    assertNull(result.reviews.single().mergedReview)
-    assertEquals(1, result.failures.size)
-    assertEquals(1, repository.loadCluster("weak").signals.size)
-    assertFails { service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(draft(provider))) }
-    provider.failMerge = false
-    assertTrue(service(EdictRepository(repository.paths), provider).checkReviews().failures.isEmpty())
-    service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(draft(provider)))
-    assertEquals(2, repository.loadCluster("weak").signals.size)
+  fun `review discussion is cut to 32000 characters`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(ReviewState.OPEN, "x".repeat(40_000))
+
+    assertEquals(
+      WeakSignalPromotionCheckReviewsResponse(listOf(checkedSourceFix(PromotionPrState.ON_REVIEW, "x".repeat(32_000)))),
+      service.checkReviews(),
+    )
   }
 
   @Test
-  fun `covered evidence without an existing representative example must stay unprocessed`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val promotion = publishForReview(repository, provider)
-    val withoutExample = draft(provider).copy(syntheticExampleId = null)
-    assertFailsWith<IllegalArgumentException> {
-      service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(withoutExample))
-    }
-    val before = repository.loadCluster("weak")
-    publishInbox(repository, withoutExample)
-    val signal = repository.loadInboxSignals().single()
-    assertNull(signal.syntheticExampleId)
-    assertFalse(signal.id in repository.loadCluster("weak").manifest.processedSignalIds)
-    assertEquals(before, repository.loadCluster("weak"))
+  fun `a review that cannot be read is reported and stays as it was`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.failAt(ReviewStep.STATUS, "Review unavailable")
+
+    val result = service.checkReviews()
+
+    assertEquals(
+      WeakSignalPromotionCheckReviewsResponse(failures = listOf(PromotionReviewFailure("rule", "1", "Review unavailable"))),
+      result,
+    )
+    assertEquals(mapOf("rule" to listOf(SOURCE_FIX_ACCEPTED)), repository.loadActiveWeakSignalPromotions())
   }
 
   @Test
-  fun `unmerged reviews never produce signals and conflicting retries do not overwrite evidence`() {
-    val repository = repository()
-    cluster(repository, "weak")
-    val provider = FakeReviews()
-    val promotion = service(repository, provider).publish("weak", digest,
-      listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
-    for (state in listOf(ReviewState.OPEN)) {
-      provider.reviewStatus = ReviewStatus(state)
-      service(repository, provider).checkReviews()
-      assertFails { service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(draft(provider))) }
-    }
-    provider.reviewStatus = ReviewStatus(ReviewState.MERGED)
-    service(repository, provider).checkReviews()
-    service(repository, provider).recordSignals("weak", promotion.pullRequest, digest, listOf(draft(provider)))
-    val before = repository.loadCluster("weak")
-    assertFails { service(repository, provider).recordSignals("weak", promotion.pullRequest, digest,
-      listOf(draft(provider).copy(description = "Conflicting reinterpretation"))) }
-    assertEquals(before, repository.loadCluster("weak"))
+  fun `a review read failure is redacted`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.failAt(ReviewStep.STATUS, "Token $SECRET was rejected")
+
+    val result = weakSignalService(repository, reviews, redactor = SECRET_REDACTION).checkReviews()
+
+    assertEquals(
+      WeakSignalPromotionCheckReviewsResponse(failures = listOf(PromotionReviewFailure("rule", "1", "Token [redacted] was rejected"))),
+      result,
+    )
   }
 
-  private fun publishForReview(repository: EdictRepository, provider: FakeReviews): WeakSignalPromotion {
-    val promotion = service(repository, provider).publish("weak", digest,
-      listOf(WeakSignalFix("src/Worker.kt", listOf(1), "proposed fix", "Fix waiting")), "Reviewed diff")
-    provider.reviewStatus = ReviewStatus(ReviewState.MERGED, "Use a blocking wait")
-    assertTrue(service(repository, provider).checkReviews().failures.isEmpty())
-    return promotion
+  @Test
+  fun `a merged review whose change cannot be read is accepted and reported as a failure`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.mergeSourceFix()
+    reviews.failAt(ReviewStep.MERGE, "Merged change unavailable")
+
+    val result = service.checkReviews()
+
+    assertEquals(
+      WeakSignalPromotionCheckReviewsResponse(
+        listOf(checkedSourceFix(PromotionPrState.ACCEPTED, REVIEW_FEEDBACK)),
+        listOf(PromotionReviewFailure("rule", "1", "Merged change unavailable")),
+      ),
+      result,
+    )
+    assertEquals(mapOf("rule" to listOf(SOURCE_FIX_ACCEPTED)), repository.loadActiveWeakSignalPromotions())
   }
 
-  private fun draft(provider: FakeReviews, label: EdictNextSignalLabel = EdictNextSignalLabel.POSITIVE): EdictNextSignal {
-    val workItem = "weak-promotion:GITHUB:owner/repo:42:${provider.merged.mergedRevision}"
-    val revision = if (label == EdictNextSignalLabel.POSITIVE) provider.merged.beforeRevision else provider.merged.mergedRevision
-    val key = "$workItem:$label:src/Worker.kt:$revision:1-1"
-    return EdictNextSignal(stableSignalId(key), key, EdictNextFileRevision("src/Worker.kt", revision, listOf(EdictNextLineRange(1, 1))),
-      EdictNextSignalSource.FromPR(42, provider.merged.title, provider.merged.discussionMessages, provider.canonicalDiff, "https://github.com/owner/repo/pull/42"),
-      label, "Use a blocking wait instead of spinning", syntheticExampleId = if (label == EdictNextSignalLabel.POSITIVE) "positive" else "negative",
-      provenance = EdictNextSignalProvenance(workItem))
+  @Test
+  fun `a review check reads no other cluster`() {
+    repository.store(weakCluster())
+    repository.storeUnreadableCluster("broken-rule")
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.mergeSourceFix()
+
+    assertEquals(WeakSignalPromotionCheckReviewsResponse(listOf(CHECKED_MERGED_SOURCE_FIX)), service.checkReviews())
   }
 
-  private fun publishInbox(repository: EdictRepository, signal: EdictNextSignal) {
-    EdictNextRepositoryState.open(repository.paths.root).use { store ->
-      val layout = EdictLayout(directory, repository.paths.root)
-      val management = EdictManagementService(store, layout)
-      edictNextToolset(layout, management).createServer()
-      val plan = store.createPlan("Check weak reviews", listOf(EdictNextRepositoryState.Step("edict-check-weak-signal-promotion", "Check")))
-      val worker = store.launch(plan.token, plan.plan.tasks.single().id, "edict-check-weak-signal-promotion")
-      assertFalse(management.call("edict_publish_signal", buildJsonObject {
-        put("token", worker.token)
-        put("signal", EdictNextJson.encodeToJsonElement(EdictNextSignal.serializer(), signal))
-      }).flag("isError") == true)
-    }
+  @Test
+  fun `a review check reads no archived review`() {
+    repository.store(weakCluster())
+    repository.storeUnreadableArchive()
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+    reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(ReviewState.OPEN)
+
+    assertEquals(WeakSignalPromotionCheckReviewsResponse(listOf(checkedSourceFix(PromotionPrState.ON_REVIEW, ""))), service.checkReviews())
   }
 
-  private fun service(repository: EdictRepository, reviews: FakeReviews = FakeReviews()) =
-    WeakSignalPromotionService({ repository }, configuration, reviews, { "main" })
+  // completeReview
 
-  private fun finding(line: Int) = EdictNextProjectFinding(
-    EdictNextFileRevision("src/Worker.kt", revision, listOf(EdictNextLineRange(line, line))), "Busy waiting",
-  )
+  @Test
+  fun `completing an accepted review archives it`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
 
-  private fun cluster(
-    repository: EdictRepository,
-    id: String,
-    strongSignals: Int = 1,
-    references: Boolean = true,
-    status: EdictNextClusterStatus = EdictNextClusterStatus.Generated,
-    findings: List<EdictNextProjectFinding> = (1..3).map(::finding),
-    review: EdictNextProjectReview? = EdictNextProjectReview(revision, findings.size, findings.size, 0, 0, 0, "Avoid busy waiting", findings),
-    evaluationDigest: String = digest,
-    sourceFiles: Int = strongSignals,
-    negativeSignals: Int = 0,
-  ) {
-    val root = repository.paths.clustersDirectory.resolve(id).createDirectories()
-    root.resolve("cluster.json").writeText(EdictNextJson.encodeToString(EdictNextClusterManifest(id, EdictNextLanguage.Kotlin, status)))
-    root.resolve("signals").createDirectories()
-    repeat(strongSignals) { index ->
-      val path = if (index % sourceFiles == 0) "src/Worker.kt" else "src/Worker${index % sourceFiles}.kt"
-      val label = if (index < negativeSignals) EdictNextSignalLabel.NEGATIVE else EdictNextSignalLabel.POSITIVE
-      val signal = EdictNextSignal("signal-$index", fileRevision = EdictNextFileRevision(path, revision, listOf(EdictNextLineRange(1, 1))),
-        source = EdictNextSignalSource.FromCommit(revision, if (references) "https://example.com/commit/$revision" else null),
-        label = label, description = "Avoid busy waiting", syntheticExampleId = if (label == EdictNextSignalLabel.POSITIVE) "positive" else "negative")
-      root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(signal))
-    }
-    listOf(EdictNextSignalLabel.POSITIVE, EdictNextSignalLabel.NEGATIVE).forEach { label ->
-      val name = if (label == EdictNextSignalLabel.POSITIVE) "positive" else "negative"
-      val example = root.resolve("synthetic-examples/$name").createDirectories()
-      example.resolve("metadata.json").writeText(EdictNextJson.encodeToString(EdictNextCodeExampleMetadata(name, "Example.kt", label,
-        if (label == EdictNextSignalLabel.POSITIVE) listOf(EdictNextLineRange(1, 1)) else null)))
-      example.resolve("project").createDirectories().resolve("Example.kt").writeText("fun example() {}\n")
-    }
-    root.resolve("evaluation.json").writeText(EdictNextJson.encodeToString(
-      EdictNextEvaluation(evaluationDigest, exampleSetDigest(repository.loadCluster(id)), EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, mapOf("positive" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1)), review, "Sample rule", "Detects sample problems."),
-    ))
-    repository.paths.inspectionsDirectory.createDirectories()
-    repository.paths.inspectionPath(id).writeText("inspection")
+    service.completeReview("rule", SOURCE_FIX_REVIEW)
+
+    assertEquals(emptyMap(), repository.loadActiveWeakSignalPromotions())
+    assertEquals(listOf(SOURCE_FIX_ACCEPTED), repository.loadWeakSignalPromotionHistory("rule"))
   }
 
-  private class FakeReviews : ReviewManagementApi, ReviewExtractionApi {
-    val requests = mutableListOf<CreateReviewRequest>()
-    var fail = false
-    var failAfterCreation = false
-    var failReviews = false
-    var reviewStatus = ReviewStatus(ReviewState.OPEN)
-    var reviewCalls = 0
-    var fetchCalls = 0
-    var beforeReview: () -> Unit = {}
-    var failMerge = false
-    var merged = MergedReview("Fix busy waiting", listOf("Use a blocking wait"), "a".repeat(40), "b".repeat(40),
-      listOf(ReviewFileChange("src/Worker.kt", "src/Worker.kt")))
-    var canonicalDiff = "--- a/src/Worker.kt\n+++ b/src/Worker.kt\n@@ -1 +1 @@\n-while (!done) {}\n+latch.await()\n"
-    override fun resolveTargetBranch(repository: ReviewRepository, configured: String?) = configured ?: "main"
-    override fun ensureReview(request: CreateReviewRequest): CreatedReview {
-      if (fail) error("Provider unavailable")
-      requests += request
-      if (failAfterCreation) error("Provider response lost after branch creation")
-      return CreatedReview("42", "https://github.com/owner/repo/pull/42")
+  @Test
+  fun `completing an archived review again changes nothing`() {
+    repository.store(weakCluster())
+    repository.storeArchivedReview(SOURCE_FIX_ACCEPTED)
+
+    service.completeReview("rule", SOURCE_FIX_REVIEW)
+
+    assertEquals(listOf(SOURCE_FIX_ACCEPTED), repository.loadWeakSignalPromotionHistory("rule"))
+  }
+
+  @Test
+  fun `completing a review still on review is rejected`() {
+    repository.store(weakCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+
+    val error = assertFailsWith<IllegalArgumentException> { service.completeReview("rule", SOURCE_FIX_REVIEW) }
+    assertEquals("Review is still open", error.message)
+  }
+
+  @Test
+  fun `completing an unknown review is rejected`() {
+    repository.store(weakCluster())
+
+    val error = assertFailsWith<IllegalArgumentException> { service.completeReview("rule", SOURCE_FIX_REVIEW) }
+    assertEquals("Unknown weak-signal review", error.message)
+  }
+
+  // recordSignals
+
+  @Test
+  fun `merged corrections are recorded in the source cluster as processed signals`() {
+    val cluster = repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val result = service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, CORRECTIONS)
+
+    val recorded = repository.loadCluster("rule")
+    assertEquals(CORRECTIONS, result)
+    assertEquals((cluster.signals + CORRECTIONS).toSet(), recorded.signals.toSet())
+    assertEquals(cluster.manifest.copy(processedSignalIds = cluster.signalIds + CORRECTIONS.map(EdictNextSignal::id)), recorded.manifest)
+    assertEquals(emptyList(), repository.loadInboxSignals())
+  }
+
+  @Test
+  fun `recording corrections again changes nothing`() {
+    val cluster = repository.store(correctedCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val result = service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, CORRECTIONS)
+
+    assertEquals(CORRECTIONS, result)
+    assertEquals(cluster, repository.loadCluster("rule"))
+  }
+
+  @ParameterizedTest
+  @EnumSource(ForgedCorrection::class)
+  fun `a correction that misstates the merged change is rejected and changes nothing`(forged: ForgedCorrection) {
+    val cluster = repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, listOf(forged.correction))
     }
-    override fun review(reference: ReviewReference): ReviewStatus {
-      beforeReview()
-      reviewCalls++
-      if (failReviews) error("Review unavailable")
-      return reviewStatus
+    assertEquals(forged.message, error.message)
+    assertEquals(cluster, repository.loadCluster("rule"))
+  }
+
+  @Test
+  fun `a correction conflicting with a recorded one is rejected and changes nothing`() {
+    val cluster = repository.store(correctedCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, listOf(POSITIVE_CORRECTION.copy(description = "Conflicting reinterpretation")))
     }
-    override fun fetch(selection: ReviewSelection): ReviewFetchResult {
-      fetchCalls++
-      return ReviewFetchResult(emptyList())
+    assertEquals("Conflicting signal '${POSITIVE_CORRECTION.id}'", error.message)
+    assertEquals(cluster, repository.loadCluster("rule"))
+  }
+
+  @Test
+  fun `a correction without a representative example is rejected`() {
+    repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, listOf(POSITIVE_CORRECTION.copy(syntheticExampleId = null)))
     }
-    override fun mergedReview(reference: ReviewReference): MergedReview {
-      if (failMerge) error("Exact merge evidence unavailable")
-      check(reviewStatus.state == ReviewState.MERGED)
-      return merged
+    assertEquals("Direct evidence must reuse an existing strong representative example; otherwise publish to inbox", error.message)
+  }
+
+  @Test
+  fun `corrections of another cluster's review are rejected`() {
+    repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("other-rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, CORRECTIONS)
     }
-    override fun file(repository: ReviewRepository, revision: String, path: String): String =
-      if (revision == merged.beforeRevision) "while (!done) {}\n" else "latch.await()\n"
-    override fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String, context: Int): String = canonicalDiff
+    assertEquals("Review does not belong to source cluster 'other-rule'", error.message)
+  }
+
+  @Test
+  fun `corrections of a review still on review are rejected`() {
+    repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, CORRECTIONS)
+    }
+    assertEquals("Review does not belong to source cluster 'rule'", error.message)
+  }
+
+  @Test
+  fun `corrections analyzed for another inspection version are rejected`() {
+    repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, sha256Hex("older"), CORRECTIONS)
+    }
+    assertEquals("Inspection changed since review analysis", error.message)
+  }
+
+  @Test
+  fun `a repeated correction is rejected`() {
+    repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, listOf(POSITIVE_CORRECTION, POSITIVE_CORRECTION))
+    }
+    assertEquals("Supply distinct nonempty signals", error.message)
+  }
+
+  @Test
+  fun `recording no corrections is rejected`() {
+    repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+
+    val error = assertFailsWith<IllegalArgumentException> {
+      service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, emptyList())
+    }
+    assertEquals("Supply actual merged corrections, not proposed fixes", error.message)
+  }
+
+  @Test
+  fun `corrections cannot be recorded while the merged change cannot be read`() {
+    val cluster = repository.store(correctableCluster())
+    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
+    reviews.mergeSourceFix()
+    reviews.failAt(ReviewStep.MERGE, "Merged change unavailable")
+
+    val error = assertFailsWith<IllegalStateException> { service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, CORRECTIONS) }
+    assertEquals("Merged change unavailable", error.message)
+    assertEquals(cluster, repository.loadCluster("rule"))
   }
 }

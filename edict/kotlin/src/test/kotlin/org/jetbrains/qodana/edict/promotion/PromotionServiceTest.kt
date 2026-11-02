@@ -1,976 +1,522 @@
+// Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.promotion
 
-import org.jetbrains.qodana.edict.ci.CiProviderId
-import org.jetbrains.qodana.edict.ci.CreateReviewRequest
-import org.jetbrains.qodana.edict.ci.CreatedReview
-import org.jetbrains.qodana.edict.ci.ReviewManagementApi
-import org.jetbrains.qodana.edict.ci.ReviewReference
-import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
-import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
-import org.jetbrains.qodana.edict.edictnext.EdictNextExampleEvaluation
-import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
-import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
-import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextProjectReview
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
-import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
 import org.jetbrains.qodana.edict.edictnext.PromotionPrState
 import org.jetbrains.qodana.edict.edictnext.sha256Hex
-import org.jetbrains.qodana.edict.support.launch
+import org.jetbrains.qodana.edict.promotion.support.HISTORY
+import org.jetbrains.qodana.edict.promotion.support.IneligibleCluster
+import org.jetbrains.qodana.edict.promotion.support.NOW
+import org.jetbrains.qodana.edict.promotion.support.OTHER_RULE_PROMOTION_ID
+import org.jetbrains.qodana.edict.promotion.support.PROMOTED_RULE
+import org.jetbrains.qodana.edict.promotion.support.PROMOTION_REPOSITORY
+import org.jetbrains.qodana.edict.promotion.support.RULE_PROMOTION_ID
+import org.jetbrains.qodana.edict.promotion.support.RULE_REVIEW_REQUEST
+import org.jetbrains.qodana.edict.promotion.support.RULE_TRUNK_PROMOTION_ID
+import org.jetbrains.qodana.edict.promotion.support.SECRET
+import org.jetbrains.qodana.edict.promotion.support.SECRET_REDACTION
+import org.jetbrains.qodana.edict.promotion.support.clusterWithSource
+import org.jetbrains.qodana.edict.promotion.support.foreignReview
+import org.jetbrains.qodana.edict.promotion.support.inspectionPromotion
+import org.jetbrains.qodana.edict.promotion.support.promotionRepository
+import org.jetbrains.qodana.edict.promotion.support.promotionService
+import org.jetbrains.qodana.edict.promotion.support.referencedCluster
+import org.jetbrains.qodana.edict.promotion.support.replaceInspection
+import org.jetbrains.qodana.edict.promotion.support.review
+import org.jetbrains.qodana.edict.promotion.support.store
+import org.jetbrains.qodana.edict.support.FakeReviewApi
+import org.jetbrains.qodana.edict.support.ReviewStep
 import org.junit.jupiter.api.io.TempDir
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 import java.nio.file.Path
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
-import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.readText
-import kotlin.io.path.writeText
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.test.assertFailsWith
 
-class PromotionServiceTest {
+internal class PromotionServiceTest {
   @TempDir
-  lateinit var temporary: Path
+  lateinit var directory: Path
 
-  private val ci = EdictCIConfiguration("https://github.com/JetBrains/qodana-cli")
-  private val configuration = PromotionConfiguration("reviewer", "main")
-  private val clock = Clock.fixed(Instant.parse("2026-10-04T12:00:00Z"), ZoneOffset.UTC)
+  private val repository by lazy { promotionRepository(directory) }
+  private val reviews = FakeReviewApi(PROMOTION_REPOSITORY)
+  private val service by lazy { promotionService(repository, reviews) }
+
+  // promote
 
   @Test
-  fun `promotes only eligible generated clusters`() {
-    val repository = repository()
-    cluster(repository, "six-strong", 6)
-    cluster(repository, "five-strong", 5)
-    cluster(repository, "four-strong", 4)
-    cluster(repository, "four-positive-one-negative", 5)
-    replaceSignal(repository, "four-positive-one-negative", "signal-4") {
-      it.copy(label = EdictNextSignalLabel.NEGATIVE)
-    }
-    cluster(repository, "six-negative", 6)
-    repeat(6) { index ->
-      replaceSignal(repository, "six-negative", "signal-$index") { it.copy(label = EdictNextSignalLabel.NEGATIVE) }
-    }
-    cluster(repository, "six-weak", 0, weakSignals = 6)
-    cluster(repository, "pending-signals", 6, EdictNextClusterStatus.Pending)
-    val processed = repository.loadCluster("five-strong")
-    processed.directory.manifestPath.writeText(EdictNextJson.encodeToString(
-      processed.manifest.copy(processedSignalIds = processed.signalIds),
-    ))
-    val provider = FakeProvider()
+  fun `a generated cluster with five referenced strong positive source files is promoted`() {
+    repository.store(referencedCluster())
 
-    val result = service(repository, provider).promoteSelected()
+    assertEquals(PromotionPromoteResponse(listOf(PROMOTED_RULE)), service.promote())
+  }
+
+  @Test
+  fun `a promotion is stored on review and keeps the cluster's processed signals`() {
+    val cluster = repository.store(referencedCluster())
+
+    service.promote()
+
+    assertEquals(cluster.manifest.copy(promotions = listOf(PROMOTED_RULE)), repository.loadCluster("rule").manifest)
+  }
+
+  @Test
+  fun `a promotion requests the review of the inspection with its description`() {
+    repository.store(referencedCluster())
+
+    service.promote()
+
+    assertEquals(listOf(RULE_REVIEW_REQUEST), reviews.requests)
+  }
+
+  @Test
+  fun `every eligible cluster is promoted in one run`() {
+    repository.store(referencedCluster())
+    repository.store(referencedCluster(id = "other-rule"))
+
+    val result = service.promote()
 
     assertEquals(
-      setOf("five-strong", "six-strong"),
-      result.created.map { it.targetPath.substringAfterLast('/').removeSuffix(".inspection.kts") }.toSet(),
+      PromotionPromoteResponse(listOf(
+        inspectionPromotion(id = OTHER_RULE_PROMOTION_ID, clusterId = "other-rule", createdAt = NOW),
+        inspectionPromotion(pullRequest = review(2), createdAt = NOW),
+      )),
+      result,
     )
-    assertEquals(2, provider.ensureCalls)
-    assertTrue(result.failures.isEmpty())
-    for (id in listOf("five-strong", "six-strong")) {
-      assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster(id).manifest.promotions.single().state)
-    }
-    assertEquals(processed.signalIds, repository.loadCluster("five-strong").manifest.processedSignalIds)
+  }
+
+  @ParameterizedTest
+  @EnumSource(IneligibleCluster::class)
+  fun `an ineligible cluster is skipped without a request`(ineligible: IneligibleCluster) {
+    repository.store(ineligible.cluster)
+
+    assertEquals(PromotionPromoteResponse(), service.promote())
+    assertEquals(emptyList(), reviews.requests)
   }
 
   @Test
-  fun `PR description includes only referenced strong positive evidence`() {
-    val repository = repository()
-    cluster(repository, "documented-rule", 7, weakSignals = 1)
-    replaceSignal(repository, "documented-rule", "signal-0") {
-      it.copy(description = "Avoid blocking the worker thread")
-    }
-    val commit = "a".repeat(40)
-    replaceSignal(repository, "documented-rule", "signal-4") {
-      it.copy(
-        source = EdictNextSignalSource.FromCommit(commit, "https://github.com/source/project/commit/$commit"),
-        label = EdictNextSignalLabel.NEGATIVE,
-        description = "Use the completion latch",
-        fileRevision = EdictNextFileRevision("Worker.kt", commit, listOf(EdictNextLineRange(12, 15))),
-      )
-    }
-    replaceSignal(repository, "documented-rule", "signal-5") {
-      it.copy(source = EdictNextSignalSource.Generated(), description = "Unreferenced generated evidence")
-    }
-    replaceSignal(repository, "documented-rule", "signal-6") {
-      it.copy(
-        source = EdictNextSignalSource.FromCommit(commit, "https://github.com/source/project/commit/$commit"),
-        description = "Avoid spinning until completion",
-        fileRevision = EdictNextFileRevision("SpinningWorker.kt", commit, listOf(EdictNextLineRange(12, 15))),
-      )
-    }
-    replaceSignal(repository, "documented-rule", "weak-0") {
-      it.copy(source = EdictNextSignalSource.FromPR(99, "Weak evidence", emptyList(), "", "https://github.com/source/project/pull/99"))
-    }
-    val provider = FakeProvider()
+  fun `a cluster with fewer than five referenced source files fails without a request`() {
+    val cluster = repository.store(clusterWithSource(EdictNextSignalSource.Generated()))
 
-    val result = service(repository, provider).promoteSelected()
+    val result = service.promote()
 
-    assertEquals(1, result.created.size)
-    assertTrue(result.failures.isEmpty())
-    val description = provider.lastRequest!!.description
-    assertContains(description, "**Worker thread blocking**")
-    assertContains(description, "Rule ID: `documented-rule`")
-    assertContains(description, "Reports blocking calls on the worker thread.")
-    assertContains(description, "## Evidence")
-    assertContains(description, "1. Fixed: \"Avoid blocking the worker thread\" in [PR #1](https://github.com/source/project/pull/1#discussion_r1).")
-    assertContains(description, "Avoid spinning until completion")
-    assertContains(description, "Fixed: \"Avoid spinning until completion\" in [${commit.take(7)}](https://github.com/source/project/commit/$commit).")
-    assertFalse(description.contains("SpinningWorker.kt"))
-    assertFalse(description.contains("lines 12-15"))
-    assertFalse(description.contains("STRONG"))
-    assertFalse(description.contains("POSITIVE"))
-    assertFalse(description.contains("SHA-256"))
-    assertFalse(description.contains("signal-"))
-    assertFalse(description.contains("`$commit`"))
-    assertFalse(description.contains("Unreferenced generated evidence"))
-    assertFalse(description.contains("Weak evidence"))
-    assertFalse(description.contains("weak 0"))
-    assertFalse(description.contains("NEGATIVE"))
-    assertFalse(description.contains("Use the completion latch"))
+    val message = "Promotion requires strong positive Signals from at least 5 distinct source files with PR or commit diff URLs; found 4"
+    assertEquals(PromotionPromoteResponse(failures = listOf(PromotionFailure("rule", message))), result)
+    assertEquals(emptyList(), reviews.requests)
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
   }
 
   @Test
-  fun `review description includes estimated precision recall and harmonic F1`() {
-    val repository = repository()
-    cluster(repository, "scored-rule", 5)
-    for ((precision, recall, expected) in listOf(
-      Triple(0.8, 0.6, "Estimated precision: **80.0%** · recall: **60.0%** · F1: **68.6%**"),
-      Triple(0.0, 0.0, "Estimated precision: **0.0%** · recall: **0.0%** · F1: **0.0%**"),
-    )) {
-      evaluation(repository, "scored-rule", precision, recall)
-      val cluster = repository.loadCluster("scored-rule")
-      val description = promotionDescription(cluster, sha256Hex("inspection"), evaluation = repository.loadEvaluation(cluster))
-      assertContains(description, expected)
-      assertFalse(description.contains("Last project analysis"))
-      val withProjectReview = promotionDescription(cluster, sha256Hex("inspection"), evaluation =
-        repository.loadEvaluation(cluster)!!.copy(projectReview = EdictNextProjectReview(
-          projectRevision = "a".repeat(40), totalFindings = 73, reviewedFindings = 20,
-          uncertain = 0, unassigned = 0, unreproduced = 0,
-        )
-        ))
-      assertContains(withProjectReview, "Last project analysis reported 73 findings; 20 were reviewed.")
-      val evaluation = repository.loadEvaluation(cluster)!!
-      val review = EdictNextProjectReview(
-        projectRevision = "a".repeat(40), totalFindings = 73, reviewedFindings = 20,
-        uncertain = 0, unassigned = 0, unreproduced = 0,
-      )
-      val linked = promotionDescription(cluster, sha256Hex("inspection"), evaluation = evaluation.copy(
-        projectReview = review.copy(reportUrl = "https://qodana.cloud/reports/latest"),
-      ))
-      assertContains(linked, "Last project analysis reported [73 findings](https://qodana.cloud/reports/latest); 20 were reviewed.")
-      val unsafe = promotionDescription(cluster, sha256Hex("inspection"), evaluation = evaluation.copy(
-        projectReview = review.copy(reportUrl = "javascript:alert(1)"),
-      ))
-      assertContains(unsafe, "Last project analysis reported 73 findings; 20 were reviewed.")
-    }
-  }
+  fun `a cluster without a generated inspection fails`() {
+    repository.store(referencedCluster().copy(inspection = null))
 
-  @Test
-  fun `promotion fails before creating a PR when fewer than five strong signals have references`() {
-    val repository = repository()
-    cluster(repository, "missing-references", 7, weakSignals = 1)
-    replaceSignal(repository, "missing-references", "signal-4") {
-      it.copy(source = EdictNextSignalSource.Generated())
-    }
-    replaceSignal(repository, "missing-references", "signal-5") {
-      it.copy(source = EdictNextSignalSource.Generated())
-    }
-    replaceSignal(repository, "missing-references", "signal-6") {
-      it.copy(source = EdictNextSignalSource.SubmittedFeedback(url = "https://example.com/feedback"))
-    }
-    val provider = FakeProvider()
-
-    val result = service(repository, provider).promoteSelected()
-
-    assertTrue(result.created.isEmpty())
-    assertEquals(0, provider.ensureCalls)
-    assertEquals(listOf(PromotionFailure(
-      "missing-references", "Promotion requires strong positive Signals from at least 5 distinct source files with satisfied examples and file/line URLs; found 4",
-    )), result.failures)
-    assertTrue(repository.loadCluster("missing-references").manifest.promotions.isEmpty())
-  }
-
-  @Test
-  fun `commit signals without URLs support selection and publication for both providers`() {
-    val commit = "a".repeat(40)
-    val repositories = listOf(
-      "https://github.example.com/owner/repo.git/" to "https://github.example.com/owner/repo/blob/${"b".repeat(40)}/Example0.kt#L3-L5",
-      "https://code.jetbrains.team/p/ij/repositories/ultimate/" to
-        "https://code.jetbrains.team/p/ij/repositories/ultimate/files/${"b".repeat(40)}/Example0.kt?line=3",
-    )
-    repositories.forEachIndexed { index, (repositoryUrl, _) ->
-      val repository = repository("commit-urls-$index")
-      cluster(repository, "commit-rule", 5)
-      repeat(5) { signalIndex ->
-        replaceSignal(repository, "commit-rule", "signal-$signalIndex") {
-          it.copy(source = EdictNextSignalSource.FromCommit(commit))
-        }
-      }
-      val provider = FakeProvider()
-      val service = PromotionService({ repository }, EdictConfiguration(
-        ci = EdictCIConfiguration(repositoryUrl), promotion = configuration,
-      ), provider, clock)
-
-      assertEquals(listOf("commit-rule"), service.select().candidates.map { it.clusterId })
-      assertTrue(service.prepareWeakSignals().candidates.isEmpty())
-      val result = service.promote(listOf("commit-rule"))
-
-      assertTrue(result.failures.isEmpty())
-      assertEquals(1, result.created.size)
-      val anchor = if (index == 0) "" else "?file=Example0.kt&from-line=OLD:3&to-line=OLD:5"
-      assertContains(provider.lastRequest!!.description, "[${commit.take(7)}](${repositoryUrl.trimEnd('/').removeSuffix(".git")}/${if (index == 0) "commit" else "revision"}/$commit$anchor)")
-      assertTrue(repository.loadCluster("commit-rule").signals.all {
-        (it.source as EdictNextSignalSource.FromCommit).url == null
-      })
-    }
-  }
-
-  @Test
-  fun `Space evidence links use review pages instead of discussion deep links`() {
-    val repository = repository()
-    cluster(repository, "space-rule", 5)
-    repeat(5) { index ->
-      replaceSignal(repository, "space-rule", "signal-$index") {
-        it.copy(source = (it.source as EdictNextSignalSource.FromPR).copy(
-          url = "https://jetbrains.team/im/review/review-id?message=message-id&channel=channel-id",
-        ))
-      }
-    }
-    val cluster = repository.loadCluster("space-rule")
-    val description = promotionDescription(cluster, sha256Hex("inspection"),
-      EdictCIConfiguration("https://jetbrains.team/p/ij/repositories/ultimate"), repository.loadEvaluation(cluster))
-
-    assertContains(description, "[PR #1](https://jetbrains.team/p/ij/reviews/1)")
-    assertFalse(description.contains("/im/review/"))
-    assertFalse(description.contains("](<"))
-  }
-
-  @Test
-  fun `invalid source URLs do not count toward referenced strong signals`() {
-    val invalidUrls = listOf("", "not-a-url", "javascript:alert(1)", "https:///missing-host", "https://host/path\nextra", "https://user:password@host/path")
-    invalidUrls.forEachIndexed { index, url ->
-      val repository = repository("invalid-url-$index")
-      cluster(repository, "invalid-link", 5)
-      replaceSignal(repository, "invalid-link", "signal-4") {
-        it.copy(source = (it.source as EdictNextSignalSource.FromPR).copy(url = url))
-      }
-      val provider = FakeProvider()
-
-      val result = service(repository, provider).promoteSelected()
-
-      assertTrue(result.created.isEmpty(), "Unexpected PR for '$url'")
-      assertContains(result.failures.single().message, "found 4")
-      assertEquals(0, provider.ensureCalls)
-    }
-  }
-
-  @Test
-  fun `large clusters produce a deterministic bounded evidence section`() {
-    val repository = repository()
-    cluster(repository, "large-rule", 14)
-    replaceSignal(repository, "large-rule", "signal-0") {
-      it.copy(description = "Do not use [unsafe](https://wrong.test) <markup> or `ticks`\nacross lines")
-    }
-    val provider = FakeProvider()
-
-    assertEquals(1, service(repository, provider).promoteSelected().created.size)
-
-    val description = provider.lastRequest!!.description
-    assertContains(description, "## Evidence")
-    assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
-    assertContains(description, "Do not use \\[unsafe\\](https://wrong.test) &lt;markup&gt; or \\`ticks\\` across lines")
-    assertEquals(description, promotionDescription(repository.loadCluster("large-rule"), provider.lastRequest!!.inspectionDigest, evaluation = repository.loadEvaluation(repository.loadCluster("large-rule"))))
-  }
-
-  @Test
-  fun `promotion counts source files once across revisions labels and reviews`() {
-    val repository = repository()
-    cluster(repository, "one-file", 8, sourceFiles = 1)
-    cluster(repository, "four-files", 10, weakSignals = 5, sourceFiles = 4)
-    cluster(repository, "five-files", 5)
-    repeat(8) { index ->
-      replaceSignal(repository, "one-file", "signal-$index") {
-        it.copy(
-          fileRevision = it.fileRevision.copy(revision = index.toString().repeat(40)),
-          label = if (index % 2 == 0) EdictNextSignalLabel.POSITIVE else EdictNextSignalLabel.NEGATIVE,
-        )
-      }
-    }
-    // Equal basenames in different directories are different source files.
-    repeat(5) { index ->
-      replaceSignal(repository, "five-files", "signal-$index") {
-        it.copy(fileRevision = it.fileRevision.copy(path = "src/package$index/Worker.kt"))
-      }
-    }
-    val provider = FakeProvider()
-
-    val result = service(repository, provider).promoteSelected()
-
-    assertEquals(listOf("inspections/five-files.inspection.kts"), result.created.map { it.targetPath })
-    assertEquals(1, provider.ensureCalls)
-    assertTrue(result.failures.isEmpty())
-    assertFailsWith<IllegalArgumentException> {
-      promotionDescription(repository.loadCluster("four-files"), sha256Hex("inspection"), evaluation = repository.loadEvaluation(repository.loadCluster("four-files")))
-    }
-  }
-
-  @Test
-  fun `description selects one referenced strong positive representative per file`() {
-    val repository = repository()
-    cluster(repository, "grouped-rule", 10, sourceFiles = 5)
-    replaceSignal(repository, "grouped-rule", "signal-0") { it.copy(source = EdictNextSignalSource.Generated()) }
-    replaceSignal(repository, "grouped-rule", "signal-1") { it.copy(label = EdictNextSignalLabel.NEGATIVE) }
-    val provider = FakeProvider()
-
-    assertEquals(1, service(repository, provider).promoteSelected().created.size)
-
-    val cluster = repository.loadCluster("grouped-rule")
-    val evidence = cluster.promotionEvidence(evaluation = repository.loadEvaluation(cluster))
-    assertEquals(listOf("signal-2", "signal-3", "signal-4", "signal-5", "signal-6"), evidence.map { it.id })
-    val description = provider.lastRequest!!.description
-    assertContains(description, "## Evidence")
-    assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
-    evidence.forEach {
-      val source = it.source as EdictNextSignalSource.FromPR
-      assertContains(description, "[PR #${source.prNumber}](${source.url})")
-    }
-    listOf("signal-0", "signal-1", "signal-7", "signal-8", "signal-9").forEach {
-      assertFalse(description.contains("signal `$it`"))
-    }
-    assertEquals(description, promotionDescription(cluster.copy(signals = cluster.signals.reversed()), sha256Hex("inspection"), evaluation = repository.loadEvaluation(cluster)))
-  }
-
-  @Test
-  fun `managed promotion publishes eligible inspections despite failed and cancelled upstream tasks`() {
-    val repository = repository()
-    cluster(repository, "earlier-rule", 6)
-    cluster(repository, "new-rule", 6)
-    cluster(repository, "failed-rule", 6, EdictNextClusterStatus.Pending)
-    val provider = FakeProvider()
-    EdictNextRepositoryState.open(repository.paths.root).use { state ->
-      val manager = state.createPlan("Run the daily repository routine", emptyList())
-      val enrichment = state.addTask(manager.token, "edict-git-history-signal-enrichment", "Enrich another rule")
-      val enrichmentWorker = state.launch(manager.token, enrichment.id, enrichment.skill)
-      state.finishTask(enrichmentWorker.token, "failed", "Historical search failed")
-
-      val generation = state.addTask(manager.token, "edict-next-cluster-generation", "Generate failed-rule")
-      val generationWorker = state.launch(manager.token, generation.id, generation.skill)
-      val review = state.addTask(generationWorker.token, "edict-next-inspection-code-review", "Review candidate")
-      val reviewer = state.launch(generationWorker.token, review.id, review.skill)
-      state.finishTask(reviewer.token, "failed", "False positive remains unrecorded")
-      state.finishTask(generationWorker.token, "failed", "Candidate review failed")
-
-      val lost = state.addTask(manager.token, generation.skill, "Generate another rule")
-      state.launch(manager.token, lost.id, lost.skill)
-      state.cancelTask(manager.token, lost.id, "Worker lost")
-      val successful = state.addTask(manager.token, generation.skill, "Generate new-rule")
-      val successfulWorker = state.launch(manager.token, successful.id, successful.skill)
-      state.finishTask(successfulWorker.token, "completed", "Generated new-rule")
-
-      val promotion = state.addTask(manager.token, "edict-promote", "Publish eligible inspections")
-      val worker = state.launch(manager.token, promotion.id, promotion.skill)
-      state.requireSkill(worker.token, setOf("edict-promote"))
-      val result = service(repository, provider).promoteSelected()
-
-      assertTrue(result.failures.isEmpty())
-      assertEquals(
-        setOf("inspections/earlier-rule.inspection.kts", "inspections/new-rule.inspection.kts"),
-        result.created.map { it.targetPath }.toSet(),
-      )
-      state.finishTask(worker.token, "completed", "Published earlier-rule and new-rule")
-      val tasks = state.plan()!!.tasks.associateBy { it.id }
-      assertEquals("failed", tasks.getValue(enrichment.id).status)
-      assertEquals("failed", tasks.getValue(generation.id).status)
-      assertEquals("failed", tasks.getValue(review.id).status)
-      assertEquals("cancelled", tasks.getValue(lost.id).status)
-      assertEquals("completed", tasks.getValue(promotion.id).status)
-      assertTrue(repository.loadCluster("failed-rule").manifest.promotions.isEmpty())
-      for (id in listOf("earlier-rule", "new-rule")) {
-        assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster(id).manifest.promotions.single().state)
-      }
-    }
-  }
-
-  @Test
-  fun `promotes only explicitly selected clusters when cluster ids are provided`() {
-    val repository = repository()
-    cluster(repository, "not-selected", 6)
-    cluster(repository, "selected", 6)
-    val provider = FakeProvider()
-
-    val result = service(repository, provider).promote(listOf("missing", "selected"))
-
-    assertEquals(listOf("selected"), result.created.map { it.targetPath.substringAfterLast('/').removeSuffix(".inspection.kts") })
-    assertEquals(listOf(PromotionFailure("missing", "cluster does not exist")), result.failures)
-    assertTrue(repository.loadCluster("not-selected").manifest.promotions.isEmpty())
-    assertEquals(1, provider.ensureCalls)
-  }
-
-  @Test
-  fun `uses and persists repository default branch when target branch is omitted`() {
-    val repository = repository()
-    cluster(repository, "default-branch", 6)
-    val provider = FakeProvider().apply { defaultBranch = "trunk" }
-
-    val result = service(repository, provider, PromotionConfiguration("reviewer")).promoteSelected()
-
-    assertEquals("trunk", result.created.single().targetBranch)
-    assertEquals("trunk", provider.lastRequest?.targetBranch)
-  }
-
-  @Test
-  fun `same digest and target is idempotent in every PR state while a new digest is promotable`() {
-    PromotionPrState.entries.forEachIndexed { index, state ->
-      val repository = repository("state-$index")
-      val content = "inspection-$index"
-      val digest = sha256Hex(content)
-      val existing = promotion("p-${index.toString(16).padStart(24, '0')}", digest, state)
-      cluster(repository, "same-version", 6, promotions = listOf(existing), inspection = content)
-      val provider = FakeProvider()
-
-      val result = service(repository, provider).promoteSelected()
-
-      assertTrue(result.created.isEmpty())
-      assertTrue(result.failures.isEmpty())
-      assertEquals(0, provider.ensureCalls)
-      assertEquals(1, repository.loadCluster("same-version").manifest.promotions.size)
-    }
-
-    val repository = repository("new-version")
-    cluster(repository, "changed-version", 6, promotions = listOf(promotion("p-${"a".repeat(24)}", sha256Hex("old"), PromotionPrState.ACCEPTED)))
-    val provider = FakeProvider()
-    val result = service(repository, provider).promoteSelected()
-    assertEquals(1, result.created.size)
-    assertEquals(2, repository.loadCluster("changed-version").manifest.promotions.size)
-  }
-
-  @Test
-  fun `provider retry creates one persisted record`() {
-    val repository = repository()
-    cluster(repository, "retry-rule", 6)
-    val provider = FakeProvider(failOnceAfterRemoteCreation = true)
-
-    assertEquals(1, service(repository, provider).promoteSelected().failures.size)
-    assertTrue(repository.loadCluster("retry-rule").manifest.promotions.isEmpty())
-    assertEquals(1, service(repository, provider).promoteSelected().created.size)
-    assertEquals(1, repository.loadCluster("retry-rule").manifest.promotions.size)
-    assertEquals(2, provider.ensureCalls)
-    assertEquals(1, provider.remotePullRequests)
-  }
-
-  @Test
-  fun `review states transition and closed current version can be discontinued`() {
-    val repository = repository()
-    val digest = sha256Hex("inspection")
-    cluster(repository, "accepted-rule", 5, promotions = listOf(promotion("p-${"1".repeat(24)}", digest, PromotionPrState.ON_REVIEW)))
-    cluster(repository, "closed-rule", 5, promotions = listOf(promotion("p-${"2".repeat(24)}", digest, PromotionPrState.ON_REVIEW)))
-    cluster(repository, "open-rule", 5, promotions = listOf(promotion("p-${"3".repeat(24)}", digest, PromotionPrState.ON_REVIEW)))
-    val provider = FakeProvider().apply {
-      reviews["1"] = ReviewStatus(ReviewState.MERGED)
-      reviews["2"] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "Please do not ship this rule")
-      reviews["3"] = ReviewStatus(ReviewState.OPEN)
-    }
-    val first = service(repository, provider).checkReviews()
-    assertEquals(PromotionPrState.ACCEPTED, first.accepted.single().state)
-    assertEquals("p-${"1".repeat(24)}", first.accepted.single().id)
-    assertEquals(PromotionPrState.ACCEPTED, repository.loadCluster("accepted-rule").manifest.promotions.single().state)
-    assertContains(
-      repository.loadCluster("accepted-rule").historyPath.readText(),
-      "accepted after merged PR https://example/p-${"1".repeat(24)}",
-    )
-    assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster("closed-rule").manifest.promotions.single().state)
-    assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster("open-rule").manifest.promotions.single().state)
-    assertEquals("Please do not ship this rule", first.undecided.single().evidence)
-    val refreshed = service(repository, provider).checkReviews()
-    assertTrue(refreshed.accepted.isEmpty())
-    assertEquals("closed-rule", refreshed.undecided.single().clusterId)
-
-    val decision = PromotionReviewDecision(
-      "closed-rule", "p-${"2".repeat(24)}", ClosedReviewDecision.DISCONTINUE_CLUSTER, "Reviewer rejected the rule itself",
-    )
-    val second = service(repository, provider).decideReviews(listOf(decision))
-    assertTrue(second.failures.isEmpty())
-    val cluster = repository.loadCluster("closed-rule")
-    assertEquals(EdictNextClusterStatus.Discontinued, cluster.manifest.status)
-    assertEquals(PromotionPrState.CLOSED, cluster.manifest.promotions.single().state)
-    assertFalse(repository.paths.inspectionPath("closed-rule").exists())
-    assertTrue(cluster.historyPath.readText().contains("Reviewer rejected the rule itself"))
-    assertTrue(service(repository, provider).checkReviews().undecided.isEmpty())
-  }
-
-  @Test
-  fun `decision can return current generated cluster to pending and records history`() {
-    val repository = repository()
-    val promotion = promotion("p-${"9".repeat(24)}", sha256Hex("inspection"), PromotionPrState.ON_REVIEW)
-    cluster(repository, "revise-rule", 5, promotions = listOf(promotion))
-    val provider = FakeProvider().apply {
-      reviews[promotion.pullRequest.id] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "Please revise")
-    }
-
-    val result = service(repository, provider).decideReviews(listOf(
-      PromotionReviewDecision(
-        "revise-rule",
-        promotion.id,
-        ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING,
-        "Reviewer requested a narrower generated rule",
-      ),
-    ))
-
-    assertTrue(result.failures.isEmpty())
-    val stored = repository.loadCluster("revise-rule")
-    assertEquals(EdictNextClusterStatus.Pending, stored.manifest.status)
-    assertEquals("revise-rule", stored.manifest.predecessorId)
-    assertEquals(PromotionPrState.CLOSED, stored.manifest.promotions.single().state)
-    assertEquals(stored.signalIds, stored.manifest.processedSignalIds)
-    assertTrue(repository.paths.inspectionPath("revise-rule").exists())
-    assertTrue(stored.historyPath.readText().contains("Reviewer requested a narrower generated rule"))
-  }
-
-  @Test
-  fun `decision batches are limited to ten promotions`() {
-    val decision = PromotionReviewDecision(
-      "rule",
-      "p-${"a".repeat(24)}",
-      ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING,
-      "Rejected",
-    )
-    assertFailsWith<IllegalArgumentException> {
-      service(repository(), FakeProvider()).decideReviews(List(11) { decision.copy(promotionId = "p-${it.toString(16).padStart(24, '0')}") })
-    }
-  }
-
-  @Test
-  fun `stale digest cannot discontinue newer generated version and older accepted promotion does not decide outcome`() {
-    val repository = repository()
-    val old = promotion("p-${"4".repeat(24)}", sha256Hex("old"), PromotionPrState.ACCEPTED)
-    val closed = promotion("p-${"5".repeat(24)}", sha256Hex("inspection"), PromotionPrState.CLOSED)
-    cluster(repository, "stale-rule", 5, promotions = listOf(old, closed))
-    repository.paths.inspectionPath("stale-rule").writeText("newer inspection")
-
-    val provider = FakeProvider().apply {
-      reviews[closed.pullRequest.id] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "Rejected")
-    }
-    val result = service(repository, provider).decideReviews(listOf(
-      PromotionReviewDecision("stale-rule", closed.id, ClosedReviewDecision.DISCONTINUE_CLUSTER, "Reject current rule"),
-    ))
-
-    assertEquals(1, result.failures.size)
-    val stored = repository.loadCluster("stale-rule")
-    assertEquals(EdictNextClusterStatus.Generated, stored.manifest.status)
-    assertEquals(PromotionPrState.CLOSED, stored.manifest.promotions.last().state)
-    assertEquals(PromotionPrState.ACCEPTED, stored.manifest.promotions.first().state)
-  }
-
-  @Test
-  fun `provider failure preserves on-review state`() {
-    val repository = repository()
-    cluster(repository, "provider-failure", 5, promotions = listOf(
-      promotion("p-${"6".repeat(24)}", sha256Hex("inspection"), PromotionPrState.ON_REVIEW),
-    ))
-    val provider = FakeProvider().apply { reviewFailure = true }
-
-    val result = service(repository, provider).checkReviews()
-
-    assertEquals(1, result.failures.size)
-    assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster("provider-failure").manifest.promotions.single().state)
-  }
-
-  @Test
-  fun `decision refuses a review that is still open`() {
-    val repository = repository()
-    val promotion = promotion("p-${"c".repeat(24)}", sha256Hex("inspection"), PromotionPrState.ON_REVIEW)
-    cluster(repository, "open-decision", 5, promotions = listOf(promotion))
-
-    val result = service(repository, FakeProvider()).decideReviews(listOf(
-      PromotionReviewDecision(
-        "open-decision",
-        promotion.id,
-        ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING,
-        "Reviewer requested changes",
-      ),
-    ))
-
-    assertEquals(1, result.failures.size)
-    val stored = repository.loadCluster("open-decision")
-    assertEquals(EdictNextClusterStatus.Generated, stored.manifest.status)
-    assertEquals(PromotionPrState.ON_REVIEW, stored.manifest.promotions.single().state)
-  }
-
-  @Test
-  fun `closed promotion remains undecided when evidence refresh fails`() {
-    val repository = repository()
-    val promotion = promotion("p-${"b".repeat(24)}", sha256Hex("inspection"), PromotionPrState.CLOSED)
-    cluster(repository, "closed-provider-failure", 5, promotions = listOf(promotion))
-    val provider = FakeProvider().apply { reviewFailure = true }
-
-    val result = service(repository, provider).checkReviews()
-
-    assertEquals(1, result.failures.size)
-    assertEquals(promotion.id, result.undecided.single().promotionId)
-    assertEquals(PromotionPrState.CLOSED, repository.loadCluster("closed-provider-failure").manifest.promotions.single().state)
-  }
-
-  @Test
-  fun `illegal transitions and duplicate promotion ids are rejected`() {
-    val repository = repository()
-    val digest = sha256Hex("inspection")
-    val accepted = promotion("p-${"7".repeat(24)}", digest, PromotionPrState.ACCEPTED)
-    cluster(repository, "invalid-transition", 5, promotions = listOf(accepted))
-
-    assertFailsWith<IllegalArgumentException> {
-      repository.applyResolvedPromotion(
-        clusterId = "invalid-transition",
-        promotionId = accepted.id,
-        resolvedState = PromotionPrState.CLOSED,
-        updatedAt = clock.instant().toString(),
-        expectedInspectionDigest = digest,
-        targetStatus = EdictNextClusterStatus.Discontinued,
-        rationale = "Invalid second resolution",
-      )
-    }
-    assertFailsWith<IllegalArgumentException> {
-      repository.appendPromotion(
-        "invalid-transition",
-        digest,
-        accepted.copy(pullRequest = accepted.pullRequest.copy(id = "different")),
-      )
-    }
-  }
-
-  @Test
-  fun `closed review evidence is bounded`() {
-    val repository = repository()
-    val promotion = promotion("p-${"8".repeat(24)}", sha256Hex("inspection"), PromotionPrState.ON_REVIEW)
-    cluster(repository, "bounded-evidence", 5, promotions = listOf(promotion))
-    val provider = FakeProvider().apply {
-      reviews[promotion.pullRequest.id] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "x".repeat(40_000))
-    }
-    val result = service(repository, provider).checkReviews()
-    assertEquals(32_000, result.undecided.single().evidence.length)
-    assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster("bounded-evidence").manifest.promotions.single().state)
-  }
-
-  private fun PromotionService.promoteSelected(clusterIds: List<String>? = null): PromotionPromoteResponse {
-    val selection = select()
-    val chosen = selection.candidates.filter { clusterIds == null || it.clusterId in clusterIds }
-    val result = if (chosen.isEmpty()) PromotionPromoteResponse()
-      else promote(chosen.map { it.clusterId })
-    return result.copy(failures = selection.failures + result.failures)
-  }
-
-  @Test
-  fun `selection is read only and publication accepts only the skills chosen subset`() {
-    val repository = repository()
-    cluster(repository, "first", 5)
-    cluster(repository, "second", 5)
-    val provider = FakeProvider()
-    val service = service(repository, provider)
-
-    val selection = service.select()
-    assertEquals(setOf("first", "second"), selection.candidates.map { it.clusterId }.toSet())
-    assertTrue(selection.candidates.all { it.evaluation.precision == 1.0 && it.f1 == 1.0 })
-    assertEquals(0, provider.ensureCalls)
-    assertTrue(repository.loadCluster("first").manifest.promotions.isEmpty())
-    assertTrue(repository.loadCluster("second").manifest.promotions.isEmpty())
-
-    val result = service.promote(listOf("second"))
-    assertEquals(listOf("inspections/second.inspection.kts"), result.created.map { it.targetPath })
-    assertTrue(repository.loadCluster("first").manifest.promotions.isEmpty())
-    assertEquals(listOf("first"), service.select().candidates.map { it.clusterId })
-  }
-
-  @Test
-  fun `selection count limits eligible candidates and reports configured thresholds`() {
-    val repository = repository()
-    cluster(repository, "a-ineligible", 5)
-    evaluation(repository, "a-ineligible", 0.1, 0.1)
-    cluster(repository, "b-eligible", 5)
-    cluster(repository, "c-eligible", 5)
-    val provider = FakeProvider()
-    val targets = configuration.copy(targetPrecision = 0.75, targetRecall = 0.65, targetF1 = 0.2)
-    val service = service(repository, provider, targets)
-
-    val limited = service.select(count = 1)
-    assertEquals(listOf("b-eligible"), limited.candidates.map { it.clusterId })
-    assertEquals(PromotionThresholds(0.75, 0.65, 0.2), limited.thresholds)
-    assertEquals(listOf("b-eligible", "c-eligible"), service.select().candidates.map { it.clusterId })
-    assertEquals(2, service.select(count = 10).candidates.size)
-    assertEquals(0, provider.ensureCalls)
-    assertFailsWith<IllegalArgumentException> { service.select(count = 0) }
-    assertFailsWith<IllegalArgumentException> { service.select(count = -1) }
-    val empty = service(repository("empty-selection"), provider, targets).select()
-    assertTrue(empty.candidates.isEmpty())
-    assertEquals(limited.thresholds, empty.thresholds)
-  }
-
-  @Test
-  fun `skill can publish outside metric selection but cannot omit evaluation`() {
-    val repository = repository()
-    cluster(repository, "low-score", 5)
-    evaluation(repository, "low-score", 0.1, 0.1)
-    cluster(repository, "no-evaluation", 5)
-    repository.loadCluster("no-evaluation").directory.evaluationPath.toFile().delete()
-    val provider = FakeProvider()
-    val service = service(repository, provider)
-    assertTrue(service.select().candidates.isEmpty())
-
-    val result = service.promote(listOf("low-score", "no-evaluation"))
-    assertEquals(1, result.created.size)
-    assertContains(result.failures.single().message, "current evaluation")
-    assertFailsWith<IllegalArgumentException> { service.promote(emptyList()) }
-    assertFailsWith<IllegalArgumentException> { service.promote(listOf("low-score", "low-score")) }
-  }
-
-  @Test
-  fun `publication excludes missed and missing examples before selecting representatives`() {
-    val repository = repository()
-    cluster(repository, "missed", 8)
-    val cluster = repository.loadCluster("missed")
-    val evaluation = repository.loadEvaluation(cluster)!!
-    cluster.directory.evaluationPath.writeText(EdictNextJson.encodeToString(evaluation.copy(
-      examples = evaluation.examples - "example-1" + ("example-0" to evaluation.examples.getValue("example-0").copy(satisfied = false)),
-    )))
-    val provider = FakeProvider()
-    val result = service(repository, provider).promote(listOf("missed"))
-    assertEquals(1, result.created.size)
-    val description = provider.lastRequest!!.description
-    assertFalse(description.contains("signal `signal-0`"))
-    assertFalse(description.contains("signal `signal-1`"))
-    assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
-    assertFalse(description.contains("/pull/1#"))
-    assertFalse(description.contains("/pull/2#"))
-  }
-
-  @Test
-  fun `explicit publication rejects stale evaluations and insufficient satisfied evidence`() {
-    val repository = repository()
-    cluster(repository, "insufficient", 5)
-    val cluster = repository.loadCluster("insufficient")
-    val evaluation = repository.loadEvaluation(cluster)!!
-    cluster.directory.evaluationPath.writeText(EdictNextJson.encodeToString(evaluation.copy(
-      examples = evaluation.examples + ("example-0" to evaluation.examples.getValue("example-0").copy(satisfied = false)),
-    )))
-    cluster(repository, "changed-inspection", 5)
-    repository.paths.inspectionPath("changed-inspection").writeText("changed")
-    cluster(repository, "changed-examples", 5)
-    val stale = repository.loadCluster("changed-examples")
-    stale.directory.evaluationPath.writeText(EdictNextJson.encodeToString(repository.loadEvaluation(stale)!!.copy(exampleSetDigest = "stale")))
-    val provider = FakeProvider()
-    val result = service(repository, provider).promote(listOf("insufficient", "changed-inspection", "changed-examples"))
-    assertTrue(result.created.isEmpty())
-    assertEquals(3, result.failures.size)
-    assertEquals(0, provider.ensureCalls)
-    assertContains(result.failures.first().message, "found 4")
-    result.failures.drop(1).forEach { assertContains(it.message, "current evaluation") }
-  }
-
-  @Test
-  fun `Space discussions link to the exact problematic file revision and encoded path`() {
-    val repository = repository()
-    cluster(repository, "space", 5)
-    val revision = "c".repeat(40)
-    val signal = repository.loadCluster("space").signals.first().copy(
-      source = EdictNextSignalSource.FromPR(215081, "akats/reused-run", listOf("Fix documentation"), "",
-        "https://jetbrains.team/im/review/4RJJlz4NRWvS?message=F2A2J0W06tf&channel=42GEq23U7k8O"),
-      fileRevision = EdictNextFileRevision("src/My File#1.kt", revision, listOf(EdictNextLineRange(13, 15))),
-    )
     assertEquals(
-      "https://code.jetbrains.team/p/ij/repositories/ultimate/files/$revision/src/My%20File%231.kt?line=13",
-      signal.referenceUrl(EdictCIConfiguration("https://code.jetbrains.team/p/ij/repositories/ultimate")),
+      PromotionPromoteResponse(failures = listOf(PromotionFailure("rule", "generated inspection is missing"))),
+      service.promote(),
     )
-    assertEquals(null, signal.copy(fileRevision = signal.fileRevision.copy(expectedRanges = null)).referenceUrl(ci))
-    assertEquals(null, signal.copy(fileRevision = signal.fileRevision.copy(revision = "master")).referenceUrl(ci))
-  }
-
-  private fun repository(name: String = "state"): EdictRepository {
-    val root = temporary.resolve(name).createDirectories()
-    root.resolve("clusters").createDirectories()
-    root.resolve("inspections").createDirectories()
-    return EdictRepository(EdictRepositoryDirectory(root))
-  }
-
-  private fun cluster(
-    repository: EdictRepository,
-    id: String,
-    positives: Int,
-    status: EdictNextClusterStatus = EdictNextClusterStatus.Generated,
-    promotions: List<InspectionPromotion> = emptyList(),
-    inspection: String = "inspection",
-    weakSignals: Int = 0,
-    sourceFiles: Int = positives,
-  ) {
-    val root = repository.paths.clustersDirectory.resolve(id).createDirectories()
-    root.resolve("signals").createDirectories()
-    root.resolve("cluster.json").writeText(EdictNextJson.encodeToString(
-      EdictNextClusterManifest(id, EdictNextLanguage.Kotlin, status, promotions = promotions),
-    ))
-    root.resolve("history.md").writeText("Created.\n")
-    repeat(positives) { index ->
-      root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(
-        EdictNextSignal(
-          "signal-$index",
-          fileRevision = EdictNextFileRevision("Example${index % sourceFiles}.kt", "b".repeat(40), listOf(EdictNextLineRange(3, 5))),
-          source = EdictNextSignalSource.FromPR(
-            index + 1, "Correction $index", listOf("Fix the problem"), "",
-            "https://github.com/source/project/pull/${index + 1}#discussion_r${index + 1}",
-          ),
-          label = EdictNextSignalLabel.POSITIVE,
-          description = "positive $index",
-          syntheticExampleId = "example-$index",
-        ),
-      ))
-    }
-    repeat(weakSignals) { index ->
-      root.resolve("signals/weak-$index.json").writeText(EdictNextJson.encodeToString(
-        EdictNextSignal(
-          "weak-$index",
-          fileRevision = EdictNextFileRevision("Example.kt", "revision"),
-          source = EdictNextSignalSource.Generated(),
-          label = EdictNextSignalLabel.POSITIVE,
-          description = "weak $index",
-          strength = EdictNextSignalStrength.WEAK,
-        ),
-      ))
-    }
-    repository.paths.inspectionPath(id).writeText(inspection)
-    evaluation(repository, id)
-  }
-
-  private fun evaluation(repository: EdictRepository, id: String, precision: Double = 1.0, recall: Double = 1.0) {
-    repository.loadCluster(id).directory.evaluationPath.writeText(EdictNextJson.encodeToString(EdictNextEvaluation(
-      inspectionHash = sha256Hex(repository.paths.inspectionPath(id).readText()),
-      exampleSetDigest = exampleSetDigest(repository.loadCluster(id)),
-      action = EdictNextInspectionAction.GENERATE,
-      tp = 5, fp = 0, fn = 0, precision = precision, recall = recall,
-      inspectionName = "Worker thread blocking",
-      inspectionDescription = "Reports blocking calls on the worker thread.",
-      examples = repository.loadCluster(id).signals.associate { it.syntheticExampleId.orEmpty() to
-        EdictNextExampleEvaluation(it.label, it.strength == EdictNextSignalStrength.STRONG, true, 0, 1) }, projectReview = null,
-    )))
   }
 
   @Test
-  fun `promotion requires all metrics strictly above their targets`() {
-    val repository = repository()
-    val provider = FakeProvider()
-    cluster(repository, "quality-rule", 5)
-    val targets = configuration.copy(targetPrecision = 0.7, targetRecall = 0.7, targetF1 = 0.8)
-    for ((precision, recall) in listOf(0.6 to 1.0, 1.0 to 0.6, 0.7 to 1.0, 1.0 to 0.7, 0.75 to 0.75, 0.8 to 0.8, 0.0 to 0.0)) {
-      evaluation(repository, "quality-rule", precision, recall)
-      val result = service(repository, provider, targets).promoteSelected(listOf("quality-rule"))
-      assertTrue(result.created.isEmpty(), "Unexpected promotion for $precision / $recall")
-      assertTrue(result.failures.isEmpty())
-      assertEquals(EdictNextClusterStatus.Generated, repository.loadCluster("quality-rule").manifest.status)
-      assertTrue(repository.paths.inspectionPath("quality-rule").exists())
-    }
-    assertEquals(0, provider.ensureCalls)
-    evaluation(repository, "quality-rule", 0.9, 0.9)
-    assertEquals(1, service(repository, provider, targets).promoteSelected().created.size)
+  fun `a generated inspection that is not UTF-8 text fails`() {
+    repository.store(referencedCluster())
+    repository.replaceInspection("rule", byteArrayOf(0xC3.toByte(), 0x28))
+
+    assertEquals(
+      PromotionPromoteResponse(failures = listOf(PromotionFailure("rule", "generated inspection is not UTF-8 text"))),
+      service.promote(),
+    )
   }
 
   @Test
-  fun `missing or stale evaluations leave inspections generated`() {
-    val repository = repository()
-    val provider = FakeProvider()
-    cluster(repository, "missing", 5)
-    repository.loadCluster("missing").directory.evaluationPath.toFile().delete()
-    cluster(repository, "stale-inspection", 5)
-    repository.paths.inspectionPath("stale-inspection").writeText("changed")
-    cluster(repository, "stale-examples", 5)
-    val cluster = repository.loadCluster("stale-examples")
-    cluster.directory.evaluationPath.writeText(EdictNextJson.encodeToString(repository.loadEvaluation(cluster)!!.copy(exampleSetDigest = "stale")))
+  fun `only the selected clusters are promoted`() {
+    repository.store(referencedCluster())
+    repository.store(referencedCluster(id = "other-rule"))
 
-    val result = service(repository, provider).promoteSelected()
-    assertTrue(result.created.isEmpty())
-    assertTrue(result.failures.isEmpty())
-    assertEquals(0, provider.ensureCalls)
-    for (id in listOf("missing", "stale-inspection", "stale-examples")) {
-      assertEquals(EdictNextClusterStatus.Generated, repository.loadCluster(id).manifest.status)
-      assertTrue(repository.paths.inspectionPath(id).exists())
-    }
+    assertEquals(PromotionPromoteResponse(listOf(PROMOTED_RULE)), service.promote(listOf("rule")))
   }
 
-  private fun replaceSignal(
-    repository: EdictRepository,
-    clusterId: String,
-    signalId: String,
-    transform: (EdictNextSignal) -> EdictNextSignal,
-  ) {
-    val cluster = repository.loadCluster(clusterId)
-    val signal = cluster.signals.single { it.id == signalId }
-    cluster.directory.signalPath(signalId).writeText(EdictNextJson.encodeToString(transform(signal)))
+  @Test
+  fun `a selected cluster that does not exist fails`() {
+    assertEquals(
+      PromotionPromoteResponse(failures = listOf(PromotionFailure("missing", "cluster does not exist"))),
+      service.promote(listOf("missing")),
+    )
   }
 
-  private fun promotion(id: String, digest: String, state: PromotionPrState): InspectionPromotion = InspectionPromotion(
-    id,
-    digest,
-    "main",
-    "inspections/same-version.inspection.kts",
-    ReviewReference(CiProviderId.GITHUB, "JetBrains", "qodana-cli", id.removePrefix("p-").take(1), "https://example/$id"),
-    state,
-    "2026-10-04T12:00:00Z",
-    "2026-10-04T12:00:00Z",
-  )
+  @Test
+  fun `an empty cluster selection is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.promote(emptyList()) }
+    assertEquals("clusterIds must not be empty when provided", error.message)
+  }
 
-  private fun service(
-    repository: EdictRepository,
-    provider: FakeProvider,
-    configuration: PromotionConfiguration = this.configuration,
-  ) = PromotionService(
-    repository = { repository },
-    configuration = EdictConfiguration(ci = ci, promotion = configuration),
-    reviews = provider,
-    clock = clock,
-  )
+  @Test
+  fun `a cluster selection with a repeated cluster is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.promote(listOf("rule", "rule")) }
+    assertEquals("clusterIds must be unique", error.message)
+  }
 
-  private class FakeProvider(
-    private val failOnceAfterRemoteCreation: Boolean = false,
-  ) : ReviewManagementApi {
-    var ensureCalls = 0
-    var remotePullRequests = 0
-    var reviewFailure = false
-    var defaultBranch = "main"
-    var lastRequest: CreateReviewRequest? = null
-    val reviews = mutableMapOf<String, ReviewStatus>()
-    private val remote = mutableMapOf<String, CreatedReview>()
+  @Test
+  fun `promotion without a promotion repository is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { promotionService(repository, null).promote() }
+    assertEquals("Inspection promotion requires edict.promotion.url or edict.ci.url configuration", error.message)
+  }
 
-    override fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String = configured ?: defaultBranch
+  @Test
+  fun `promotion without a reviewer is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { promotionService(repository, reviews, promotion = null).promote() }
+    assertEquals("Inspection promotion requires edict.promotion.reviewer configuration", error.message)
+  }
 
-    override fun ensureReview(request: CreateReviewRequest): CreatedReview {
-      lastRequest = request
-      ensureCalls++
-      val pullRequest = remote.getOrPut(request.operationId) {
-        remotePullRequests++
-        CreatedReview("$remotePullRequests", "https://example/pr/$remotePullRequests")
-      }
-      if (failOnceAfterRemoteCreation && ensureCalls == 1) error("connection lost after PR creation")
-      return pullRequest
-    }
+  @Test
+  fun `a promotion without a configured target branch targets the repository's default branch`() {
+    repository.store(referencedCluster())
+    val trunk = FakeReviewApi(PROMOTION_REPOSITORY, defaultBranch = "trunk")
 
-    override fun review(reference: ReviewReference): ReviewStatus {
-      if (reviewFailure) error("provider unavailable")
-      return reviews[reference.id] ?: ReviewStatus(ReviewState.OPEN)
-    }
+    val result = promotionService(repository, trunk, PromotionConfiguration("reviewer")).promote()
+
+    assertEquals(
+      PromotionPromoteResponse(listOf(inspectionPromotion(id = RULE_TRUNK_PROMOTION_ID, targetBranch = "trunk", createdAt = NOW))),
+      result,
+    )
+    assertEquals(listOf(RULE_REVIEW_REQUEST.copy(operationId = RULE_TRUNK_PROMOTION_ID, targetBranch = "trunk")), trunk.requests)
+  }
+
+  @Test
+  fun `an inspection already promoted to the same target is skipped, even when its review was closed`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.CLOSED))))
+
+    assertEquals(PromotionPromoteResponse(), service.promote())
+    assertEquals(emptyList(), reviews.requests)
+  }
+
+  @Test
+  fun `a changed inspection is promoted again`() {
+    val older = inspectionPromotion(PromotionPrState.ACCEPTED, id = "p-${"a".repeat(24)}", inspectionDigest = sha256Hex("older"))
+    repository.store(referencedCluster(promotions = listOf(older)))
+
+    val result = service.promote()
+
+    assertEquals(PromotionPromoteResponse(listOf(PROMOTED_RULE)), result)
+    assertEquals(listOf(older, PROMOTED_RULE), repository.loadCluster("rule").manifest.promotions)
+  }
+
+  @Test
+  fun `an inspection promoted in another repository is promoted in the configured one`() {
+    val foreign = inspectionPromotion(id = "p-${"f".repeat(24)}", pullRequest = foreignReview(1))
+    repository.store(referencedCluster(promotions = listOf(foreign)))
+
+    assertEquals(PromotionPromoteResponse(listOf(PROMOTED_RULE)), service.promote())
+  }
+
+  @Test
+  fun `a promotion whose review creation fails is reported and stores nothing`() {
+    val cluster = repository.store(referencedCluster())
+    reviews.failAt(ReviewStep.CREATION, "Provider unavailable")
+
+    val result = service.promote()
+
+    assertEquals(PromotionPromoteResponse(failures = listOf(PromotionFailure("rule", "Provider unavailable"))), result)
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
+  }
+
+  // checkReviews
+
+  @Test
+  fun `a merged review accepts its promotion`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.MERGED)
+
+    val result = service.checkReviews()
+
+    val accepted = inspectionPromotion(PromotionPrState.ACCEPTED).copy(updatedAt = NOW)
+    assertEquals(PromotionCheckReviewsResponse(accepted = listOf(accepted)), result)
+    assertEquals(listOf(accepted), repository.loadCluster("rule").manifest.promotions)
+  }
+
+  @Test
+  fun `an accepted promotion is recorded in the cluster history`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.MERGED)
+
+    service.checkReviews()
+
+    assertEquals(
+      "${HISTORY}Promotion `$RULE_PROMOTION_ID` accepted after merged PR https://github.com/JetBrains/qodana-cli/pull/1.\n",
+      repository.loadCluster("rule").historyPath.readText(),
+    )
+  }
+
+  @Test
+  fun `an open review changes nothing`() {
+    val cluster = repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.OPEN)
+
+    assertEquals(PromotionCheckReviewsResponse(), service.checkReviews())
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
+  }
+
+  @Test
+  fun `a review closed unmerged awaits a decision with its discussion`() {
+    val cluster = repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "Please do not ship this rule")
+
+    val result = service.checkReviews()
+
+    val undecided = UndecidedPromotionReview("rule", RULE_PROMOTION_ID, review(1).url, "Please do not ship this rule")
+    assertEquals(PromotionCheckReviewsResponse(undecided = listOf(undecided)), result)
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
+  }
+
+  @Test
+  fun `closed review discussion is redacted`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "Do not expose $SECRET")
+
+    val result = promotionService(repository, reviews, redactor = SECRET_REDACTION).checkReviews()
+
+    assertEquals(
+      PromotionCheckReviewsResponse(undecided = listOf(UndecidedPromotionReview("rule", RULE_PROMOTION_ID, review(1).url, "Do not expose [redacted]"))),
+      result,
+    )
+  }
+
+  @Test
+  fun `closed review discussion is cut to 32000 characters`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED, "x".repeat(40_000))
+
+    val result = service.checkReviews()
+
+    assertEquals(
+      PromotionCheckReviewsResponse(undecided = listOf(UndecidedPromotionReview("rule", RULE_PROMOTION_ID, review(1).url, "x".repeat(32_000)))),
+      result,
+    )
+  }
+
+  @Test
+  fun `an accepted promotion is not checked`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.ACCEPTED))))
+
+    assertEquals(PromotionCheckReviewsResponse(), service.checkReviews())
+    assertEquals(emptyList(), reviews.statusReads)
+  }
+
+  @Test
+  fun `a closed promotion of a cluster no longer generated is not checked`() {
+    val closed = referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.CLOSED)))
+    repository.store(closed.copy(status = EdictNextClusterStatus.Discontinued))
+
+    assertEquals(PromotionCheckReviewsResponse(), service.checkReviews())
+    assertEquals(emptyList(), reviews.statusReads)
+  }
+
+  @Test
+  fun `a closed promotion whose review has merged since fails`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.CLOSED))))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.MERGED)
+
+    val result = service.checkReviews()
+
+    val failure = PromotionReviewFailure("rule", RULE_PROMOTION_ID, "Promotion is CLOSED, but its review is now MERGED")
+    assertEquals(PromotionCheckReviewsResponse(failures = listOf(failure)), result)
+  }
+
+  @Test
+  fun `a review that cannot be read is reported and keeps its promotion on review`() {
+    val cluster = repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.failAt(ReviewStep.STATUS, "Provider unavailable")
+
+    val result = service.checkReviews()
+
+    assertEquals(
+      PromotionCheckReviewsResponse(failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, "Provider unavailable"))),
+      result,
+    )
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
+  }
+
+  @Test
+  fun `a review read failure is redacted`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.failAt(ReviewStep.STATUS, "Token $SECRET was rejected")
+
+    val result = promotionService(repository, reviews, redactor = SECRET_REDACTION).checkReviews()
+
+    assertEquals(
+      PromotionCheckReviewsResponse(failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, "Token [redacted] was rejected"))),
+      result,
+    )
+  }
+
+  @Test
+  fun `a closed promotion whose review cannot be read still awaits a decision`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.CLOSED))))
+    reviews.failAt(ReviewStep.STATUS, "Provider unavailable")
+
+    val result = service.checkReviews()
+
+    assertEquals(
+      PromotionCheckReviewsResponse(
+        undecided = listOf(UndecidedPromotionReview("rule", RULE_PROMOTION_ID, review(1).url, "")),
+        failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, "Provider unavailable")),
+      ),
+      result,
+    )
+  }
+
+  // decideReviews
+
+  @ParameterizedTest
+  @EnumSource(PromotionPrState::class, names = ["ON_REVIEW", "CLOSED"])
+  fun `discontinuing a closed review discontinues the cluster`(state: PromotionPrState) {
+    val cluster = repository.store(referencedCluster(promotions = listOf(inspectionPromotion(state))))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED)
+
+    val result = service.decideReviews(listOf(DISCONTINUE))
+
+    val closed = inspectionPromotion(PromotionPrState.CLOSED).copy(updatedAt = NOW)
+    assertEquals(PromotionDecideReviewsResponse(updated = listOf(closed)), result)
+    assertEquals(
+      cluster.manifest.copy(status = EdictNextClusterStatus.Discontinued, promotions = listOf(closed)),
+      repository.loadCluster("rule").manifest,
+    )
+  }
+
+  @Test
+  fun `discontinuing a cluster removes its inspection`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED)
+
+    service.decideReviews(listOf(DISCONTINUE))
+
+    assertFalse(repository.paths.inspectionPath("rule").exists())
+  }
+
+  @Test
+  fun `a decision is recorded in the cluster history with its rationale`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED)
+
+    service.decideReviews(listOf(DISCONTINUE))
+
+    assertEquals(
+      "${HISTORY}Promotion `$RULE_PROMOTION_ID` moved cluster to Discontinued: Reviewer rejected the rule itself\n",
+      repository.loadCluster("rule").historyPath.readText(),
+    )
+  }
+
+  @Test
+  fun `moving a closed review's cluster to pending keeps its inspection as the predecessor`() {
+    val cluster = repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED)
+
+    service.decideReviews(listOf(DISCONTINUE.copy(decision = ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING)))
+
+    val closed = inspectionPromotion(PromotionPrState.CLOSED).copy(updatedAt = NOW)
+    assertEquals(
+      cluster.manifest.copy(status = EdictNextClusterStatus.Pending, predecessorId = "rule", promotions = listOf(closed)),
+      repository.loadCluster("rule").manifest,
+    )
+    assertTrue(repository.paths.inspectionPath("rule").exists())
+  }
+
+  @Test
+  fun `a decision on a review that is still open fails and changes nothing`() {
+    val cluster = repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.OPEN)
+
+    val result = service.decideReviews(listOf(DISCONTINUE))
+
+    val message = "Promotion '$RULE_PROMOTION_ID' remote review is OPEN, not CLOSED_UNMERGED"
+    assertEquals(PromotionDecideReviewsResponse(failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, message))), result)
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
+  }
+
+  @Test
+  fun `a decision on an accepted promotion fails`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.ACCEPTED))))
+
+    val result = service.decideReviews(listOf(DISCONTINUE))
+
+    val message = "Promotion '$RULE_PROMOTION_ID' is not awaiting a closed-review decision"
+    assertEquals(PromotionDecideReviewsResponse(failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, message))), result)
+  }
+
+  @Test
+  fun `a decision on an unknown promotion fails`() {
+    repository.store(referencedCluster())
+
+    val result = service.decideReviews(listOf(DISCONTINUE))
+
+    val message = "Unknown promotion '$RULE_PROMOTION_ID' in cluster 'rule'"
+    assertEquals(PromotionDecideReviewsResponse(failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, message))), result)
+  }
+
+  @Test
+  fun `a decision on a promotion of a replaced inspection fails and leaves the newer inspection generated`() {
+    val older = inspectionPromotion(PromotionPrState.ACCEPTED, id = "p-${"4".repeat(24)}", inspectionDigest = sha256Hex("older"))
+    val cluster = repository.store(referencedCluster(promotions = listOf(older, inspectionPromotion(PromotionPrState.CLOSED))))
+    repository.replaceInspection("rule", "newer inspection".toByteArray())
+    reviews.statuses[review(1)] = ReviewStatus(ReviewState.CLOSED_UNMERGED)
+
+    val result = service.decideReviews(listOf(DISCONTINUE))
+
+    val failure = PromotionReviewFailure("rule", RULE_PROMOTION_ID, "Promotion is stale: the generated inspection has changed")
+    assertEquals(PromotionDecideReviewsResponse(failures = listOf(failure)), result)
+    assertEquals(cluster.manifest, repository.loadCluster("rule").manifest)
+  }
+
+  @Test
+  fun `a decision failure is redacted`() {
+    repository.store(referencedCluster(promotions = listOf(inspectionPromotion())))
+    reviews.failAt(ReviewStep.STATUS, "Token $SECRET was rejected")
+
+    val result = promotionService(repository, reviews, redactor = SECRET_REDACTION).decideReviews(listOf(DISCONTINUE))
+
+    assertEquals(
+      PromotionDecideReviewsResponse(failures = listOf(PromotionReviewFailure("rule", RULE_PROMOTION_ID, "Token [redacted] was rejected"))),
+      result,
+    )
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = [0, 11])
+  fun `a decision batch holds one to ten decisions`(size: Int) {
+    val decisions = List(size) { DISCONTINUE.copy(promotionId = "p-%024x".format(it)) }
+
+    val error = assertFailsWith<IllegalArgumentException> { service.decideReviews(decisions) }
+    assertEquals("A decision batch must contain 1 to 10 promotions", error.message)
+  }
+
+  @Test
+  fun `a decision batch with two decisions of one promotion is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.decideReviews(listOf(DISCONTINUE, DISCONTINUE)) }
+    assertEquals("Only one decision may be supplied for each promotion", error.message)
+  }
+
+  @Test
+  fun `a decision without a rationale is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.decideReviews(listOf(DISCONTINUE.copy(rationale = " "))) }
+    assertEquals("A rationale is required for DISCONTINUE_CLUSTER", error.message)
+  }
+
+  @Test
+  fun `a decision rationale longer than 4000 characters is rejected`() {
+    val error = assertFailsWith<IllegalArgumentException> { service.decideReviews(listOf(DISCONTINUE.copy(rationale = "x".repeat(4_001)))) }
+    assertEquals("Decision rationale exceeds 4000 characters", error.message)
   }
 }
+
+/** Discontinues cluster `rule` over its promotion [RULE_PROMOTION_ID]. */
+private val DISCONTINUE = PromotionReviewDecision(
+  "rule", RULE_PROMOTION_ID, ClosedReviewDecision.DISCONTINUE_CLUSTER, "Reviewer rejected the rule itself",
+)

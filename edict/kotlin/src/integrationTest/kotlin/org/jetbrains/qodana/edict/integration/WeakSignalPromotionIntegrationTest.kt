@@ -21,7 +21,7 @@ class WeakSignalPromotionIntegrationTest : IntegrationTest() {
         val projectReview = assertNotNull(evaluation.projectReview)
         assertEquals(exampleSetDigest(original), evaluation.exampleSetDigest)
         assertTrue(repository.loadActiveWeakSignalPromotions().isEmpty())
-        val reviews = Fixture.Reviews()
+        val reviews = Fixture.reviews()
 
         workspace.withPromotionCodex(
             prompt = "Promote weak signals",
@@ -47,14 +47,14 @@ class WeakSignalPromotionIntegrationTest : IntegrationTest() {
 
             val cluster = repository.loadCluster(Fixture.clusterId)
             val promotion = repository.loadActiveWeakSignalPromotions()[Fixture.clusterId].orEmpty().single()
-            assertEquals(Fixture.pullRequest, promotion.pullRequest)
+            assertEquals(listOf(promotion.pullRequest), reviews.opened.values.toList())
             assertEquals(evaluation.inspectionHash, request.inspectionDigest)
             assertEquals(PromotionPrState.ON_REVIEW, promotion.state)
             assertEquals(original.manifest.status, cluster.manifest.status)
             assertEquals(original.signals, cluster.signals)
             assertTrue(cluster.manifest.promotions.isEmpty())
             assertTrue(repository.loadInboxSignals().isEmpty())
-            assertTrue(reviews.checked.isEmpty())
+            assertTrue(reviews.statusReads.isEmpty())
             verifyManagedRun(workspace, runtime, plan)
         }
     }

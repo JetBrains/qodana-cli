@@ -1,0 +1,9 @@
+--- "a/src/caf\303\251 1.kt"
++++ "b/src/tab\there.kt"
+@@ -1,5 +1,5 @@
+ class Equality {
+   boolean same(String a, String b) {
+-    return a == b;
++    return java.util.Objects.equals(a, b);
+   }
+ }

@@ -3,17 +3,15 @@ package org.jetbrains.qodana.edict.integration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.qodana.edict.edictnext.HttpInspectionKtsClient
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerLifecycle
+import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -28,17 +26,10 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
      */
     @Test
     fun `production client keeps its IDE session across idle pauses without restarting the IDE`() = runBlocking {
-        InspectionServer.start(workspace).use { ide ->
-            val starts = AtomicInteger()
-            val service = IntellijMcpServerService(
-                ide.source,
-                serverLifecycle = object : IntellijMcpServerLifecycle {
-                    override suspend fun start(): URI = ide.streamableEndpoint.also { starts.incrementAndGet() }
-
-                    // The surrounding test owns the IDE.
-                    override suspend fun stop() = Unit
-                },
-            )
+        InspectionServer.start(workspace.project, workspace.output).use { ide ->
+            // The surrounding test owns the IDE.
+            val lifecycle = FakeIntellijMcpServerLifecycle(ide.streamableEndpoint)
+            val service = IntellijMcpServerService(ide.source, serverLifecycle = lifecycle)
             try {
                 repeat(3) { call ->
                     if (call > 0) delay(20.seconds)
@@ -49,14 +40,14 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
             finally {
                 service.stop()
             }
-            assertEquals(1, starts.get(), "IntelliJ MCP was restarted after its session was dropped")
+            assertEquals(1, lifecycle.starts, "IntelliJ MCP was restarted after its session was dropped")
         }
     }
 
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     fun `project analysis can be submitted after the previous analysis times out`() = runBlocking {
-        InspectionServer.start(workspace, ::prepareProjectForAnalysis).use { ide ->
+        InspectionServer.start(workspace.project, workspace.output, ::prepareProjectForAnalysis).use { ide ->
             HttpInspectionKtsClient(
                 endpoint = ide.streamableEndpoint,
                 projectPath = ide.source.toString(),
