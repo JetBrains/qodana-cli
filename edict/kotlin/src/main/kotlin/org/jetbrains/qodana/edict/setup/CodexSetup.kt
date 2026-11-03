@@ -48,7 +48,7 @@ internal object CodexSetup {
     val previous = layout.codexConfigPath.takeIf { it.exists() }?.readText()
     val merged = mergeCodexConfig(
       previous.orEmpty(),
-      codexConfig(layout, deniedPaths.map { layout.root.resolve(it).canonical() }, config.mcpPort),
+      codexConfig(layout, codexHome.canonical(), deniedPaths.map { layout.root.resolve(it).canonical() }, config.mcpPort),
       layout.codexConfigPath,
     )
     val skills = Skills.install(layout.codexSkillsDirectory)
@@ -109,8 +109,12 @@ private fun quote(value: Any): String = JsonPrimitive(value.toString()).toString
 /** Ends every line that install writes, so a later install replaces exactly those lines. */
 private const val EDICT_MARKER = "# qodana-edict"
 
-/** The settings Edict needs, one entry per line; [mergeCodexConfig] copies the missing lines into the user's config. */
-private fun codexConfig(layout: EdictLayout, deniedPaths: List<Path>, port: Int): String = """
+/**
+ * The settings Edict needs, one entry per line; [mergeCodexConfig] copies the missing lines into the user's config.
+ * Agents may not read Edict's process logs, nor the sessions and logs in [codexHome]: they hold capability tokens and
+ * other agents' transcripts.
+ */
+private fun codexConfig(layout: EdictLayout, codexHome: Path, deniedPaths: List<Path>, port: Int): String = """
   |approval_policy = "never"
   |default_permissions = "edict"
   |model_reasoning_effort = "high"
@@ -124,6 +128,8 @@ private fun codexConfig(layout: EdictLayout, deniedPaths: List<Path>, port: Int)
   |${quote(layout.root)} = "read"
   |${quote(layout.agentWorkRoot)} = "write"
   |${quote(layout.processLogRoot)} = "deny"
+  |${quote(codexHome.resolve("sessions"))} = "deny"
+  |${quote(codexHome.resolve("log"))} = "deny"
   |${deniedPaths.joinToString("") { "${quote(it)} = \"deny\"\n" }}
   |[permissions.edict.network]
   |enabled = true

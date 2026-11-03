@@ -135,15 +135,24 @@ func TestPrepareMCPScanContextRejectsDockerLinters(t *testing.T) {
 	}
 }
 
-func TestIDEMCPPropertiesEnableQodanaModeUnlessOverridden(t *testing.T) {
-	properties := ideMCPProperties([]string{"-Xmx8g", "qodana.application=false"})
+func TestIDEMCPPropertiesReplaceDefaultsTheCallerSets(t *testing.T) {
+	// The caller sets one default as given and one with -D; -Xmx sets no default but wins over the heap percentage.
+	properties := ideMCPProperties([]string{
+		"-Xmx8g", "qodana.application=false", "-Dorg.gradle.daemon.idletimeout=300000",
+	})
 
-	if properties[0] != "qodana.application=true" {
-		t.Fatalf("IDE properties do not enable Qodana mode: %v", properties)
+	expected := []string{
+		"-XX:MaxRAMPercentage=70",
+		"idea.batch.inspections.inspect.injected.psi=false",
+		"idea.enable.duplicates.online.calculation=false",
+		"vfs.health-check.enabled=false",
+		"kotlin.daemon.jvm.options=-Xmx2g",
+		"-Xmx8g",
+		"qodana.application=false",
+		"-Dorg.gradle.daemon.idletimeout=300000",
 	}
-	// Later occurrences win when properties become VM options, so a caller can still turn it off.
-	if properties[len(properties)-1] != "qodana.application=false" || !slices.Contains(properties, "-Xmx8g") {
-		t.Fatalf("caller properties were not kept after the default: %v", properties)
+	if !slices.Equal(properties, expected) {
+		t.Fatalf("IDE properties:\n%v\nexpected:\n%v", properties, expected)
 	}
 }
 
