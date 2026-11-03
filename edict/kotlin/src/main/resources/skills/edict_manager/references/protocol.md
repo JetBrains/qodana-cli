@@ -51,6 +51,8 @@ A delegating task finishes only after all its descendants complete. When a skill
    call `edict_task_cancel(token, taskId, result)` with your parent capability. That marks the task `cancelled`,
    revokes it and its descendants, and records your reason. Do not act as its worker. Retry it when your skill still
    needs its result: `edict_delegate` the same task again and launch a fresh worker. A cancelled task does not count
-   against review limits and does not stop you from completing; a child that finished `failed` normally does. A
+   against review limits and does not stop you from completing; a child that finished `failed` normally does. Retry a
+   failed child the same way, by delegating the same task again: its completed retry replaces the failure, while a new
+   task for the same work leaves the failed one blocking your completion. A
    coordinator may tolerate failed children only when its own managed skill defines an explicit threshold and the
    server accepts that coordinator's completed status.

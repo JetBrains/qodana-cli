@@ -90,9 +90,10 @@ Previous code review: <Code review from the previous round's result, or none>
 
 A round finishes with the lines `Cluster id`, `Analyzed candidate`, `Code review`, and `Next`. Use its cluster id for
 every later call and round, since a round may rename the cluster. On `Next: CONTINUE`, launch the next round. On
-`STOP`, finish as below. On `INVALID` or `DISCONTINUED`, finalise that status with the round's reason. When a round
-fails or is cancelled, launch one more round with the last completed round's lines; when that one fails too, finalise
-`Invalid` with the failure.
+`STOP`, finish as below. On `INVALID` or `DISCONTINUED`, finalise that status with the round's reason. When a round is
+cancelled, or fails because of tooling (an IDE, MCP server or model service error, or a timeout), delegate the same
+round task once more, with the same round number and the last completed round's lines; when that retry fails too,
+finalise `Invalid` with the failure. When a round fails for any other reason, finalise `Invalid` with its failure.
 
 After `STOP`, append the decision to history, call `edict_next_record_evaluation(token, clusterId)` as the last step
 before finalising, then finalise `Generated`. Do not read or change the candidate: the round left the stored candidate
