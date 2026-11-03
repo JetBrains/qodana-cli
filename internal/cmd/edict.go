@@ -25,13 +25,44 @@ func newEdictCommand() *cobra.Command {
 		Use:   "edict",
 		Short: "Edict commands: extract inspection rules from your development history",
 	}
-	cmd.AddCommand(newEdictInstallCommand(), newEdictManagedMCPCommand(), newEdictIDEMCPCommand())
+	cmd.AddCommand(newEdictInstallCommand(), newEdictManagedMCPCommand(), newEdictIDEMCPCommand(), newEdictStateCommand())
 	return cmd
+}
+
+// newEdictStateCommand returns the commands for the Edict state branch that install checks out.
+func newEdictStateCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   "state",
+		Short: "Manage the Edict state branch",
+	}
+	var message, configFile string
+	push := &cobra.Command{
+		Use:   "push",
+		Short: "Commit the Edict state and push its branch to origin",
+		Long: `Commit every change in the Edict state (edict.statePath, ./.edict by default) on its branch
+(edict.stateBranch, edict/state by default) and push the branch to origin, setting it as upstream.
+If another run pushed the branch first, the commit is rebased onto it. Fails while an Edict server
+owns the state: stop it with 'qodana edict mcp stop' first.`,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
+		RunE: func(command *cobra.Command, _ []string) error {
+			args := append([]string{"state-push"}, edictQodanaYamlArguments(".", configFile)...)
+			if message != "" {
+				args = append(args, "--message", message)
+			}
+			return runEdictJVM(command, args...)
+		},
+	}
+	push.Flags().StringVar(&message, "message", "", "Commit message (default \"Update the Edict state\")")
+	push.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
+	command.AddCommand(push)
+	return command
 }
 
 // newEdictInstallCommand returns the command setting Edict up for Codex sessions started in the current directory.
 func newEdictInstallCommand() *cobra.Command {
 	var deniedPaths []string
+	var configFile string
 	command := &cobra.Command{
 		Use:   "install",
 		Short: "Set Edict up for Codex sessions in the current directory",
@@ -49,11 +80,17 @@ whether it loads the config, and restores the previous config and fails if not. 
 after changing the port; it updates skills and config. The lines it writes end with '# qodana-edict'
 and are replaced on each run; every other line and unrelated files in ./.codex/skills are kept. The
 command fails without changes when the config sets a value Edict needs, such as approval_policy, differently.
-Use --deny for paths agents must not read, such as benchmark answers.`,
+Agents may not read Edict's process logs or the sessions and logs in $CODEX_HOME; use --deny for
+other paths agents must not read, such as benchmark answers.
+
+In a git repository, install then checks out the Edict state branch (edict.stateBranch, edict/state
+by default) as a worktree at edict.statePath, from origin when it has the branch, else as a new
+branch without history, and excludes it from the project's git status. The project's checkout stays
+on its branch. A state directory that already holds files is kept as it is.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
-			args := []string{"install"}
+			args := append([]string{"install"}, edictQodanaYamlArguments(".", configFile)...)
 			for _, path := range deniedPaths {
 				args = append(args, "--deny", path)
 			}
@@ -61,5 +98,6 @@ Use --deny for paths agents must not read, such as benchmark answers.`,
 		},
 	}
 	command.Flags().StringArrayVar(&deniedPaths, "deny", nil, "Deny agents any access to this path (relative to the current directory)")
+	command.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
 	return command
 }

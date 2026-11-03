@@ -115,7 +115,8 @@ The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not suppor
 		"",
 		"Directory for IDE results and logs, kept after exit (default: a temporary directory removed on exit)",
 	)
-	flags.DurationVar(&options.WaitTimeout, "wait-timeout", 90*time.Second, "Maximum time to wait for MCP readiness")
+	// Large projects take tens of minutes to import, and the IDE serves MCP only afterwards.
+	flags.DurationVar(&options.WaitTimeout, "wait-timeout", time.Hour, "Maximum time to wait for MCP readiness")
 	flags.BoolVar(
 		&options.QodanaScript,
 		"qodana-script",
@@ -341,11 +342,45 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 	return scanContext, cleanup, nil
 }
 
-// ideMCPProperties starts the IDE in Qodana mode, as a scan does: its headless project setup, such as assigning the
-// project JDK after a Maven import, runs only then. The mcp-server script runs in Qodana mode anyway; the headless
-// starter needs it. Caller properties come later, so they can override it.
+// ideMCPDefaultProperties configure the IDE for an Edict session on any project.
+var ideMCPDefaultProperties = []string{
+	// Qodana mode, as a scan runs: its headless project setup, such as assigning the project JDK after a Maven import,
+	// runs only then. The mcp-server script runs in Qodana mode anyway; the headless starter needs it.
+	"qodana.application=true",
+	// 70% of the memory the JVM detects, cgroup limits included; with it, the launcher drops the distribution's -Xmx.
+	// The rest holds the build tool's daemon during the import, the Kotlin daemon and the agents. An explicit -Xmx wins.
+	"-XX:MaxRAMPercentage=70",
+	// Avoid repeated JSON schema lookups while the batch engine discovers injected code.
+	"idea.batch.inspections.inspect.injected.psi=false",
+	// Background work that a session without an editor does not need, as in Qodana's rules extraction builds.
+	"idea.enable.duplicates.online.calculation=false",
+	"vfs.health-check.enabled=false",
+	// The Kotlin daemon that compiles inspection scripts would otherwise inherit the IDE's heap limit.
+	"kotlin.daemon.jvm.options=-Xmx2g",
+	// The Gradle daemon that imported the project stays idle for three hours by default, holding its heap while agents
+	// run inspections. The IDE's own JVM properties override the project's gradle.properties for the daemons it starts.
+	"org.gradle.daemon.idletimeout=60000",
+}
+
+// ideMCPProperties are the default properties, except those the caller sets, followed by the caller's.
 func ideMCPProperties(properties []string) []string {
-	return append([]string{"qodana.application=true"}, properties...)
+	overridden := map[string]bool{}
+	for _, property := range properties {
+		overridden[ideMCPPropertyKey(property)] = true
+	}
+	var result []string
+	for _, property := range ideMCPDefaultProperties {
+		if !overridden[ideMCPPropertyKey(property)] {
+			result = append(result, property)
+		}
+	}
+	return append(result, properties...)
+}
+
+// ideMCPPropertyKey is the system property or JVM option a property sets: the part before "=", without "-D".
+func ideMCPPropertyKey(property string) string {
+	key, _, _ := strings.Cut(property, "=")
+	return strings.TrimPrefix(key, "-D")
 }
 
 func computeNativeMCPContext(options ideMCPOptions) commoncontext.Context {

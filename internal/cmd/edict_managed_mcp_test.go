@@ -153,6 +153,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 func TestEdictManagedMCPRequiresInstall(t *testing.T) {
 	t.Chdir(t.TempDir())
 	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
 	command.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(context.Background(), command); err == nil ||
 		!strings.Contains(output, "run `qodana edict install` first") {
@@ -164,6 +165,7 @@ func TestEdictManagedMCPRequiresInstallationForConfiguredPort(t *testing.T) {
 	prepareEdictProject(t)
 	writeEdictPort(t, freePort(t))
 	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
 	command.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(context.Background(), command); err == nil ||
 		!strings.Contains(output, "re-run `qodana edict install`") {
@@ -191,6 +193,7 @@ edict:
 		forwarded = append([]string(nil), args...)
 		return nil
 	})
+	command.SetArgs([]string{"--foreground"})
 	if err := command.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +217,7 @@ func TestEdictManagedMCPForwardsCustomQodanaYamlWithoutParsing(t *testing.T) {
 		forwarded = append([]string(nil), args...)
 		return nil
 	})
-	command.SetArgs([]string{"--config", custom})
+	command.SetArgs([]string{"--foreground", "--config", custom})
 	if err := command.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -234,6 +237,7 @@ func TestEdictManagedMCPForwardsYamlWithoutEdictSection(t *testing.T) {
 		forwarded = append([]string(nil), args...)
 		return nil
 	})
+	command.SetArgs([]string{"--foreground"})
 	if err := command.Execute(); err != nil {
 		t.Fatal(err)
 	}
@@ -249,6 +253,7 @@ func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
 	}
 	appendEdictStatePath(t, "not-a-directory")
 	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
 	command.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(context.Background(), command); err == nil || !strings.Contains(output, "ERROR") {
 		t.Fatalf("startup with an invalid state directory: %v, %s", err, output)

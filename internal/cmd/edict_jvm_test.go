@@ -103,7 +103,13 @@ func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
 		t.Fatal("unrelated file changed")
 	}
 	config := readCodexConfig(t)
+	realCodexHome, err := filepath.EvalSymlinks(codexHome)
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, want := range []string{
+		strconv.Quote(filepath.Join(realCodexHome, "sessions")) + ` = "deny"`,
+		strconv.Quote(filepath.Join(realCodexHome, "log")) + ` = "deny"`,
 		`default_permissions = "edict"`,
 		strconv.Quote(project) + ` = "read"`,
 		strconv.Quote(filepath.Join(project, "log", "agent-work")) + ` = "write"`,
@@ -340,6 +346,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 	_ = session.Close()
 	// The configured state path is exclusively locked by the JVM.
 	duplicate := newEdictManagedMCPStartCommand()
+	duplicate.SetArgs([]string{"--foreground"})
 	duplicate.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(ctx, duplicate); err == nil || !strings.Contains(output, "already owned") {
 		t.Fatalf("second JVM did not respect the state lock: %v, %s", err, output)
@@ -348,6 +355,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 	otherState := filepath.Join(project, "other state")
 	replaceEdictStatePath(t, state, otherState)
 	busy := newEdictManagedMCPStartCommand()
+	busy.SetArgs([]string{"--foreground"})
 	busy.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(ctx, busy); err == nil || !strings.Contains(output, "Address already in use") {
 		t.Fatalf("second JVM did not fail on the busy port: %v, %s", err, output)
@@ -450,7 +458,7 @@ func startEdictMCP(t *testing.T, ctx context.Context, args ...string) edictMCPSe
 	output, outputWriter := io.Pipe()
 	t.Cleanup(func() { _ = output.Close() })
 	command := newEdictManagedMCPStartCommand()
-	command.SetArgs(args)
+	command.SetArgs(append([]string{"--foreground"}, args...))
 	command.SetIn(strings.NewReader(""))
 	server := edictMCPServer{done: make(chan error, 1)}
 	command.SetOut(outputWriter)
@@ -511,4 +519,27 @@ func firstEdictProcessLog(t *testing.T, root, name string) string {
 		t.Fatalf("no Edict run in %s wrote %s: %v", root, name, err)
 	}
 	return matches[0]
+}
+
+func TestEdictStatePushBeforeInstallLeavesTheStateDirectoryToInstall(t *testing.T) {
+	t.Chdir(t.TempDir())
+	project := realWorkingDirectory(t)
+	useFakeCodex(t)
+	trustCodexProject(t, t.TempDir(), project)
+	if output, err := exec.Command("git", "init", "-q", project).CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, output)
+	}
+	writeEdictPort(t, freePort(t))
+	push := newEdictStateCommand()
+	push.SetArgs([]string{"push"})
+	push.SetIn(strings.NewReader(""))
+	if output, err := executeEdictCommand(context.Background(), push); err == nil || !strings.Contains(output, "is not a worktree of edict/state") {
+		t.Fatalf("state push before install: %v\n%s", err, output)
+	}
+
+	output := installEdict(t)
+
+	if !strings.Contains(output, "Started edict/state at "+filepath.Join(project, ".edict")) {
+		t.Fatalf("install after a failed state push did not start the state branch:\n%s", output)
+	}
 }

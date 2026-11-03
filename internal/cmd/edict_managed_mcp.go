@@ -14,6 +14,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 // newEdictManagedMCPCommand serves Edict state management and, on demand, IntelliJ inspections.
@@ -22,8 +23,27 @@ func newEdictManagedMCPCommand() *cobra.Command {
 		Use:   "mcp",
 		Short: "Manage the Kotlin Edict state server",
 	}
-	command.AddCommand(newEdictManagedMCPStartCommand())
+	command.AddCommand(newEdictManagedMCPStartCommand(), newEdictManagedMCPStopCommand())
 	return command
+}
+
+func newEdictManagedMCPStopCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "stop",
+		Short: "Stop the Edict server that `edict mcp start` started for the current directory",
+		Long: `Stop the detached Edict server of the project in the current directory and the IDE it started.
+The server gets a minute to stop its IDE; then everything it started is killed.
+Succeeds when no server runs.`,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
+		RunE: func(command *cobra.Command, _ []string) error {
+			files, err := newEdictServerFiles(".")
+			if err != nil {
+				return err
+			}
+			return stopEdictServer(files, edictServerStopTimeout, command.OutOrStdout())
+		},
+	}
 }
 
 func newEdictManagedMCPStartCommand() *cobra.Command {
@@ -34,10 +54,14 @@ func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string
 	var configFile, ideDist, ideLinter string
 	var ideProperties []string
 	var ideWaitTimeout time.Duration
+	var foreground bool
 	command := &cobra.Command{
 		Use:   "start",
 		Short: "Serve managed Edict state and skill capabilities through the Kotlin JVM",
 		Long: `Run the bundled Kotlin managed Edict server for the project in the current directory.
+The server runs in the background: the command returns once it serves MCP, its output
+goes to a server log in the user cache, and 'qodana edict mcp stop' stops it and its IDE.
+With --foreground it serves in this process until interrupted instead.
 It serves Streamable HTTP on loopback at edict.mcpPort from ./qodana.yaml (or
 ./qodana.yml; default 27182), and fails if 'qodana edict install' did not configure
 that port in ./.codex/config.toml or the port is busy.
@@ -68,6 +92,9 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
+			if !foreground {
+				return startDetached(command)
+			}
 			// The JVM exits with this process, so a SIGKILL here cannot leave the server and its IDE running.
 			args := []string{"mcp", "--parent-pid", strconv.Itoa(os.Getpid())}
 			// The Kotlin server starts the IntelliJ MCP server through this same CLI binary, not whichever qodana is on PATH.
@@ -99,9 +126,38 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 	command.Flags().StringVar(&ideDist, "ide-dist", "", "Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)")
 	command.Flags().StringVar(&ideLinter, "ide-linter", "", "Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)")
 	command.Flags().StringArrayVar(&ideProperties, "ide-property", nil, "Set a JVM property or option for the IDE")
-	command.Flags().DurationVar(&ideWaitTimeout, "ide-wait-timeout", 0, "Maximum time to wait for the IDE MCP server to become ready (default 1m30s)")
+	command.Flags().DurationVar(&ideWaitTimeout, "ide-wait-timeout", 0, "Maximum time to wait for the IDE MCP server to become ready (default 1h)")
+	command.Flags().BoolVar(&foreground, "foreground", false, "Serve in this process until it is interrupted, instead of in the background")
 	command.MarkFlagsMutuallyExclusive("ide-dist", "ide-linter")
 	return command
+}
+
+// startDetached starts this command again with --foreground and the same flags, in the background.
+func startDetached(command *cobra.Command) error {
+	executable, err := os.Executable()
+	if err != nil {
+		return err
+	}
+	files, err := newEdictServerFiles(".")
+	if err != nil {
+		return err
+	}
+	return startDetachedEdictServer(executable, foregroundArguments(command.Flags()), files, command.OutOrStdout())
+}
+
+// foregroundArguments start the server in the foreground with every flag set on the command line, as given.
+func foregroundArguments(flags *pflag.FlagSet) []string {
+	arguments := []string{"edict", "mcp", "start", "--foreground"}
+	flags.Visit(func(flag *pflag.Flag) {
+		values := []string{flag.Value.String()}
+		if slice, ok := flag.Value.(pflag.SliceValue); ok {
+			values = slice.GetSlice()
+		}
+		for _, value := range values {
+			arguments = append(arguments, "--"+flag.Name+"="+value)
+		}
+	})
+	return arguments
 }
 
 func edictQodanaYamlArguments(projectDir, configFile string) []string {

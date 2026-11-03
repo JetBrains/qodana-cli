@@ -4,8 +4,11 @@ package org.jetbrains.qodana.edict
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.qodana.edict.ci.getReviewAPI
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.DEFAULT_EDICT_STATE_BRANCH
 import org.jetbrains.qodana.edict.common.EdictYamlConfiguration
+import org.jetbrains.qodana.edict.common.StateBranch
 import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.edictnext.defaultQodanaExecutable
 import org.jetbrains.qodana.edict.setup.CodexSetup
@@ -30,11 +33,13 @@ fun main(args: Array<String>) {
         val options = optionPairs.toMap()
         when (command) {
             "install" -> {
-                require(options.keys.all { it == "deny" }) { "Unknown install option" }
-                val configuration = EdictYamlConfiguration.load(EdictLayout.findQodanaYaml())
-                val layout = EdictLayout.get(configuration.statePath)
-                val denied = optionPairs.map { Path.of(it.second) }
-                CodexSetup.install(layout, denied, EdictConfig(configuration.mcpPort))
+                require(options.keys.all { it in listOf("deny", "qodana-yaml") }) { "Unknown install option" }
+                install(qodanaYaml(options), optionPairs.filter { it.first == "deny" }.map { Path.of(it.second) })
+            }
+
+            "state-push" -> {
+                require(options.keys.all { it in listOf("message", "qodana-yaml") }) { "Unknown state-push option" }
+                pushState(qodanaYaml(options), options["message"] ?: "Update the Edict state")
             }
 
             "mcp" -> {
@@ -49,9 +54,7 @@ fun main(args: Array<String>) {
                         "qodana-yaml",
                     )
                 }) { "Unknown Edict Next option" }
-                val qodanaYaml = options["qodana-yaml"]?.let(Path::of)?.toAbsolutePath()?.normalize()
-                    ?: EdictLayout.findQodanaYaml()
-                val configuration = EdictYamlConfiguration.load(qodanaYaml)
+                val configuration = EdictYamlConfiguration.load(qodanaYaml(options))
                 val ciReviews = configuration.ci?.let { getReviewAPI(it, configuration.bots) }
                 val promotionReviews = configuration.promotionRepository?.let { getReviewAPI(it, configuration.bots) }
                 val layout = EdictLayout.get(configuration.statePath)
@@ -90,8 +93,11 @@ fun main(args: Array<String>) {
             "help", "--help", "-h" -> println(
                 """
                 Edict managed skills (standalone Kotlin/JVM). Run every command in the project directory.
-                  edict install [--deny <path>]...
+                  edict install [--qodana-yaml <path>] [--deny <path>]...
                     Installs skills into .codex/skills and adds Edict settings for edict.mcpPort from qodana.yaml to .codex/config.toml.
+                    Checks out edict.stateBranch (default $DEFAULT_EDICT_STATE_BRANCH) as a worktree at edict.statePath, from origin when it has the branch.
+                  edict state-push [--qodana-yaml <path>] [--message <message>]
+                    Commits the state on edict.stateBranch and pushes it to origin; fails while a server owns the state.
                   edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
                     edict.calculatePrice=true enables the manager-only price-report MCP tool and private run report.
@@ -107,3 +113,28 @@ fun main(args: Array<String>) {
         exitProcess(1)
     }
 }
+
+/** The Qodana configuration that `--qodana-yaml` names, else the one in the working directory, if any. */
+private fun qodanaYaml(options: Map<String, String>): Path? =
+    options["qodana-yaml"]?.let(Path::of)?.toAbsolutePath()?.normalize() ?: EdictLayout.findQodanaYaml()
+
+/** Sets Codex up for the project in the working directory and checks the state branch out. */
+private fun install(qodanaYaml: Path?, deniedPaths: List<Path>) {
+    val configuration = EdictYamlConfiguration.load(qodanaYaml)
+    val layout = EdictLayout.get(configuration.statePath)
+    CodexSetup.install(layout, deniedPaths, EdictConfig(configuration.mcpPort))
+    val stateBranch = StateBranch(layout, configuration.stateBranch)
+    val checkout = stateBranch.checkOut()
+    logger.info { stateBranch.describe(checkout) }
+}
+
+private fun pushState(qodanaYaml: Path?, message: String) {
+    val configuration = EdictYamlConfiguration.load(qodanaYaml)
+    val layout = EdictLayout.get(configuration.statePath)
+    // Before the lock, which creates files in the state directory that would keep install from checking it out.
+    val worktree = StateBranch(layout, configuration.stateBranch).worktree()
+    // Holding the state lock keeps a running server from writing while the state is committed.
+    EdictNextRepositoryState.open(layout.stateDirectory).use { worktree.push(message) }
+    logger.info { "Pushed the Edict state in ${layout.stateDirectory} to ${configuration.stateBranch}" }
+}
+

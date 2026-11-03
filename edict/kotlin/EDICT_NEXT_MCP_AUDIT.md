@@ -101,8 +101,7 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
   is deleting `<state>/.edict-mcp-current` by hand.
 - [ ] The plan has no upper bound since the review-iteration cap was removed; a large run can hit the 8 MiB /
   10,000-task limits, after which every lifecycle call fails. Each save rewrites the whole plan.
-- [ ] Setup: `install` has no `--config` but `mcp start` does, so a non-default port set through `--config` cannot be
-  installed; a repeated `--deny` (or one equal to root/`log/agent-work`/`log/process-log`) produces a duplicate TOML key;
+- [ ] Setup: a repeated `--deny` (or one equal to root/`log/agent-work`/`log/process-log`) produces a duplicate TOML key;
   `log/agent-work` is neither created nor canonicalised at install.
 - [ ] No depth headroom: the deepest chain (manager -> run -> generation -> cluster -> overseer -> code-example) is 5
   against `max_depth = 5`.

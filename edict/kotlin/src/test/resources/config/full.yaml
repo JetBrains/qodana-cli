@@ -6,6 +6,7 @@ include:
 edict:
   mcpPort: 27200
   statePath: ../edict-state
+  stateBranch: edict/kotlin-state
   calculatePrice: true
   projectAnalysisTimeoutMinutes: 75
   bots:
