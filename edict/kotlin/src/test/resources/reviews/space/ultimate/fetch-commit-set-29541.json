@@ -12,9 +12,14 @@
         "status": 200,
         "body": {
           "className": "CommitSetReviewRecord",
-          "number": 29541
-        },
-        "hasNext": false
+          "id": "VkjKG0ToHJ0",
+          "number": 29541,
+          "title": "[IDEA-CR-1500] use withAlternativeResolveEnabled",
+          "state": "Closed",
+          "timestamp": 0,
+          "feedChannelId": "2JA1SN0yC3Kf",
+          "description": null
+        }
       }
     }
   ],

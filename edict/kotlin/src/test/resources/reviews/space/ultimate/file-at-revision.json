@@ -13,10 +13,13 @@
         "status": 200,
         "body": [
           {
+            "commit": "05086d8d08296dd055c7c7ec95fc76930fbd8b50",
             "path": "plugins/bazel/intellij.bazel.languages/src/org/jetbrains/bazel/languages/starlark/psi/StarlarkFile.kt",
             "blob": "08980471e91747c265fb61f5e79b893816da2e9c",
             "type": "FILE",
             "properties": {
+              "lfs": null,
+              "executable": null,
               "attributes": [
                 {
                   "name": "eol",
@@ -31,8 +34,7 @@
               ]
             }
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -50,8 +52,7 @@
         "body": {
           "totalSize": 1976,
           "partBase64": "cGFja2FnZSBvcmcuamV0YnJhaW5zLmJhemVsLmxhbmd1YWdlcy5zdGFybGFyay5wc2kKCmltcG9ydCBjb20uaW50ZWxsaWouZXh0YXBpLnBzaS5Qc2lGaWxlQmFzZQppbXBvcnQgY29tLmludGVsbGlqLm9wZW5hcGkuZmlsZVR5cGVzLkZpbGVUeXBlCmltcG9ydCBjb20uaW50ZWxsaWoucHNpLkZpbGVWaWV3UHJvdmlkZXIKaW1wb3J0IGNvbS5pbnRlbGxpai51dGlsLlByb2Nlc3NvcgppbXBvcnQgb3JnLmpldGJyYWlucy5hbm5vdGF0aW9ucy5BcGlTdGF0dXMKaW1wb3J0IG9yZy5qZXRicmFpbnMuYmF6ZWwubGFuZ3VhZ2VzLnN0YXJsYXJrLlN0YXJsYXJrRmlsZVR5cGUKaW1wb3J0IG9yZy5qZXRicmFpbnMuYmF6ZWwubGFuZ3VhZ2VzLnN0YXJsYXJrLlN0YXJsYXJrTGFuZ3VhZ2UKaW1wb3J0IG9yZy5qZXRicmFpbnMuYmF6ZWwubGFuZ3VhZ2VzLnN0YXJsYXJrLmJhemVsLkJhemVsRmlsZVR5cGUKaW1wb3J0IG9yZy5qZXRicmFpbnMuYmF6ZWwubGFuZ3VhZ2VzLnN0YXJsYXJrLnBzaS5leHByZXNzaW9ucy5TdGFybGFya0NhbGxFeHByZXNzaW9uCmltcG9ydCBvcmcuamV0YnJhaW5zLmJhemVsLmxhbmd1YWdlcy5zdGFybGFyay5wc2kuc3RhdGVtZW50cy5TdGFybGFya0V4cHJlc3Npb25TdGF0ZW1lbnQKaW1wb3J0IG9yZy5qZXRicmFpbnMuYmF6ZWwubGFuZ3VhZ2VzLnN0YXJsYXJrLnBzaS5zdGF0ZW1lbnRzLlN0YXJsYXJrTG9hZFN0YXRlbWVudAppbXBvcnQgb3JnLmpldGJyYWlucy5iYXplbC5sYW5ndWFnZXMuc3Rhcmxhcmsuc3RhcmxhcmtQcm9qZWN0U2NvcGUKCkBBcGlTdGF0dXMuSW50ZXJuYWwKb3BlbiBjbGFzcyBTdGFybGFya0ZpbGUodmlld1Byb3ZpZGVyOiBGaWxlVmlld1Byb3ZpZGVyKSA6CiAgUHNpRmlsZUJhc2Uodmlld1Byb3ZpZGVyLCBTdGFybGFya0xhbmd1YWdlKSwKICBTdGFybGFya0VsZW1lbnQgewoKICBvdmVycmlkZSBmdW4gZ2V0VXNlU2NvcGUoKSA9IHByb2plY3Quc3RhcmxhcmtQcm9qZWN0U2NvcGUoKQoKICBvdmVycmlkZSBmdW4gZ2V0RmlsZVR5cGUoKTogRmlsZVR5cGUgPSBTdGFybGFya0ZpbGVUeXBlCgogIGZ1biBpc0J1aWxkRmlsZSgpOiBCb29sZWFuID0gdGhpcy5nZXRCYXplbEZpbGVUeXBlKCkgPT0gQmF6ZWxGaWxlVHlwZS5CVUlMRAoKICBmdW4gZ2V0QmF6ZWxGaWxlVHlwZSgpOiBCYXplbEZpbGVUeXBlID0gQmF6ZWxGaWxlVHlwZS5vZkZpbGVOYW1lKG5hbWUpCgogIGZ1biBnZXRUYXJnZXRSdWxlcygpOiBMaXN0PFN0YXJsYXJrQ2FsbEV4cHJlc3Npb24+ID0KICAgIGZpbmRDaGlsZHJlbkJ5Q2xhc3MoU3RhcmxhcmtFeHByZXNzaW9uU3RhdGVtZW50OjpjbGFzcy5qYXZhKQogICAgICAubWFwTm90TnVsbCB7IGl0LmNhbGxFeHByZXNzaW9uT3JOdWxsKCkgfQogICAgICAuZmlsdGVyIHsgaXQuaXNSdWxlVGFyZ2V0KCkgfQoKICBmdW4gZmluZFRhcmdldFJ1bGUodGFyZ2V0TmFtZTogU3RyaW5nKTogU3RhcmxhcmtDYWxsRXhwcmVzc2lvbj8gPQogICAgZ2V0VGFyZ2V0UnVsZXMoKS5maXJzdE9yTnVsbCB7CiAgICAgIGl0LmdldE5hbWVBdHRyaWJ1dGVWYWx1ZSgpID09IHRhcmdldE5hbWUKICAgIH0KCiAgZnVuIHNlYXJjaEluTG9hZHMocHJvY2Vzc29yOiBQcm9jZXNzb3I8U3RhcmxhcmtFbGVtZW50Pik6IEJvb2xlYW4gPQogICAgZmluZENoaWxkcmVuQnlDbGFzcyhTdGFybGFya0xvYWRTdGF0ZW1lbnQ6OmNsYXNzLmphdmEpLmZsYXRNYXAgeyBpdC5nZXRMb2FkZWRTeW1ib2xzUHNpKCkgfS5hbGwocHJvY2Vzc29yOjpwcm9jZXNzKQoKICBmdW4gc2VhcmNoSW5GdW5jdGlvbkNhbGxzKHByb2Nlc3NvcjogUHJvY2Vzc29yPFN0YXJsYXJrRWxlbWVudD4pOiBCb29sZWFuID0KICAgIGZpbmRDaGlsZHJlbkJ5Q2xhc3MoU3RhcmxhcmtFeHByZXNzaW9uU3RhdGVtZW50OjpjbGFzcy5qYXZhKQogICAgICAubWFwTm90TnVsbCB7IGl0LmNhbGxFeHByZXNzaW9uT3JOdWxsKCkgfQogICAgICAuYWxsKHByb2Nlc3Nvcjo6cHJvY2VzcykKfQo="
-        },
-        "hasNext": false
+        }
       }
     }
   ],

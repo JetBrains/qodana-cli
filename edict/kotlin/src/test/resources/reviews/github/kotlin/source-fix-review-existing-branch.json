@@ -9,13 +9,16 @@
       "response": {
         "status": 200,
         "body": {
+          "ref": "refs/heads/edict/weak-w-cccccccccccccccccccccccc",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/edict/weak-w-cccccccccccccccccccccccc",
           "object": {
             "sha": "1111111111111111111111111111111111111111",
-            "type": "commit"
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/1111111111111111111111111111111111111111"
           }
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -32,10 +35,12 @@
           "encoding": "base64",
           "size": 35,
           "name": "gradlew",
+          "path": "gradlew",
+          "sha": "5555555555555555555555555555555555555555",
           "content": "IyEvdXNyL2Jpbi9lbnYgc2gKIyBGaXhlZCBieSBFZGljdAo=\n"
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -52,10 +57,12 @@
           "encoding": "base64",
           "size": 33,
           "name": "Lazy.kt",
+          "path": "libraries/stdlib/src/kotlin/util/Lazy.kt",
+          "sha": "6666666666666666666666666666666666666666",
           "content": "cGFja2FnZSBrb3RsaW4KLy8gRml4ZWQgYnkgRWRpY3QK\n"
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -69,9 +76,9 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
-      }
+        "body": []
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -88,11 +95,16 @@
       "response": {
         "status": 201,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99999",
           "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
-          "number": 99999
-        },
-        "hasNext": false
-      }
+          "number": 99999,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -107,9 +119,17 @@
       },
       "response": {
         "status": 201,
-        "body": {},
-        "hasNext": false
-      }
+        "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99999",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
+          "number": 99999,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
     }
   ],
   "result": {

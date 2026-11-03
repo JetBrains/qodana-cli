@@ -53,9 +53,12 @@ internal class ProviderApiServer : BeforeEachCallback, AfterEachCallback {
     answer = Answer(status, body.toByteArray(Charsets.UTF_8), headers)
   }
 
+  /** This server's origin, `http://127.0.0.1:<port>`. */
+  val origin: String get() = "http://127.0.0.1:${server.address.port}"
+
   /** A transport of [provider] to this server's API, authenticated by [PROVIDER_TOKEN]. */
   fun transport(provider: CiProviderId = CiProviderId.GITHUB): DefaultCiHttpTransport =
-    DefaultCiHttpTransport(provider, "http://127.0.0.1:${server.address.port}$API_PATH", PROVIDER_TOKEN)
+    DefaultCiHttpTransport(provider, "$origin$API_PATH", PROVIDER_TOKEN)
 
   override fun beforeEach(context: ExtensionContext) {
     server = HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0)

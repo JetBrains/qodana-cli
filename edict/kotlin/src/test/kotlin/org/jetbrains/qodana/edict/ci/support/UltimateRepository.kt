@@ -5,7 +5,6 @@ import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.SourceFixChanges
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
 
 /** IJ/ultimate on Space, which the integration tests read through the real API and the other tests replay. */
 internal val ULTIMATE = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "ij", "ultimate")
@@ -35,25 +34,16 @@ internal const val ULTIMATE_STARLARK_FILE =
 /** The reviewer the requests ask for: a bare value, which Space reads as a profile id. */
 internal const val ULTIMATE_REVIEWER = "reviewer"
 
-/** A generated inspection, opened for review against [RELEASE_191]. */
-internal val ULTIMATE_INSPECTION_CONTENT = recording("avoid-thread-sleep.inspection.kts")
-internal const val ULTIMATE_INSPECTION_PATH = "inspections/avoid-thread-sleep.inspection.kts"
-internal const val ULTIMATE_INSPECTION_TITLE = "Add Edict inspection avoid-thread-sleep"
-internal const val ULTIMATE_INSPECTION_DESCRIPTION =
-  "Reviewers asked five times to replace Thread.sleep with explicit synchronization."
-
-/** The inspection's branch: its cluster and the first 12 hex digits of the SHA-256 of [ULTIMATE_INSPECTION_CONTENT]. */
-internal const val ULTIMATE_INSPECTION_BRANCH = "edict/avoid-thread-sleep-9cc450caa078"
-
+/** The [INSPECTION_CONTENT] opened for review against [RELEASE_191]. */
 internal val ULTIMATE_INSPECTION_REQUEST = CreateReviewRequest(
   operationId = "p-aaaaaaaaaaaaaaaaaaaaaaaa",
   clusterId = "avoid-thread-sleep",
   targetBranch = RELEASE_191,
   reviewer = ULTIMATE_REVIEWER,
-  targetPath = ULTIMATE_INSPECTION_PATH,
-  inspectionDigest = sha256Hex(ULTIMATE_INSPECTION_CONTENT),
-  inspectionContent = ULTIMATE_INSPECTION_CONTENT,
-  description = ULTIMATE_INSPECTION_DESCRIPTION,
+  targetPath = INSPECTION_PATH,
+  inspectionDigest = INSPECTION_DIGEST,
+  inspectionContent = INSPECTION_CONTENT,
+  description = INSPECTION_DESCRIPTION,
 )
 
 /** Two small files of [RELEASE_191], each replaced by the source fix, and the text of the first one at the release. */
@@ -74,7 +64,7 @@ internal val ULTIMATE_SOURCE_FIX_REQUEST = CreateReviewRequest(
   targetBranch = RELEASE_191,
   reviewer = ULTIMATE_REVIEWER,
   targetPath = "",
-  inspectionDigest = sha256Hex(ULTIMATE_INSPECTION_CONTENT),
+  inspectionDigest = INSPECTION_DIGEST,
   inspectionContent = "",
   description = ULTIMATE_SOURCE_FIX_DESCRIPTION,
   sourceFix = ULTIMATE_SOURCE_FIX,

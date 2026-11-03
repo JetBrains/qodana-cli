@@ -16,6 +16,7 @@ import org.jetbrains.qodana.edict.ci.support.RELEASE_HEAD
 import org.jetbrains.qodana.edict.ci.support.RELEASE_PARENT
 import org.jetbrains.qodana.edict.ci.support.answer
 import org.jetbrains.qodana.edict.ci.support.gitHubFailure
+import org.jetbrains.qodana.edict.ci.support.EXISTING_BRANCH
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
 import org.jetbrains.qodana.edict.ci.urlPart
 import kotlin.test.Test
@@ -29,7 +30,7 @@ import kotlin.test.assertFailsWith
 internal class GitHubInspectionReviewTest {
   @Test
   fun `a review is opened from a new branch at the target head`() {
-    // INSPECTION_REQUEST opened from a new branch at RELEASE_HEAD; the four writes are scripted.
+    // INSPECTION_REQUEST opened from a new branch at RELEASE_HEAD; scripted from the first write on.
     val recording = kotlinRecording("inspection-review")
 
     assertEquals(CREATED_REVIEW, recording.replay { findOrCreateReview(INSPECTION_REQUEST) })
@@ -45,8 +46,8 @@ internal class GitHubInspectionReviewTest {
 
   @Test
   fun `a branch creation GitHub refuses with 422 fails before committing`() {
-    // inspection-review, but GitHub refuses the branch with 422 "Reference already exists" (scripted).
-    val recording = kotlinRecording("inspection-review-branch-refused")
+    // inspection-review, but GitHub refuses the branch with 422 "Reference already exists".
+    val recording = kotlinRecording("inspection-review").failingAt("POST", "/git/refs", EXISTING_BRANCH)
 
     val error = assertFailsWith<IllegalArgumentException> {
       recording.replay { findOrCreateReview(INSPECTION_REQUEST) }
@@ -91,7 +92,7 @@ internal class GitHubInspectionReviewTest {
 
   @Test
   fun `an inspection already on the branch is not committed again`() {
-    // inspection-review, but the branch holds the inspection already (scripted).
+    // An interrupted run left the branch with this inspection committed and no review yet (scripted reads).
     val recording = kotlinRecording("inspection-review-same-inspection")
 
     assertEquals(CREATED_REVIEW, recording.replay { findOrCreateReview(INSPECTION_REQUEST) })
@@ -99,7 +100,7 @@ internal class GitHubInspectionReviewTest {
 
   @Test
   fun `another inspection on the branch is replaced`() {
-    // inspection-review, but the branch holds another inspection at the path (scripted).
+    // An earlier promotion left the branch holding another inspection, which the commit replaces by its blob.
     val recording = kotlinRecording("inspection-review-other-inspection")
 
     assertEquals(CREATED_REVIEW, recording.replay { findOrCreateReview(INSPECTION_REQUEST) })
@@ -130,11 +131,27 @@ internal class GitHubInspectionReviewTest {
   }
 
   @Test
-  fun `a review already opened from the branch is reused in whatever state`() {
-    // inspection-review, but PR EXISTING_PULL_REQUEST is open from the branch (scripted).
-    val recording = kotlinRecording("inspection-review-existing-review")
+  fun `an open review from the branch is reused and gets the reviewer`() {
+    // An interrupted run committed the inspection and opened PR EXISTING_PULL_REQUEST, but requested no reviewer.
+    val recording = kotlinRecording("inspection-review-open-review")
 
     assertEquals(EXISTING_REVIEW, recording.replay { findOrCreateReview(INSPECTION_REQUEST) })
+  }
+
+  @Test
+  fun `a merged review from the branch is reused without a reviewer request`() {
+    // PR EXISTING_PULL_REQUEST from the branch was merged and the branch deleted, so the branch is created again.
+    val recording = kotlinRecording("inspection-review-merged-review")
+
+    assertEquals(EXISTING_REVIEW, recording.replay { findOrCreateReview(INSPECTION_REQUEST) })
+  }
+
+  @Test
+  fun `a review opened by its reviewer gets no reviewer request`() {
+    // inspection-review, but the token runs as REVIEWER, so GitHub names REVIEWER as the PR's author.
+    val recording = kotlinRecording("inspection-review-opened-by-reviewer")
+
+    assertEquals(CREATED_REVIEW, recording.replay { findOrCreateReview(INSPECTION_REQUEST) })
   }
 
   @Test
@@ -182,8 +199,9 @@ internal class GitHubInspectionReviewTest {
 
   @Test
   fun `a reviewer who is not a collaborator fails`() {
-    // inspection-review, but GitHub refuses the reviewer with 422: not a collaborator (scripted).
-    val recording = kotlinRecording("inspection-review-reviewer-not-collaborator")
+    // inspection-review, but GitHub refuses the reviewer with 422: not a collaborator.
+    val recording = kotlinRecording("inspection-review")
+      .failingAt("POST", "/requested_reviewers", gitHubFailure(422, NOT_COLLABORATOR))
 
     val error = assertFailsWith<IllegalArgumentException> {
       recording.replay { findOrCreateReview(INSPECTION_REQUEST) }

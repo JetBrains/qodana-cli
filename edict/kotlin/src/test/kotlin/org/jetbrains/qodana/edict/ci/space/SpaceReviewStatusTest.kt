@@ -1,15 +1,16 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.ci.space
 
-import org.jetbrains.qodana.edict.ci.CiProviderId
-import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_CLOSED_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_INVISIBLE_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_OPEN_REVIEW
+import org.jetbrains.qodana.edict.ci.support.ULTIMATE
 import org.jetbrains.qodana.edict.ci.support.answer
+import org.jetbrains.qodana.edict.ci.support.UltimateScripts
+import org.jetbrains.qodana.edict.ci.support.recording
 import org.jetbrains.qodana.edict.ci.support.ultimateRecording
 import org.jetbrains.qodana.edict.ci.support.ultimateScripted
 import kotlin.test.Test
@@ -53,8 +54,8 @@ internal class SpaceReviewStatusTest {
 
   @Test
   fun `the evidence of a review holds each message of its people once, without events and bots`() {
-    // ULTIMATE_MERGED_REVIEW's feed: its discussions' messages, its people's events, and texts and events of the
-    // "Patronus" application and of the "JetBrains Space" service.
+    // ULTIMATE_MERGED_REVIEW's feed: its discussions' messages, its people's events, texts and events of the
+    // "Patronus" application and of the "JetBrains Space" service, and message Exj6C0W4TWa, which Space can't show.
     val recording = ultimateRecording("evidence-merged")
 
     assertEquals(recording.result<ReviewStatus>(), recording.replay { reviewWithEvidence(ULTIMATE_MERGED_REVIEW) })
@@ -66,29 +67,25 @@ internal class SpaceReviewStatusTest {
     // "Patronus" application and of the "JetBrains Space" service.
     val recording = ultimateRecording("evidence-merged", bots = setOf("lev.leontev"))
 
-    // The evidence starts with three questions of Lev.Leontev, and the answer to them follows.
+    // The 13 text messages of Danil.Tereshchenko and pasynkov, without the five of Lev.Leontev.
     assertEquals(
-      "I don't think so. It is the same pattern as AbstractGotoSEContributor: the whole fetch runs in one read " +
-        "action with write-action priority, so a pending write cancels it. resolveLabel only does VFS/PSI lookups, " +
-        "with no refresh. Before this change, resolveLabel ran in a plain runReadAction that blocked writes, so this " +
-        "is better for freezes.",
-      recording.replay { reviewWithEvidence(ULTIMATE_MERGED_REVIEW) }.evidence.substringBefore("\n\n"),
+      recording("space/ultimate/evidence-merged-without-lev-leontev.txt"),
+      recording.replay { reviewWithEvidence(ULTIMATE_MERGED_REVIEW) }.evidence,
     )
   }
 
   @Test
   fun `an application's text messages are no evidence`() {
-    // ULTIMATE_OPEN_REVIEW's feed, whose only text messages are the "Patronus" application's.
+    // ULTIMATE_OPEN_REVIEW's feed: its author's events, and text messages of the "Patronus" application only.
     val recording = ultimateRecording("evidence-open")
 
     assertEquals(ReviewStatus(ReviewState.OPEN), recording.replay { reviewWithEvidence(ULTIMATE_OPEN_REVIEW) })
   }
 
-  /** The variant drops `hasMore` from the feed page. */
   @Test
   fun `evidence from an incomplete feed is refused`() {
-    // Variant of evidence-open: its feed page omits hasMore.
-    val recording = ultimateRecording("evidence-incomplete-feed")
+    // ULTIMATE_OPEN_REVIEW's feed, with its page omitting hasMore (scripted).
+    val recording = UltimateScripts.incompleteFeed()
 
     val error = assertFailsWith<IllegalArgumentException> {
       recording.replay { reviewWithEvidence(ULTIMATE_OPEN_REVIEW) }
@@ -101,11 +98,13 @@ internal class SpaceReviewStatusTest {
 
   @Test
   fun `a review of another repository is refused before any request`() {
-    val foreign = ReviewReference(CiProviderId.GITHUB, "JetBrains", "kotlin", "6007", "https://github.com/JetBrains/kotlin/pull/6007")
+    // Review 1946 of ultimate-teamcity-config, another repository of the same Space project.
+    val foreign = ULTIMATE.copy(repository = "ultimate-teamcity-config")
+      .reference("201aA50kbTmt", "https://jetbrains.team/p/ij/reviews/1946")
 
     val error = assertFailsWith<IllegalArgumentException> { ultimateScripted().replay { review(foreign) } }
     assertEquals(
-      "Review https://github.com/JetBrains/kotlin/pull/6007 (github:github.com/JetBrains/kotlin) " +
+      "Review https://jetbrains.team/p/ij/reviews/1946 (space:jetbrains.team/ij/ultimate-teamcity-config) " +
         "is not in the configured space:jetbrains.team/ij/ultimate",
       error.message,
     )

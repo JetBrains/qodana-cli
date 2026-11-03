@@ -12,9 +12,11 @@
         "status": 200,
         "body": {
           "className": "MergeRequestRecord",
-          "state": "Opened"
-        },
-        "hasNext": false
+          "state": "Opened",
+          "branchPair": {
+            "isMerged": false
+          }
+        }
       }
     }
   ],

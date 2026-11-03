@@ -72,7 +72,7 @@ internal class SpaceExchanges(private val repository: ReviewRepository) {
       "state" to state,
       "\$skip" to "0",
       "\$top" to "100",
-      "\$fields" to "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))",
+      "\$fields" to "data(review(id,number,state,branchPair(repository,sourceBranch,targetBranch)))",
     ),
   )
 
@@ -113,11 +113,12 @@ internal class SpaceExchanges(private val repository: ReviewRepository) {
   fun commitResult(success: Boolean, message: String): CiHttpResponse =
     CiHttpResponse(200, buildJsonObject { put("success", success); put("message", message) })
 
-  /** A review a search finds: the review [id] and [number], from [branch] into [target], as Space lists it. */
-  fun review(id: String, number: Int, branch: String, target: String): JsonObject = buildJsonObject {
+  /** A review a search finds: the review [id] and [number] in [state], from [branch] into [target], as Space lists it. */
+  fun review(id: String, number: Int, branch: String, target: String, state: String = "Opened"): JsonObject = buildJsonObject {
     putJsonObject("review") {
       put("id", id)
       put("number", number)
+      put("state", state)
       putJsonObject("branchPair") {
         put("repository", repository.repository)
         put("sourceBranch", branch)

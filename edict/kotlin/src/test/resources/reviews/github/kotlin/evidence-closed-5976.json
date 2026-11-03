@@ -9,38 +9,376 @@
       "response": {
         "status": 200,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+          "id": 3611536967,
+          "node_id": "PR_kwDOADRfSs7XQ65H",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/5976",
+          "diff_url": "https://github.com/JetBrains/kotlin/pull/5976.diff",
+          "patch_url": "https://github.com/JetBrains/kotlin/pull/5976.patch",
+          "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/5976",
+          "commits_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976/commits",
+          "review_comments_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976/comments",
+          "review_comment_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}",
+          "comments_url": "https://api.github.com/repos/JetBrains/kotlin/issues/5976/comments",
+          "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/dc3537386a10d49561cc99bb889105acf91d9762",
+          "number": 5976,
+          "state": "closed",
+          "locked": false,
+          "title": "KT-85614: copyToRecursively's error handler should not throw on its own",
           "user": {
             "login": "fzhinkin",
-            "type": "User"
+            "id": 13045611,
+            "node_id": "MDQ6VXNlcjEzMDQ1NjEx",
+            "avatar_url": "https://avatars.githubusercontent.com/u/13045611?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/fzhinkin",
+            "html_url": "https://github.com/fzhinkin",
+            "followers_url": "https://api.github.com/users/fzhinkin/followers",
+            "following_url": "https://api.github.com/users/fzhinkin/following{/other_user}",
+            "gists_url": "https://api.github.com/users/fzhinkin/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/fzhinkin/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/fzhinkin/subscriptions",
+            "organizations_url": "https://api.github.com/users/fzhinkin/orgs",
+            "repos_url": "https://api.github.com/users/fzhinkin/repos",
+            "events_url": "https://api.github.com/users/fzhinkin/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/fzhinkin/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
+          "body": "`Path.copyToRecursively` accepts error handler and it catches and delegates all errors thrown during traversal and copying to that hander. The handler accepts resolved destination path, but destination path resolution can throw an exception. As a result, such exceptions were never delivered to the handler.\r\n\r\n^KT-85614 fixed",
+          "labels": [],
+          "milestone": null,
+          "active_lock_reason": null,
+          "created_at": "2026-04-30T21:11:49Z",
+          "updated_at": "2026-11-02T10:09:54Z",
+          "closed_at": "2026-07-14T14:59:40Z",
+          "merged_at": null,
+          "merge_commit_sha": null,
+          "assignee": null,
+          "assignees": [],
+          "requested_reviewers": [],
+          "requested_teams": [],
           "head": {
+            "label": "JetBrains:rr/stdlib/kt-85614-correctly-handle-copy-exceptions",
+            "ref": "rr/stdlib/kt-85614-correctly-handle-copy-exceptions",
             "repo": {
+              "id": 3432266,
+              "node_id": "MDEwOlJlcG9zaXRvcnkzNDMyMjY2",
               "name": "kotlin",
+              "full_name": "JetBrains/kotlin",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
-              }
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": false,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [
+                "compiler",
+                "gradle-plugin",
+                "intellij-plugin",
+                "kotlin",
+                "kotlin-library",
+                "maven-plugin",
+                "programming-language",
+                "wasm",
+                "webassembly"
+              ],
+              "forks_count": 6452,
+              "forks": 6452,
+              "stargazers_count": 53536,
+              "watchers_count": 53536,
+              "watchers": 53536,
+              "open_issues_count": 485,
+              "open_issues": 485,
+              "size": 4391464,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": false,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-11-03T15:08:21Z",
+              "created_at": "2012-02-13T17:29:58Z",
+              "updated_at": "2026-11-03T14:54:36Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/JetBrains/kotlin",
+              "html_url": "https://github.com/JetBrains/kotlin",
+              "archive_url": "https://api.github.com/repos/JetBrains/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/JetBrains/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/JetBrains/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/JetBrains/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/JetBrains/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/JetBrains/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/JetBrains/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/JetBrains/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/JetBrains/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/JetBrains/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/JetBrains/kotlin/events",
+              "forks_url": "https://api.github.com/repos/JetBrains/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/JetBrains/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/JetBrains/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/JetBrains/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/JetBrains/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/JetBrains/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/JetBrains/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/JetBrains/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/JetBrains/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/JetBrains/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/JetBrains/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/JetBrains/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/JetBrains/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/JetBrains/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/JetBrains/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:JetBrains/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/JetBrains/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/JetBrains/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/JetBrains/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/JetBrains/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/JetBrains/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/JetBrains/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/JetBrains/kotlin/hooks",
+              "svn_url": "https://github.com/JetBrains/kotlin"
             },
+            "sha": "dc3537386a10d49561cc99bb889105acf91d9762",
             "user": {
               "login": "JetBrains",
-              "type": "Organization"
+              "id": 878437,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/JetBrains",
+              "html_url": "https://github.com/JetBrains",
+              "followers_url": "https://api.github.com/users/JetBrains/followers",
+              "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+              "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+              "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+              "repos_url": "https://api.github.com/users/JetBrains/repos",
+              "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
           "base": {
+            "label": "JetBrains:master",
+            "ref": "master",
             "repo": {
+              "id": 3432266,
+              "node_id": "MDEwOlJlcG9zaXRvcnkzNDMyMjY2",
               "name": "kotlin",
+              "full_name": "JetBrains/kotlin",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
-              }
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": false,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [
+                "compiler",
+                "gradle-plugin",
+                "intellij-plugin",
+                "kotlin",
+                "kotlin-library",
+                "maven-plugin",
+                "programming-language",
+                "wasm",
+                "webassembly"
+              ],
+              "forks_count": 6452,
+              "forks": 6452,
+              "stargazers_count": 53536,
+              "watchers_count": 53536,
+              "watchers": 53536,
+              "open_issues_count": 485,
+              "open_issues": 485,
+              "size": 4391464,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": false,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-11-03T15:08:21Z",
+              "created_at": "2012-02-13T17:29:58Z",
+              "updated_at": "2026-11-03T14:54:36Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/JetBrains/kotlin",
+              "html_url": "https://github.com/JetBrains/kotlin",
+              "archive_url": "https://api.github.com/repos/JetBrains/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/JetBrains/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/JetBrains/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/JetBrains/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/JetBrains/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/JetBrains/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/JetBrains/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/JetBrains/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/JetBrains/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/JetBrains/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/JetBrains/kotlin/events",
+              "forks_url": "https://api.github.com/repos/JetBrains/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/JetBrains/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/JetBrains/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/JetBrains/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/JetBrains/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/JetBrains/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/JetBrains/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/JetBrains/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/JetBrains/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/JetBrains/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/JetBrains/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/JetBrains/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/JetBrains/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/JetBrains/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/JetBrains/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:JetBrains/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/JetBrains/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/JetBrains/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/JetBrains/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/JetBrains/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/JetBrains/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/JetBrains/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/JetBrains/kotlin/hooks",
+              "svn_url": "https://github.com/JetBrains/kotlin"
             },
+            "sha": "2314b92ed7775faeb8212ed5926d635d17e90e65",
             "user": {
               "login": "JetBrains",
-              "type": "Organization"
+              "id": 878437,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/JetBrains",
+              "html_url": "https://github.com/JetBrains",
+              "followers_url": "https://api.github.com/users/JetBrains/followers",
+              "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+              "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+              "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+              "repos_url": "https://api.github.com/users/JetBrains/repos",
+              "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
             }
-          }
-        },
-        "hasNext": false
+          },
+          "_links": {
+            "comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/5976/comments"
+            },
+            "commits": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976/commits"
+            },
+            "statuses": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/statuses/dc3537386a10d49561cc99bb889105acf91d9762"
+            },
+            "html": {
+              "href": "https://github.com/JetBrains/kotlin/pull/5976"
+            },
+            "issue": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/5976"
+            },
+            "review_comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976/comments"
+            },
+            "review_comment": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}"
+            },
+            "self": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+            }
+          },
+          "author_association": "MEMBER",
+          "auto_merge": null,
+          "draft": false,
+          "merged": false,
+          "mergeable": false,
+          "rebaseable": false,
+          "mergeable_state": "dirty",
+          "merged_by": null,
+          "comments": 4,
+          "review_comments": 5,
+          "maintainer_can_modify": false,
+          "commits": 2,
+          "additions": 19,
+          "deletions": 4,
+          "changed_files": 2
+        }
       }
     },
     {
@@ -56,35 +394,190 @@
         "status": 200,
         "body": [
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356186307",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#issuecomment-4356186307",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/5976",
+            "id": 4356186307,
+            "node_id": "IC_kwDOADRfSs8AAAABA6Ygww",
             "user": {
               "login": "ghost",
-              "type": "User"
+              "id": 10137,
+              "node_id": "MDQ6VXNlcjEwMTM3",
+              "avatar_url": "https://avatars.githubusercontent.com/u/10137?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/ghost",
+              "html_url": "https://github.com/ghost",
+              "followers_url": "https://api.github.com/users/ghost/followers",
+              "following_url": "https://api.github.com/users/ghost/following{/other_user}",
+              "gists_url": "https://api.github.com/users/ghost/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/ghost/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/ghost/subscriptions",
+              "organizations_url": "https://api.github.com/users/ghost/orgs",
+              "repos_url": "https://api.github.com/users/ghost/repos",
+              "events_url": "https://api.github.com/users/ghost/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/ghost/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​libraries/​stdlib/​</code></td><td><a href=\"https://github.com/DmitryNekrasov\"><b><code>@DmitryNekrasov</code></b></a>, <a href=\"https://github.com/fzhinkin\"><b><code>@fzhinkin</code></b></a>, <a href=\"https://github.com/ilya-g\"><b><code>@ilya-g</code></b></a>, <a href=\"https://github.com/qwwdfsad\"><b><code>@qwwdfsad</code></b></a></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->"
+            "created_at": "2026-04-30T21:11:56Z",
+            "updated_at": "2026-05-20T17:16:54Z",
+            "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​libraries/​stdlib/​</code></td><td><a href=\"https://github.com/DmitryNekrasov\"><b><code>@DmitryNekrasov</code></b></a>, <a href=\"https://github.com/fzhinkin\"><b><code>@fzhinkin</code></b></a>, <a href=\"https://github.com/ilya-g\"><b><code>@ilya-g</code></b></a>, <a href=\"https://github.com/qwwdfsad\"><b><code>@qwwdfsad</code></b></a></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
+            "author_association": "NONE",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356186307/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356186402",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#issuecomment-4356186402",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/5976",
+            "id": 4356186402,
+            "node_id": "IC_kwDOADRfSs8AAAABA6YhIg",
             "user": {
               "login": "fzhinkin",
-              "type": "User"
+              "id": 13045611,
+              "node_id": "MDQ6VXNlcjEzMDQ1NjEx",
+              "avatar_url": "https://avatars.githubusercontent.com/u/13045611?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/fzhinkin",
+              "html_url": "https://github.com/fzhinkin",
+              "followers_url": "https://api.github.com/users/fzhinkin/followers",
+              "following_url": "https://api.github.com/users/fzhinkin/following{/other_user}",
+              "gists_url": "https://api.github.com/users/fzhinkin/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/fzhinkin/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/fzhinkin/subscriptions",
+              "organizations_url": "https://api.github.com/users/fzhinkin/orgs",
+              "repos_url": "https://api.github.com/users/fzhinkin/repos",
+              "events_url": "https://api.github.com/users/fzhinkin/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/fzhinkin/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "/dry-run"
+            "created_at": "2026-04-30T21:11:57Z",
+            "updated_at": "2026-04-30T21:11:57Z",
+            "body": "/dry-run",
+            "author_association": "MEMBER",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356186402/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356194174",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#issuecomment-4356194174",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/5976",
+            "id": 4356194174,
+            "node_id": "IC_kwDOADRfSs8AAAABA6Y_fg",
             "user": {
               "login": "KotlinBuild",
-              "type": "User"
+              "id": 11723187,
+              "node_id": "MDQ6VXNlcjExNzIzMTg3",
+              "avatar_url": "https://avatars.githubusercontent.com/u/11723187?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/KotlinBuild",
+              "html_url": "https://github.com/KotlinBuild",
+              "followers_url": "https://api.github.com/users/KotlinBuild/followers",
+              "following_url": "https://api.github.com/users/KotlinBuild/following{/other_user}",
+              "gists_url": "https://api.github.com/users/KotlinBuild/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/KotlinBuild/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/KotlinBuild/subscriptions",
+              "organizations_url": "https://api.github.com/users/KotlinBuild/orgs",
+              "repos_url": "https://api.github.com/users/KotlinBuild/repos",
+              "events_url": "https://api.github.com/users/KotlinBuild/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/KotlinBuild/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/939099857 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-5976/safe-merge`\n> Commit: [92e1e44](https://github.com/JetBrains/kotlin/commit/92e1e44ef7fb5bd8e8685cb3789af8249ed35a11)\n\n"
+            "created_at": "2026-04-30T21:13:11Z",
+            "updated_at": "2026-04-30T21:13:11Z",
+            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/939099857 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-5976/safe-merge`\n> Commit: [92e1e44](https://github.com/JetBrains/kotlin/commit/92e1e44ef7fb5bd8e8685cb3789af8249ed35a11)\n\n",
+            "author_association": "MEMBER",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356194174/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356613001",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#issuecomment-4356613001",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/5976",
+            "id": 4356613001,
+            "node_id": "IC_kwDOADRfSs8AAAABA6yjiQ",
             "user": {
               "login": "KotlinBuild",
-              "type": "User"
+              "id": 11723187,
+              "node_id": "MDQ6VXNlcjExNzIzMTg3",
+              "avatar_url": "https://avatars.githubusercontent.com/u/11723187?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/KotlinBuild",
+              "html_url": "https://github.com/KotlinBuild",
+              "followers_url": "https://api.github.com/users/KotlinBuild/followers",
+              "following_url": "https://api.github.com/users/KotlinBuild/following{/other_user}",
+              "gists_url": "https://api.github.com/users/KotlinBuild/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/KotlinBuild/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/KotlinBuild/subscriptions",
+              "organizations_url": "https://api.github.com/users/KotlinBuild/orgs",
+              "repos_url": "https://api.github.com/users/KotlinBuild/repos",
+              "events_url": "https://api.github.com/users/KotlinBuild/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/KotlinBuild/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Quality gate finished successfully."
+            "created_at": "2026-04-30T22:33:04Z",
+            "updated_at": "2026-04-30T22:33:04Z",
+            "body": "Quality gate finished successfully.",
+            "author_association": "MEMBER",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4356613001/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -100,25 +593,132 @@
         "status": 200,
         "body": [
           {
+            "id": 4330651302,
+            "node_id": "PRR_kwDOADRfSs8AAAABAiB-pg",
             "user": {
               "login": "DmitryNekrasov",
-              "type": "User"
-            }
+              "id": 8778314,
+              "node_id": "MDQ6VXNlcjg3NzgzMTQ=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/8778314?u=08c693f5993702c2f7c1881f4cb46fe41e51a2af&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/DmitryNekrasov",
+              "html_url": "https://github.com/DmitryNekrasov",
+              "followers_url": "https://api.github.com/users/DmitryNekrasov/followers",
+              "following_url": "https://api.github.com/users/DmitryNekrasov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/DmitryNekrasov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/DmitryNekrasov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/DmitryNekrasov/subscriptions",
+              "organizations_url": "https://api.github.com/users/DmitryNekrasov/orgs",
+              "repos_url": "https://api.github.com/users/DmitryNekrasov/repos",
+              "events_url": "https://api.github.com/users/DmitryNekrasov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/DmitryNekrasov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#pullrequestreview-4330651302",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#pullrequestreview-4330651302"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-05-20T17:16:48Z",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762"
           },
           {
+            "id": 4330813684,
+            "node_id": "PRR_kwDOADRfSs8AAAABAiL49A",
             "user": {
               "login": "DmitryNekrasov",
-              "type": "User"
-            }
+              "id": 8778314,
+              "node_id": "MDQ6VXNlcjg3NzgzMTQ=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/8778314?u=08c693f5993702c2f7c1881f4cb46fe41e51a2af&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/DmitryNekrasov",
+              "html_url": "https://github.com/DmitryNekrasov",
+              "followers_url": "https://api.github.com/users/DmitryNekrasov/followers",
+              "following_url": "https://api.github.com/users/DmitryNekrasov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/DmitryNekrasov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/DmitryNekrasov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/DmitryNekrasov/subscriptions",
+              "organizations_url": "https://api.github.com/users/DmitryNekrasov/orgs",
+              "repos_url": "https://api.github.com/users/DmitryNekrasov/repos",
+              "events_url": "https://api.github.com/users/DmitryNekrasov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/DmitryNekrasov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#pullrequestreview-4330813684",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#pullrequestreview-4330813684"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-05-20T17:42:17Z",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762"
           },
           {
+            "id": 4353063249,
+            "node_id": "PRR_kwDOADRfSs8AAAABA3Z5UQ",
             "user": {
               "login": "fzhinkin",
-              "type": "User"
-            }
+              "id": 13045611,
+              "node_id": "MDQ6VXNlcjEzMDQ1NjEx",
+              "avatar_url": "https://avatars.githubusercontent.com/u/13045611?u=82e086b1b1217137ed1322fb78acbbf7d2cebbbc&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/fzhinkin",
+              "html_url": "https://github.com/fzhinkin",
+              "followers_url": "https://api.github.com/users/fzhinkin/followers",
+              "following_url": "https://api.github.com/users/fzhinkin/following{/other_user}",
+              "gists_url": "https://api.github.com/users/fzhinkin/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/fzhinkin/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/fzhinkin/subscriptions",
+              "organizations_url": "https://api.github.com/users/fzhinkin/orgs",
+              "repos_url": "https://api.github.com/users/fzhinkin/repos",
+              "events_url": "https://api.github.com/users/fzhinkin/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/fzhinkin/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#pullrequestreview-4353063249",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#pullrequestreview-4353063249"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-05-24T15:49:35Z",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762"
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -134,42 +734,363 @@
         "status": 200,
         "body": [
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800856",
+            "pull_request_review_id": 4330651302,
+            "id": 3275800856,
+            "node_id": "PRRC_kwDOADRfSs7DQMEY",
+            "diff_hunk": "@@ -216,7 +216,12 @@ public fun Path.copyToRecursively(\n     }\n \n     fun error(source: Path, exception: Exception): FileVisitResult {\n-        return onError(source, destination(source), exception).toFileVisitResult()\n+        // destination, when invoked with default validatePath value (true) may throw an exception.\n+        // If this function was invoked to handle such an exception thrown elsewhere,\n+        // there is no way to deliver exception to onError other than bypassing the validation.\n+        // Thus, we call destination w/ validatePath = false.\n+        val destinationPath = destination(source, validatePath = false)",
+            "path": "libraries/stdlib/jdk7/src/kotlin/io/path/PathRecursiveFunctions.kt",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
+            "original_commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
             "user": {
               "login": "DmitryNekrasov",
-              "type": "User"
+              "id": 8778314,
+              "node_id": "MDQ6VXNlcjg3NzgzMTQ=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/8778314?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/DmitryNekrasov",
+              "html_url": "https://github.com/DmitryNekrasov",
+              "followers_url": "https://api.github.com/users/DmitryNekrasov/followers",
+              "following_url": "https://api.github.com/users/DmitryNekrasov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/DmitryNekrasov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/DmitryNekrasov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/DmitryNekrasov/subscriptions",
+              "organizations_url": "https://api.github.com/users/DmitryNekrasov/orgs",
+              "repos_url": "https://api.github.com/users/DmitryNekrasov/repos",
+              "events_url": "https://api.github.com/users/DmitryNekrasov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/DmitryNekrasov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "nit: `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\n\nIf that happens here, the secondary exception will mask the original one and still bypass `onError` — the same class of bug this PR fixes, in a narrower case.\n\nTwo options:\n- (a) document this as a known limitation in the comment above, scoping the fix to `IllegalFileNameException` only;\n- (b) wrap the resolve in try/catch and fall back to a safe path (e.g. `target.resolve(source.fileName?.toString().orEmpty())` or just `target`) so `onError` always gets called with the original exception.\n\nEither is fine, but currently the comment claims `onError` is now always reachable, which isn't strictly true."
+            "body": "nit: `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\n\nIf that happens here, the secondary exception will mask the original one and still bypass `onError` — the same class of bug this PR fixes, in a narrower case.\n\nTwo options:\n- (a) document this as a known limitation in the comment above, scoping the fix to `IllegalFileNameException` only;\n- (b) wrap the resolve in try/catch and fall back to a safe path (e.g. `target.resolve(source.fileName?.toString().orEmpty())` or just `target`) so `onError` always gets called with the original exception.\n\nEither is fine, but currently the comment claims `onError` is now always reachable, which isn't strictly true.",
+            "created_at": "2026-05-20T17:16:48Z",
+            "updated_at": "2026-05-20T17:16:48Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275800856",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800856"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275800856"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800856/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": 223,
+            "original_line": 223,
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 22,
+            "position": 22,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800861",
+            "pull_request_review_id": 4330651302,
+            "id": 3275800861,
+            "node_id": "PRRC_kwDOADRfSs7DQMEd",
+            "diff_hunk": "@@ -216,7 +216,12 @@ public fun Path.copyToRecursively(\n     }\n \n     fun error(source: Path, exception: Exception): FileVisitResult {\n-        return onError(source, destination(source), exception).toFileVisitResult()\n+        // destination, when invoked with default validatePath value (true) may throw an exception.\n+        // If this function was invoked to handle such an exception thrown elsewhere,\n+        // there is no way to deliver exception to onError other than bypassing the validation.\n+        // Thus, we call destination w/ validatePath = false.",
+            "path": "libraries/stdlib/jdk7/src/kotlin/io/path/PathRecursiveFunctions.kt",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
+            "original_commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
             "user": {
               "login": "DmitryNekrasov",
-              "type": "User"
+              "id": 8778314,
+              "node_id": "MDQ6VXNlcjg3NzgzMTQ=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/8778314?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/DmitryNekrasov",
+              "html_url": "https://github.com/DmitryNekrasov",
+              "followers_url": "https://api.github.com/users/DmitryNekrasov/followers",
+              "following_url": "https://api.github.com/users/DmitryNekrasov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/DmitryNekrasov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/DmitryNekrasov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/DmitryNekrasov/subscriptions",
+              "organizations_url": "https://api.github.com/users/DmitryNekrasov/orgs",
+              "repos_url": "https://api.github.com/users/DmitryNekrasov/repos",
+              "events_url": "https://api.github.com/users/DmitryNekrasov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/DmitryNekrasov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Suggest naming the specific exception type to make the rationale concrete:\n\n```kotlin\n// destination(source) throws IllegalFileNameException when the resolved path\n// escapes target — which is exactly the case onError must be notified about.\n// Skip validation here so the original exception reaches onError instead of\n// being replaced by a recursive throw.\n```"
+            "body": "Suggest naming the specific exception type to make the rationale concrete:\n\n```kotlin\n// destination(source) throws IllegalFileNameException when the resolved path\n// escapes target — which is exactly the case onError must be notified about.\n// Skip validation here so the original exception reaches onError instead of\n// being replaced by a recursive throw.\n```",
+            "created_at": "2026-05-20T17:16:48Z",
+            "updated_at": "2026-05-20T17:16:48Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275800861",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800861"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275800861"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800861/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 219,
+            "original_start_line": 219,
+            "start_side": "RIGHT",
+            "line": 222,
+            "original_line": 222,
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 21,
+            "position": 21,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800870",
+            "pull_request_review_id": 4330651302,
+            "id": 3275800870,
+            "node_id": "PRRC_kwDOADRfSs7DQMEm",
+            "diff_hunk": "@@ -515,6 +515,16 @@ class PathRecursiveFunctionsZipTest : AbstractPathTest() {\n             })\n             assertTrue(failed)\n         }\n+        withZip(\"Archive4.zip\", listOf(\"normal\", \"../../../../../test\")) { root, zipRoot ->\n+            val target = root.resolve(\"UnzipArchive4\")\n+            var failed = false\n+            zipRoot.copyToRecursively(target, followLinks = false, onError = { _, _, exception ->\n+                failed = true\n+                assertIs<IllegalFileNameException>(exception)\n+                OnErrorResult.SKIP_SUBTREE\n+            })\n+            assertTrue(failed)\n+        }",
+            "path": "libraries/stdlib/jdk7/test/PathRecursiveFunctionsZipTest.kt",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
+            "original_commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
             "user": {
               "login": "DmitryNekrasov",
-              "type": "User"
+              "id": 8778314,
+              "node_id": "MDQ6VXNlcjg3NzgzMTQ=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/8778314?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/DmitryNekrasov",
+              "html_url": "https://github.com/DmitryNekrasov",
+              "followers_url": "https://api.github.com/users/DmitryNekrasov/followers",
+              "following_url": "https://api.github.com/users/DmitryNekrasov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/DmitryNekrasov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/DmitryNekrasov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/DmitryNekrasov/subscriptions",
+              "organizations_url": "https://api.github.com/users/DmitryNekrasov/orgs",
+              "repos_url": "https://api.github.com/users/DmitryNekrasov/repos",
+              "events_url": "https://api.github.com/users/DmitryNekrasov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/DmitryNekrasov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "The destination path passed to `onError` is now part of the contract this PR restores — please don't drop it with `_`. Capture and assert at least:\n\n- `source` corresponds to the offending zip entry (e.g. `assertTrue(source.toString().endsWith(\"test\"))`)\n- `dst` is the unvalidated resolved path (e.g. `assertFalse(dst.normalize().startsWith(target.normalize()))`)\n\nWithout this, a future change that silently re-enables validation inside `error()` would not be caught — the test would still pass as long as the callback is invoked at all (which it would, for some other exception)."
+            "body": "The destination path passed to `onError` is now part of the contract this PR restores — please don't drop it with `_`. Capture and assert at least:\n\n- `source` corresponds to the offending zip entry (e.g. `assertTrue(source.toString().endsWith(\"test\"))`)\n- `dst` is the unvalidated resolved path (e.g. `assertFalse(dst.normalize().startsWith(target.normalize()))`)\n\nWithout this, a future change that silently re-enables validation inside `error()` would not be caught — the test would still pass as long as the callback is invoked at all (which it would, for some other exception).",
+            "created_at": "2026-05-20T17:16:48Z",
+            "updated_at": "2026-05-20T17:16:48Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275800870",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800870"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275800870"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275800870/reactions",
+              "total_count": 1,
+              "+1": 1,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 518,
+            "original_start_line": 518,
+            "start_side": "RIGHT",
+            "line": 527,
+            "original_line": 527,
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 13,
+            "position": 13,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275947128",
+            "pull_request_review_id": 4330813684,
+            "id": 3275947128,
+            "node_id": "PRRC_kwDOADRfSs7DQvx4",
+            "diff_hunk": "@@ -515,6 +515,16 @@ class PathRecursiveFunctionsZipTest : AbstractPathTest() {\n             })\n             assertTrue(failed)\n         }\n+        withZip(\"Archive4.zip\", listOf(\"normal\", \"../../../../../test\")) { root, zipRoot ->\n+            val target = root.resolve(\"UnzipArchive4\")\n+            var failed = false\n+            zipRoot.copyToRecursively(target, followLinks = false, onError = { _, _, exception ->\n+                failed = true\n+                assertIs<IllegalFileNameException>(exception)\n+                OnErrorResult.SKIP_SUBTREE\n+            })\n+            assertTrue(failed)\n+        }",
+            "path": "libraries/stdlib/jdk7/test/PathRecursiveFunctionsZipTest.kt",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
+            "original_commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
             "user": {
               "login": "DmitryNekrasov",
-              "type": "User"
+              "id": 8778314,
+              "node_id": "MDQ6VXNlcjg3NzgzMTQ=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/8778314?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/DmitryNekrasov",
+              "html_url": "https://github.com/DmitryNekrasov",
+              "followers_url": "https://api.github.com/users/DmitryNekrasov/followers",
+              "following_url": "https://api.github.com/users/DmitryNekrasov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/DmitryNekrasov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/DmitryNekrasov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/DmitryNekrasov/subscriptions",
+              "organizations_url": "https://api.github.com/users/DmitryNekrasov/orgs",
+              "repos_url": "https://api.github.com/users/DmitryNekrasov/repos",
+              "events_url": "https://api.github.com/users/DmitryNekrasov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/DmitryNekrasov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Concrete regression this catches:\n\nSuppose someone later \"helpfully\" clamps `dst` inside `error()` to keep it within `target`:\n\n```kotlin\nfun error(source: Path, exception: Exception): FileVisitResult {\n    val raw = destination(source, validatePath = false)\n    val dst = if (raw.normalize().startsWith(normalizedTarget)) raw else target\n    return onError(source, dst, exception).toFileVisitResult()\n}\n```\n\nWalk-through for the Archive4 entry `../../../../../test`:\n\n1. `destination(source)` at line 237 still throws `IllegalFileNameException` (validation is on at that call site).\n2. The `catch` block invokes `error()`.\n3. `raw` = `<tmpdir>/UnzipArchive4/../../../../../test` — outside `target`.\n4. The new \"guard\" replaces it: `dst = target`.\n5. `onError(source, target, IllegalFileNameException)` is invoked.\n\nThe current test passes:\n- `failed = true` ✓\n- `assertIs<IllegalFileNameException>(exception)` ✓\n- `assertTrue(failed)` ✓\n\n…but the restored contract is silently broken — the caller now sees `target` itself instead of the unvalidated path that triggered the error.\n\nThe proposed `assertFalse(dst.normalize().startsWith(target.normalize()))` fails here, catching the regression."
+            "body": "Concrete regression this catches:\n\nSuppose someone later \"helpfully\" clamps `dst` inside `error()` to keep it within `target`:\n\n```kotlin\nfun error(source: Path, exception: Exception): FileVisitResult {\n    val raw = destination(source, validatePath = false)\n    val dst = if (raw.normalize().startsWith(normalizedTarget)) raw else target\n    return onError(source, dst, exception).toFileVisitResult()\n}\n```\n\nWalk-through for the Archive4 entry `../../../../../test`:\n\n1. `destination(source)` at line 237 still throws `IllegalFileNameException` (validation is on at that call site).\n2. The `catch` block invokes `error()`.\n3. `raw` = `<tmpdir>/UnzipArchive4/../../../../../test` — outside `target`.\n4. The new \"guard\" replaces it: `dst = target`.\n5. `onError(source, target, IllegalFileNameException)` is invoked.\n\nThe current test passes:\n- `failed = true` ✓\n- `assertIs<IllegalFileNameException>(exception)` ✓\n- `assertTrue(failed)` ✓\n\n…but the restored contract is silently broken — the caller now sees `target` itself instead of the unvalidated path that triggered the error.\n\nThe proposed `assertFalse(dst.normalize().startsWith(target.normalize()))` fails here, catching the regression.",
+            "created_at": "2026-05-20T17:42:17Z",
+            "updated_at": "2026-05-20T17:42:17Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275947128",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275947128"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3275947128"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3275947128/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 518,
+            "original_start_line": 518,
+            "start_side": "RIGHT",
+            "line": 527,
+            "original_line": 527,
+            "side": "RIGHT",
+            "in_reply_to_id": 3275800870,
+            "author_association": "MEMBER",
+            "original_position": 13,
+            "position": 13,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3294906306",
+            "pull_request_review_id": 4353063249,
+            "id": 3294906306,
+            "node_id": "PRRC_kwDOADRfSs7EZEfC",
+            "diff_hunk": "@@ -216,7 +216,12 @@ public fun Path.copyToRecursively(\n     }\n \n     fun error(source: Path, exception: Exception): FileVisitResult {\n-        return onError(source, destination(source), exception).toFileVisitResult()\n+        // destination, when invoked with default validatePath value (true) may throw an exception.\n+        // If this function was invoked to handle such an exception thrown elsewhere,\n+        // there is no way to deliver exception to onError other than bypassing the validation.\n+        // Thus, we call destination w/ validatePath = false.\n+        val destinationPath = destination(source, validatePath = false)",
+            "path": "libraries/stdlib/jdk7/src/kotlin/io/path/PathRecursiveFunctions.kt",
+            "commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
+            "original_commit_id": "dc3537386a10d49561cc99bb889105acf91d9762",
             "user": {
               "login": "fzhinkin",
-              "type": "User"
+              "id": 13045611,
+              "node_id": "MDQ6VXNlcjEzMDQ1NjEx",
+              "avatar_url": "https://avatars.githubusercontent.com/u/13045611?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/fzhinkin",
+              "html_url": "https://github.com/fzhinkin",
+              "followers_url": "https://api.github.com/users/fzhinkin/followers",
+              "following_url": "https://api.github.com/users/fzhinkin/following{/other_user}",
+              "gists_url": "https://api.github.com/users/fzhinkin/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/fzhinkin/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/fzhinkin/subscriptions",
+              "organizations_url": "https://api.github.com/users/fzhinkin/orgs",
+              "repos_url": "https://api.github.com/users/fzhinkin/repos",
+              "events_url": "https://api.github.com/users/fzhinkin/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/fzhinkin/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "> `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\r\n\r\nI don't see how we can get an exception from `relativeTo`, but `resolve` can indeed throw one. Not sure if there's a reasonable way to handle it other than updating `onError`'s contract."
+            "body": "> `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\r\n\r\nI don't see how we can get an exception from `relativeTo`, but `resolve` can indeed throw one. Not sure if there's a reasonable way to handle it other than updating `onError`'s contract.",
+            "created_at": "2026-05-24T15:49:34Z",
+            "updated_at": "2026-05-24T15:49:35Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3294906306",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3294906306"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/5976#discussion_r3294906306"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/5976"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3294906306/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": 223,
+            "original_line": 223,
+            "side": "RIGHT",
+            "in_reply_to_id": 3275800856,
+            "author_association": "MEMBER",
+            "original_position": 22,
+            "position": 22,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           }
-        ],
-        "hasNext": false
+        ]
       }
     }
   ],

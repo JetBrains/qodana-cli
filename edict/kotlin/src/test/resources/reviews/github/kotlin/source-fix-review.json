@@ -9,9 +9,10 @@
       "response": {
         "status": 404,
         "body": {
-          "message": "Not Found"
-        },
-        "hasNext": false
+          "message": "Not Found",
+          "documentation_url": "https://docs.github.com/rest/git/refs#get-a-reference",
+          "status": "404"
+        }
       }
     },
     {
@@ -23,12 +24,15 @@
       "response": {
         "status": 200,
         "body": {
+          "ref": "refs/heads/1.3.70",
+          "node_id": "MDM6UmVmMzQzMjI2NjpyZWZzL2hlYWRzLzEuMy43MA==",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/1.3.70",
           "object": {
             "sha": "00708e800293156c9c4acaaaa7c06cb78e96ae69",
-            "type": "commit"
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/00708e800293156c9c4acaaaa7c06cb78e96ae69"
           }
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -43,12 +47,22 @@
         "status": 200,
         "body": {
           "name": "gradlew",
+          "path": "gradlew",
+          "sha": "83f2acfdc319a24e8766cca78f32474ad7a22dd6",
           "size": 5960,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/gradlew?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/gradlew",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/83f2acfdc319a24e8766cca78f32474ad7a22dd6",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/00708e800293156c9c4acaaaa7c06cb78e96ae69/gradlew",
           "type": "file",
           "content": "IyEvdXNyL2Jpbi9lbnYgc2gKCiMKIyBDb3B5cmlnaHQgMjAxNSB0aGUgb3Jp\nZ2luYWwgYXV0aG9yIG9yIGF1dGhvcnMuCiMKIyBMaWNlbnNlZCB1bmRlciB0\naGUgQXBhY2hlIExpY2Vuc2UsIFZlcnNpb24gMi4wICh0aGUgIkxpY2Vuc2Ui\nKTsKIyB5b3UgbWF5IG5vdCB1c2UgdGhpcyBmaWxlIGV4Y2VwdCBpbiBjb21w\nbGlhbmNlIHdpdGggdGhlIExpY2Vuc2UuCiMgWW91IG1heSBvYnRhaW4gYSBj\nb3B5IG9mIHRoZSBMaWNlbnNlIGF0CiMKIyAgICAgIGh0dHBzOi8vd3d3LmFw\nYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0yLjAKIwojIFVubGVzcyByZXF1\naXJlZCBieSBhcHBsaWNhYmxlIGxhdyBvciBhZ3JlZWQgdG8gaW4gd3JpdGlu\nZywgc29mdHdhcmUKIyBkaXN0cmlidXRlZCB1bmRlciB0aGUgTGljZW5zZSBp\ncyBkaXN0cmlidXRlZCBvbiBhbiAiQVMgSVMiIEJBU0lTLAojIFdJVEhPVVQg\nV0FSUkFOVElFUyBPUiBDT05ESVRJT05TIE9GIEFOWSBLSU5ELCBlaXRoZXIg\nZXhwcmVzcyBvciBpbXBsaWVkLgojIFNlZSB0aGUgTGljZW5zZSBmb3IgdGhl\nIHNwZWNpZmljIGxhbmd1YWdlIGdvdmVybmluZyBwZXJtaXNzaW9ucyBhbmQK\nIyBsaW1pdGF0aW9ucyB1bmRlciB0aGUgTGljZW5zZS4KIwoKIyMjIyMjIyMj\nIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj\nIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjCiMjCiMjICBHcmFkbGUgc3RhcnQg\ndXAgc2NyaXB0IGZvciBVTipYCiMjCiMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj\nIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMj\nIyMjIyMjIyMjIwoKIyBBdHRlbXB0IHRvIHNldCBBUFBfSE9NRQojIFJlc29s\ndmUgbGlua3M6ICQwIG1heSBiZSBhIGxpbmsKUFJHPSIkMCIKIyBOZWVkIHRo\naXMgZm9yIHJlbGF0aXZlIHN5bWxpbmtzLgp3aGlsZSBbIC1oICIkUFJHIiBd\nIDsgZG8KICAgIGxzPWBscyAtbGQgIiRQUkciYAogICAgbGluaz1gZXhwciAi\nJGxzIiA6ICcuKi0+IFwoLipcKSQnYAogICAgaWYgZXhwciAiJGxpbmsiIDog\nJy8uKicgPiAvZGV2L251bGw7IHRoZW4KICAgICAgICBQUkc9IiRsaW5rIgog\nICAgZWxzZQogICAgICAgIFBSRz1gZGlybmFtZSAiJFBSRyJgIi8kbGluayIK\nICAgIGZpCmRvbmUKU0FWRUQ9ImBwd2RgIgpjZCAiYGRpcm5hbWUgXCIkUFJH\nXCJgLyIgPi9kZXYvbnVsbApBUFBfSE9NRT0iYHB3ZCAtUGAiCmNkICIkU0FW\nRUQiID4vZGV2L251bGwKCkFQUF9OQU1FPSJHcmFkbGUiCkFQUF9CQVNFX05B\nTUU9YGJhc2VuYW1lICIkMCJgCgojIEFkZCBkZWZhdWx0IEpWTSBvcHRpb25z\nIGhlcmUuIFlvdSBjYW4gYWxzbyB1c2UgSkFWQV9PUFRTIGFuZCBHUkFETEVf\nT1BUUyB0byBwYXNzIEpWTSBvcHRpb25zIHRvIHRoaXMgc2NyaXB0LgpERUZB\nVUxUX0pWTV9PUFRTPSciLVhteDY0bSIgIi1YbXM2NG0iJwoKIyBVc2UgdGhl\nIG1heGltdW0gYXZhaWxhYmxlLCBvciBzZXQgTUFYX0ZEICE9IC0xIHRvIHVz\nZSB0aGF0IHZhbHVlLgpNQVhfRkQ9Im1heGltdW0iCgp3YXJuICgpIHsKICAg\nIGVjaG8gIiQqIgp9CgpkaWUgKCkgewogICAgZWNobwogICAgZWNobyAiJCoi\nCiAgICBlY2hvCiAgICBleGl0IDEKfQoKIyBPUyBzcGVjaWZpYyBzdXBwb3J0\nIChtdXN0IGJlICd0cnVlJyBvciAnZmFsc2UnKS4KY3lnd2luPWZhbHNlCm1z\neXM9ZmFsc2UKZGFyd2luPWZhbHNlCm5vbnN0b3A9ZmFsc2UKY2FzZSAiYHVu\nYW1lYCIgaW4KICBDWUdXSU4qICkKICAgIGN5Z3dpbj10cnVlCiAgICA7Owog\nIERhcndpbiogKQogICAgZGFyd2luPXRydWUKICAgIDs7CiAgTUlOR1cqICkK\nICAgIG1zeXM9dHJ1ZQogICAgOzsKICBOT05TVE9QKiApCiAgICBub25zdG9w\nPXRydWUKICAgIDs7CmVzYWMKCkNMQVNTUEFUSD0kQVBQX0hPTUUvZ3JhZGxl\nL3dyYXBwZXIvZ3JhZGxlLXdyYXBwZXIuamFyCgojIERldGVybWluZSB0aGUg\nSmF2YSBjb21tYW5kIHRvIHVzZSB0byBzdGFydCB0aGUgSlZNLgppZiBbIC1u\nICIkSkFWQV9IT01FIiBdIDsgdGhlbgogICAgaWYgWyAteCAiJEpBVkFfSE9N\nRS9qcmUvc2gvamF2YSIgXSA7IHRoZW4KICAgICAgICAjIElCTSdzIEpESyBv\nbiBBSVggdXNlcyBzdHJhbmdlIGxvY2F0aW9ucyBmb3IgdGhlIGV4ZWN1dGFi\nbGVzCiAgICAgICAgSkFWQUNNRD0iJEpBVkFfSE9NRS9qcmUvc2gvamF2YSIK\nICAgIGVsc2UKICAgICAgICBKQVZBQ01EPSIkSkFWQV9IT01FL2Jpbi9qYXZh\nIgogICAgZmkKICAgIGlmIFsgISAteCAiJEpBVkFDTUQiIF0gOyB0aGVuCiAg\nICAgICAgZGllICJFUlJPUjogSkFWQV9IT01FIGlzIHNldCB0byBhbiBpbnZh\nbGlkIGRpcmVjdG9yeTogJEpBVkFfSE9NRQoKUGxlYXNlIHNldCB0aGUgSkFW\nQV9IT01FIHZhcmlhYmxlIGluIHlvdXIgZW52aXJvbm1lbnQgdG8gbWF0Y2gg\ndGhlCmxvY2F0aW9uIG9mIHlvdXIgSmF2YSBpbnN0YWxsYXRpb24uIgogICAg\nZmkKZWxzZQogICAgSkFWQUNNRD0iamF2YSIKICAgIHdoaWNoIGphdmEgPi9k\nZXYvbnVsbCAyPiYxIHx8IGRpZSAiRVJST1I6IEpBVkFfSE9NRSBpcyBub3Qg\nc2V0IGFuZCBubyAnamF2YScgY29tbWFuZCBjb3VsZCBiZSBmb3VuZCBpbiB5\nb3VyIFBBVEguCgpQbGVhc2Ugc2V0IHRoZSBKQVZBX0hPTUUgdmFyaWFibGUg\naW4geW91ciBlbnZpcm9ubWVudCB0byBtYXRjaCB0aGUKbG9jYXRpb24gb2Yg\neW91ciBKYXZhIGluc3RhbGxhdGlvbi4iCmZpCgojIEluY3JlYXNlIHRoZSBt\nYXhpbXVtIGZpbGUgZGVzY3JpcHRvcnMgaWYgd2UgY2FuLgppZiBbICIkY3ln\nd2luIiA9ICJmYWxzZSIgLWEgIiRkYXJ3aW4iID0gImZhbHNlIiAtYSAiJG5v\nbnN0b3AiID0gImZhbHNlIiBdIDsgdGhlbgogICAgTUFYX0ZEX0xJTUlUPWB1\nbGltaXQgLUggLW5gCiAgICBpZiBbICQ/IC1lcSAwIF0gOyB0aGVuCiAgICAg\nICAgaWYgWyAiJE1BWF9GRCIgPSAibWF4aW11bSIgLW8gIiRNQVhfRkQiID0g\nIm1heCIgXSA7IHRoZW4KICAgICAgICAgICAgTUFYX0ZEPSIkTUFYX0ZEX0xJ\nTUlUIgogICAgICAgIGZpCiAgICAgICAgdWxpbWl0IC1uICRNQVhfRkQKICAg\nICAgICBpZiBbICQ/IC1uZSAwIF0gOyB0aGVuCiAgICAgICAgICAgIHdhcm4g\nIkNvdWxkIG5vdCBzZXQgbWF4aW11bSBmaWxlIGRlc2NyaXB0b3IgbGltaXQ6\nICRNQVhfRkQiCiAgICAgICAgZmkKICAgIGVsc2UKICAgICAgICB3YXJuICJD\nb3VsZCBub3QgcXVlcnkgbWF4aW11bSBmaWxlIGRlc2NyaXB0b3IgbGltaXQ6\nICRNQVhfRkRfTElNSVQiCiAgICBmaQpmaQoKIyBGb3IgRGFyd2luLCBhZGQg\nb3B0aW9ucyB0byBzcGVjaWZ5IGhvdyB0aGUgYXBwbGljYXRpb24gYXBwZWFy\ncyBpbiB0aGUgZG9jawppZiAkZGFyd2luOyB0aGVuCiAgICBHUkFETEVfT1BU\nUz0iJEdSQURMRV9PUFRTIFwiLVhkb2NrOm5hbWU9JEFQUF9OQU1FXCIgXCIt\nWGRvY2s6aWNvbj0kQVBQX0hPTUUvbWVkaWEvZ3JhZGxlLmljbnNcIiIKZmkK\nCiMgRm9yIEN5Z3dpbiBvciBNU1lTLCBzd2l0Y2ggcGF0aHMgdG8gV2luZG93\ncyBmb3JtYXQgYmVmb3JlIHJ1bm5pbmcgamF2YQppZiBbICIkY3lnd2luIiA9\nICJ0cnVlIiAtbyAiJG1zeXMiID0gInRydWUiIF0gOyB0aGVuCiAgICBBUFBf\nSE9NRT1gY3lncGF0aCAtLXBhdGggLS1taXhlZCAiJEFQUF9IT01FImAKICAg\nIENMQVNTUEFUSD1gY3lncGF0aCAtLXBhdGggLS1taXhlZCAiJENMQVNTUEFU\nSCJgCiAgICBKQVZBQ01EPWBjeWdwYXRoIC0tdW5peCAiJEpBVkFDTUQiYAoK\nICAgICMgV2UgYnVpbGQgdGhlIHBhdHRlcm4gZm9yIGFyZ3VtZW50cyB0byBi\nZSBjb252ZXJ0ZWQgdmlhIGN5Z3BhdGgKICAgIFJPT1RESVJTUkFXPWBmaW5k\nIC1MIC8gLW1heGRlcHRoIDEgLW1pbmRlcHRoIDEgLXR5cGUgZCAyPi9kZXYv\nbnVsbGAKICAgIFNFUD0iIgogICAgZm9yIGRpciBpbiAkUk9PVERJUlNSQVcg\nOyBkbwogICAgICAgIFJPT1RESVJTPSIkUk9PVERJUlMkU0VQJGRpciIKICAg\nICAgICBTRVA9InwiCiAgICBkb25lCiAgICBPVVJDWUdQQVRURVJOPSIoXigk\nUk9PVERJUlMpKSIKICAgICMgQWRkIGEgdXNlci1kZWZpbmVkIHBhdHRlcm4g\ndG8gdGhlIGN5Z3BhdGggYXJndW1lbnRzCiAgICBpZiBbICIkR1JBRExFX0NZ\nR1BBVFRFUk4iICE9ICIiIF0gOyB0aGVuCiAgICAgICAgT1VSQ1lHUEFUVEVS\nTj0iJE9VUkNZR1BBVFRFUk58KCRHUkFETEVfQ1lHUEFUVEVSTikiCiAgICBm\naQogICAgIyBOb3cgY29udmVydCB0aGUgYXJndW1lbnRzIC0ga2x1ZGdlIHRv\nIGxpbWl0IG91cnNlbHZlcyB0byAvYmluL3NoCiAgICBpPTAKICAgIGZvciBh\ncmcgaW4gIiRAIiA7IGRvCiAgICAgICAgQ0hFQ0s9YGVjaG8gIiRhcmcifGVn\ncmVwIC1jICIkT1VSQ1lHUEFUVEVSTiIgLWAKICAgICAgICBDSEVDSzI9YGVj\naG8gIiRhcmcifGVncmVwIC1jICJeLSJgICAgICAgICAgICAgICAgICAgICAg\nICAgICAgICAgICAgIyMjIERldGVybWluZSBpZiBhbiBvcHRpb24KCiAgICAg\nICAgaWYgWyAkQ0hFQ0sgLW5lIDAgXSAmJiBbICRDSEVDSzIgLWVxIDAgXSA7\nIHRoZW4gICAgICAgICAgICAgICAgICAgICMjIyBBZGRlZCBhIGNvbmRpdGlv\nbgogICAgICAgICAgICBldmFsIGBlY2hvIGFyZ3MkaWA9YGN5Z3BhdGggLS1w\nYXRoIC0taWdub3JlIC0tbWl4ZWQgIiRhcmciYAogICAgICAgIGVsc2UKICAg\nICAgICAgICAgZXZhbCBgZWNobyBhcmdzJGlgPSJcIiRhcmdcIiIKICAgICAg\nICBmaQogICAgICAgIGk9JCgoaSsxKSkKICAgIGRvbmUKICAgIGNhc2UgJGkg\naW4KICAgICAgICAoMCkgc2V0IC0tIDs7CiAgICAgICAgKDEpIHNldCAtLSAi\nJGFyZ3MwIiA7OwogICAgICAgICgyKSBzZXQgLS0gIiRhcmdzMCIgIiRhcmdz\nMSIgOzsKICAgICAgICAoMykgc2V0IC0tICIkYXJnczAiICIkYXJnczEiICIk\nYXJnczIiIDs7CiAgICAgICAgKDQpIHNldCAtLSAiJGFyZ3MwIiAiJGFyZ3Mx\nIiAiJGFyZ3MyIiAiJGFyZ3MzIiA7OwogICAgICAgICg1KSBzZXQgLS0gIiRh\ncmdzMCIgIiRhcmdzMSIgIiRhcmdzMiIgIiRhcmdzMyIgIiRhcmdzNCIgOzsK\nICAgICAgICAoNikgc2V0IC0tICIkYXJnczAiICIkYXJnczEiICIkYXJnczIi\nICIkYXJnczMiICIkYXJnczQiICIkYXJnczUiIDs7CiAgICAgICAgKDcpIHNl\ndCAtLSAiJGFyZ3MwIiAiJGFyZ3MxIiAiJGFyZ3MyIiAiJGFyZ3MzIiAiJGFy\nZ3M0IiAiJGFyZ3M1IiAiJGFyZ3M2IiA7OwogICAgICAgICg4KSBzZXQgLS0g\nIiRhcmdzMCIgIiRhcmdzMSIgIiRhcmdzMiIgIiRhcmdzMyIgIiRhcmdzNCIg\nIiRhcmdzNSIgIiRhcmdzNiIgIiRhcmdzNyIgOzsKICAgICAgICAoOSkgc2V0\nIC0tICIkYXJnczAiICIkYXJnczEiICIkYXJnczIiICIkYXJnczMiICIkYXJn\nczQiICIkYXJnczUiICIkYXJnczYiICIkYXJnczciICIkYXJnczgiIDs7CiAg\nICBlc2FjCmZpCgojIEVzY2FwZSBhcHBsaWNhdGlvbiBhcmdzCnNhdmUgKCkg\newogICAgZm9yIGkgZG8gcHJpbnRmICVzXFxuICIkaSIgfCBzZWQgInMvJy8n\nXFxcXCcnL2c7MXMvXi8nLztcJHMvXCQvJyBcXFxcLyIgOyBkb25lCiAgICBl\nY2hvICIgIgp9CkFQUF9BUkdTPSQoc2F2ZSAiJEAiKQoKIyBDb2xsZWN0IGFs\nbCBhcmd1bWVudHMgZm9yIHRoZSBqYXZhIGNvbW1hbmQsIGZvbGxvd2luZyB0\naGUgc2hlbGwgcXVvdGluZyBhbmQgc3Vic3RpdHV0aW9uIHJ1bGVzCmV2YWwg\nc2V0IC0tICRERUZBVUxUX0pWTV9PUFRTICRKQVZBX09QVFMgJEdSQURMRV9P\nUFRTICJcIi1Eb3JnLmdyYWRsZS5hcHBuYW1lPSRBUFBfQkFTRV9OQU1FXCIi\nIC1jbGFzc3BhdGggIlwiJENMQVNTUEFUSFwiIiBvcmcuZ3JhZGxlLndyYXBw\nZXIuR3JhZGxlV3JhcHBlck1haW4gIiRBUFBfQVJHUyIKCiMgYnkgZGVmYXVs\ndCB3ZSBzaG91bGQgYmUgaW4gdGhlIGNvcnJlY3QgcHJvamVjdCBkaXIsIGJ1\ndCB3aGVuIHJ1biBmcm9tIEZpbmRlciBvbiBNYWMsIHRoZSBjd2QgaXMgd3Jv\nbmcKaWYgWyAiJCh1bmFtZSkiID0gIkRhcndpbiIgXSAmJiBbICIkSE9NRSIg\nPSAiJFBXRCIgXTsgdGhlbgogIGNkICIkKGRpcm5hbWUgIiQwIikiCmZpCgpl\neGVjICIkSkFWQUNNRCIgIiRAIgo=\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/gradlew?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/83f2acfdc319a24e8766cca78f32474ad7a22dd6",
+            "html": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/gradlew"
+          }
+        }
       }
     },
     {
@@ -63,12 +77,22 @@
         "status": 200,
         "body": {
           "name": "Lazy.kt",
+          "path": "libraries/stdlib/src/kotlin/util/Lazy.kt",
+          "sha": "763cf30b6440e7a8ea3b9cfbb0174cfef70c84df",
           "size": 3323,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/libraries/stdlib/src/kotlin/util/Lazy.kt?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/libraries/stdlib/src/kotlin/util/Lazy.kt",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/763cf30b6440e7a8ea3b9cfbb0174cfef70c84df",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/00708e800293156c9c4acaaaa7c06cb78e96ae69/libraries/stdlib/src/kotlin/util/Lazy.kt",
           "type": "file",
           "content": "LyoKICogQ29weXJpZ2h0IDIwMTAtMjAxOCBKZXRCcmFpbnMgcy5yLm8uIGFu\nZCBLb3RsaW4gUHJvZ3JhbW1pbmcgTGFuZ3VhZ2UgY29udHJpYnV0b3JzLgog\nKiBVc2Ugb2YgdGhpcyBzb3VyY2UgY29kZSBpcyBnb3Zlcm5lZCBieSB0aGUg\nQXBhY2hlIDIuMCBsaWNlbnNlIHRoYXQgY2FuIGJlIGZvdW5kIGluIHRoZSBs\naWNlbnNlL0xJQ0VOU0UudHh0IGZpbGUuCiAqLwoKQGZpbGU6a290bGluLmp2\nbS5Kdm1OYW1lKCJMYXp5S3QiKQpAZmlsZTprb3RsaW4uanZtLkp2bU11bHRp\nZmlsZUNsYXNzCgpwYWNrYWdlIGtvdGxpbgoKaW1wb3J0IGtvdGxpbi5yZWZs\nZWN0LktQcm9wZXJ0eQoKLyoqCiAqIFJlcHJlc2VudHMgYSB2YWx1ZSB3aXRo\nIGxhenkgaW5pdGlhbGl6YXRpb24uCiAqCiAqIFRvIGNyZWF0ZSBhbiBpbnN0\nYW5jZSBvZiBbTGF6eV0gdXNlIHRoZSBbbGF6eV0gZnVuY3Rpb24uCiAqLwpw\ndWJsaWMgaW50ZXJmYWNlIExhenk8b3V0IFQ+IHsKICAgIC8qKgogICAgICog\nR2V0cyB0aGUgbGF6aWx5IGluaXRpYWxpemVkIHZhbHVlIG9mIHRoZSBjdXJy\nZW50IExhenkgaW5zdGFuY2UuCiAgICAgKiBPbmNlIHRoZSB2YWx1ZSB3YXMg\naW5pdGlhbGl6ZWQgaXQgbXVzdCBub3QgY2hhbmdlIGR1cmluZyB0aGUgcmVz\ndCBvZiBsaWZldGltZSBvZiB0aGlzIExhenkgaW5zdGFuY2UuCiAgICAgKi8K\nICAgIHB1YmxpYyB2YWwgdmFsdWU6IFQKCiAgICAvKioKICAgICAqIFJldHVy\nbnMgYHRydWVgIGlmIGEgdmFsdWUgZm9yIHRoaXMgTGF6eSBpbnN0YW5jZSBo\nYXMgYmVlbiBhbHJlYWR5IGluaXRpYWxpemVkLCBhbmQgYGZhbHNlYCBvdGhl\ncndpc2UuCiAgICAgKiBPbmNlIHRoaXMgZnVuY3Rpb24gaGFzIHJldHVybmVk\nIGB0cnVlYCBpdCBzdGF5cyBgdHJ1ZWAgZm9yIHRoZSByZXN0IG9mIGxpZmV0\naW1lIG9mIHRoaXMgTGF6eSBpbnN0YW5jZS4KICAgICAqLwogICAgcHVibGlj\nIGZ1biBpc0luaXRpYWxpemVkKCk6IEJvb2xlYW4KfQoKLyoqCiAqIENyZWF0\nZXMgYSBuZXcgaW5zdGFuY2Ugb2YgdGhlIFtMYXp5XSB0aGF0IGlzIGFscmVh\nZHkgaW5pdGlhbGl6ZWQgd2l0aCB0aGUgc3BlY2lmaWVkIFt2YWx1ZV0uCiAq\nLwpwdWJsaWMgZnVuIDxUPiBsYXp5T2YodmFsdWU6IFQpOiBMYXp5PFQ+ID0g\nSW5pdGlhbGl6ZWRMYXp5SW1wbCh2YWx1ZSkKCi8qKgogKiBBbiBleHRlbnNp\nb24gdG8gZGVsZWdhdGUgYSByZWFkLW9ubHkgcHJvcGVydHkgb2YgdHlwZSBb\nVF0gdG8gYW4gaW5zdGFuY2Ugb2YgW0xhenldLgogKgogKiBUaGlzIGV4dGVu\nc2lvbiBhbGxvd3MgdG8gdXNlIGluc3RhbmNlcyBvZiBMYXp5IGZvciBwcm9w\nZXJ0eSBkZWxlZ2F0aW9uOgogKiBgdmFsIHByb3BlcnR5OiBTdHJpbmcgYnkg\nbGF6eSB7IGluaXRpYWxpemVyIH1gCiAqLwpAa290bGluLmludGVybmFsLklu\nbGluZU9ubHkKcHVibGljIGlubGluZSBvcGVyYXRvciBmdW4gPFQ+IExhenk8\nVD4uZ2V0VmFsdWUodGhpc1JlZjogQW55PywgcHJvcGVydHk6IEtQcm9wZXJ0\neTwqPik6IFQgPSB2YWx1ZQoKLyoqCiAqIFNwZWNpZmllcyBob3cgYSBbTGF6\neV0gaW5zdGFuY2Ugc3luY2hyb25pemVzIGluaXRpYWxpemF0aW9uIGFtb25n\nIG11bHRpcGxlIHRocmVhZHMuCiAqLwpwdWJsaWMgZW51bSBjbGFzcyBMYXp5\nVGhyZWFkU2FmZXR5TW9kZSB7CgogICAgLyoqCiAgICAgKiBMb2NrcyBhcmUg\ndXNlZCB0byBlbnN1cmUgdGhhdCBvbmx5IGEgc2luZ2xlIHRocmVhZCBjYW4g\naW5pdGlhbGl6ZSB0aGUgW0xhenldIGluc3RhbmNlLgogICAgICovCiAgICBT\nWU5DSFJPTklaRUQsCgogICAgLyoqCiAgICAgKiBJbml0aWFsaXplciBmdW5j\ndGlvbiBjYW4gYmUgY2FsbGVkIHNldmVyYWwgdGltZXMgb24gY29uY3VycmVu\ndCBhY2Nlc3MgdG8gdW5pbml0aWFsaXplZCBbTGF6eV0gaW5zdGFuY2UgdmFs\ndWUsCiAgICAgKiBidXQgb25seSB0aGUgZmlyc3QgcmV0dXJuZWQgdmFsdWUg\nd2lsbCBiZSB1c2VkIGFzIHRoZSB2YWx1ZSBvZiBbTGF6eV0gaW5zdGFuY2Uu\nCiAgICAgKi8KICAgIFBVQkxJQ0FUSU9OLAoKICAgIC8qKgogICAgICogTm8g\nbG9ja3MgYXJlIHVzZWQgdG8gc3luY2hyb25pemUgYW4gYWNjZXNzIHRvIHRo\nZSBbTGF6eV0gaW5zdGFuY2UgdmFsdWU7IGlmIHRoZSBpbnN0YW5jZSBpcyBh\nY2Nlc3NlZCBmcm9tIG11bHRpcGxlIHRocmVhZHMsIGl0cyBiZWhhdmlvciBp\ncyB1bmRlZmluZWQuCiAgICAgKgogICAgICogVGhpcyBtb2RlIHNob3VsZCBu\nb3QgYmUgdXNlZCB1bmxlc3MgdGhlIFtMYXp5XSBpbnN0YW5jZSBpcyBndWFy\nYW50ZWVkIG5ldmVyIHRvIGJlIGluaXRpYWxpemVkIGZyb20gbW9yZSB0aGFu\nIG9uZSB0aHJlYWQuCiAgICAgKi8KICAgIE5PTkUsCn0KCgppbnRlcm5hbCBv\nYmplY3QgVU5JTklUSUFMSVpFRF9WQUxVRQoKLy8gaW50ZXJuYWwgdG8gYmUg\nY2FsbGVkIGZyb20gbGF6eSBpbiBKUwppbnRlcm5hbCBjbGFzcyBVbnNhZmVM\nYXp5SW1wbDxvdXQgVD4oaW5pdGlhbGl6ZXI6ICgpIC0+IFQpIDogTGF6eTxU\nPiwgU2VyaWFsaXphYmxlIHsKICAgIHByaXZhdGUgdmFyIGluaXRpYWxpemVy\nOiAoKCkgLT4gVCk/ID0gaW5pdGlhbGl6ZXIKICAgIHByaXZhdGUgdmFyIF92\nYWx1ZTogQW55PyA9IFVOSU5JVElBTElaRURfVkFMVUUKCiAgICBvdmVycmlk\nZSB2YWwgdmFsdWU6IFQKICAgICAgICBnZXQoKSB7CiAgICAgICAgICAgIGlm\nIChfdmFsdWUgPT09IFVOSU5JVElBTElaRURfVkFMVUUpIHsKICAgICAgICAg\nICAgICAgIF92YWx1ZSA9IGluaXRpYWxpemVyISEoKQogICAgICAgICAgICAg\nICAgaW5pdGlhbGl6ZXIgPSBudWxsCiAgICAgICAgICAgIH0KICAgICAgICAg\nICAgQFN1cHByZXNzKCJVTkNIRUNLRURfQ0FTVCIpCiAgICAgICAgICAgIHJl\ndHVybiBfdmFsdWUgYXMgVAogICAgICAgIH0KCiAgICBvdmVycmlkZSBmdW4g\naXNJbml0aWFsaXplZCgpOiBCb29sZWFuID0gX3ZhbHVlICE9PSBVTklOSVRJ\nQUxJWkVEX1ZBTFVFCgogICAgb3ZlcnJpZGUgZnVuIHRvU3RyaW5nKCk6IFN0\ncmluZyA9IGlmIChpc0luaXRpYWxpemVkKCkpIHZhbHVlLnRvU3RyaW5nKCkg\nZWxzZSAiTGF6eSB2YWx1ZSBub3QgaW5pdGlhbGl6ZWQgeWV0LiIKCiAgICBw\ncml2YXRlIGZ1biB3cml0ZVJlcGxhY2UoKTogQW55ID0gSW5pdGlhbGl6ZWRM\nYXp5SW1wbCh2YWx1ZSkKfQoKaW50ZXJuYWwgY2xhc3MgSW5pdGlhbGl6ZWRM\nYXp5SW1wbDxvdXQgVD4ob3ZlcnJpZGUgdmFsIHZhbHVlOiBUKSA6IExhenk8\nVD4sIFNlcmlhbGl6YWJsZSB7CgogICAgb3ZlcnJpZGUgZnVuIGlzSW5pdGlh\nbGl6ZWQoKTogQm9vbGVhbiA9IHRydWUKCiAgICBvdmVycmlkZSBmdW4gdG9T\ndHJpbmcoKTogU3RyaW5nID0gdmFsdWUudG9TdHJpbmcoKQoKfQo=\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/libraries/stdlib/src/kotlin/util/Lazy.kt?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/763cf30b6440e7a8ea3b9cfbb0174cfef70c84df",
+            "html": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/libraries/stdlib/src/kotlin/util/Lazy.kt"
+          }
+        }
       }
     },
     {
@@ -80,18 +104,40 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "00708e800293156c9c4acaaaa7c06cb78e96ae69",
+          "node_id": "MDY6Q29tbWl0MzQzMjI2NjowMDcwOGU4MDAyOTMxNTZjOWM0YWNhYWFhN2MwNmNiNzhlOTZhZTY5",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/00708e800293156c9c4acaaaa7c06cb78e96ae69",
+          "html_url": "https://github.com/JetBrains/kotlin/commit/00708e800293156c9c4acaaaa7c06cb78e96ae69",
           "author": {
-            "name": "Andrey Uskov"
+            "name": "Andrey Uskov",
+            "email": "Andrey.Uskov@jetbrains.com",
+            "date": "2020-05-25T18:26:29Z"
           },
           "committer": {
-            "name": "Andrey Uskov"
+            "name": "Andrey Uskov",
+            "email": "Andrey.Uskov@jetbrains.com",
+            "date": "2020-06-22T08:37:01Z"
           },
           "tree": {
-            "sha": "c66b387caf282113acb0c01a43e1048869961df9"
+            "sha": "c66b387caf282113acb0c01a43e1048869961df9",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/c66b387caf282113acb0c01a43e1048869961df9"
           },
-          "message": "Improved performance of MPP projects import\n\n#KT-39059 Fixed\n\n(cherry picked from commit e6165ed78511d56d6afb188d484ea91c071a71e7)"
-        },
-        "hasNext": false
+          "message": "Improved performance of MPP projects import\n\n#KT-39059 Fixed\n\n(cherry picked from commit e6165ed78511d56d6afb188d484ea91c071a71e7)",
+          "parents": [
+            {
+              "sha": "5efcbacff39169cc98e2f778117c12028d4e4563",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/5efcbacff39169cc98e2f778117c12028d4e4563",
+              "html_url": "https://github.com/JetBrains/kotlin/commit/5efcbacff39169cc98e2f778117c12028d4e4563"
+            }
+          ],
+          "verification": {
+            "verified": false,
+            "reason": "unsigned",
+            "signature": null,
+            "payload": null,
+            "verified_at": null
+          }
+        }
       }
     },
     {
@@ -103,286 +149,350 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "c66b387caf282113acb0c01a43e1048869961df9",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/c66b387caf282113acb0c01a43e1048869961df9",
           "tree": [
             {
               "path": ".bunch",
               "mode": "100644",
               "type": "blob",
-              "sha": "74ca7d6a374ea1756b87ed0d5b6e95b2b28804a3"
+              "sha": "74ca7d6a374ea1756b87ed0d5b6e95b2b28804a3",
+              "size": 84,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/74ca7d6a374ea1756b87ed0d5b6e95b2b28804a3"
             },
             {
               "path": ".gitattributes",
               "mode": "100644",
               "type": "blob",
-              "sha": "18973d22c60b6660a01fe41bc71d8c92bdd2bc98"
+              "sha": "18973d22c60b6660a01fe41bc71d8c92bdd2bc98",
+              "size": 131,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/18973d22c60b6660a01fe41bc71d8c92bdd2bc98"
             },
             {
               "path": ".gitignore",
               "mode": "100644",
               "type": "blob",
-              "sha": "b08ded4fb6e3f96940e65b9a739535dd181e299b"
+              "sha": "b08ded4fb6e3f96940e65b9a739535dd181e299b",
+              "size": 1390,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/b08ded4fb6e3f96940e65b9a739535dd181e299b"
             },
             {
               "path": ".idea",
               "mode": "040000",
               "type": "tree",
-              "sha": "0ee0ac25d4b9c7f7fc648257262274fc8ab95dbb"
+              "sha": "0ee0ac25d4b9c7f7fc648257262274fc8ab95dbb",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/0ee0ac25d4b9c7f7fc648257262274fc8ab95dbb"
             },
             {
               "path": "CODE_OF_CONDUCT.md",
               "mode": "100644",
               "type": "blob",
-              "sha": "85ed20dba49a91a803ff69dcec57e44d8053be91"
+              "sha": "85ed20dba49a91a803ff69dcec57e44d8053be91",
+              "size": 269,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/85ed20dba49a91a803ff69dcec57e44d8053be91"
             },
             {
               "path": "ChangeLog.md",
               "mode": "100644",
               "type": "blob",
-              "sha": "005c7403513bfcf280b92d29b410edc5664f40f0"
+              "sha": "005c7403513bfcf280b92d29b410edc5664f40f0",
+              "size": 51449,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/005c7403513bfcf280b92d29b410edc5664f40f0"
             },
             {
               "path": "ReadMe.md",
               "mode": "100644",
               "type": "blob",
-              "sha": "dca8eea5ee310598c09054f7177cba0d3ab8bf66"
+              "sha": "dca8eea5ee310598c09054f7177cba0d3ab8bf66",
+              "size": 7729,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/dca8eea5ee310598c09054f7177cba0d3ab8bf66"
             },
             {
               "path": "android-studio",
               "mode": "040000",
               "type": "tree",
-              "sha": "a0f9a5e1f9d8ab48c6af815e4d17ad7eca69630e"
+              "sha": "a0f9a5e1f9d8ab48c6af815e4d17ad7eca69630e",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/a0f9a5e1f9d8ab48c6af815e4d17ad7eca69630e"
             },
             {
               "path": "annotations",
               "mode": "040000",
               "type": "tree",
-              "sha": "92e9b9825c1ce929819ec3ccb7335622839ee507"
+              "sha": "92e9b9825c1ce929819ec3ccb7335622839ee507",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/92e9b9825c1ce929819ec3ccb7335622839ee507"
             },
             {
               "path": "ant",
               "mode": "040000",
               "type": "tree",
-              "sha": "71e8163c8248055661a5dd1bd06fd6f7505b8aab"
+              "sha": "71e8163c8248055661a5dd1bd06fd6f7505b8aab",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/71e8163c8248055661a5dd1bd06fd6f7505b8aab"
             },
             {
               "path": "benchmarks",
               "mode": "040000",
               "type": "tree",
-              "sha": "63277f4ee40ded3671d907fc8e5f719b61e8ddba"
+              "sha": "63277f4ee40ded3671d907fc8e5f719b61e8ddba",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/63277f4ee40ded3671d907fc8e5f719b61e8ddba"
             },
             {
               "path": "build-common",
               "mode": "040000",
               "type": "tree",
-              "sha": "6729b5461e3cd138222527d60ac59d55d55285a3"
+              "sha": "6729b5461e3cd138222527d60ac59d55d55285a3",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/6729b5461e3cd138222527d60ac59d55d55285a3"
             },
             {
               "path": "build.gradle.kts",
               "mode": "100644",
               "type": "blob",
-              "sha": "9cb204833f7b13f8683fa51af2b67bc5f9e4dfe1"
+              "sha": "9cb204833f7b13f8683fa51af2b67bc5f9e4dfe1",
+              "size": 29421,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/9cb204833f7b13f8683fa51af2b67bc5f9e4dfe1"
             },
             {
               "path": "buildSrc",
               "mode": "040000",
               "type": "tree",
-              "sha": "d3143e5532c9a2898b630094f0b19188b6b40fdb"
+              "sha": "d3143e5532c9a2898b630094f0b19188b6b40fdb",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/d3143e5532c9a2898b630094f0b19188b6b40fdb"
             },
             {
               "path": "compiler",
               "mode": "040000",
               "type": "tree",
-              "sha": "056ecfd28f785d27fb37a74efaa2e3075ae38f92"
+              "sha": "056ecfd28f785d27fb37a74efaa2e3075ae38f92",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/056ecfd28f785d27fb37a74efaa2e3075ae38f92"
             },
             {
               "path": "core",
               "mode": "040000",
               "type": "tree",
-              "sha": "115a27b1f55c2983b997265d75ac24df2f8bcf43"
+              "sha": "115a27b1f55c2983b997265d75ac24df2f8bcf43",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/115a27b1f55c2983b997265d75ac24df2f8bcf43"
             },
             {
               "path": "dependencies",
               "mode": "040000",
               "type": "tree",
-              "sha": "18a5238b81c24751a7d4723635191d0491b32170"
+              "sha": "18a5238b81c24751a7d4723635191d0491b32170",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/18a5238b81c24751a7d4723635191d0491b32170"
             },
             {
               "path": "docs",
               "mode": "040000",
               "type": "tree",
-              "sha": "e6a0aec4d6570e585735c35d25765aca42463fa2"
+              "sha": "e6a0aec4d6570e585735c35d25765aca42463fa2",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/e6a0aec4d6570e585735c35d25765aca42463fa2"
             },
             {
               "path": "generators",
               "mode": "040000",
               "type": "tree",
-              "sha": "e944b52c28b00eaf519f8d09b3b7c6fa01abc1e3"
+              "sha": "e944b52c28b00eaf519f8d09b3b7c6fa01abc1e3",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/e944b52c28b00eaf519f8d09b3b7c6fa01abc1e3"
             },
             {
               "path": "gradle.properties",
               "mode": "100644",
               "type": "blob",
-              "sha": "bd0786dd9190e691f4cf4eef4b78316683d6b07d"
+              "sha": "bd0786dd9190e691f4cf4eef4b78316683d6b07d",
+              "size": 686,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/bd0786dd9190e691f4cf4eef4b78316683d6b07d"
             },
             {
               "path": "gradle.properties.as34",
               "mode": "100644",
               "type": "blob",
-              "sha": "3530b13c2e9f2ef746ed83f8f86556b05b820583"
+              "sha": "3530b13c2e9f2ef746ed83f8f86556b05b820583",
+              "size": 717,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/3530b13c2e9f2ef746ed83f8f86556b05b820583"
             },
             {
               "path": "gradle.properties.as35",
               "mode": "100644",
               "type": "blob",
-              "sha": "a14f118a6805d9b1a7b2a2a63901c1c82875c665"
+              "sha": "a14f118a6805d9b1a7b2a2a63901c1c82875c665",
+              "size": 750,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/a14f118a6805d9b1a7b2a2a63901c1c82875c665"
             },
             {
               "path": "gradle.properties.as36",
               "mode": "100644",
               "type": "blob",
-              "sha": "a14f118a6805d9b1a7b2a2a63901c1c82875c665"
+              "sha": "a14f118a6805d9b1a7b2a2a63901c1c82875c665",
+              "size": 750,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/a14f118a6805d9b1a7b2a2a63901c1c82875c665"
             },
             {
               "path": "gradle.properties.as40",
               "mode": "100644",
               "type": "blob",
-              "sha": "a14f118a6805d9b1a7b2a2a63901c1c82875c665"
+              "sha": "a14f118a6805d9b1a7b2a2a63901c1c82875c665",
+              "size": 750,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/a14f118a6805d9b1a7b2a2a63901c1c82875c665"
             },
             {
               "path": "gradle",
               "mode": "040000",
               "type": "tree",
-              "sha": "6b00f2efd0a63585157f4966d83923945e118321"
+              "sha": "6b00f2efd0a63585157f4966d83923945e118321",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/6b00f2efd0a63585157f4966d83923945e118321"
             },
             {
               "path": "gradlew",
               "mode": "100755",
               "type": "blob",
-              "sha": "83f2acfdc319a24e8766cca78f32474ad7a22dd6"
+              "sha": "83f2acfdc319a24e8766cca78f32474ad7a22dd6",
+              "size": 5960,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/83f2acfdc319a24e8766cca78f32474ad7a22dd6"
             },
             {
               "path": "gradlew.bat",
               "mode": "100644",
               "type": "blob",
-              "sha": "9618d8d9607cd91a0efb866bcac4810064ba6fac"
+              "sha": "9618d8d9607cd91a0efb866bcac4810064ba6fac",
+              "size": 2842,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/9618d8d9607cd91a0efb866bcac4810064ba6fac"
             },
             {
               "path": "idea-runner",
               "mode": "040000",
               "type": "tree",
-              "sha": "41d1785a64c7f614b3d38df611edfdc67082ec5a"
+              "sha": "41d1785a64c7f614b3d38df611edfdc67082ec5a",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/41d1785a64c7f614b3d38df611edfdc67082ec5a"
             },
             {
               "path": "idea",
               "mode": "040000",
               "type": "tree",
-              "sha": "aa44d64ff08242c65915e1bf109b0c614dae9925"
+              "sha": "aa44d64ff08242c65915e1bf109b0c614dae9925",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/aa44d64ff08242c65915e1bf109b0c614dae9925"
             },
             {
               "path": "include",
               "mode": "040000",
               "type": "tree",
-              "sha": "2b5c3f8a41058265b365fa05f08edd960502832c"
+              "sha": "2b5c3f8a41058265b365fa05f08edd960502832c",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/2b5c3f8a41058265b365fa05f08edd960502832c"
             },
             {
               "path": "j2k",
               "mode": "040000",
               "type": "tree",
-              "sha": "377e5d352756e7226866ed7ac06cd37d2fd593e4"
+              "sha": "377e5d352756e7226866ed7ac06cd37d2fd593e4",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/377e5d352756e7226866ed7ac06cd37d2fd593e4"
             },
             {
               "path": "jps-plugin",
               "mode": "040000",
               "type": "tree",
-              "sha": "c8fb646fa873a8db6d2a73640c447e0f3f31eacc"
+              "sha": "c8fb646fa873a8db6d2a73640c447e0f3f31eacc",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/c8fb646fa873a8db6d2a73640c447e0f3f31eacc"
             },
             {
               "path": "js",
               "mode": "040000",
               "type": "tree",
-              "sha": "39df419a51d2d25bdb9f83cdd32f4667a14df962"
+              "sha": "39df419a51d2d25bdb9f83cdd32f4667a14df962",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/39df419a51d2d25bdb9f83cdd32f4667a14df962"
             },
             {
               "path": "konan",
               "mode": "040000",
               "type": "tree",
-              "sha": "3d38418a1c6d6513e9b91ce35b360b9099f4ecd7"
+              "sha": "3d38418a1c6d6513e9b91ce35b360b9099f4ecd7",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/3d38418a1c6d6513e9b91ce35b360b9099f4ecd7"
             },
             {
               "path": "libraries",
               "mode": "040000",
               "type": "tree",
-              "sha": "a9e441d5a4c62b6f7748dce6f6919deacac91932"
+              "sha": "a9e441d5a4c62b6f7748dce6f6919deacac91932",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/a9e441d5a4c62b6f7748dce6f6919deacac91932"
             },
             {
               "path": "license",
               "mode": "040000",
               "type": "tree",
-              "sha": "ddd7eccfc543d3beb40e7ed292422db17b43b3c6"
+              "sha": "ddd7eccfc543d3beb40e7ed292422db17b43b3c6",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/ddd7eccfc543d3beb40e7ed292422db17b43b3c6"
             },
             {
               "path": "nj2k",
               "mode": "040000",
               "type": "tree",
-              "sha": "d126c80c650dc6bf61802f00bde1c0ba1336eaf1"
+              "sha": "d126c80c650dc6bf61802f00bde1c0ba1336eaf1",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/d126c80c650dc6bf61802f00bde1c0ba1336eaf1"
             },
             {
               "path": "plugins",
               "mode": "040000",
               "type": "tree",
-              "sha": "6ce3dbbc411ac188c1c1625a25bc78b83698ea9c"
+              "sha": "6ce3dbbc411ac188c1c1625a25bc78b83698ea9c",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/6ce3dbbc411ac188c1c1625a25bc78b83698ea9c"
             },
             {
               "path": "prepare",
               "mode": "040000",
               "type": "tree",
-              "sha": "7bb1acaacd475163317e7d86ec1d93de969658d3"
+              "sha": "7bb1acaacd475163317e7d86ec1d93de969658d3",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/7bb1acaacd475163317e7d86ec1d93de969658d3"
             },
             {
               "path": "resources",
               "mode": "040000",
               "type": "tree",
-              "sha": "9711a1330b87518fcda108aa2477762ba90b91f1"
+              "sha": "9711a1330b87518fcda108aa2477762ba90b91f1",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/9711a1330b87518fcda108aa2477762ba90b91f1"
             },
             {
               "path": "settings.gradle",
               "mode": "100644",
               "type": "blob",
-              "sha": "07c5eda8a4ca2176c9699e85f685bb362f7a7c26"
+              "sha": "07c5eda8a4ca2176c9699e85f685bb362f7a7c26",
+              "size": 26494,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/07c5eda8a4ca2176c9699e85f685bb362f7a7c26"
             },
             {
               "path": "spec-docs",
               "mode": "040000",
               "type": "tree",
-              "sha": "480c348fe9b0fcf1cd4619d3d863054dc6edf7ce"
+              "sha": "480c348fe9b0fcf1cd4619d3d863054dc6edf7ce",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/480c348fe9b0fcf1cd4619d3d863054dc6edf7ce"
             },
             {
               "path": "test-instrumenter",
               "mode": "040000",
               "type": "tree",
-              "sha": "e2caf5a2c2790b4f1fccb378605c57472aaab0e2"
+              "sha": "e2caf5a2c2790b4f1fccb378605c57472aaab0e2",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/e2caf5a2c2790b4f1fccb378605c57472aaab0e2"
             },
             {
               "path": "tests",
               "mode": "040000",
               "type": "tree",
-              "sha": "5ff7c9ad0db6ec3c9db9110cb3dc372166f6cba6"
+              "sha": "5ff7c9ad0db6ec3c9db9110cb3dc372166f6cba6",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/5ff7c9ad0db6ec3c9db9110cb3dc372166f6cba6"
             },
             {
               "path": "third-party",
               "mode": "040000",
               "type": "tree",
-              "sha": "69dde13264b1f6a1fd2b53c3c3df9d16dbbac155"
+              "sha": "69dde13264b1f6a1fd2b53c3c3df9d16dbbac155",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/69dde13264b1f6a1fd2b53c3c3df9d16dbbac155"
             },
             {
               "path": "upload_plugins.gradle.kts",
               "mode": "100644",
               "type": "blob",
-              "sha": "cc448577dd87016b020631fe1770116e51ffeb4c"
+              "sha": "cc448577dd87016b020631fe1770116e51ffeb4c",
+              "size": 1439,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/cc448577dd87016b020631fe1770116e51ffeb4c"
             }
-          ]
-        },
-        "hasNext": false
+          ],
+          "truncated": false
+        }
       }
     },
     {
@@ -394,95 +504,140 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "a9e441d5a4c62b6f7748dce6f6919deacac91932",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/a9e441d5a4c62b6f7748dce6f6919deacac91932",
           "tree": [
             {
               "path": ".gitignore",
+              "mode": "100644",
               "type": "blob",
-              "sha": "ab804e658cced1d8e60d5fd7218a69b14863dd43"
+              "sha": "ab804e658cced1d8e60d5fd7218a69b14863dd43",
+              "size": 57,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/ab804e658cced1d8e60d5fd7218a69b14863dd43"
             },
             {
               "path": "ReadMe.md",
+              "mode": "100644",
               "type": "blob",
-              "sha": "4ad403c825d73df9ee78c7c109ca12cda68d94b1"
+              "sha": "4ad403c825d73df9ee78c7c109ca12cda68d94b1",
+              "size": 1849,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/4ad403c825d73df9ee78c7c109ca12cda68d94b1"
             },
             {
               "path": "commonConfiguration.gradle",
+              "mode": "100644",
               "type": "blob",
-              "sha": "686a9479154f6abc9f4035509a8edef8a50332f5"
+              "sha": "686a9479154f6abc9f4035509a8edef8a50332f5",
+              "size": 7450,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/686a9479154f6abc9f4035509a8edef8a50332f5"
             },
             {
               "path": "configureGradleTools.gradle",
+              "mode": "100644",
               "type": "blob",
-              "sha": "35020d1d4db6357629cd37bc6c170a517b65dd26"
+              "sha": "35020d1d4db6357629cd37bc6c170a517b65dd26",
+              "size": 1213,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/35020d1d4db6357629cd37bc6c170a517b65dd26"
             },
             {
               "path": "examples",
+              "mode": "040000",
               "type": "tree",
-              "sha": "320e4c21e5a6c4239abb1703ea72dca8ff9f7b0a"
+              "sha": "320e4c21e5a6c4239abb1703ea72dca8ff9f7b0a",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/320e4c21e5a6c4239abb1703ea72dca8ff9f7b0a"
             },
             {
               "path": "gradlew",
+              "mode": "100755",
               "type": "blob",
-              "sha": "c40a9ff60d2acbd1d2ab419e44745f7c4994cb84"
+              "sha": "c40a9ff60d2acbd1d2ab419e44745f7c4994cb84",
+              "size": 5302,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/c40a9ff60d2acbd1d2ab419e44745f7c4994cb84"
             },
             {
               "path": "gradlew.bat",
+              "mode": "100644",
               "type": "blob",
-              "sha": "cb8444495aba3cd0c38c93f68499b156501fa550"
+              "sha": "cb8444495aba3cd0c38c93f68499b156501fa550",
+              "size": 2179,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/cb8444495aba3cd0c38c93f68499b156501fa550"
             },
             {
               "path": "kotlin.test",
+              "mode": "040000",
               "type": "tree",
-              "sha": "597456ab29dd5f2594b1dd4224d44639a8b4eae4"
+              "sha": "597456ab29dd5f2594b1dd4224d44639a8b4eae4",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/597456ab29dd5f2594b1dd4224d44639a8b4eae4"
             },
             {
               "path": "kotlinx-metadata",
+              "mode": "040000",
               "type": "tree",
-              "sha": "c9d9af1daed2023cdb4df5afe16dea0c122b9b17"
+              "sha": "c9d9af1daed2023cdb4df5afe16dea0c122b9b17",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/c9d9af1daed2023cdb4df5afe16dea0c122b9b17"
             },
             {
               "path": "lib",
+              "mode": "040000",
               "type": "tree",
-              "sha": "c3953f2482c03a29a51028a6266dd2660ba5a594"
+              "sha": "c3953f2482c03a29a51028a6266dd2660ba5a594",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/c3953f2482c03a29a51028a6266dd2660ba5a594"
             },
             {
               "path": "maven-settings.xml",
+              "mode": "100644",
               "type": "blob",
-              "sha": "45afff253b27d2b15ae48148b3fc9aed2944109e"
+              "sha": "45afff253b27d2b15ae48148b3fc9aed2944109e",
+              "size": 1449,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/45afff253b27d2b15ae48148b3fc9aed2944109e"
             },
             {
               "path": "pom.xml",
+              "mode": "100644",
               "type": "blob",
-              "sha": "ccd873bef11e96f28b097b52de3239f557bdb684"
+              "sha": "ccd873bef11e96f28b097b52de3239f557bdb684",
+              "size": 10079,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/ccd873bef11e96f28b097b52de3239f557bdb684"
             },
             {
               "path": "prepareSonatypeStaging.gradle",
+              "mode": "100644",
               "type": "blob",
-              "sha": "9a5dc20e3a712b1eab4af36f4b44773779b93145"
+              "sha": "9a5dc20e3a712b1eab4af36f4b44773779b93145",
+              "size": 1277,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/9a5dc20e3a712b1eab4af36f4b44773779b93145"
             },
             {
               "path": "reflect",
+              "mode": "040000",
               "type": "tree",
-              "sha": "fb802211c70c1687eba64e1d8b6ecb4aa52fcb8c"
+              "sha": "fb802211c70c1687eba64e1d8b6ecb4aa52fcb8c",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/fb802211c70c1687eba64e1d8b6ecb4aa52fcb8c"
             },
             {
               "path": "scripting",
+              "mode": "040000",
               "type": "tree",
-              "sha": "f354494b5506e5b86422081eb19be013b303759c"
+              "sha": "f354494b5506e5b86422081eb19be013b303759c",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/f354494b5506e5b86422081eb19be013b303759c"
             },
             {
               "path": "stdlib",
+              "mode": "040000",
               "type": "tree",
-              "sha": "1a7d57034914b6a73684c610a2f51b9993a63b5b"
+              "sha": "1a7d57034914b6a73684c610a2f51b9993a63b5b",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/1a7d57034914b6a73684c610a2f51b9993a63b5b"
             },
             {
               "path": "tools",
+              "mode": "040000",
               "type": "tree",
-              "sha": "9b77c03426459da1a9db58defacafde63b614c3b"
+              "sha": "9b77c03426459da1a9db58defacafde63b614c3b",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/9b77c03426459da1a9db58defacafde63b614c3b"
             }
-          ]
-        },
-        "hasNext": false
+          ],
+          "truncated": false
+        }
       }
     },
     {
@@ -494,90 +649,125 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "1a7d57034914b6a73684c610a2f51b9993a63b5b",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/1a7d57034914b6a73684c610a2f51b9993a63b5b",
           "tree": [
             {
               "path": "ReadMe.md",
+              "mode": "100644",
               "type": "blob",
-              "sha": "743c83f7dabab594c06085ae5ddb86a93a863bb3"
+              "sha": "743c83f7dabab594c06085ae5ddb86a93a863bb3",
+              "size": 992,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/743c83f7dabab594c06085ae5ddb86a93a863bb3"
             },
             {
               "path": "common",
+              "mode": "040000",
               "type": "tree",
-              "sha": "b6a33b1fbe6ec32af93495b01807245a4198e2ef"
+              "sha": "b6a33b1fbe6ec32af93495b01807245a4198e2ef",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/b6a33b1fbe6ec32af93495b01807245a4198e2ef"
             },
             {
               "path": "coroutines-experimental",
+              "mode": "040000",
               "type": "tree",
-              "sha": "74bb39622c8fd0278c91156ba1a0545d9a5924d2"
+              "sha": "74bb39622c8fd0278c91156ba1a0545d9a5924d2",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/74bb39622c8fd0278c91156ba1a0545d9a5924d2"
             },
             {
               "path": "jdk7",
+              "mode": "040000",
               "type": "tree",
-              "sha": "bf068e0effdab54842c3c4f0f9d8d50a1707ccd5"
+              "sha": "bf068e0effdab54842c3c4f0f9d8d50a1707ccd5",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/bf068e0effdab54842c3c4f0f9d8d50a1707ccd5"
             },
             {
               "path": "jdk8",
+              "mode": "040000",
               "type": "tree",
-              "sha": "b9b8a156793b53056508319b02e45abfa0513ce7"
+              "sha": "b9b8a156793b53056508319b02e45abfa0513ce7",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/b9b8a156793b53056508319b02e45abfa0513ce7"
             },
             {
               "path": "jps-build",
+              "mode": "040000",
               "type": "tree",
-              "sha": "26dbfcbc737e0db550eb7a6630a99e9f43deeb1f"
+              "sha": "26dbfcbc737e0db550eb7a6630a99e9f43deeb1f",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/26dbfcbc737e0db550eb7a6630a99e9f43deeb1f"
             },
             {
               "path": "js-ir",
+              "mode": "040000",
               "type": "tree",
-              "sha": "9035b8b175fcabab46234a7f5ba967a5cf5e23ac"
+              "sha": "9035b8b175fcabab46234a7f5ba967a5cf5e23ac",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/9035b8b175fcabab46234a7f5ba967a5cf5e23ac"
             },
             {
               "path": "js-v1",
+              "mode": "040000",
               "type": "tree",
-              "sha": "18657bddc98bdf2e3f69c60441947b965069e9f2"
+              "sha": "18657bddc98bdf2e3f69c60441947b965069e9f2",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/18657bddc98bdf2e3f69c60441947b965069e9f2"
             },
             {
               "path": "js",
+              "mode": "040000",
               "type": "tree",
-              "sha": "5ebee79000f5d718398ab3cb8bae015e26b8b0e5"
+              "sha": "5ebee79000f5d718398ab3cb8bae015e26b8b0e5",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/5ebee79000f5d718398ab3cb8bae015e26b8b0e5"
             },
             {
               "path": "jvm-minimal-for-test",
+              "mode": "040000",
               "type": "tree",
-              "sha": "51bbeaf0396afe01fdb7f965793e9b8df3d897bb"
+              "sha": "51bbeaf0396afe01fdb7f965793e9b8df3d897bb",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/51bbeaf0396afe01fdb7f965793e9b8df3d897bb"
             },
             {
               "path": "jvm",
+              "mode": "040000",
               "type": "tree",
-              "sha": "7101433741603edd0c5f61a14ac9fb5fb3d0db56"
+              "sha": "7101433741603edd0c5f61a14ac9fb5fb3d0db56",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/7101433741603edd0c5f61a14ac9fb5fb3d0db56"
             },
             {
               "path": "samples",
+              "mode": "040000",
               "type": "tree",
-              "sha": "b574cf500b85dd28cc4bae53adfeb5e75f465717"
+              "sha": "b574cf500b85dd28cc4bae53adfeb5e75f465717",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/b574cf500b85dd28cc4bae53adfeb5e75f465717"
             },
             {
               "path": "src",
+              "mode": "040000",
               "type": "tree",
-              "sha": "863186fbf5ca2dd425d1f4d182b1c6b968aaec7d"
+              "sha": "863186fbf5ca2dd425d1f4d182b1c6b968aaec7d",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/863186fbf5ca2dd425d1f4d182b1c6b968aaec7d"
             },
             {
               "path": "test",
+              "mode": "040000",
               "type": "tree",
-              "sha": "5379c13c312cf12d50709ee9ad02fb5bc25526fd"
+              "sha": "5379c13c312cf12d50709ee9ad02fb5bc25526fd",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/5379c13c312cf12d50709ee9ad02fb5bc25526fd"
             },
             {
               "path": "unsigned",
+              "mode": "040000",
               "type": "tree",
-              "sha": "5c6c46277cac04fca35fbd33a29fd336e39d84d7"
+              "sha": "5c6c46277cac04fca35fbd33a29fd336e39d84d7",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/5c6c46277cac04fca35fbd33a29fd336e39d84d7"
             },
             {
               "path": "wasm",
+              "mode": "040000",
               "type": "tree",
-              "sha": "82b57513f2e1add19d608119db089db2781e5a97"
+              "sha": "82b57513f2e1add19d608119db089db2781e5a97",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/82b57513f2e1add19d608119db089db2781e5a97"
             }
-          ]
-        },
-        "hasNext": false
+          ],
+          "truncated": false
+        }
       }
     },
     {
@@ -589,20 +779,27 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "863186fbf5ca2dd425d1f4d182b1c6b968aaec7d",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/863186fbf5ca2dd425d1f4d182b1c6b968aaec7d",
           "tree": [
             {
               "path": "Module.md",
+              "mode": "100644",
               "type": "blob",
-              "sha": "d4ee3484be416f78bd862ecb0b94706e554f222d"
+              "sha": "d4ee3484be416f78bd862ecb0b94706e554f222d",
+              "size": 6764,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/d4ee3484be416f78bd862ecb0b94706e554f222d"
             },
             {
               "path": "kotlin",
+              "mode": "040000",
               "type": "tree",
-              "sha": "fe3dcfab80071d8d8627e611ca18d80b3a1e394a"
+              "sha": "fe3dcfab80071d8d8627e611ca18d80b3a1e394a",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/fe3dcfab80071d8d8627e611ca18d80b3a1e394a"
             }
-          ]
-        },
-        "hasNext": false
+          ],
+          "truncated": false
+        }
       }
     },
     {
@@ -614,80 +811,110 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "fe3dcfab80071d8d8627e611ca18d80b3a1e394a",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/fe3dcfab80071d8d8627e611ca18d80b3a1e394a",
           "tree": [
             {
               "path": "annotations",
+              "mode": "040000",
               "type": "tree",
-              "sha": "0d8e0f5d9065eed5ea3040dabbaaef3e72ada8f2"
+              "sha": "0d8e0f5d9065eed5ea3040dabbaaef3e72ada8f2",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/0d8e0f5d9065eed5ea3040dabbaaef3e72ada8f2"
             },
             {
               "path": "collections",
+              "mode": "040000",
               "type": "tree",
-              "sha": "9b8f7892526e25a6e1ee3b832a6f520d6483cca2"
+              "sha": "9b8f7892526e25a6e1ee3b832a6f520d6483cca2",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/9b8f7892526e25a6e1ee3b832a6f520d6483cca2"
             },
             {
               "path": "comparisons",
+              "mode": "040000",
               "type": "tree",
-              "sha": "457b0cb62ac5a49f093a7eb18e7c434ea8ff38a6"
+              "sha": "457b0cb62ac5a49f093a7eb18e7c434ea8ff38a6",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/457b0cb62ac5a49f093a7eb18e7c434ea8ff38a6"
             },
             {
               "path": "contracts",
+              "mode": "040000",
               "type": "tree",
-              "sha": "b79ebb8b0288e8830b5bb686d7241fcb3720bfc6"
+              "sha": "b79ebb8b0288e8830b5bb686d7241fcb3720bfc6",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/b79ebb8b0288e8830b5bb686d7241fcb3720bfc6"
             },
             {
               "path": "coroutines",
+              "mode": "040000",
               "type": "tree",
-              "sha": "026e502419e5b21c5e2bb3e49e1fb3a0d74fd210"
+              "sha": "026e502419e5b21c5e2bb3e49e1fb3a0d74fd210",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/026e502419e5b21c5e2bb3e49e1fb3a0d74fd210"
             },
             {
               "path": "experimental",
+              "mode": "040000",
               "type": "tree",
-              "sha": "2aeff615944af0361d03a7fedb9f2ad27b200568"
+              "sha": "2aeff615944af0361d03a7fedb9f2ad27b200568",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/2aeff615944af0361d03a7fedb9f2ad27b200568"
             },
             {
               "path": "internal",
+              "mode": "040000",
               "type": "tree",
-              "sha": "ae2d1018fb9c704c7239a3cbcc4cd3a3731bcb70"
+              "sha": "ae2d1018fb9c704c7239a3cbcc4cd3a3731bcb70",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/ae2d1018fb9c704c7239a3cbcc4cd3a3731bcb70"
             },
             {
               "path": "properties",
+              "mode": "040000",
               "type": "tree",
-              "sha": "8e9b4b8a04434d124dc1ce1c2e9ca4f740d27375"
+              "sha": "8e9b4b8a04434d124dc1ce1c2e9ca4f740d27375",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/8e9b4b8a04434d124dc1ce1c2e9ca4f740d27375"
             },
             {
               "path": "random",
+              "mode": "040000",
               "type": "tree",
-              "sha": "29ce3d127aece0577ce23cf8661c8b65306329ba"
+              "sha": "29ce3d127aece0577ce23cf8661c8b65306329ba",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/29ce3d127aece0577ce23cf8661c8b65306329ba"
             },
             {
               "path": "ranges",
+              "mode": "040000",
               "type": "tree",
-              "sha": "28835a936be8b1c2dc10259a363058f5c9eaf021"
+              "sha": "28835a936be8b1c2dc10259a363058f5c9eaf021",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/28835a936be8b1c2dc10259a363058f5c9eaf021"
             },
             {
               "path": "reflect",
+              "mode": "040000",
               "type": "tree",
-              "sha": "b5097fe18b6bf0129c12171ee4c750cad04a9ba9"
+              "sha": "b5097fe18b6bf0129c12171ee4c750cad04a9ba9",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/b5097fe18b6bf0129c12171ee4c750cad04a9ba9"
             },
             {
               "path": "text",
+              "mode": "040000",
               "type": "tree",
-              "sha": "2561f9331dd956a336f9b2c3d82a56fc2bfc908e"
+              "sha": "2561f9331dd956a336f9b2c3d82a56fc2bfc908e",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/2561f9331dd956a336f9b2c3d82a56fc2bfc908e"
             },
             {
               "path": "time",
+              "mode": "040000",
               "type": "tree",
-              "sha": "50cce41ac925905da812b4ecdec076dad6ebe83f"
+              "sha": "50cce41ac925905da812b4ecdec076dad6ebe83f",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/50cce41ac925905da812b4ecdec076dad6ebe83f"
             },
             {
               "path": "util",
+              "mode": "040000",
               "type": "tree",
-              "sha": "74d8357c97922e89411b3f02c4fc75d1c81288c5"
+              "sha": "74d8357c97922e89411b3f02c4fc75d1c81288c5",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/74d8357c97922e89411b3f02c4fc75d1c81288c5"
             }
-          ]
-        },
-        "hasNext": false
+          ],
+          "truncated": false
+        }
       }
     },
     {
@@ -699,65 +926,100 @@
       "response": {
         "status": 200,
         "body": {
+          "sha": "74d8357c97922e89411b3f02c4fc75d1c81288c5",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/74d8357c97922e89411b3f02c4fc75d1c81288c5",
           "tree": [
             {
               "path": "HashCode.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "22874cbe7120ada8d0b200694be73f8c3db141c9",
+              "size": 466,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/22874cbe7120ada8d0b200694be73f8c3db141c9"
             },
             {
               "path": "KotlinVersion.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "12f913d7d97bf17bfa121c8219fe37aaac1ade97",
+              "size": 3014,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/12f913d7d97bf17bfa121c8219fe37aaac1ade97"
             },
             {
               "path": "Lateinit.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "917f54bbefaccf509a13a31d9ff4b6572c60b778",
+              "size": 793,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/917f54bbefaccf509a13a31d9ff4b6572c60b778"
             },
             {
               "path": "Lazy.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "763cf30b6440e7a8ea3b9cfbb0174cfef70c84df",
+              "size": 3323,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/763cf30b6440e7a8ea3b9cfbb0174cfef70c84df"
             },
             {
               "path": "Numbers.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "ffbbef7b4768f80671658492609e6f3419b0a633",
+              "size": 11305,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/ffbbef7b4768f80671658492609e6f3419b0a633"
             },
             {
               "path": "Preconditions.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "7190100a645d646fb042d2f2b9283633096b5f33",
+              "size": 3952,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/7190100a645d646fb042d2f2b9283633096b5f33"
             },
             {
               "path": "Result.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "28beacd076393e7dbf1fc6e232f393c412c7a3bc",
+              "size": 11465,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/28beacd076393e7dbf1fc6e232f393c412c7a3bc"
             },
             {
               "path": "Standard.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "027cc85aeff82fe3cf46cf2809c0d6651226d802",
+              "size": 4763,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/027cc85aeff82fe3cf46cf2809c0d6651226d802"
             },
             {
               "path": "SuccessOrFailure.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "8ab6e52c05e60dfd53a444d239c57f171641afba",
+              "size": 623,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/8ab6e52c05e60dfd53a444d239c57f171641afba"
             },
             {
               "path": "Suspend.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "a3fb816e280ab2ac4a4c743fdc2e37ef30363e88",
+              "size": 615,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/a3fb816e280ab2ac4a4c743fdc2e37ef30363e88"
             },
             {
               "path": "Tuples.kt",
               "mode": "100644",
-              "type": "blob"
+              "type": "blob",
+              "sha": "d1e4f14aed5d50eebc449fa5945c4de4610c8951",
+              "size": 2554,
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/d1e4f14aed5d50eebc449fa5945c4de4610c8951"
             }
-          ]
-        },
-        "hasNext": false
+          ],
+          "truncated": false
+        }
       }
     },
     {
@@ -786,10 +1048,11 @@
       "response": {
         "status": 201,
         "body": {
-          "sha": "2222222222222222222222222222222222222222"
-        },
-        "hasNext": false
-      }
+          "sha": "2222222222222222222222222222222222222222",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/2222222222222222222222222222222222222222"
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -807,10 +1070,14 @@
       "response": {
         "status": 201,
         "body": {
-          "sha": "1111111111111111111111111111111111111111"
-        },
-        "hasNext": false
-      }
+          "sha": "1111111111111111111111111111111111111111",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/1111111111111111111111111111111111111111",
+          "tree": {
+            "sha": "2222222222222222222222222222222222222222"
+          }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -825,12 +1092,16 @@
       "response": {
         "status": 201,
         "body": {
+          "ref": "refs/heads/edict/weak-w-cccccccccccccccccccccccc",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/edict/weak-w-cccccccccccccccccccccccc",
           "object": {
-            "type": "commit"
+            "sha": "1111111111111111111111111111111111111111",
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/1111111111111111111111111111111111111111"
           }
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -844,9 +1115,9 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
-      }
+        "body": []
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -863,11 +1134,16 @@
       "response": {
         "status": 201,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99999",
           "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
-          "number": 99999
-        },
-        "hasNext": false
-      }
+          "number": 99999,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -882,9 +1158,17 @@
       },
       "response": {
         "status": 201,
-        "body": {},
-        "hasNext": false
-      }
+        "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99999",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
+          "number": 99999,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
     }
   ],
   "result": {

@@ -13,14 +13,37 @@
         "body": [
           {
             "name": "build.gradle.kts",
-            "type": "file"
+            "path": "core/descriptors/build.gradle.kts",
+            "sha": "a11d34aff30c436750bacf3ea924b24b2ec7dd9a",
+            "size": 461,
+            "url": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/build.gradle.kts?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "html_url": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/core/descriptors/build.gradle.kts",
+            "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/a11d34aff30c436750bacf3ea924b24b2ec7dd9a",
+            "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/00708e800293156c9c4acaaaa7c06cb78e96ae69/core/descriptors/build.gradle.kts",
+            "type": "file",
+            "_links": {
+              "self": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/build.gradle.kts?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+              "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/a11d34aff30c436750bacf3ea924b24b2ec7dd9a",
+              "html": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/core/descriptors/build.gradle.kts"
+            }
           },
           {
             "name": "src",
-            "type": "dir"
+            "path": "core/descriptors/src",
+            "sha": "0ba60b190f3b73036115b40c76ac7051d352d356",
+            "size": 0,
+            "url": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/src?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "html_url": "https://github.com/JetBrains/kotlin/tree/00708e800293156c9c4acaaaa7c06cb78e96ae69/core/descriptors/src",
+            "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/0ba60b190f3b73036115b40c76ac7051d352d356",
+            "download_url": null,
+            "type": "dir",
+            "_links": {
+              "self": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/src?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+              "git": "https://api.github.com/repos/JetBrains/kotlin/git/trees/0ba60b190f3b73036115b40c76ac7051d352d356",
+              "html": "https://github.com/JetBrains/kotlin/tree/00708e800293156c9c4acaaaa7c06cb78e96ae69/core/descriptors/src"
+            }
           }
-        ],
-        "hasNext": false
+        ]
       }
     }
   ],

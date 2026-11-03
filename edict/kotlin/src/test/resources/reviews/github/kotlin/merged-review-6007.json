@@ -9,46 +9,386 @@
       "response": {
         "status": 200,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+          "id": 3647261837,
+          "node_id": "PR_kwDOADRfSs7ZZMyN",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/6007",
+          "diff_url": "https://github.com/JetBrains/kotlin/pull/6007.diff",
+          "patch_url": "https://github.com/JetBrains/kotlin/pull/6007.patch",
+          "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/6007",
+          "commits_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007/commits",
+          "review_comments_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007/comments",
+          "review_comment_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}",
+          "comments_url": "https://api.github.com/repos/JetBrains/kotlin/issues/6007/comments",
+          "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051",
+          "number": 6007,
+          "state": "closed",
+          "locked": false,
           "title": "KT-86199 Fix scalability problems with packageFragmentProviderImpl",
           "user": {
             "login": "alfonsocvu",
-            "type": "User"
+            "id": 31135704,
+            "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+            "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/alfonsocvu",
+            "html_url": "https://github.com/alfonsocvu",
+            "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+            "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+            "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+            "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+            "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+            "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
+          "body": "Fixing a scaling issue with packageFragments when dependencies are over 10k by \r\n\r\n* reducing allocations\r\n* remove linear look ups by grouping the fragments\r\n\r\nWhen profiling an app with over 40k dependencies it when from 32s~ or 9%~ to 8s~ or 2%~\r\n\r\n[details in issue](https://youtrack.jetbrains.com/issue/KT-86199/PackageFragmentProviderImpl-bottleneck)",
+          "labels": [],
+          "milestone": null,
+          "active_lock_reason": null,
+          "created_at": "2026-05-08T04:17:47Z",
+          "updated_at": "2026-09-03T14:08:08Z",
+          "closed_at": "2026-09-03T14:08:08Z",
           "merged_at": "2026-09-03T14:08:08Z",
           "merge_commit_sha": "a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "assignee": null,
+          "assignees": [],
+          "requested_reviewers": [],
+          "requested_teams": [],
           "head": {
+            "label": "alfonsocvu:fix/packageFragmentProvider-opt",
+            "ref": "fix/packageFragmentProvider-opt",
             "repo": {
+              "id": 1014013479,
+              "node_id": "R_kgDOPHCeJw",
               "name": "kotlin",
+              "full_name": "alfonsocvu/kotlin",
               "owner": {
                 "login": "alfonsocvu",
-                "type": "User"
-              }
+                "id": 31135704,
+                "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+                "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/alfonsocvu",
+                "html_url": "https://github.com/alfonsocvu",
+                "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+                "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+                "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+                "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+                "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+                "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": true,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [],
+              "forks_count": 1,
+              "forks": 1,
+              "stargazers_count": 0,
+              "watchers_count": 0,
+              "watchers": 0,
+              "open_issues_count": 0,
+              "open_issues": 0,
+              "size": 3750406,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": true,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-09-01T18:24:07Z",
+              "created_at": "2025-07-04T21:58:27Z",
+              "updated_at": "2025-12-08T16:39:33Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/alfonsocvu/kotlin",
+              "html_url": "https://github.com/alfonsocvu/kotlin",
+              "archive_url": "https://api.github.com/repos/alfonsocvu/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/alfonsocvu/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/alfonsocvu/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/alfonsocvu/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/alfonsocvu/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/alfonsocvu/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/alfonsocvu/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/alfonsocvu/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/alfonsocvu/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/alfonsocvu/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/alfonsocvu/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/alfonsocvu/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/alfonsocvu/kotlin/events",
+              "forks_url": "https://api.github.com/repos/alfonsocvu/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/alfonsocvu/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/alfonsocvu/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/alfonsocvu/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/alfonsocvu/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/alfonsocvu/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/alfonsocvu/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/alfonsocvu/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/alfonsocvu/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/alfonsocvu/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/alfonsocvu/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/alfonsocvu/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/alfonsocvu/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/alfonsocvu/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/alfonsocvu/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/alfonsocvu/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:alfonsocvu/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/alfonsocvu/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/alfonsocvu/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/alfonsocvu/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/alfonsocvu/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/alfonsocvu/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/alfonsocvu/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/alfonsocvu/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/alfonsocvu/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/alfonsocvu/kotlin/hooks",
+              "svn_url": "https://github.com/alfonsocvu/kotlin"
             },
+            "sha": "9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
           "base": {
+            "label": "JetBrains:master",
+            "ref": "master",
             "repo": {
+              "id": 3432266,
+              "node_id": "MDEwOlJlcG9zaXRvcnkzNDMyMjY2",
               "name": "kotlin",
+              "full_name": "JetBrains/kotlin",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
-              }
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": false,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [
+                "compiler",
+                "gradle-plugin",
+                "intellij-plugin",
+                "kotlin",
+                "kotlin-library",
+                "maven-plugin",
+                "programming-language",
+                "wasm",
+                "webassembly"
+              ],
+              "forks_count": 6452,
+              "forks": 6452,
+              "stargazers_count": 53536,
+              "watchers_count": 53536,
+              "watchers": 53536,
+              "open_issues_count": 485,
+              "open_issues": 485,
+              "size": 4391464,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": false,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-11-03T15:08:21Z",
+              "created_at": "2012-02-13T17:29:58Z",
+              "updated_at": "2026-11-03T14:54:36Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/JetBrains/kotlin",
+              "html_url": "https://github.com/JetBrains/kotlin",
+              "archive_url": "https://api.github.com/repos/JetBrains/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/JetBrains/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/JetBrains/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/JetBrains/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/JetBrains/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/JetBrains/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/JetBrains/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/JetBrains/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/JetBrains/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/JetBrains/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/JetBrains/kotlin/events",
+              "forks_url": "https://api.github.com/repos/JetBrains/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/JetBrains/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/JetBrains/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/JetBrains/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/JetBrains/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/JetBrains/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/JetBrains/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/JetBrains/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/JetBrains/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/JetBrains/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/JetBrains/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/JetBrains/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/JetBrains/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/JetBrains/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/JetBrains/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:JetBrains/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/JetBrains/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/JetBrains/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/JetBrains/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/JetBrains/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/JetBrains/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/JetBrains/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/JetBrains/kotlin/hooks",
+              "svn_url": "https://github.com/JetBrains/kotlin"
             },
+            "sha": "f550b76e8c9d0e703fdc0ec9c2b0a23a4076f082",
             "user": {
               "login": "JetBrains",
-              "type": "Organization"
+              "id": 878437,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/JetBrains",
+              "html_url": "https://github.com/JetBrains",
+              "followers_url": "https://api.github.com/users/JetBrains/followers",
+              "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+              "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+              "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+              "repos_url": "https://api.github.com/users/JetBrains/repos",
+              "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
+          "_links": {
+            "comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/6007/comments"
+            },
+            "commits": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007/commits"
+            },
+            "statuses": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/statuses/9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051"
+            },
+            "html": {
+              "href": "https://github.com/JetBrains/kotlin/pull/6007"
+            },
+            "issue": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/6007"
+            },
+            "review_comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007/comments"
+            },
+            "review_comment": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}"
+            },
+            "self": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+            }
+          },
+          "author_association": "CONTRIBUTOR",
+          "auto_merge": null,
+          "draft": false,
+          "merged": true,
+          "mergeable": null,
+          "rebaseable": null,
+          "mergeable_state": "unknown",
           "merged_by": {
             "login": "KotlinBuild",
-            "type": "User"
+            "id": 11723187,
+            "node_id": "MDQ6VXNlcjExNzIzMTg3",
+            "avatar_url": "https://avatars.githubusercontent.com/u/11723187?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/KotlinBuild",
+            "html_url": "https://github.com/KotlinBuild",
+            "followers_url": "https://api.github.com/users/KotlinBuild/followers",
+            "following_url": "https://api.github.com/users/KotlinBuild/following{/other_user}",
+            "gists_url": "https://api.github.com/users/KotlinBuild/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/KotlinBuild/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/KotlinBuild/subscriptions",
+            "organizations_url": "https://api.github.com/users/KotlinBuild/orgs",
+            "repos_url": "https://api.github.com/users/KotlinBuild/repos",
+            "events_url": "https://api.github.com/users/KotlinBuild/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/KotlinBuild/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
-          "commits": 1
-        },
-        "hasNext": false
+          "comments": 4,
+          "review_comments": 9,
+          "maintainer_can_modify": false,
+          "commits": 1,
+          "additions": 12,
+          "deletions": 9,
+          "changed_files": 1
+        }
       }
     },
     {
@@ -64,35 +404,105 @@
         "status": 200,
         "body": {
           "sha": "a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "node_id": "C_kwDOADRfStoAKGE4ZmQxZTA3MzQ3NDg5ZmVlNjlkOWQ1ZGZhNmU0OWFmYTA4NTY4ODY",
           "commit": {
             "author": {
-              "name": "Alfonso Villalobos Ulate"
+              "name": "Alfonso Villalobos Ulate",
+              "email": "alfonsou@google.com",
+              "date": "2026-05-08T04:16:51Z"
             },
             "committer": {
-              "name": "Build Server"
+              "name": "Build Server",
+              "email": "kotlin-build@jetbrains.com",
+              "date": "2026-09-03T14:08:07Z"
             },
-            "message": "Frontend: Grouping the fragments to avoid linear searches and avoid allocations\n\n^KT-86199 Fixed"
+            "message": "Frontend: Grouping the fragments to avoid linear searches and avoid allocations\n\n^KT-86199 Fixed",
+            "tree": {
+              "sha": "88df3715b327d1a1ea277c7a6f6377cb85577e54",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/88df3715b327d1a1ea277c7a6f6377cb85577e54"
+            },
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+            "comment_count": 0,
+            "verification": {
+              "verified": false,
+              "reason": "unsigned",
+              "signature": null,
+              "payload": null,
+              "verified_at": null
+            }
           },
+          "url": "https://api.github.com/repos/JetBrains/kotlin/commits/a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "html_url": "https://github.com/JetBrains/kotlin/commit/a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "comments_url": "https://api.github.com/repos/JetBrains/kotlin/commits/a8fd1e07347489fee69d9d5dfa6e49afa0856886/comments",
           "author": {
             "login": "alfonsocvu",
-            "type": "User"
+            "id": 31135704,
+            "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+            "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/alfonsocvu",
+            "html_url": "https://github.com/alfonsocvu",
+            "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+            "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+            "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+            "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+            "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+            "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
           "committer": {
             "login": "KotlinBuild",
-            "type": "User"
+            "id": 11723187,
+            "node_id": "MDQ6VXNlcjExNzIzMTg3",
+            "avatar_url": "https://avatars.githubusercontent.com/u/11723187?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/KotlinBuild",
+            "html_url": "https://github.com/KotlinBuild",
+            "followers_url": "https://api.github.com/users/KotlinBuild/followers",
+            "following_url": "https://api.github.com/users/KotlinBuild/following{/other_user}",
+            "gists_url": "https://api.github.com/users/KotlinBuild/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/KotlinBuild/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/KotlinBuild/subscriptions",
+            "organizations_url": "https://api.github.com/users/KotlinBuild/orgs",
+            "repos_url": "https://api.github.com/users/KotlinBuild/repos",
+            "events_url": "https://api.github.com/users/KotlinBuild/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/KotlinBuild/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
           "parents": [
             {
-              "sha": "e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff"
+              "sha": "e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/commits/e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff",
+              "html_url": "https://github.com/JetBrains/kotlin/commit/e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff"
             }
           ],
+          "stats": {
+            "total": 21,
+            "additions": 12,
+            "deletions": 9
+          },
           "files": [
             {
-              "filename": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt"
+              "sha": "de695249a747ca0bcd31d9077777e0f8246cc3e9",
+              "filename": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+              "status": "modified",
+              "additions": 12,
+              "deletions": 9,
+              "changes": 21,
+              "blob_url": "https://github.com/JetBrains/kotlin/blob/a8fd1e07347489fee69d9d5dfa6e49afa0856886/core%2Fdescriptors%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fdescriptors%2FPackageFragmentProviderImpl.kt",
+              "raw_url": "https://github.com/JetBrains/kotlin/raw/a8fd1e07347489fee69d9d5dfa6e49afa0856886/core%2Fdescriptors%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fdescriptors%2FPackageFragmentProviderImpl.kt",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/core%2Fdescriptors%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fdescriptors%2FPackageFragmentProviderImpl.kt?ref=a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+              "patch": "@@ -20,22 +20,25 @@ import org.jetbrains.kotlin.name.FqName\n import org.jetbrains.kotlin.name.Name\n \n class PackageFragmentProviderImpl(\n-    private val packageFragments: Collection<PackageFragmentDescriptor>\n+    private val packageFragments: Collection<PackageFragmentDescriptor>,\n ) : PackageFragmentProviderOptimized {\n+    private val packageFragmentsByFqName = packageFragments.groupBy { it.fqName }\n+\n+    private val subPackagesByParent = packageFragments.asSequence()\n+        .map { it.fqName }\n+        .filter { !it.isRoot }\n+        .groupBy { it.parent() }\n+\n     override fun collectPackageFragments(fqName: FqName, packageFragments: MutableCollection<PackageFragmentDescriptor>) {\n-        this.packageFragments.filterTo(packageFragments) { it.fqName == fqName }\n+        packageFragmentsByFqName[fqName]?.let { packageFragments.addAll(it) }\n     }\n \n     override fun isEmpty(fqName: FqName): Boolean =\n-        this.packageFragments.none { it.fqName == fqName }\n+        !packageFragmentsByFqName.containsKey(fqName)\n \n     @Deprecated(\"for usages use #packageFragments(FqName) at final point, for impl use #collectPackageFragments(FqName, MutableCollection<PackageFragmentDescriptor>)\")\n-    override fun getPackageFragments(fqName: FqName): List<PackageFragmentDescriptor> =\n-        packageFragments.filter { it.fqName == fqName }\n+    override fun getPackageFragments(fqName: FqName): List<PackageFragmentDescriptor> = packageFragmentsByFqName[fqName] ?: emptyList()\n \n     override fun getSubPackagesOf(fqName: FqName, nameFilter: (Name) -> Boolean): Collection<FqName> =\n-        packageFragments.asSequence()\n-            .map { it.fqName }\n-            .filter { !it.isRoot && it.parent() == fqName }\n-            .toList()\n+        subPackagesByParent[fqName] ?: emptyList()\n }"
             }
           ]
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -108,45 +518,240 @@
         "status": 200,
         "body": [
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4403298735",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#issuecomment-4403298735",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/6007",
+            "id": 4403298735,
+            "node_id": "IC_kwDOADRfSs8AAAABBnUBrw",
             "user": {
               "login": "ghost",
-              "type": "User"
+              "id": 10137,
+              "node_id": "MDQ6VXNlcjEwMTM3",
+              "avatar_url": "https://avatars.githubusercontent.com/u/10137?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/ghost",
+              "html_url": "https://github.com/ghost",
+              "followers_url": "https://api.github.com/users/ghost/followers",
+              "following_url": "https://api.github.com/users/ghost/following{/other_user}",
+              "gists_url": "https://api.github.com/users/ghost/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/ghost/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/ghost/subscriptions",
+              "organizations_url": "https://api.github.com/users/ghost/orgs",
+              "repos_url": "https://api.github.com/users/ghost/repos",
+              "events_url": "https://api.github.com/users/ghost/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/ghost/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
+            "created_at": "2026-05-08T04:17:52Z",
+            "updated_at": "2026-05-08T04:17:52Z",
             "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​core/​descriptors/​</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-frontend\">kotlin-frontend</a></summary><ul><li><a href=\"https://github.com/ligee\"><b><code>@ligee</code></b></a></li><li><a href=\"https://github.com/dzharkov\"><b><code>@dzharkov</code></b></a></li><li><a href=\"https://github.com/bnorm\"><b><code>@bnorm</code></b></a></li><li><a href=\"https://github.com/mglukhikh\"><b><code>@mglukhikh</code></b></a></li><li><a href=\"https://github.com/KvanTTT\"><b><code>@KvanTTT</code></b></a></li><li><a href=\"https://github.com/cypressious\"><b><code>@cypressious</code></b></a></li><li><a href=\"https://github.com/demiurg906\"><b><code>@demiurg906</code></b></a></li><li><a href=\"https://github.com/FenstonSingel\"><b><code>@FenstonSingel</code></b></a></li><li><a href=\"https://github.com/lunakoly\"><b><code>@lunakoly</code></b></a></li><li><a href=\"https://github.com/agamzikova\"><b><code>@agamzikova</code></b></a></li><li><a href=\"https://github.com/GrigoriiSolnyshkin\"><b><code>@GrigoriiSolnyshkin</code></b></a></li><li><a href=\"https://github.com/Aleksandra-Arsenteva\"><b><code>@Aleksandra-Arsenteva</code></b></a></li></ul></details></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
-            "performed_via_github_app": null
+            "author_association": "NONE",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4403298735/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4647513086",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#issuecomment-4647513086",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/6007",
+            "id": 4647513086,
+            "node_id": "IC_kwDOADRfSs8AAAABFQNr_g",
             "user": {
               "login": "kotlin-safemerge[bot]",
-              "type": "Bot"
+              "id": 288886408,
+              "node_id": "BOT_kgDOETgOiA",
+              "avatar_url": "https://avatars.githubusercontent.com/in/3903505?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D",
+              "html_url": "https://github.com/apps/kotlin-safemerge",
+              "followers_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/followers",
+              "following_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/following{/other_user}",
+              "gists_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/subscriptions",
+              "organizations_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/orgs",
+              "repos_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/repos",
+              "events_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/kotlin-safemerge%5Bbot%5D/received_events",
+              "type": "Bot",
+              "user_view_type": "public",
+              "site_admin": false
             },
+            "created_at": "2026-06-08T09:46:01Z",
+            "updated_at": "2026-09-03T11:12:21Z",
             "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​core/​descriptors/​</code></td><td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-frontend\">kotlin-frontend</a></summary><ul><li><a href=\"https://github.com/ligee\"><b><code>ligee</code></b></a></li><li><a href=\"https://github.com/dzharkov\"><b><code>dzharkov</code></b></a> 🌴</li><li><a href=\"https://github.com/bnorm\"><b><code>bnorm</code></b></a></li><li><a href=\"https://github.com/mglukhikh\"><b><code>mglukhikh</code></b></a></li><li><a href=\"https://github.com/KvanTTT\"><b><code>KvanTTT</code></b></a></li><li><a href=\"https://github.com/cypressious\"><b><code>cypressious</code></b></a></li><li><a href=\"https://github.com/demiurg906\"><b><code>demiurg906</code></b></a></li><li><a href=\"https://github.com/FenstonSingel\"><b><code>FenstonSingel</code></b></a> (QA) 🌴</li><li><a href=\"https://github.com/lunakoly\"><b><code>lunakoly</code></b></a></li><li><a href=\"https://github.com/GrigoriiSolnyshkin\"><b><code>GrigoriiSolnyshkin</code></b></a></li><li><a href=\"https://github.com/agamzikova-jb\"><b><code>agamzikova-jb</code></b></a> (QA)</li><li><a href=\"https://github.com/Aleksandra-Arsenteva\"><b><code>Aleksandra-Arsenteva</code></b></a> (QA) 🌴</li></ul></details></td><td align=\"center\">✅<br><a href=\"https://github.com/ligee\"><b><code>ligee</code></b></a></td></tr></table>\n\n<details><summary><b>PR commands for maintainers</b></summary><table><tr><th>Command</th><th>Description</th><th>Parameters</th></tr><tr><td><code>/safe-merge</code></td><td>Rebase-merges with automatic fixup commit squashing</td><td><code>--fixup</code> Autosquash fixup commits (on by default)</td></tr><tr><td><code>/safe-squash-merge</code></td><td>Squash-merges with optional commit title/body override</td><td><code>--title</code> Title of the squashed commit<br><code>--message</code> Body of the squashed commit</td></tr><tr><td><code>/dry-run</code></td><td>Runs the test pipeline with changes rebased on latest master</td><td><code>--retry</code> Retry the CI run on failure</td></tr><tr><td><code>/test-public</code></td><td>Triggers the public test suite without rebasing on latest master</td><td>—</td></tr><tr><td><code>/test-private</code></td><td>Triggers the private test suite without rebasing on latest master</td><td>—</td></tr><tr><td><code>/codeowners</code></td><td>Triggers code owners check and comment update</td><td>—</td></tr><tr><td><code>/fixup</code></td><td>Squashes fixup commits and force pushes the branch</td><td>—</td></tr><tr><td><code>/cancel-coordinator</code></td><td>Cancels the merge coordinator currently running for this branch</td><td>—</td></tr><tr><td><code>/cherry-pick</code></td><td>Cherry-picks this pull request onto a target release branch</td><td><code>--target</code> Release version to cherry-pick onto</td></tr></table></details><!-- KPR_COMMANDS:eyJjb21tYW5kcyI6W3sidmFsdWUiOiIvc2FmZS1tZXJnZSIsImRlc2NyaXB0aW9uIjoiUmViYXNlLW1lcmdlcyB3aXRoIGF1dG9tYXRpYyBmaXh1cCBjb21taXQgc3F1YXNoaW5nIiwicGFyYW1ldGVycyI6W3siZmxhZyI6Ii0tZml4dXAiLCJraW5kIjoidG9nZ2xlIiwiZGVzY3JpcHRpb24iOiJBdXRvc3F1YXNoIGZpeHVwIGNvbW1pdHMiLCJkZWZhdWx0Ijp0cnVlfV19LHsidmFsdWUiOiIvc2FmZS1zcXVhc2gtbWVyZ2UiLCJkZXNjcmlwdGlvbiI6IlNxdWFzaC1tZXJnZXMgd2l0aCBvcHRpb25hbCBjb21taXQgdGl0bGUvYm9keSBvdmVycmlkZSIsInBhcmFtZXRlcnMiOlt7ImZsYWciOiItLXRpdGxlIiwia2luZCI6InZhbHVlIiwiZGVzY3JpcHRpb24iOiJUaXRsZSBvZiB0aGUgc3F1YXNoZWQgY29tbWl0In0seyJmbGFnIjoiLS1tZXNzYWdlIiwia2luZCI6InZhbHVlIiwiZGVzY3JpcHRpb24iOiJCb2R5IG9mIHRoZSBzcXVhc2hlZCBjb21taXQifV19LHsidmFsdWUiOiIvZHJ5LXJ1biIsImRlc2NyaXB0aW9uIjoiUnVucyB0aGUgdGVzdCBwaXBlbGluZSB3aXRoIGNoYW5nZXMgcmViYXNlZCBvbiBsYXRlc3QgbWFzdGVyIiwicGFyYW1ldGVycyI6W3siZmxhZyI6Ii0tcmV0cnkiLCJraW5kIjoidG9nZ2xlIiwiZGVzY3JpcHRpb24iOiJSZXRyeSB0aGUgQ0kgcnVuIG9uIGZhaWx1cmUifV19LHsidmFsdWUiOiIvdGVzdC1wdWJsaWMiLCJkZXNjcmlwdGlvbiI6IlRyaWdnZXJzIHRoZSBwdWJsaWMgdGVzdCBzdWl0ZSB3aXRob3V0IHJlYmFzaW5nIG9uIGxhdGVzdCBtYXN0ZXIiLCJwYXJhbWV0ZXJzIjpbXX0seyJ2YWx1ZSI6Ii90ZXN0LXByaXZhdGUiLCJkZXNjcmlwdGlvbiI6IlRyaWdnZXJzIHRoZSBwcml2YXRlIHRlc3Qgc3VpdGUgd2l0aG91dCByZWJhc2luZyBvbiBsYXRlc3QgbWFzdGVyIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvY29kZW93bmVycyIsImRlc2NyaXB0aW9uIjoiVHJpZ2dlcnMgY29kZSBvd25lcnMgY2hlY2sgYW5kIGNvbW1lbnQgdXBkYXRlIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvZml4dXAiLCJkZXNjcmlwdGlvbiI6IlNxdWFzaGVzIGZpeHVwIGNvbW1pdHMgYW5kIGZvcmNlIHB1c2hlcyB0aGUgYnJhbmNoIiwicGFyYW1ldGVycyI6W119LHsidmFsdWUiOiIvY2FuY2VsLWNvb3JkaW5hdG9yIiwiZGVzY3JpcHRpb24iOiJDYW5jZWxzIHRoZSBtZXJnZSBjb29yZGluYXRvciBjdXJyZW50bHkgcnVubmluZyBmb3IgdGhpcyBicmFuY2giLCJwYXJhbWV0ZXJzIjpbXX0seyJ2YWx1ZSI6Ii9jaGVycnktcGljayIsImRlc2NyaXB0aW9uIjoiQ2hlcnJ5LXBpY2tzIHRoaXMgcHVsbCByZXF1ZXN0IG9udG8gYSB0YXJnZXQgcmVsZWFzZSBicmFuY2giLCJwYXJhbWV0ZXJzIjpbeyJmbGFnIjoiLS10YXJnZXQiLCJraW5kIjoidmFsdWUiLCJkZXNjcmlwdGlvbiI6IlJlbGVhc2UgdmVyc2lvbiB0byBjaGVycnktcGljayBvbnRvIn1dfV19 -->\n<!-- CODE_OWNERS_REVIEW_COMMENT -->",
+            "author_association": "NONE",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/4647513086/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
             "performed_via_github_app": {
+              "id": 3903505,
+              "client_id": "Iv23lirPFRir9EyCOBWF",
+              "slug": "kotlin-safemerge",
+              "node_id": "A_kwHOAA1nZc4AO5AR",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
               },
-              "name": "Kotlin SafeMerge"
-            }
+              "name": "Kotlin SafeMerge",
+              "description": "",
+              "external_url": "https://kotlinlang.org/",
+              "html_url": "https://github.com/apps/kotlin-safemerge",
+              "created_at": "2026-05-29T09:07:12Z",
+              "updated_at": "2026-05-29T13:17:18Z",
+              "permissions": {
+                "administration": "read",
+                "checks": "write",
+                "contents": "write",
+                "issues": "write",
+                "members": "read",
+                "metadata": "read",
+                "pull_requests": "write",
+                "statuses": "read"
+              },
+              "events": [
+                "issue_comment",
+                "membership",
+                "pull_request",
+                "pull_request_review",
+                "push",
+                "team"
+              ]
+            },
+            "minimized": null
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/5525745358",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#issuecomment-5525745358",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/6007",
+            "id": 5525745358,
+            "node_id": "IC_kwDOADRfSs8AAAABSVwuzg",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
+            "created_at": "2026-09-03T12:27:46Z",
+            "updated_at": "2026-09-03T12:27:46Z",
             "body": "/safe-merge",
-            "performed_via_github_app": null
+            "author_association": "MEMBER",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/5525745358/reactions",
+              "total_count": 1,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 1,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/5525790714",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#issuecomment-5525790714",
+            "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/6007",
+            "id": 5525790714,
+            "node_id": "IC_kwDOADRfSs8AAAABSVzf-g",
             "user": {
               "login": "KotlinBuild",
-              "type": "User"
+              "id": 11723187,
+              "node_id": "MDQ6VXNlcjExNzIzMTg3",
+              "avatar_url": "https://avatars.githubusercontent.com/u/11723187?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/KotlinBuild",
+              "html_url": "https://github.com/KotlinBuild",
+              "followers_url": "https://api.github.com/users/KotlinBuild/followers",
+              "following_url": "https://api.github.com/users/KotlinBuild/following{/other_user}",
+              "gists_url": "https://api.github.com/users/KotlinBuild/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/KotlinBuild/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/KotlinBuild/subscriptions",
+              "organizations_url": "https://api.github.com/users/KotlinBuild/orgs",
+              "repos_url": "https://api.github.com/users/KotlinBuild/repos",
+              "events_url": "https://api.github.com/users/KotlinBuild/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/KotlinBuild/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
+            "created_at": "2026-09-03T12:31:26Z",
+            "updated_at": "2026-09-03T14:08:05Z",
             "body": "Quality gate is triggered at https://buildserver.labs.intellij.net/build/1050419085 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-6007/safe-merge`\n> Commit: [4a4ebd3](https://github.com/JetBrains/kotlin/commit/4a4ebd39a44ffb5bd56e308f15285412461ab30f)\n\n\n\n---\n\nQuality gate finished successfully.",
-            "performed_via_github_app": null
+            "author_association": "MEMBER",
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments/5525790714/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "performed_via_github_app": null,
+            "minimized": null
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -162,67 +767,426 @@
         "status": 200,
         "body": [
           {
+            "id": 4984585292,
+            "node_id": "PRR_kwDOADRfSs8AAAABKRq8TA",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
-            }
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-4984585292",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-4984585292"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-08-20T15:34:18Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5071135677,
+            "node_id": "PRR_kwDOADRfSs8AAAABLkNjvQ",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
-            }
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?u=15788f6eb09c910e81bac1845b881f1fc8658b85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5071135677",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "CONTRIBUTOR",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5071135677"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-08-31T20:58:17Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5076682772,
+            "node_id": "PRR_kwDOADRfSs8AAAABLpgIFA",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
-            }
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5076682772",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5076682772"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T10:13:25Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5081561313,
+            "node_id": "PRR_kwDOADRfSs8AAAABLuJ44Q",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
-            }
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?u=15788f6eb09c910e81bac1845b881f1fc8658b85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5081561313",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "CONTRIBUTOR",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5081561313"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T18:24:43Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5081668260,
+            "node_id": "PRR_kwDOADRfSs8AAAABLuQapA",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
-            }
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?u=15788f6eb09c910e81bac1845b881f1fc8658b85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5081668260",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "CONTRIBUTOR",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5081668260"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T18:36:35Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5089075943,
+            "node_id": "PRR_kwDOADRfSs8AAAABL1Ui5w",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
-            }
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5089075943",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5089075943"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-02T11:38:50Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5095970717,
+            "node_id": "PRR_kwDOADRfSs8AAAABL75XnQ",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
-            }
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?u=15788f6eb09c910e81bac1845b881f1fc8658b85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5095970717",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "CONTRIBUTOR",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5095970717"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-02T22:49:01Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5099707195,
+            "node_id": "PRR_kwDOADRfSs8AAAABL_dbOw",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
-            }
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5099707195",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5099707195"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-03T08:40:19Z",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a"
           },
           {
+            "id": 5099709890,
+            "node_id": "PRR_kwDOADRfSs8AAAABL_dlwg",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
-            }
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "APPROVED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5099709890",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5099709890"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-03T08:40:33Z",
+            "commit_id": "9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051"
           },
           {
+            "id": 5101148869,
+            "node_id": "PRR_kwDOADRfSs8AAAABMA1axQ",
             "user": {
               "login": "ligee",
-              "type": "User"
-            }
+              "id": 329565,
+              "node_id": "MDQ6VXNlcjMyOTU2NQ==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/329565?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/ligee",
+              "html_url": "https://github.com/ligee",
+              "followers_url": "https://api.github.com/users/ligee/followers",
+              "following_url": "https://api.github.com/users/ligee/following{/other_user}",
+              "gists_url": "https://api.github.com/users/ligee/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/ligee/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/ligee/subscriptions",
+              "organizations_url": "https://api.github.com/users/ligee/orgs",
+              "repos_url": "https://api.github.com/users/ligee/repos",
+              "events_url": "https://api.github.com/users/ligee/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/ligee/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "APPROVED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5101148869",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#pullrequestreview-5101148869"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-03T11:12:18Z",
+            "commit_id": "9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051"
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -238,70 +1202,652 @@
         "status": 200,
         "body": [
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3823024632",
+            "pull_request_review_id": 4984585292,
+            "id": 3823024632,
+            "node_id": "PRRC_kwDOADRfSs7j3rn4",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Does it affect memory consumption?"
+            "body": "Does it affect memory consumption?",
+            "created_at": "2026-08-20T15:34:10Z",
+            "updated_at": "2026-08-20T15:34:18Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3823024632",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3823024632"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3823024632"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3823024632/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3898321066",
+            "pull_request_review_id": 5071135677,
+            "id": 3898321066,
+            "node_id": "PRRC_kwDOADRfSs7oW6iq",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Not that much. I just ran a benchmark of the same framework action as the one use for the issue report (10k klib). Here are the results\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50      | p90      | p95      |\r\n|----------------------|----------|----------|----------|\r\n| Action A wall time   |   294.84 |   432.46 |   451.81 |\r\n| Action B wall time   |   431.30 |   669.46 |   747.36 |\r\n| Action A CPU time    |   512.10 |   677.11 |   695.66 |\r\n| Action B CPU time    |   636.70 |   917.02 |  1012.21 |\r\n| Action A peak memory | 17.62GiB | 17.68GiB | 17.70GiB |\r\n| Action B peak memory | 17.19GiB | 17.26GiB | 17.28GiB |\r\n\r\nTotal wall time ratio (B / A): 1.48\r\nTotal CPU time ratio (B / A): 1.28\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```"
+            "body": "Not that much. I just ran a benchmark of the same framework action as the one use for the issue report (10k klib). Here are the results\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50      | p90      | p95      |\r\n|----------------------|----------|----------|----------|\r\n| Action A wall time   |   294.84 |   432.46 |   451.81 |\r\n| Action B wall time   |   431.30 |   669.46 |   747.36 |\r\n| Action A CPU time    |   512.10 |   677.11 |   695.66 |\r\n| Action B CPU time    |   636.70 |   917.02 |  1012.21 |\r\n| Action A peak memory | 17.62GiB | 17.68GiB | 17.70GiB |\r\n| Action B peak memory | 17.19GiB | 17.26GiB | 17.28GiB |\r\n\r\nTotal wall time ratio (B / A): 1.48\r\nTotal CPU time ratio (B / A): 1.28\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+            "created_at": "2026-08-31T20:58:17Z",
+            "updated_at": "2026-08-31T20:58:34Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3898321066",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3898321066"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3898321066"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3898321066/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "in_reply_to_id": 3823024632,
+            "author_association": "CONTRIBUTOR",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3902993904",
+            "pull_request_review_id": 5076682772,
+            "id": 3902993904,
+            "node_id": "PRRC_kwDOADRfSs7oovXw",
+            "diff_hunk": "@@ -22,20 +22,23 @@ import org.jetbrains.kotlin.name.Name\n class PackageFragmentProviderImpl(\n     private val packageFragments: Collection<PackageFragmentDescriptor>\n ) : PackageFragmentProviderOptimized {\n+    private val packageFragmentsByFqName = packageFragments.groupBy { it.fqName }\n+\n+    private val subPackagesByParent = packageFragments.asSequence()\n+        .map {it.fqName}",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "2eca768e8d49dca513e038fd5f1ea00bccba3dda",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Formatting: should be `.map { it.fqName }`."
+            "body": "Formatting: should be `.map { it.fqName }`.",
+            "created_at": "2026-09-01T10:03:13Z",
+            "updated_at": "2026-09-01T10:13:25Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3902993904",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3902993904"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3902993904"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3902993904/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
+            "original_line": 28,
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 7,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3903069948",
+            "pull_request_review_id": 5076682772,
+            "id": 3903069948,
+            "node_id": "PRRC_kwDOADRfSs7opB78",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Interesting. What does the action include? Is it only the Objective-C header generation, or something more?"
+            "body": "Interesting. What does the action include? Is it only the Objective-C header generation, or something more?",
+            "created_at": "2026-09-01T10:13:12Z",
+            "updated_at": "2026-09-01T10:13:25Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3903069948",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3903069948"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3903069948"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3903069948/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "in_reply_to_id": 3823024632,
+            "author_association": "MEMBER",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907088595",
+            "pull_request_review_id": 5081561313,
+            "id": 3907088595,
+            "node_id": "PRRC_kwDOADRfSs7o4XDT",
+            "diff_hunk": "@@ -22,20 +22,23 @@ import org.jetbrains.kotlin.name.Name\n class PackageFragmentProviderImpl(\n     private val packageFragments: Collection<PackageFragmentDescriptor>\n ) : PackageFragmentProviderOptimized {\n+    private val packageFragmentsByFqName = packageFragments.groupBy { it.fqName }\n+\n+    private val subPackagesByParent = packageFragments.asSequence()\n+        .map {it.fqName}",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "2eca768e8d49dca513e038fd5f1ea00bccba3dda",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Nice catch, sorry."
+            "body": "Nice catch, sorry.",
+            "created_at": "2026-09-01T18:24:43Z",
+            "updated_at": "2026-09-01T18:24:43Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3907088595",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907088595"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3907088595"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907088595/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
+            "original_line": 28,
+            "side": "RIGHT",
+            "in_reply_to_id": 3902993904,
+            "author_association": "CONTRIBUTOR",
+            "original_position": 7,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907187494",
+            "pull_request_review_id": 5081668260,
+            "id": 3907187494,
+            "node_id": "PRRC_kwDOADRfSs7o4vMm",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "This is the full framework it generates the Objective-C header, stubs and bridges"
+            "body": "This is the full framework it generates the Objective-C header, stubs and bridges",
+            "created_at": "2026-09-01T18:36:34Z",
+            "updated_at": "2026-09-01T18:36:35Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3907187494",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907187494"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3907187494"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907187494/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "in_reply_to_id": 3823024632,
+            "author_association": "CONTRIBUTOR",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3913669017",
+            "pull_request_review_id": 5089075943,
+            "id": 3913669017,
+            "node_id": "PRRC_kwDOADRfSs7pRdmZ",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "What are the numbers when compiling with `-Xomit-framework-binary`? It basically limits the compilation to generating the header and skips the rest."
+            "body": "What are the numbers when compiling with `-Xomit-framework-binary`? It basically limits the compilation to generating the header and skips the rest.",
+            "created_at": "2026-09-02T11:38:50Z",
+            "updated_at": "2026-09-02T11:38:50Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3913669017",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3913669017"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3913669017"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3913669017/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "in_reply_to_id": 3823024632,
+            "author_association": "MEMBER",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3919386757",
+            "pull_request_review_id": 5095970717,
+            "id": 3919386757,
+            "node_id": "PRRC_kwDOADRfSs7pnRiF",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "alfonsocvu",
-              "type": "User"
+              "id": 31135704,
+              "node_id": "MDQ6VXNlcjMxMTM1NzA0",
+              "avatar_url": "https://avatars.githubusercontent.com/u/31135704?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/alfonsocvu",
+              "html_url": "https://github.com/alfonsocvu",
+              "followers_url": "https://api.github.com/users/alfonsocvu/followers",
+              "following_url": "https://api.github.com/users/alfonsocvu/following{/other_user}",
+              "gists_url": "https://api.github.com/users/alfonsocvu/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/alfonsocvu/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/alfonsocvu/subscriptions",
+              "organizations_url": "https://api.github.com/users/alfonsocvu/orgs",
+              "repos_url": "https://api.github.com/users/alfonsocvu/repos",
+              "events_url": "https://api.github.com/users/alfonsocvu/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/alfonsocvu/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Here you go. This is only the `FremeworkHeaderOnly`\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50     | p90     | p95     |\r\n|----------------------|---------|---------|---------|\r\n| Action A wall time   |   65.44 |   73.24 |   75.62 |\r\n| Action B wall time   |   87.64 |  102.25 |  125.46 |\r\n| Action A CPU time    |  102.35 |  118.24 |  121.70 |\r\n| Action B CPU time    |  135.60 |  156.19 |  182.90 |\r\n| Action A peak memory | 4.51GiB | 4.53GiB | 4.53GiB |\r\n| Action B peak memory | 4.45GiB | 4.51GiB | 4.52GiB |\r\n\r\nTotal wall time ratio (B / A): 1.39\r\nTotal CPU time ratio (B / A): 1.33\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```"
+            "body": "Here you go. This is only the `FremeworkHeaderOnly`\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50     | p90     | p95     |\r\n|----------------------|---------|---------|---------|\r\n| Action A wall time   |   65.44 |   73.24 |   75.62 |\r\n| Action B wall time   |   87.64 |  102.25 |  125.46 |\r\n| Action A CPU time    |  102.35 |  118.24 |  121.70 |\r\n| Action B CPU time    |  135.60 |  156.19 |  182.90 |\r\n| Action A peak memory | 4.51GiB | 4.53GiB | 4.53GiB |\r\n| Action B peak memory | 4.45GiB | 4.51GiB | 4.52GiB |\r\n\r\nTotal wall time ratio (B / A): 1.39\r\nTotal CPU time ratio (B / A): 1.33\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+            "created_at": "2026-09-02T22:49:00Z",
+            "updated_at": "2026-09-02T22:49:01Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3919386757",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3919386757"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3919386757"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3919386757/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "in_reply_to_id": 3823024632,
+            "author_association": "CONTRIBUTOR",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3922682837",
+            "pull_request_review_id": 5099707195,
+            "id": 3922682837,
+            "node_id": "PRRC_kwDOADRfSs7pz2PV",
+            "diff_hunk": "",
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
             "user": {
               "login": "SvyatoslavScherbina",
-              "type": "User"
+              "id": 22007028,
+              "node_id": "MDQ6VXNlcjIyMDA3MDI4",
+              "avatar_url": "https://avatars.githubusercontent.com/u/22007028?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/SvyatoslavScherbina",
+              "html_url": "https://github.com/SvyatoslavScherbina",
+              "followers_url": "https://api.github.com/users/SvyatoslavScherbina/followers",
+              "following_url": "https://api.github.com/users/SvyatoslavScherbina/following{/other_user}",
+              "gists_url": "https://api.github.com/users/SvyatoslavScherbina/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/SvyatoslavScherbina/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/SvyatoslavScherbina/subscriptions",
+              "organizations_url": "https://api.github.com/users/SvyatoslavScherbina/orgs",
+              "repos_url": "https://api.github.com/users/SvyatoslavScherbina/repos",
+              "events_url": "https://api.github.com/users/SvyatoslavScherbina/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/SvyatoslavScherbina/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
-            "body": "Ok, seems reasonable, thanks!"
+            "body": "Ok, seems reasonable, thanks!",
+            "created_at": "2026-09-03T08:40:19Z",
+            "updated_at": "2026-09-03T08:40:19Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3922682837",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3922682837"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3922682837"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/6007"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3922682837/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": 25,
+            "original_start_line": 25,
+            "start_side": "RIGHT",
+            "line": 31,
+            "original_line": 31,
+            "side": "RIGHT",
+            "in_reply_to_id": 3823024632,
+            "author_association": "MEMBER",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           }
-        ],
-        "hasNext": false
+        ]
       }
     }
   ],

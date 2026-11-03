@@ -1,13 +1,18 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.ci.github
 
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.jsonArray
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
+import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.support.FIRST_TWO_MERGED_SELECTION
 import org.jetbrains.qodana.edict.ci.support.MISSING_PULL_REQUEST
 import org.jetbrains.qodana.edict.ci.support.SEVERAL_NUMBERS_SELECTION
+import org.jetbrains.qodana.edict.ci.support.TWO_DISCOVERY_PAGES_SELECTION
 import org.jetbrains.qodana.edict.ci.support.WEEKEND_SELECTION
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
+import org.jetbrains.qodana.edict.ci.support.withBody
 import org.jetbrains.qodana.edict.extraction.reviews.withValidThreads
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,8 +20,8 @@ import kotlin.test.assertEquals
 /** Fetching pull requests of JetBrains/kotlin with their review threads, replaying what GitHub answered. */
 internal class GitHubFetchTest {
   @Test
-  fun `a merged pull request has its threads, each with its replies in the order they were written`() {
-    // PR 6007, merged: a thread of seven replies and one of a single reply, interleaved in time.
+  fun `a merged pull request has its threads, each with its replies`() {
+    // PR 6007, merged: a thread of seven messages and one of two, interleaved in time.
     val recording = kotlinRecording("fetch-merged-6007")
 
     assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(selectionOf(6007)) })
@@ -65,7 +70,7 @@ internal class GitHubFetchTest {
 
   @Test
   fun `pull requests are fetched in the requested order, past missing and unmerged ones`() {
-    // SEVERAL_NUMBERS_SELECTION: two merged PRs, a missing one and one closed unmerged.
+    // SEVERAL_NUMBERS_SELECTION: three merged PRs in neither number order, a missing one and one closed unmerged.
     val recording = kotlinRecording("fetch-several-numbers")
 
     assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(SEVERAL_NUMBERS_SELECTION) })
@@ -73,12 +78,22 @@ internal class GitHubFetchTest {
 
   @Test
   fun `a thread only a bot took part in is left out`() {
-    // PR 7185: a thread Copilot started that nobody answered, and a thread of people.
+    // PR 7185: a thread Copilot started in a review whose body Copilot wrote, nobody answering, and a thread of people.
     val recording = kotlinRecording("fetch-bot-thread-7185")
 
     val threads = recording.replay { fetch(selectionOf(7185)) }.pullRequests.single().threads
 
     assertEquals(listOf("github-7185-3721437321"), threads.map { it.threadId })
+  }
+
+  @Test
+  fun `a configured bot's comments are left out of threads, whatever the case of its login`() {
+    // PR 7185: timofeys1 opened the thread of people, which rbbozkurt answered.
+    val recording = kotlinRecording("fetch-bot-thread-7185", bots = setOf("TimofeyS1"))
+
+    val threads = recording.replay { fetch(selectionOf(7185)) }.pullRequests.single().threads
+
+    assertEquals(listOf("github-7185-3721437321" to listOf("rbbozkurt")), threads.map { it.threadId to it.messages.map(ReviewMessage::author) })
   }
 
   @Test
@@ -106,11 +121,26 @@ internal class GitHubFetchTest {
   }
 
   @Test
-  fun `a pull request listed again on the next discovery page is fetched once and reported`() {
-    // WEEKEND_SELECTION with scripted discovery pages: 9413 moves to the next page meanwhile.
-    val recording = kotlinRecording("fetch-repeated-on-next-page")
+  fun `discovery reads the next page while the first lists only pull requests updated after the range`() {
+    // TWO_DISCOVERY_PAGES_SELECTION: the first page lists only pull requests updated after 2026-10-28.
+    val recording = kotlinRecording("fetch-two-discovery-pages")
 
-    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(WEEKEND_SELECTION) })
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(TWO_DISCOVERY_PAGES_SELECTION) })
+  }
+
+  @Test
+  fun `a pull request listed again on the next discovery page is fetched once and reported`() {
+    // TWO_DISCOVERY_PAGES_SELECTION, with the second page read after a pull request was updated meanwhile: that moves
+    // the first page's last pull request onto the second.
+    val recording = kotlinRecording("fetch-two-discovery-pages")
+    val last = recording.exchanges.first().response.body.jsonArray.last()
+    val moved = recording.answering("GET", "/pulls", mapOf("page" to "2")) { page ->
+      listOf(page.withBody(JsonArray(listOf(last) + page.response.body.jsonArray.dropLast(1))))
+    }
+
+    val expected = recording.result<ReviewFetchResult>()
+      .let { it.copy(problems = listOf("GitHub PR discovery page 2 item[0]: invalid or repeated PR number") + it.problems) }
+    assertEquals(expected, moved.replay { fetch(TWO_DISCOVERY_PAGES_SELECTION) })
   }
 }
 

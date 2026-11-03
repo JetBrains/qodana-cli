@@ -21,6 +21,286 @@
             {
               "review": {
                 "className": "MergeRequestRecord",
+                "number": 232284,
+                "timestamp": 1793718020027
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232420,
+                "timestamp": 1793717221626
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232564,
+                "timestamp": 1793716729328
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230041,
+                "timestamp": 1793716018682
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 228937,
+                "timestamp": 1793714457631
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231960,
+                "timestamp": 1793713788207
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232172,
+                "timestamp": 1793713717910
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230201,
+                "timestamp": 1793713120519
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232287,
+                "timestamp": 1793712771328
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 220414,
+                "timestamp": 1793712464333
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232524,
+                "timestamp": 1793712069393
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230479,
+                "timestamp": 1793711691266
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232333,
+                "timestamp": 1793710553628
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232532,
+                "timestamp": 1793710459746
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 218633,
+                "timestamp": 1793709820585
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 220164,
+                "timestamp": 1793709705221
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232681,
+                "timestamp": 1793708964909
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232310,
+                "timestamp": 1793708569286
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 220297,
+                "timestamp": 1793708414383
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 228940,
+                "timestamp": 1793707366561
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 229973,
+                "timestamp": 1793707275171
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232321,
+                "timestamp": 1793706808960
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232592,
+                "timestamp": 1793706489642
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230223,
+                "timestamp": 1793705206991
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232334,
+                "timestamp": 1793704191725
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 223225,
+                "timestamp": 1793703200126
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232513,
+                "timestamp": 1793702564876
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232728,
+                "timestamp": 1793701319116
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232739,
+                "timestamp": 1793701130228
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 228647,
+                "timestamp": 1793700876409
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232495,
+                "timestamp": 1793700407005
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230745,
+                "timestamp": 1793699971031
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231959,
+                "timestamp": 1793696492898
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 226313,
+                "timestamp": 1793672935502
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 229937,
+                "timestamp": 1793666102484
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 232342,
+                "timestamp": 1793663715076
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 223311,
+                "timestamp": 1793660334237
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 231023,
+                "timestamp": 1793659648123
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 230184,
+                "timestamp": 1793659154795
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
+                "number": 204352,
+                "timestamp": 1793657351829
+              }
+            },
+            {
+              "review": {
+                "className": "MergeRequestRecord",
                 "number": 232282,
                 "timestamp": 1793656353720
               }
@@ -437,7 +717,29 @@
                 "number": 232185,
                 "timestamp": 1793628798876
               }
-            },
+            }
+          ]
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "$skip": "100",
+          "$top": "100",
+          "state": "Merged",
+          "repository": "ultimate",
+          "sort": "LastUpdatedDesc",
+          "to": "2026-11-01",
+          "$fields": "data(review(number,timestamp))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
             {
               "review": {
                 "className": "MergeRequestRecord",
@@ -717,30 +1019,7 @@
                 "number": 231374,
                 "timestamp": 1793610932469
               }
-            }
-          ]
-        },
-        "hasNext": false
-      }
-    },
-    {
-      "request": {
-        "method": "GET",
-        "endpoint": "/projects/key:ij/code-reviews",
-        "query": {
-          "$skip": "100",
-          "$top": "100",
-          "state": "Merged",
-          "repository": "ultimate",
-          "sort": "LastUpdatedDesc",
-          "to": "2026-11-01",
-          "$fields": "data(review(number,timestamp))"
-        }
-      },
-      "response": {
-        "status": 200,
-        "body": {
-          "data": [
+            },
             {
               "review": {
                 "className": "MergeRequestRecord",
@@ -1160,290 +1439,9 @@
                 "number": 232639,
                 "timestamp": 1793394788377
               }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232443,
-                "timestamp": 1793394268041
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 231410,
-                "timestamp": 1793393687936
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232111,
-                "timestamp": 1793393313687
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232620,
-                "timestamp": 1793393039476
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 231890,
-                "timestamp": 1793392980474
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232383,
-                "timestamp": 1793392377779
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232087,
-                "timestamp": 1793392170579
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232384,
-                "timestamp": 1793391582829
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232414,
-                "timestamp": 1793391480462
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 225250,
-                "timestamp": 1793390713891
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232529,
-                "timestamp": 1793390481075
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232546,
-                "timestamp": 1793390253630
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232537,
-                "timestamp": 1793389986655
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232542,
-                "timestamp": 1793389870579
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232125,
-                "timestamp": 1793389787743
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232345,
-                "timestamp": 1793389302017
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232277,
-                "timestamp": 1793389251784
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232459,
-                "timestamp": 1793389162218
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232504,
-                "timestamp": 1793388607556
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232494,
-                "timestamp": 1793388276188
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232252,
-                "timestamp": 1793387465095
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 231925,
-                "timestamp": 1793386066277
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232570,
-                "timestamp": 1793385962243
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232437,
-                "timestamp": 1793384722110
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232323,
-                "timestamp": 1793384533054
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232474,
-                "timestamp": 1793384063715
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232593,
-                "timestamp": 1793383341805
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 224967,
-                "timestamp": 1793382535639
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 231983,
-                "timestamp": 1793381989509
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 231747,
-                "timestamp": 1793379579697
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 229983,
-                "timestamp": 1793379431786
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232584,
-                "timestamp": 1793379364602
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 227315,
-                "timestamp": 1793379304230
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232412,
-                "timestamp": 1793379031763
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 231757,
-                "timestamp": 1793378965773
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 230290,
-                "timestamp": 1793378508047
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232521,
-                "timestamp": 1793378206216
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232598,
-                "timestamp": 1793378084019
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 232453,
-                "timestamp": 1793378036755
-              }
-            },
-            {
-              "review": {
-                "className": "MergeRequestRecord",
-                "number": 230559,
-                "timestamp": 1793377832335
-              }
             }
           ]
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -1471,9 +1469,9 @@
               "ref": "ee27accdd04f6e45839bfe4dfab1dd23fd25d38f"
             },
             "isMerged": true
-          }
-        },
-        "hasNext": false
+          },
+          "description": null
+        }
       }
     },
     {
@@ -1493,6 +1491,7 @@
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -1507,6 +1506,7 @@
             },
             {
               "chatMessage": {
+                "text": "added 6 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1521,6 +1521,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/b29b2a0aea195874f693d7f7b99571d158d4f202/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak)</details> | ✅ 1/1 |\n| [IJPL Editor](https://codeowners.labs.jb.gg/group/ijpl-editor?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/b29b2a0aea195874f693d7f7b99571d158d4f202/.ownership/review-rules.yaml?line=118) | `community/platform/…/openapi/editor/**` | **[Alexey Kryuchkov](https://jetbrains.team/m/Alexey.Kryuchkov)**, <br/><details><summary>More</summary>[Aleksandr Trushev](https://jetbrains.team/m/Aleksandr.Trushev), <br/>[Alexey Kudravtsev](https://jetbrains.team/m/cdr), <br/>[Nikolay Egorov](https://jetbrains.team/m/Nikolay.Egorov), <br/>[Vojtech Balik](https://jetbrains.team/m/Vojtech.Balik)</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1535,6 +1536,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1549,6 +1551,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge Dry Run \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nChanges:\n• [618da4c](https://jetbrains.team/p/IJ/repositories/ultimate/revision/618da4ca11c0125da23a36d00252b7689c9b676e) Pre-merge `master` changes into temp branch for running tests\n• [b1f914d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/b1f914d4a09a74ed53079127cc04d9a98980ccd8) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [ba7781a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/ba7781ad2efee62fc2f91c820fc5ba3879599b5d) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [8754d8e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8754d8efbe945da536e57fb54a3e0a11a9a06b08) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [8ba8bdf](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8ba8bdfacb3134bf3b7aa609a889f6e809d8fffc) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: do not cache the contexts of a loading file\n(displayed 5 of 7)\n\n[https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372](https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1563,6 +1566,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 7 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1577,6 +1581,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/82ec571a98f93450bc7bc42cfdf69585e8028448/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak)</details> | ✅ 1/1 |\n| [IJPL Editor](https://codeowners.labs.jb.gg/group/ijpl-editor?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/82ec571a98f93450bc7bc42cfdf69585e8028448/.ownership/review-rules.yaml?line=118) | `community/platform/…/openapi/editor/**` | **[Alexey Kryuchkov](https://jetbrains.team/m/Alexey.Kryuchkov)**, <br/><details><summary>More</summary>[Aleksandr Trushev](https://jetbrains.team/m/Aleksandr.Trushev), <br/>[Alexey Kudravtsev](https://jetbrains.team/m/cdr), <br/>[Nikolay Egorov](https://jetbrains.team/m/Nikolay.Egorov), <br/>[Vojtech Balik](https://jetbrains.team/m/Vojtech.Balik)</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1591,6 +1596,7 @@
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge Dry Run \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nChecks failed:\n• [IntelliJ Aggregator](https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372?check=ijplatform_master_Idea_Tests_Aggregator&attempt=3) (2 builds)\n…also 62 checks passed\n\nTested changes:\n• [618da4c](https://jetbrains.team/p/IJ/repositories/ultimate/revision/618da4ca11c0125da23a36d00252b7689c9b676e) Pre-merge `master` changes into temp branch for running tests\n• [b1f914d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/b1f914d4a09a74ed53079127cc04d9a98980ccd8) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [ba7781a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/ba7781ad2efee62fc2f91c820fc5ba3879599b5d) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [8754d8e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8754d8efbe945da536e57fb54a3e0a11a9a06b08) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [8ba8bdf](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8ba8bdfacb3134bf3b7aa609a889f6e809d8fffc) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: do not cache the contexts of a loading file\n(displayed 5 of 7)\n\n[https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372](https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1605,6 +1611,7 @@
             },
             {
               "chatMessage": {
+                "text": "build failed\n**[Patronus](https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372)**\n1 check failed\n1 check failed\n**[Patronus](https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372)**\n1 check failed\n1 check failed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1619,6 +1626,7 @@
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge Dry Run \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nTo: `master`\n\nProblems:\n• ⚠️ Branch `karaev/multiverse-recheck` cannot be merged into `master`.\n\n[https://patronus.labs.jb.gg/robot/e4936c78-c507-4026-b381-3d5e8a2b2af1](https://patronus.labs.jb.gg/robot/e4936c78-c507-4026-b381-3d5e8a2b2af1)\n(started from [https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372](https://patronus.labs.jb.gg/robot/0c3471f6-b2c9-49ef-8432-a0d227f99372))",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1633,6 +1641,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 6 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1647,6 +1656,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/753980f18d9d2b98d570e079d796beb3ded48268/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak)</details> | ✅ 1/1 |\n| [IJPL Editor](https://codeowners.labs.jb.gg/group/ijpl-editor?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/753980f18d9d2b98d570e079d796beb3ded48268/.ownership/review-rules.yaml?line=118) | `community/platform/…/openapi/editor/**` | **[Alexey Kryuchkov](https://jetbrains.team/m/Alexey.Kryuchkov)**, <br/><details><summary>More</summary>[Aleksandr Trushev](https://jetbrains.team/m/Aleksandr.Trushev), <br/>[Alexey Kudravtsev](https://jetbrains.team/m/cdr), <br/>[Nikolay Egorov](https://jetbrains.team/m/Nikolay.Egorov), <br/>[Vojtech Balik](https://jetbrains.team/m/Vojtech.Balik)</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1661,6 +1671,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1675,6 +1686,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge Dry Run \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nChanges:\n• [73e03fd](https://jetbrains.team/p/IJ/repositories/ultimate/revision/73e03fdb222f5140b3f598f8d3e5a977a68dc35b) Pre-merge `master` changes into temp branch for running tests\n• [81bca08](https://jetbrains.team/p/IJ/repositories/ultimate/revision/81bca085fe414e9a204a6d339ced210802137575) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [867ee7d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/867ee7d906c6bbb592d81a31e5a56027755f0bd1) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [026d240](https://jetbrains.team/p/IJ/repositories/ultimate/revision/026d24085d67cd0cf448f0424ae501965c7fccfd) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [142aec7](https://jetbrains.team/p/IJ/repositories/ultimate/revision/142aec76df4f4c4e7d7408a5c46e043a64b97e5a) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: do not cache the contexts of a loading file\n(displayed 5 of 7)\n\n[https://patronus.labs.jb.gg/robot/24ae6c68-a4f4-40a3-b347-e30a2aff8ce0](https://patronus.labs.jb.gg/robot/24ae6c68-a4f4-40a3-b347-e30a2aff8ce0)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1689,6 +1701,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1703,6 +1716,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge Dry Run \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\n[https://patronus.labs.jb.gg/robot/24ae6c68-a4f4-40a3-b347-e30a2aff8ce0](https://patronus.labs.jb.gg/robot/24ae6c68-a4f4-40a3-b347-e30a2aff8ce0)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1717,6 +1731,7 @@
             },
             {
               "chatMessage": {
+                "text": "build succeeded\n**[Patronus](https://patronus.labs.jb.gg/robot/24ae6c68-a4f4-40a3-b347-e30a2aff8ce0)**\n63 checks passed\n63 checks passed\n**[Patronus](https://patronus.labs.jb.gg/robot/24ae6c68-a4f4-40a3-b347-e30a2aff8ce0)**\n63 checks passed\n63 checks passed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1731,6 +1746,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 6 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1745,6 +1761,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/cac8b7f042632d994bf8ae14d67a68ab3a80b17f/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev) (away soon), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch) (away soon), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak) (away soon), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (away soon)</details> | ✅ 1/1 |\n| [IJPL Code Platform](https://codeowners.labs.jb.gg/group/ijpl-code-platform?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/cac8b7f042632d994bf8ae14d67a68ab3a80b17f/.ownership/review-rules.yaml?line=157) | `community/platform/…/impl/multiverse/**` | ⏳ **[Maksim Medvedev](https://jetbrains.team/m/Maxim.Medvedev)**, <br/><details><summary>More</summary>[Dmitrii Batkóvich](https://jetbrains.team/m/Dmitry.Batkovich), <br/>[Ilia Malakhov](https://jetbrains.team/m/Ilia.Malakhov), <br/>[Ilya Korennoy](https://jetbrains.team/m/Ilya.Korennoy), <br/>[Kirill Bochkarev](https://jetbrains.team/m/Kirill.Bochkarev), <br/>[Lucy Kornilova](https://jetbrains.team/m/Liudmila.Kornilova), <br/>[Roman Shevchenko](https://jetbrains.team/m/Roman.Shevchenko), <br/>[Ruslan Vladimirovich Cheremin](https://jetbrains.team/m/Ruslan.Cheremin)</details> | ⏳ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1759,6 +1776,7 @@
             },
             {
               "chatMessage": {
+                "text": "> Nothing cached depends on the empty answer, so this comes on any thread, with no lock.\n\nI cannot understand this without knowing context, could you apply some AI to the doc? :)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1773,16 +1791,19 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
                       "filename": "/community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextManager.kt",
-                      "line": 90
+                      "line": 90,
+                      "oldLine": null
                     },
                     "endAnchor": {
-                      "line": 91
+                      "line": 91,
+                      "oldLine": null
                     },
                     "channel": {
                       "id": "3R2HYj4YFNea"
@@ -1800,6 +1821,7 @@
             },
             {
               "chatMessage": {
+                "text": "Maybe we could invent some DSL here? \nSomething like \n```\ninterface ContextResult  { // name TBD\n  object FileIsNotMine : ContextResult\n  class Contexts(val contexts: List<CodeInsightContext>) // assert non-empty in CodeInsightManagerImpl\n  object ContextAreBeingLoaded \n}",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1814,13 +1836,15 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
                       "filename": "/community/platform/core-api/src/com/intellij/codeInsight/multiverse/CodeInsightContextProvider.kt",
-                      "line": 23
+                      "line": 23,
+                      "oldLine": null
                     },
                     "endAnchor": null,
                     "channel": {
@@ -1839,6 +1863,7 @@
             },
             {
               "chatMessage": {
+                "text": "let's maybe assert not-empty? I mean it might be non-obvious that emptyList is noop and not \"invalidate everything\"",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1853,13 +1878,15 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
                       "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
-                      "line": 69
+                      "line": 69,
+                      "oldLine": null
                     },
                     "endAnchor": null,
                     "channel": {
@@ -1878,6 +1905,7 @@
             },
             {
               "chatMessage": {
+                "text": "[major] I think we need a flow and mmerging requsts here so that recheck don't compete with each other",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1892,13 +1920,15 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
                       "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
-                      "line": 71
+                      "line": 71,
+                      "oldLine": null
                     },
                     "endAnchor": null,
                     "channel": {
@@ -1917,6 +1947,7 @@
             },
             {
               "chatMessage": {
+                "text": "result might be stale by the time this runs. \n\nconsider using `readAndBackgroundWriteAction`. it guarantees that the world hasn't changed after read-action finished",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1931,13 +1962,15 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
                       "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
-                      "line": 115
+                      "line": 115,
+                      "oldLine": null
                     },
                     "endAnchor": null,
                     "channel": {
@@ -1956,6 +1989,7 @@
             },
             {
               "chatMessage": {
+                "text": "let's use LinkedHashSet here. It would save us from potential nasty ordering problems.\n(a lot of places in platform already swiched to LHS, also kotlin's default is also LHS)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1970,13 +2004,15 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "028ba0bca14c251901fb9bfc2cdb148d94cf277c",
                       "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
-                      "line": 132
+                      "line": 132,
+                      "oldLine": null
                     },
                     "endAnchor": null,
                     "channel": {
@@ -1995,6 +2031,7 @@
             },
             {
               "chatMessage": {
+                "text": "Could you write a unit performance test, push it before the fix and make sure it improves after your fix?",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2009,6 +2046,7 @@
             },
             {
               "chatMessage": {
+                "text": "There is a tool for comparing perfromance of two branches \nhttps://ij-perf.labs.jb.gg/perfUnit/compareBranches?machine=linux-blade-hetzner&branch=master&project=[]&measure=[]&metrics=attempt.mean.ms",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2023,6 +2061,7 @@
             },
             {
               "chatMessage": {
+                "text": "waits for updates",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2037,6 +2076,7 @@
             },
             {
               "chatMessage": {
+                "text": "pushed 7 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2051,6 +2091,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/00aa50eb0472df37d7322bd95f3efce4062f8b08/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev) (away soon), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (away soon), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch) (away soon), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak) (away soon)</details> | ✅ 1/1 |\n| [IJPL Code Platform](https://codeowners.labs.jb.gg/group/ijpl-code-platform?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/00aa50eb0472df37d7322bd95f3efce4062f8b08/.ownership/review-rules.yaml?line=157) | `community/platform/…/impl/multiverse/**`, `community/platform/projectModel-impl/**` | ⏳ **[Maksim Medvedev](https://jetbrains.team/m/Maxim.Medvedev)**, <br/><details><summary>More</summary>[Dmitrii Batkóvich](https://jetbrains.team/m/Dmitry.Batkovich), <br/>[Ilia Malakhov](https://jetbrains.team/m/Ilia.Malakhov), <br/>[Ilya Korennoy](https://jetbrains.team/m/Ilya.Korennoy), <br/>[Kirill Bochkarev](https://jetbrains.team/m/Kirill.Bochkarev), <br/>[Lucy Kornilova](https://jetbrains.team/m/Liudmila.Kornilova), <br/>[Roman Shevchenko](https://jetbrains.team/m/Roman.Shevchenko), <br/>[Ruslan Vladimirovich Cheremin](https://jetbrains.team/m/Ruslan.Cheremin)</details> | ⏳ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2065,6 +2106,7 @@
             },
             {
               "chatMessage": {
+                "text": "Done, let me know if it's still not clear",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2079,6 +2121,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2093,6 +2136,7 @@
             },
             {
               "chatMessage": {
+                "text": "Good point, DSL is much cleaner, thanks!",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2107,6 +2151,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2121,6 +2166,7 @@
             },
             {
               "chatMessage": {
+                "text": "IMO, empty here is completely fine. As a user, I expect API to be intuitive. For example, `requestInvalidation(X) + requestInvalidation(Y)` is same as `requestInvalidation(X + Y)`. And in this sense `emptySet()` is zero element of this operation.\n\nAlso, it makes usage more clear, for example you don't need to handle the `requestInvalidation(someListOfFiles.filter { someCondition(it) })` separately.\n\nI added a comment about behavior for empty `files` instead.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2135,6 +2181,7 @@
             },
             {
               "chatMessage": {
+                "text": "Thanks, I rewrote to the `Channel` (TIL, `ChannelIterator#hasNext` can be `suspend`) - looks simpler than flows.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2149,6 +2196,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2163,6 +2211,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2177,6 +2226,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2191,6 +2241,7 @@
             },
             {
               "chatMessage": {
+                "text": "I did not add unit performance test to verify what I did. Instead, I did checks on our performance tests - they found the degradation initially (when I merged partially enabled (by mistake) switcher to master) - CPP-52172. I hope the numbers below are conviencing enough for this review to be merged :)\n\nThese tests were checking (`*`) the time for \"go to declaration\" action - and they caught degradation by accident - they measured interval until \"frontend daemon starts after navigation\".\n\n| | getScopes, Win | time.h, Win | getScopes, Linux | time.h, Linux |\n|---|---|---|---|---|\n| master, switcher off | 813 | 706 | 835 | 667 |\n| master, switcher on | 1067 | 924 | 1073 | 940 |\n| branch, switcher on, no daemon fix | 877 | 918 | 789 | 781 |\n| branch, switcher on, daemon fix | 816 | 684 | 755 | 641 |\n\nLast line = current review state, line previous to it = current state without daemon fix: `contextsLoaded` no longer pushes back a pending daemon start.\n\n---\n\nBuilds. The metric is only in the artifacts: `radler/luau/lagging/gotoDeclaration/<test>/metrics.performance.json`\n- master, switcher off: [W1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505607) [W2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099682340) [W3](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683515) [W4](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683791) [L1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099682680) [L2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683751) [L3](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683831)\n- master, switcher on: [W1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505467) [W2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505587) [L1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505650)\n- branch, no daemon fix: [W1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505427) [W2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505447) [W3](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099682320) [W4](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683250) [W5](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683771) [L1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099505630) [L2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099682360) [L3](https://buildserver.labs.intellij.net/viewLog.html?buildId=1099683811)\n- branch, daemon fix: [W1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100907471) [W2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100950990) [W3](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100951030) [L1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100951050) [L2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100951070). These builds are on a newer master. With the switcher off on that master it's 820 / 678, Linux 767 / 636: [W1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100907451) [W2](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100950770) [L1](https://buildserver.labs.intellij.net/viewLog.html?buildId=1100951010)\n\n---\n\n(`*`) - these tests no longer catch the degradation in master, because Maxim Banaev just switched them not to wait for the daemon.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2205,6 +2256,7 @@
             },
             {
               "chatMessage": {
+                "text": "resumed work on the review",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2219,6 +2271,7 @@
             },
             {
               "chatMessage": {
+                "text": "waits for reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2233,6 +2286,7 @@
             },
             {
               "chatMessage": {
+                "text": "LGTM",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2247,6 +2301,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2261,6 +2316,7 @@
             },
             {
               "chatMessage": {
+                "text": "unfortunately `cached == null` can mean that cached contexts existed, preferred context was inferred and cached, but later `cached` was gc-ed. So there is no guarantee that preferred context is not set in this case",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2275,13 +2331,15 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "816863f4c2a622f8164714207584c4392a6fadc6",
                       "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
-                      "line": 158
+                      "line": 158,
+                      "oldLine": null
                     },
                     "endAnchor": null,
                     "channel": {
@@ -2300,6 +2358,7 @@
             },
             {
               "chatMessage": {
+                "text": "also i'm not sure it's correct to just skip the file when `fresh == null` because of this.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2314,6 +2373,7 @@
             },
             {
               "chatMessage": {
+                "text": "apparently it's kinda expected that provider returns the actual value for the given file at all times. So if it returns \"loading\" then probably it is the current value and we should drop previous contexts",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2328,6 +2388,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 11 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2342,6 +2403,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e559cd5eec8be5bd4a04370c7e5b730eadf96f9a/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev) (away soon), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (away soon), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch) (away soon), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak) (away soon)</details> | ✅ 1/1 |\n| [IJPL Code Platform](https://codeowners.labs.jb.gg/group/ijpl-code-platform?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e559cd5eec8be5bd4a04370c7e5b730eadf96f9a/.ownership/review-rules.yaml?line=157) | `community/platform/…/impl/multiverse/**`, `community/platform/projectModel-impl/**` | ⏳ **[Maksim Medvedev](https://jetbrains.team/m/Maxim.Medvedev)**, <br/><details><summary>More</summary>[Ilia Malakhov](https://jetbrains.team/m/Ilia.Malakhov), <br/>[Kirill Bochkarev](https://jetbrains.team/m/Kirill.Bochkarev), <br/>[Lucy Kornilova](https://jetbrains.team/m/Liudmila.Kornilova), <br/>[Roman Shevchenko](https://jetbrains.team/m/Roman.Shevchenko), <br/>[Ruslan Vladimirovich Cheremin](https://jetbrains.team/m/Ruslan.Cheremin), <br/>[Ilya Korennoy](https://jetbrains.team/m/Ilya.Korennoy) (away soon), <br/>[Dmitrii Batkóvich](https://jetbrains.team/m/Dmitry.Batkovich) (away soon)</details> | ⏳ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2356,6 +2418,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 9 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2370,8 +2433,7 @@
             }
           ],
           "hasMore": true
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -2387,9 +2449,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849981308",
           "data": [
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [CLion](https://codeowners.labs.jb.gg/group/clion?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e559cd5eec8be5bd4a04370c7e5b730eadf96f9a/.ownership/review-rules.yaml?line=43) | `CIDR/clion-radler/**`, `dotnet/ReSharperCpp/RiderPlugin/Src/Radler/**` | ✅ [Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev) (away soon), <br/><details><summary>More</summary>[Daniel Below](https://jetbrains.team/m/Daniel.Below), <br/>[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov), <br/>[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (away soon), <br/>[Jan Papesch](https://jetbrains.team/m/Jan.Papesch) (away soon), <br/>[Tomas Husak](https://jetbrains.team/m/Tomas.Husak) (away soon)</details> | ✅ 1/1 |\n| [IJPL Code Platform](https://codeowners.labs.jb.gg/group/ijpl-code-platform?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e559cd5eec8be5bd4a04370c7e5b730eadf96f9a/.ownership/review-rules.yaml?line=157) | `community/platform/…/impl/multiverse/**`, `community/platform/projectModel-impl/**` | ⏳ **[Maksim Medvedev](https://jetbrains.team/m/Maxim.Medvedev)**, <br/><details><summary>More</summary>[Ilia Malakhov](https://jetbrains.team/m/Ilia.Malakhov), <br/>[Kirill Bochkarev](https://jetbrains.team/m/Kirill.Bochkarev), <br/>[Lucy Kornilova](https://jetbrains.team/m/Liudmila.Kornilova), <br/>[Roman Shevchenko](https://jetbrains.team/m/Roman.Shevchenko), <br/>[Ruslan Vladimirovich Cheremin](https://jetbrains.team/m/Ruslan.Cheremin), <br/>[Ilya Korennoy](https://jetbrains.team/m/Ilya.Korennoy) (away soon), <br/>[Dmitrii Batkóvich](https://jetbrains.team/m/Dmitry.Batkovich) (away soon)</details> | ⏳ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2404,6 +2468,7 @@
             },
             {
               "chatMessage": {
+                "text": "Thanks, both are fixed:\n\n1. A file with no cached contexts now counts as changed, so the recheck drops it in the write action. The same happens when only the cached preferred context is gone.\n2. `Loading` is gone, together with the \"do not cache the contexts of a loading file\" commit. A provider now returns only `NotOwned` or `Contexts`, so there is no `fresh == null` case.\n\nI also moved the typed `Answer` commit to the start of the branch.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2418,6 +2483,7 @@
             },
             {
               "chatMessage": {
+                "text": "minor: maybe we want `log.trace { print all invalidated editors here }`",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2432,14 +2498,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "052fd2004a456b1733be98ce5947f4692d847f69",
                       "filename": "/community/platform/analysis-impl/src/com/intellij/codeInsight/multiverse/EditorContextManagerImpl.kt",
-                      "line": 43
+                      "line": 43,
+                      "oldLine": null
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "ZVjKz0kapMw"
                     }
@@ -2456,6 +2525,7 @@
             },
             {
               "chatMessage": {
+                "text": "minor: runSafely rethrows control-flow exceptions. instead we should log-error them here",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2470,14 +2540,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "894d425c4c81ef6f13ca8dacbab8dc8e254b7a83",
                       "filename": "/community/platform/core-impl/src/com/intellij/codeInsight/multiverse/CodeInsightContextManagerImpl.kt",
-                      "line": 116
+                      "line": 116,
+                      "oldLine": null
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "3PyLHV2fflY8"
                     }
@@ -2494,6 +2567,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2508,6 +2582,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2522,6 +2597,7 @@
             },
             {
               "chatMessage": {
+                "text": "otherwise, the coroutine processing updates dies",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2536,6 +2612,7 @@
             },
             {
               "chatMessage": {
+                "text": "pushed 2 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2550,6 +2627,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2564,6 +2642,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nChanges:\n• [7f9d530](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7f9d530a2416759c70f0a31b557ed98c9348b2b7) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [9901f0b](https://jetbrains.team/p/IJ/repositories/ultimate/revision/9901f0b307167de0c7d0f83a5ddb016713ad68d2) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [877c113](https://jetbrains.team/p/IJ/repositories/ultimate/revision/877c1137b31ba92931d9d7f374e403f7b5f06dc8) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [7fc47fb](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7fc47fbdea8d8a70f08289d3eb53a8c315914293) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: keep the cached contexts that did not change\n• [e6239c1](https://jetbrains.team/p/IJ/repositories/ultimate/revision/e6239c176cd4919b3ea3665123fe217641c7eb5b) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: drop the code insight contexts per file\n(displayed 5 of 6)\n\n[https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a](https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2578,6 +2657,7 @@
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nProblems:\n• ⚠️ Important build failure in the check 'Incremental Compilation'\n\nChecks failed:\n• [Incremental Compilation](https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a?check=ijplatform_master_IncrementalCompilation&attempt=1) (2 builds)\n…also 65 checks canceled\n\nTested changes:\n• [7f9d530](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7f9d530a2416759c70f0a31b557ed98c9348b2b7) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [9901f0b](https://jetbrains.team/p/IJ/repositories/ultimate/revision/9901f0b307167de0c7d0f83a5ddb016713ad68d2) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [877c113](https://jetbrains.team/p/IJ/repositories/ultimate/revision/877c1137b31ba92931d9d7f374e403f7b5f06dc8) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [7fc47fb](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7fc47fbdea8d8a70f08289d3eb53a8c315914293) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: keep the cached contexts that did not change\n• [e6239c1](https://jetbrains.team/p/IJ/repositories/ultimate/revision/e6239c176cd4919b3ea3665123fe217641c7eb5b) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: drop the code insight contexts per file\n(displayed 5 of 6)\n\n[https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a](https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2592,6 +2672,7 @@
             },
             {
               "chatMessage": {
+                "text": "build failed\n**[Patronus](https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a)**\n1 check failed\n1 check failed\n**[Patronus](https://patronus.labs.jb.gg/robot/225aee5e-cf39-41b9-a372-232637f3000a)**\n1 check failed\n1 check failed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2606,6 +2687,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 13 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2620,6 +2702,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2634,6 +2717,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nChanges:\n• [3264071](https://jetbrains.team/p/IJ/repositories/ultimate/revision/3264071b97975f65e966d406ce366cb65a6ea573) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [f8e7851](https://jetbrains.team/p/IJ/repositories/ultimate/revision/f8e7851968374a0bc383a5e3e2fbd05e77e1d4b1) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [bedbc74](https://jetbrains.team/p/IJ/repositories/ultimate/revision/bedbc74d5bf0cb1ffad33f8d727babfbd410db36) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [aaa9d68](https://jetbrains.team/p/IJ/repositories/ultimate/revision/aaa9d68aee3e0f0292ffce676a8736aec22fb681) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: keep the cached contexts that did not change\n• [bedb241](https://jetbrains.team/p/IJ/repositories/ultimate/revision/bedb2416ebc2a2304d0986f5cd84975e3d9d0a3e) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: drop the code insight contexts per file\n(displayed 5 of 6)\n\n[https://patronus.labs.jb.gg/robot/f243c24b-eebe-4d78-8dbb-ca11e64c281e](https://patronus.labs.jb.gg/robot/f243c24b-eebe-4d78-8dbb-ca11e64c281e)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2648,6 +2732,7 @@
             },
             {
               "chatMessage": {
+                "text": "merged the karaev/multiverse-recheck branch into master and deleted it",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2662,6 +2747,7 @@
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -2676,6 +2762,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge \"[CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696): per-file invalidation - fixing performance issue\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230194/timeline)\n\nRepository: `ultimate`\nFrom: `karaev/multiverse-recheck`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/f243c24b-eebe-4d78-8dbb-ca11e64c281e/changes/space)):\n• [25a869d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/25a869d210128e977533290f684fcca53b6dd3d1) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: do not apply a pin whose root no longer includes the header\n• [0f52913](https://jetbrains.team/p/IJ/repositories/ultimate/revision/0f5291370a87b922140cabcfc68e251a24a78f90) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: publish the roots again when the include graph changes\n• [d4d1717](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d4d17177a8cbb55803683ff6b9ff03f428ae01c0) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [radler]: ask the platform to recheck only the files the backend changed\n• [7b07d7e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7b07d7e86dd4832a22329d2e8e80c4ac1535d0f1) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: keep the cached contexts that did not change\n• [6590948](https://jetbrains.team/p/IJ/repositories/ultimate/revision/65909485705e688d71b29abb7c2cb10928e3743c) [CPP-24696](https://youtrack.jetbrains.com/issue/CPP-24696) [platform]: drop the code insight contexts per file\n(displayed 5 of 6)\n\n[https://patronus.labs.jb.gg/robot/f243c24b-eebe-4d78-8dbb-ca11e64c281e](https://patronus.labs.jb.gg/robot/f243c24b-eebe-4d78-8dbb-ca11e64c281e)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -2690,8 +2777,7 @@
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -2721,6 +2807,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-23T12:36:12.623Z",
                 "timestamp": 1792758972623
               },
               "id": "F8iJV0W6edx"
@@ -2737,6 +2824,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:27:30.965Z",
                 "timestamp": 1793003250965
               },
               "id": "F8ZTn0W6nOJ"
@@ -2753,14 +2841,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:27:37.427Z",
                 "timestamp": 1793003257427
               },
               "id": "F8ZTw0W6nOK"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-26T08:27:37.427Z",
+            "timestamp": 1793003257427
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -2790,6 +2882,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-23T12:36:12.623Z",
                 "timestamp": 1792758972623
               },
               "id": "F8iK70W6eeR"
@@ -2806,6 +2899,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:27:51.923Z",
                 "timestamp": 1793003271923
               },
               "id": "F8ZTy0W6nOM"
@@ -2822,14 +2916,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:27:53.403Z",
                 "timestamp": 1793003273403
               },
               "id": "F8ZTz0W6nON"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-26T08:27:53.403Z",
+            "timestamp": 1793003273403
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -2859,6 +2957,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-23T12:36:12.623Z",
                 "timestamp": 1792758972623
               },
               "id": "F8iK80W6eea"
@@ -2875,6 +2974,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:30:34.099Z",
                 "timestamp": 1793003434099
               },
               "id": "F8ZU10W6nOX"
@@ -2891,6 +2991,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T15:04:05.066Z",
                 "timestamp": 1793113445066
               },
               "id": "FA0wO0W78ee"
@@ -2907,14 +3008,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T15:04:05.120Z",
                 "timestamp": 1793113445120
               },
               "id": "FA0wP0W78ef"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-27T15:04:05.120Z",
+            "timestamp": 1793113445120
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -2944,6 +3049,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-23T12:36:12.623Z",
                 "timestamp": 1792758972623
               },
               "id": "F8iKT0W6een"
@@ -2960,6 +3066,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:32:27.038Z",
                 "timestamp": 1793003547038
               },
               "id": "F8ZU90W6nOf"
@@ -2976,14 +3083,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:32:47.699Z",
                 "timestamp": 1793003567699
               },
               "id": "F8ZUL0W6nOj"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-26T08:32:47.699Z",
+            "timestamp": 1793003567699
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -3013,6 +3124,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-23T12:36:12.623Z",
                 "timestamp": 1792758972623
               },
               "id": "F8iLT0W6efv"
@@ -3029,14 +3141,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:32:53.079Z",
                 "timestamp": 1793003573079
               },
               "id": "F8ZUM0W6nOk"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-26T08:32:53.079Z",
+            "timestamp": 1793003573079
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -3066,6 +3182,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-23T12:36:12.623Z",
                 "timestamp": 1792758972623
               },
               "id": "F8iNS0W6ehm"
@@ -3082,14 +3199,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-26T08:33:01.271Z",
                 "timestamp": 1793003581271
               },
               "id": "F8ZUN0W6nOl"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-26T08:33:01.271Z",
+            "timestamp": 1793003581271
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -3119,6 +3240,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T15:28:22.441Z",
                 "timestamp": 1793114902441
               },
               "id": "FA12a0W78kq"
@@ -3135,6 +3257,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T15:33:14.003Z",
                 "timestamp": 1793115194003
               },
               "id": "FA13M0W78lc"
@@ -3151,6 +3274,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T15:34:28.999Z",
                 "timestamp": 1793115268999
               },
               "id": "FA13Q0W78lo"
@@ -3167,6 +3291,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T20:59:55.236Z",
                 "timestamp": 1793134795236
               },
               "id": "FAJTi0W79bu"
@@ -3183,14 +3308,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T08:53:35.540Z",
                 "timestamp": 1793177615540
               },
               "id": "FAKkT0W7ALl"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T08:53:35.540Z",
+            "timestamp": 1793177615540
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -3220,14 +3349,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T08:53:39.980Z",
                 "timestamp": 1793177619980
               },
               "id": "FAIwR0W7A8h"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T08:53:39.980Z",
+            "timestamp": 1793177619980
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -3257,6 +3390,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T08:53:39.980Z",
                 "timestamp": 1793177619980
               },
               "id": "FAKgR0W7AHb"
@@ -3273,14 +3407,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T08:54:30.180Z",
                 "timestamp": 1793177670180
               },
               "id": "FAKkb0W7ALt"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T08:54:30.180Z",
+            "timestamp": 1793177670180
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -3295,6 +3433,7 @@
         "status": 200,
         "body": {
           "className": "MergeRequestRecord",
+          "id": "1D4SGk1m1Et4",
           "number": 232745,
           "title": "leonya/long",
           "state": "Closed",
@@ -3307,9 +3446,9 @@
               "ref": "054b2357cbb969a3b239103a847a57ebe641dbba"
             },
             "isMerged": true
-          }
-        },
-        "hasNext": false
+          },
+          "description": null
+        }
       }
     },
     {
@@ -3325,9 +3464,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849981166",
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -3336,11 +3477,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9VsQ0W7TGw"
               }
             },
             {
               "chatMessage": {
+                "text": "added 2 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3349,11 +3492,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9VsR0W7TGx"
               }
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3362,11 +3507,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vsq0W7THE"
               }
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"leonya/long\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232745/timeline)\n\nRepository: `ultimate`\nFrom: `leonya/long`\nTo: `master`\n\nChanges:\n• [1ffc057](https://jetbrains.team/p/IJ/repositories/ultimate/revision/1ffc0578e64f3b0a6d39e0ce33f7d0a2216a4458) [IJAI-5572](https://youtrack.jetbrains.com/issue/IJAI-5572) Air chat: #788 in a jcp-org-service session links to github.com/JetBrains/JetProfile/pull/788\n• [f59dd8c](https://jetbrains.team/p/IJ/repositories/ultimate/revision/f59dd8c8f78f9fa22ba8cac0b977a4c356cea517) [IJAI-5578](https://youtrack.jetbrains.com/issue/IJAI-5578) Air attachment store is full: no way to clear it, image paste and screen capture fail\n\n[https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0](https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -3375,11 +3522,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vsr0W7THF"
               }
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge \"leonya/long\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232745/timeline)\n\nRepository: `ultimate`\nFrom: `leonya/long`\nTo: `master`\n\nProblems:\n• ⚠️ Important build failure in the check 'Incremental Compilation'\n\nChecks failed:\n• [Incremental Compilation](https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0?check=ijplatform_master_IncrementalCompilation&attempt=1) (2 builds)\n…also 8 checks canceled\n\nTested changes:\n• [1ffc057](https://jetbrains.team/p/IJ/repositories/ultimate/revision/1ffc0578e64f3b0a6d39e0ce33f7d0a2216a4458) [IJAI-5572](https://youtrack.jetbrains.com/issue/IJAI-5572) Air chat: #788 in a jcp-org-service session links to github.com/JetBrains/JetProfile/pull/788\n• [f59dd8c](https://jetbrains.team/p/IJ/repositories/ultimate/revision/f59dd8c8f78f9fa22ba8cac0b977a4c356cea517) [IJAI-5578](https://youtrack.jetbrains.com/issue/IJAI-5578) Air attachment store is full: no way to clear it, image paste and screen capture fail\n\n[https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0](https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -3388,11 +3537,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vsy0W7THM"
               }
             },
             {
               "chatMessage": {
+                "text": "build failed\n**[Patronus](https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0)**\n1 check failed\n1 check failed\n**[Patronus](https://patronus.labs.jb.gg/robot/57fc3149-d466-42ce-b8fd-677920f08de0)**\n1 check failed\n1 check failed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3401,11 +3552,13 @@
                   "details": {
                     "className": "CBuiltInServicePrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vsz0W7THN"
               }
             },
             {
               "chatMessage": {
+                "text": "removed 2 commits from the merge request",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3414,11 +3567,13 @@
                   "details": {
                     "className": "CBuiltInServicePrincipalDetails"
                   }
-                }
+                },
+                "id": "F9VuO0W7TIm"
               }
             },
             {
               "chatMessage": {
+                "text": "pushed 2 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3427,11 +3582,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9VuP0W7TIn"
               }
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3440,11 +3597,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9VuQ0W7TIo"
               }
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"leonya/long\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232745/timeline)\n\nRepository: `ultimate`\nFrom: `leonya/long`\nTo: `master`\n\nChanges:\n• [69af1b0](https://jetbrains.team/p/IJ/repositories/ultimate/revision/69af1b02e13acde9fc1765822e22d817708b7953) [IJAI-5572](https://youtrack.jetbrains.com/issue/IJAI-5572) Air chat: #788 in a jcp-org-service session links to github.com/JetBrains/JetProfile/pull/788\n• [7bc623f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7bc623fe2b1d96f23d9353f7966907ac82f447d6) [IJAI-5578](https://youtrack.jetbrains.com/issue/IJAI-5578) Air attachment store is full: no way to clear it, image paste and screen capture fail\n\n[https://patronus.labs.jb.gg/robot/df5b1eb1-f7c8-4b00-9161-f4b38dbc22dd](https://patronus.labs.jb.gg/robot/df5b1eb1-f7c8-4b00-9161-f4b38dbc22dd)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -3453,11 +3612,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9VuR0W7TIp"
               }
             },
             {
               "chatMessage": {
+                "text": "merged the leonya/long branch into master",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3466,11 +3627,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vut0W7TJP"
               }
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -3479,11 +3642,13 @@
                   "details": {
                     "className": "CBuiltInServicePrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vv30W7TJR"
               }
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge \"leonya/long\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232745/timeline)\n\nRepository: `ultimate`\nFrom: `leonya/long`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/df5b1eb1-f7c8-4b00-9161-f4b38dbc22dd/changes/space)):\n• [9ced6d9](https://jetbrains.team/p/IJ/repositories/ultimate/revision/9ced6d91478fc8855b478fb9c9ed5219b21e9de9) [IJAI-5572](https://youtrack.jetbrains.com/issue/IJAI-5572) Air chat: #788 in a jcp-org-service session links to github.com/JetBrains/JetProfile/pull/788\n• [3d2cf0b](https://jetbrains.team/p/IJ/repositories/ultimate/revision/3d2cf0bfc543a3d4ce87cc696e3b9f151d114a95) [IJAI-5578](https://youtrack.jetbrains.com/issue/IJAI-5578) Air attachment store is full: no way to clear it, image paste and screen capture fail\n\n[https://patronus.labs.jb.gg/robot/df5b1eb1-f7c8-4b00-9161-f4b38dbc22dd](https://patronus.labs.jb.gg/robot/df5b1eb1-f7c8-4b00-9161-f4b38dbc22dd)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -3492,13 +3657,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Vv40W7TJS"
               }
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],

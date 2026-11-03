@@ -119,6 +119,7 @@ internal val SOURCE_FIX_REQUEST = CreateReviewRequest(
   targetPath = "",
   inspectionDigest = INSPECTION_DIGEST,
   inspectionContent = "",
+  // Source-fix body: two proposed improvements (Worker.kt lines 1, 2; Other.kt line 3) and a validation note.
   description = expectedText("source-fix-description.md"),
   sourceFix = SourceFixChanges(PROJECT_REVISION, SOURCE_FIXES.associate { it.path to it.content }),
 )

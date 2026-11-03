@@ -12,12 +12,22 @@
         "status": 200,
         "body": {
           "name": "PackageFragmentProviderImpl.kt",
+          "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+          "sha": "80af978819be55e1241315bc1f262737db77763d",
           "size": 1761,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt?ref=e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/80af978819be55e1241315bc1f262737db77763d",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
           "type": "file",
           "content": "LyoKICogQ29weXJpZ2h0IDIwMTAtMjAxNSBKZXRCcmFpbnMgcy5yLm8uCiAq\nCiAqIExpY2Vuc2VkIHVuZGVyIHRoZSBBcGFjaGUgTGljZW5zZSwgVmVyc2lv\nbiAyLjAgKHRoZSAiTGljZW5zZSIpOwogKiB5b3UgbWF5IG5vdCB1c2UgdGhp\ncyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2Uu\nCiAqIFlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdAog\nKgogKiBodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0y\nLjAKICoKICogVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9y\nIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQogKiBkaXN0cmlidXRl\nZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMg\nSVMiIEJBU0lTLAogKiBXSVRIT1VUIFdBUlJBTlRJRVMgT1IgQ09ORElUSU9O\nUyBPRiBBTlkgS0lORCwgZWl0aGVyIGV4cHJlc3Mgb3IgaW1wbGllZC4KICog\nU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292\nZXJuaW5nIHBlcm1pc3Npb25zIGFuZAogKiBsaW1pdGF0aW9ucyB1bmRlciB0\naGUgTGljZW5zZS4KICovCgpwYWNrYWdlIG9yZy5qZXRicmFpbnMua290bGlu\nLmRlc2NyaXB0b3JzCgppbXBvcnQgb3JnLmpldGJyYWlucy5rb3RsaW4ubmFt\nZS5GcU5hbWUKaW1wb3J0IG9yZy5qZXRicmFpbnMua290bGluLm5hbWUuTmFt\nZQoKY2xhc3MgUGFja2FnZUZyYWdtZW50UHJvdmlkZXJJbXBsKAogICAgcHJp\ndmF0ZSB2YWwgcGFja2FnZUZyYWdtZW50czogQ29sbGVjdGlvbjxQYWNrYWdl\nRnJhZ21lbnREZXNjcmlwdG9yPgopIDogUGFja2FnZUZyYWdtZW50UHJvdmlk\nZXJPcHRpbWl6ZWQgewogICAgb3ZlcnJpZGUgZnVuIGNvbGxlY3RQYWNrYWdl\nRnJhZ21lbnRzKGZxTmFtZTogRnFOYW1lLCBwYWNrYWdlRnJhZ21lbnRzOiBN\ndXRhYmxlQ29sbGVjdGlvbjxQYWNrYWdlRnJhZ21lbnREZXNjcmlwdG9yPikg\newogICAgICAgIHRoaXMucGFja2FnZUZyYWdtZW50cy5maWx0ZXJUbyhwYWNr\nYWdlRnJhZ21lbnRzKSB7IGl0LmZxTmFtZSA9PSBmcU5hbWUgfQogICAgfQoK\nICAgIG92ZXJyaWRlIGZ1biBpc0VtcHR5KGZxTmFtZTogRnFOYW1lKTogQm9v\nbGVhbiA9CiAgICAgICAgdGhpcy5wYWNrYWdlRnJhZ21lbnRzLm5vbmUgeyBp\ndC5mcU5hbWUgPT0gZnFOYW1lIH0KCiAgICBARGVwcmVjYXRlZCgiZm9yIHVz\nYWdlcyB1c2UgI3BhY2thZ2VGcmFnbWVudHMoRnFOYW1lKSBhdCBmaW5hbCBw\nb2ludCwgZm9yIGltcGwgdXNlICNjb2xsZWN0UGFja2FnZUZyYWdtZW50cyhG\ncU5hbWUsIE11dGFibGVDb2xsZWN0aW9uPFBhY2thZ2VGcmFnbWVudERlc2Ny\naXB0b3I+KSIpCiAgICBvdmVycmlkZSBmdW4gZ2V0UGFja2FnZUZyYWdtZW50\ncyhmcU5hbWU6IEZxTmFtZSk6IExpc3Q8UGFja2FnZUZyYWdtZW50RGVzY3Jp\ncHRvcj4gPQogICAgICAgIHBhY2thZ2VGcmFnbWVudHMuZmlsdGVyIHsgaXQu\nZnFOYW1lID09IGZxTmFtZSB9CgogICAgb3ZlcnJpZGUgZnVuIGdldFN1YlBh\nY2thZ2VzT2YoZnFOYW1lOiBGcU5hbWUsIG5hbWVGaWx0ZXI6IChOYW1lKSAt\nPiBCb29sZWFuKTogQ29sbGVjdGlvbjxGcU5hbWU+ID0KICAgICAgICBwYWNr\nYWdlRnJhZ21lbnRzLmFzU2VxdWVuY2UoKQogICAgICAgICAgICAubWFwIHsg\naXQuZnFOYW1lIH0KICAgICAgICAgICAgLmZpbHRlciB7ICFpdC5pc1Jvb3Qg\nJiYgaXQucGFyZW50KCkgPT0gZnFOYW1lIH0KICAgICAgICAgICAgLnRvTGlz\ndCgpCn0K\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt?ref=e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/80af978819be55e1241315bc1f262737db77763d",
+            "html": "https://github.com/JetBrains/kotlin/blob/e4e2b3ccd42c1cc153ab7c4d24eb79f545796cff/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt"
+          }
+        }
       }
     },
     {
@@ -32,12 +42,22 @@
         "status": 200,
         "body": {
           "name": "PackageFragmentProviderImpl.kt",
+          "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+          "sha": "de695249a747ca0bcd31d9077777e0f8246cc3e9",
           "size": 1889,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt?ref=a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/a8fd1e07347489fee69d9d5dfa6e49afa0856886/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/de695249a747ca0bcd31d9077777e0f8246cc3e9",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/a8fd1e07347489fee69d9d5dfa6e49afa0856886/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
           "type": "file",
           "content": "LyoKICogQ29weXJpZ2h0IDIwMTAtMjAxNSBKZXRCcmFpbnMgcy5yLm8uCiAq\nCiAqIExpY2Vuc2VkIHVuZGVyIHRoZSBBcGFjaGUgTGljZW5zZSwgVmVyc2lv\nbiAyLjAgKHRoZSAiTGljZW5zZSIpOwogKiB5b3UgbWF5IG5vdCB1c2UgdGhp\ncyBmaWxlIGV4Y2VwdCBpbiBjb21wbGlhbmNlIHdpdGggdGhlIExpY2Vuc2Uu\nCiAqIFlvdSBtYXkgb2J0YWluIGEgY29weSBvZiB0aGUgTGljZW5zZSBhdAog\nKgogKiBodHRwOi8vd3d3LmFwYWNoZS5vcmcvbGljZW5zZXMvTElDRU5TRS0y\nLjAKICoKICogVW5sZXNzIHJlcXVpcmVkIGJ5IGFwcGxpY2FibGUgbGF3IG9y\nIGFncmVlZCB0byBpbiB3cml0aW5nLCBzb2Z0d2FyZQogKiBkaXN0cmlidXRl\nZCB1bmRlciB0aGUgTGljZW5zZSBpcyBkaXN0cmlidXRlZCBvbiBhbiAiQVMg\nSVMiIEJBU0lTLAogKiBXSVRIT1VUIFdBUlJBTlRJRVMgT1IgQ09ORElUSU9O\nUyBPRiBBTlkgS0lORCwgZWl0aGVyIGV4cHJlc3Mgb3IgaW1wbGllZC4KICog\nU2VlIHRoZSBMaWNlbnNlIGZvciB0aGUgc3BlY2lmaWMgbGFuZ3VhZ2UgZ292\nZXJuaW5nIHBlcm1pc3Npb25zIGFuZAogKiBsaW1pdGF0aW9ucyB1bmRlciB0\naGUgTGljZW5zZS4KICovCgpwYWNrYWdlIG9yZy5qZXRicmFpbnMua290bGlu\nLmRlc2NyaXB0b3JzCgppbXBvcnQgb3JnLmpldGJyYWlucy5rb3RsaW4ubmFt\nZS5GcU5hbWUKaW1wb3J0IG9yZy5qZXRicmFpbnMua290bGluLm5hbWUuTmFt\nZQoKY2xhc3MgUGFja2FnZUZyYWdtZW50UHJvdmlkZXJJbXBsKAogICAgcHJp\ndmF0ZSB2YWwgcGFja2FnZUZyYWdtZW50czogQ29sbGVjdGlvbjxQYWNrYWdl\nRnJhZ21lbnREZXNjcmlwdG9yPiwKKSA6IFBhY2thZ2VGcmFnbWVudFByb3Zp\nZGVyT3B0aW1pemVkIHsKICAgIHByaXZhdGUgdmFsIHBhY2thZ2VGcmFnbWVu\ndHNCeUZxTmFtZSA9IHBhY2thZ2VGcmFnbWVudHMuZ3JvdXBCeSB7IGl0LmZx\nTmFtZSB9CgogICAgcHJpdmF0ZSB2YWwgc3ViUGFja2FnZXNCeVBhcmVudCA9\nIHBhY2thZ2VGcmFnbWVudHMuYXNTZXF1ZW5jZSgpCiAgICAgICAgLm1hcCB7\nIGl0LmZxTmFtZSB9CiAgICAgICAgLmZpbHRlciB7ICFpdC5pc1Jvb3QgfQog\nICAgICAgIC5ncm91cEJ5IHsgaXQucGFyZW50KCkgfQoKICAgIG92ZXJyaWRl\nIGZ1biBjb2xsZWN0UGFja2FnZUZyYWdtZW50cyhmcU5hbWU6IEZxTmFtZSwg\ncGFja2FnZUZyYWdtZW50czogTXV0YWJsZUNvbGxlY3Rpb248UGFja2FnZUZy\nYWdtZW50RGVzY3JpcHRvcj4pIHsKICAgICAgICBwYWNrYWdlRnJhZ21lbnRz\nQnlGcU5hbWVbZnFOYW1lXT8ubGV0IHsgcGFja2FnZUZyYWdtZW50cy5hZGRB\nbGwoaXQpIH0KICAgIH0KCiAgICBvdmVycmlkZSBmdW4gaXNFbXB0eShmcU5h\nbWU6IEZxTmFtZSk6IEJvb2xlYW4gPQogICAgICAgICFwYWNrYWdlRnJhZ21l\nbnRzQnlGcU5hbWUuY29udGFpbnNLZXkoZnFOYW1lKQoKICAgIEBEZXByZWNh\ndGVkKCJmb3IgdXNhZ2VzIHVzZSAjcGFja2FnZUZyYWdtZW50cyhGcU5hbWUp\nIGF0IGZpbmFsIHBvaW50LCBmb3IgaW1wbCB1c2UgI2NvbGxlY3RQYWNrYWdl\nRnJhZ21lbnRzKEZxTmFtZSwgTXV0YWJsZUNvbGxlY3Rpb248UGFja2FnZUZy\nYWdtZW50RGVzY3JpcHRvcj4pIikKICAgIG92ZXJyaWRlIGZ1biBnZXRQYWNr\nYWdlRnJhZ21lbnRzKGZxTmFtZTogRnFOYW1lKTogTGlzdDxQYWNrYWdlRnJh\nZ21lbnREZXNjcmlwdG9yPiA9IHBhY2thZ2VGcmFnbWVudHNCeUZxTmFtZVtm\ncU5hbWVdID86IGVtcHR5TGlzdCgpCgogICAgb3ZlcnJpZGUgZnVuIGdldFN1\nYlBhY2thZ2VzT2YoZnFOYW1lOiBGcU5hbWUsIG5hbWVGaWx0ZXI6IChOYW1l\nKSAtPiBCb29sZWFuKTogQ29sbGVjdGlvbjxGcU5hbWU+ID0KICAgICAgICBz\ndWJQYWNrYWdlc0J5UGFyZW50W2ZxTmFtZV0gPzogZW1wdHlMaXN0KCkKfQo=\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt?ref=a8fd1e07347489fee69d9d5dfa6e49afa0856886",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/de695249a747ca0bcd31d9077777e0f8246cc3e9",
+            "html": "https://github.com/JetBrains/kotlin/blob/a8fd1e07347489fee69d9d5dfa6e49afa0856886/core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt"
+          }
+        }
       }
     }
   ],

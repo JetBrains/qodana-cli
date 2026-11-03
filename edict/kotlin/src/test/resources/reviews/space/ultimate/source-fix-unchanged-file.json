@@ -8,8 +8,7 @@
       },
       "response": {
         "status": 200,
-        "body": null,
-        "hasNext": false
+        "body": null
       }
     },
     {
@@ -22,19 +21,44 @@
         "status": 200,
         "body": {
           "branchInfo": {
+            "head": "refs/heads/191",
             "ref": "17795949cee5953ee3e18b810af8db74f641dc54"
           },
           "lastCommit": {
+            "id": "17795949cee5953ee3e18b810af8db74f641dc54",
             "message": "set majorReleaseDate for RubyMine\n\nSpace-RevId: 0789542778d35e2bc9140e695ff123c67ec53f34",
+            "authorDate": 1587564855000,
+            "commitDate": 1587564902000,
             "author": {
-              "name": "Andrey Vokin"
+              "name": "Andrey Vokin",
+              "email": "andrey.vokin@jetbrains.com"
+            },
+            "authorProfile": {
+              "id": "2DytII2KCztQ"
             },
             "committer": {
-              "name": "Andrey Vokin"
-            }
-          }
-        },
-        "hasNext": false
+              "name": "Andrey Vokin",
+              "email": "andrey.vokin@jetbrains.com"
+            },
+            "committerProfile": {
+              "id": "2DytII2KCztQ"
+            },
+            "parents": [
+              "941e1f00fa10c29eb2eb021ca6baa738dd915417"
+            ],
+            "heads": [
+              "refs/heads/191"
+            ],
+            "signature": null,
+            "committerIsSpace": null,
+            "treeId": "8e97c879683807159a4f8539ad64505016602f4d"
+          },
+          "stats": {
+            "ahead": 5496,
+            "isBehind": true
+          },
+          "default": false
+        }
       }
     },
     {
@@ -50,10 +74,13 @@
         "status": 200,
         "body": [
           {
+            "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
             "path": "community/build.txt",
             "blob": "ee358d2380f97c7b56130fd5a7a13dc91e55cd66",
             "type": "FILE",
             "properties": {
+              "lfs": null,
+              "executable": null,
               "attributes": [
                 {
                   "name": "text",
@@ -63,8 +90,7 @@
               ]
             }
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -82,8 +108,7 @@
         "body": {
           "totalSize": 13,
           "partBase64": "MTkxLlNOQVBTSE9UCg=="
-        },
-        "hasNext": false
+        }
       }
     }
   ],

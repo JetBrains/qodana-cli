@@ -3,8 +3,10 @@ package org.jetbrains.qodana.edict.ci
 
 import org.jetbrains.qodana.edict.ci.github.gitHubApiUrl
 import org.jetbrains.qodana.edict.ci.github.gitHubReviewApi
+import org.jetbrains.qodana.edict.ci.github.gitHubToken
 import org.jetbrains.qodana.edict.ci.space.spaceReviewApi
 import org.jetbrains.qodana.edict.ci.support.KOTLIN
+import org.jetbrains.qodana.edict.ci.support.ULTIMATE
 import org.junitpioneer.jupiter.ClearEnvironmentVariable
 import org.junitpioneer.jupiter.SetEnvironmentVariable
 import kotlin.test.Test
@@ -36,10 +38,17 @@ internal class ReviewApiFactoryTest {
   }
 
   @Test
+  @SetEnvironmentVariable(key = "GITHUB_TOKEN", value = "github-token")
+  @SetEnvironmentVariable(key = "GH_TOKEN", value = "gh-token")
+  fun `GITHUB_TOKEN is preferred to GH_TOKEN`() {
+    assertEquals("github-token", gitHubToken())
+  }
+
+  @Test
   @SetEnvironmentVariable(key = "GITHUB_TOKEN", value = " ")
   @SetEnvironmentVariable(key = "GH_TOKEN", value = "gh-token")
-  fun `a GitHub client takes GH_TOKEN when GITHUB_TOKEN is blank`() {
-    assertEquals(KOTLIN, gitHubReviewApi(KOTLIN, emptySet()).repository)
+  fun `GH_TOKEN is taken when GITHUB_TOKEN is blank`() {
+    assertEquals("gh-token", gitHubToken())
   }
 
   @Test
@@ -56,5 +65,3 @@ internal class ReviewApiFactoryTest {
     assertEquals("space:jetbrains.team/ij/ultimate requires SPACE_TOKEN in the server environment", error.message)
   }
 }
-
-private val ULTIMATE = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "ij", "ultimate")

@@ -12,9 +12,9 @@
       "response": {
         "status": 404,
         "body": {
+          "error": "not-found",
           "error_description": "Missing unknown 0000000000000000000000000000000000000000"
-        },
-        "hasNext": false
+        }
       }
     }
   ],

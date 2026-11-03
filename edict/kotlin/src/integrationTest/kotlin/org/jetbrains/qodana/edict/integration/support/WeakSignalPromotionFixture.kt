@@ -14,7 +14,7 @@ internal object WeakSignalPromotionFixture {
     const val sourcePath = "$project/src/main/java/com/mycompany/app/FutureWaiter.java"
 
     /** The promotion stored at [reviewRevision]. */
-    val pullRequest = ReviewReference(CiProviderId.GITHUB, "owner", "repo", "42", "https://github.test/owner/repo/pull/42")
+    val pullRequest = ReviewReference(CiProviderId.GITHUB, "owner", "repo", "42", "https://github.com/owner/repo/pull/42")
     val configuration = EdictConfiguration(
         ci = ReviewRepository(CiProviderId.GITHUB, "github.com", "owner", "repo"),
         promotion = PromotionConfiguration("reviewer", "main"),
@@ -22,7 +22,7 @@ internal object WeakSignalPromotionFixture {
 
     /** The promotion repository, where [pullRequest] has [status] and, once merged, removes the delay from [sourcePath]. */
     fun reviews(status: ReviewStatus = ReviewStatus(ReviewState.OPEN)) =
-        FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.test", "owner", "repo")).apply {
+        FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.com", "owner", "repo")).apply {
             statuses[pullRequest] = status
             merges[pullRequest] = MergedReview(
                 "Remove redundant delay before Future.get", listOf(status.evidence), creationRevision, MERGED_REVISION,

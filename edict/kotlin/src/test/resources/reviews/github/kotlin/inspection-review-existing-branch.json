@@ -9,12 +9,16 @@
       "response": {
         "status": 200,
         "body": {
+          "ref": "refs/heads/edict/avoid-thread-sleep-9cc450caa078",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/edict/avoid-thread-sleep-9cc450caa078",
           "object": {
-            "type": "commit"
+            "sha": "00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/00708e800293156c9c4acaaaa7c06cb78e96ae69"
           }
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -27,10 +31,12 @@
       "response": {
         "status": 404,
         "body": {
-          "message": "No commit found for the ref edict/avoid-thread-sleep-9cc450caa078"
-        },
-        "hasNext": false
-      }
+          "message": "Not Found",
+          "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+          "status": "404"
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -47,11 +53,16 @@
         "status": 201,
         "body": {
           "content": {
-            "name": "avoid-thread-sleep.inspection.kts"
+            "name": "avoid-thread-sleep.inspection.kts",
+            "path": "inspections/avoid-thread-sleep.inspection.kts",
+            "sha": "3333333333333333333333333333333333333333"
+          },
+          "commit": {
+            "sha": "7777777777777777777777777777777777777777"
           }
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -65,9 +76,9 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
-      }
+        "body": []
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -84,11 +95,16 @@
       "response": {
         "status": 201,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99999",
           "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
-          "number": 99999
-        },
-        "hasNext": false
-      }
+          "number": 99999,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -103,9 +119,17 @@
       },
       "response": {
         "status": 201,
-        "body": {},
-        "hasNext": false
-      }
+        "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99999",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
+          "number": 99999,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
     }
   ],
   "result": {

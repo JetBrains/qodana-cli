@@ -124,8 +124,6 @@ class EdictNextInspectionTest {
       ),
     )
     val review = EdictNextProjectReview("abcdef", totalFindings = 40, reviewedFindings = 12, uncertain = 1, unassigned = 0, unreproduced = 0)
-    fun assigned(exampleId: String, count: Int, classification: EdictNextFindingClassification) =
-      List(count) { EdictNextFindingAssignment(exampleId, classification, stillReported = false) }
     val (validation, evaluation) = EdictNextInspection({ client }, client::analyzeProject).evaluate(
       cluster,
       "inspection",
@@ -229,16 +227,6 @@ class EdictNextInspectionTest {
 
   @Test
   fun `findings compare by reported locations only`() {
-    fun findings(vararg lines: Int, message: String = "problem") = EdictNextInspectionFindings(
-      clusterId = "sample-rule",
-      candidateDigest = message,
-      projectRevision = "abcdef",
-      inspectionDescription = message,
-      language = EdictNextLanguage.Java,
-      findings = lines.map {
-        EdictNextProjectFinding(EdictNextFileRevision("src/Sample.java", "abcdef", listOf(EdictNextLineRange(it, it))), message)
-      },
-    )
 
     assertEquals(findings(3, 7).reviewKey(), findings(3, 7, message = "reworded").reviewKey())
     assertTrue(findings(3, 7).reviewKey() != findings(3, 8).reviewKey())
@@ -311,3 +299,19 @@ private fun ideClient(
   examples: InspectionKtsBatchRunResult,
   project: InspectionKtsProjectRunResult = InspectionKtsProjectRunResult(examples.compilation),
 ) = FakeInspectionKtsClient(compilation = { examples.compilation }, examples = { _, _ -> examples }, projectAnalysis = { project })
+
+/** [count] assignments of project findings to [exampleId], each classified as [classification]. */
+private fun assigned(exampleId: String, count: Int, classification: EdictNextFindingClassification) =
+  List(count) { EdictNextFindingAssignment(exampleId, classification, stillReported = false) }
+
+/** Findings of one candidate on the [lines] of one file, each with [message]. */
+private fun findings(vararg lines: Int, message: String = "problem") = EdictNextInspectionFindings(
+  clusterId = "sample-rule",
+  candidateDigest = message,
+  projectRevision = "abcdef",
+  inspectionDescription = message,
+  language = EdictNextLanguage.Java,
+  findings = lines.map {
+    EdictNextProjectFinding(EdictNextFileRevision("src/Sample.java", "abcdef", listOf(EdictNextLineRange(it, it))), message)
+  },
+)

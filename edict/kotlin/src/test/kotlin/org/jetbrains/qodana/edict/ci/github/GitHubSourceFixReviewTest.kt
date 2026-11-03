@@ -27,7 +27,7 @@ import kotlin.test.assertFailsWith
 internal class GitHubSourceFixReviewTest {
   @Test
   fun `all fixed files are committed at once to a new branch, keeping their modes`() {
-    // SOURCE_FIX_REQUEST committed to a new branch at RELEASE_HEAD; the five writes are scripted.
+    // SOURCE_FIX_REQUEST committed to a new branch at RELEASE_HEAD; scripted from the first write on.
     val recording = kotlinRecording("source-fix-review")
 
     assertEquals(CREATED_REVIEW, recording.replay { findOrCreateReview(SOURCE_FIX_REQUEST) })

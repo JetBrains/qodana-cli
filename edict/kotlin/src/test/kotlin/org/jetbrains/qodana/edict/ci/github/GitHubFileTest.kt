@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.ci.github
 
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.ci.support.ADDED_BY_917
 import org.jetbrains.qodana.edict.ci.support.BEFORE_6007
 import org.jetbrains.qodana.edict.ci.support.BEFORE_917
@@ -14,6 +16,9 @@ import org.jetbrains.qodana.edict.ci.support.PATH_6007
 import org.jetbrains.qodana.edict.ci.support.RELEASE_HEAD
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
 import org.jetbrains.qodana.edict.ci.support.kotlinScripted
+import org.jetbrains.qodana.edict.ci.support.with
+import org.jetbrains.qodana.edict.ci.support.withBody
+import org.jetbrains.qodana.edict.common.number
 import java.nio.file.NoSuchFileException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -78,8 +83,10 @@ internal class GitHubFileTest {
 
   @Test
   fun `a file shorter than GitHub's size of it is rejected`() {
-    // file-at-revision, hand-edited: GitHub's size of the file is one byte more than its content.
-    val recording = kotlinRecording("file-truncated")
+    // file-at-revision, but GitHub's size of the file is one byte more than its content.
+    val recording = kotlinRecording("file-at-revision").answering("GET", "/contents/$PATH_6007") { read ->
+      listOf(read.withBody(read.response.body.with("size" to JsonPrimitive(read.response.body.jsonObject.number("size") + 1))))
+    }
 
     val error = assertFailsWith<IllegalArgumentException> { recording.replay { file(MERGE_6007, PATH_6007) } }
     assertEquals("Provider file content is invalid, binary or truncated", error.message)

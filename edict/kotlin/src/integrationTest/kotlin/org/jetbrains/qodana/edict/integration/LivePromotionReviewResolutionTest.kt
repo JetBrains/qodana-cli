@@ -25,7 +25,7 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
         val merged = createGeneratedCluster(repository, "merged-rule", "1")
         val revise = createGeneratedCluster(repository, "revise-rule", "2")
         val discontinue = createGeneratedCluster(repository, "discontinue-rule", "3")
-        val reviews = FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.test", "JetBrains", "qodana-cli")).apply {
+        val reviews = FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "qodana-cli")).apply {
             statuses[merged.pullRequest] = ReviewStatus(ReviewState.MERGED)
             statuses[revise.pullRequest] = ReviewStatus(
                 ReviewState.CLOSED_UNMERGED,
@@ -72,9 +72,10 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
             assertFalse(repository.paths.inspectionPath("discontinue-rule").exists())
             assertContains(discontinuedCluster.historyPath.readText(), "moved cluster to Discontinued")
 
+            // A merged review is read once; a closed one for its state, its evidence, and again for the decision.
             assertEquals(1, reviews.statusReads.count { it == merged.pullRequest })
-            assertEquals(2, reviews.statusReads.count { it == revise.pullRequest })
-            assertEquals(2, reviews.statusReads.count { it == discontinue.pullRequest })
+            assertEquals(3, reviews.statusReads.count { it == revise.pullRequest })
+            assertEquals(3, reviews.statusReads.count { it == discontinue.pullRequest })
             assertEquals(emptyList(), reviews.requests, "Review creation is outside this scenario")
             verifyManagedRun(workspace, runtime, plan)
         }
@@ -98,7 +99,7 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
                 "JetBrains",
                 "qodana-cli",
                 reviewId,
-                "https://github.test/JetBrains/qodana-cli/pull/$reviewId",
+                "https://github.com/JetBrains/qodana-cli/pull/$reviewId",
             ),
             state = PromotionPrState.ON_REVIEW,
             createdAt = now,

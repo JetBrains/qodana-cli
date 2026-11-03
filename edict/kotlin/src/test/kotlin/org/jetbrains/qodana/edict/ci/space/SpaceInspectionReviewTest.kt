@@ -7,7 +7,7 @@ import org.jetbrains.qodana.edict.ci.support.INTERNAL_ERROR
 import org.jetbrains.qodana.edict.ci.support.RELEASE_191
 import org.jetbrains.qodana.edict.ci.support.REVIEW_DENIED
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_EXISTING_REVIEW
-import org.jetbrains.qodana.edict.ci.support.ULTIMATE_INSPECTION_BRANCH
+import org.jetbrains.qodana.edict.ci.support.INSPECTION_BRANCH
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_INSPECTION_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_NEW_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_NEW_REVIEW_ID
@@ -25,13 +25,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Opening an inspection review on IJ/ultimate: the regular run reads the real repository with its writes scripted;
- * each other test answers one step differently.
+ * Opening an inspection review on IJ/ultimate: the regular run reads the real repository until its first write, from
+ * which on every answer is scripted; each other test answers one step differently.
  */
 internal class SpaceInspectionReviewTest {
   @Test
   fun `a review is opened from a new branch at the target head`() {
-    // ULTIMATE_INSPECTION_REQUEST opened from a new branch at the real head of RELEASE_191; writes scripted.
+    // ULTIMATE_INSPECTION_REQUEST opened from a new branch at the real head of RELEASE_191; scripted from the first write on.
     val recording = ultimateRecording("inspection-review-opened")
 
     assertEquals(ULTIMATE_NEW_REVIEW, recording.replay { findOrCreateReview(ULTIMATE_INSPECTION_REQUEST) })
@@ -41,7 +41,7 @@ internal class SpaceInspectionReviewTest {
   fun `a failed branch lookup stops before any write`() {
     // inspection-review-opened, cut short by a failed read of the inspection branch.
     val recording = ultimateRecording("inspection-review-opened")
-      .failingAt("GET", "/branches/${urlPart("refs/heads/$ULTIMATE_INSPECTION_BRANCH")}", INTERNAL_ERROR)
+      .failingAt("GET", "/branches/${urlPart("refs/heads/$INSPECTION_BRANCH")}", INTERNAL_ERROR)
 
     val error = assertFailsWith<IllegalArgumentException> {
       recording.replay { findOrCreateReview(ULTIMATE_INSPECTION_REQUEST) }
@@ -175,8 +175,8 @@ internal class SpaceInspectionReviewTest {
   }
 
   @Test
-  fun `a closed review from the branch is reused`() {
-    // A closed review from the inspection branch, and no open one.
+  fun `a closed review from the branch is reused without a reviewer request`() {
+    // A closed review from the inspection branch, and no open one; the script holds no reviewer assignment.
     val recording = UltimateScripts.inspectionReviewClosedBefore()
 
     assertEquals(ULTIMATE_EXISTING_REVIEW, recording.replay { findOrCreateReview(ULTIMATE_INSPECTION_REQUEST) })

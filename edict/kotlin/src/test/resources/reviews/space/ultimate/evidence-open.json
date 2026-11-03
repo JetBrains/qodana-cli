@@ -13,9 +13,11 @@
         "body": {
           "className": "MergeRequestRecord",
           "state": "Opened",
-          "feedChannelId": "191BsY07WiVq"
-        },
-        "hasNext": false
+          "feedChannelId": "191BsY07WiVq",
+          "branchPair": {
+            "isMerged": false
+          }
+        }
       }
     },
     {
@@ -31,9 +33,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669848894211",
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -42,11 +46,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElkgB0VrfQR"
               }
             },
             {
               "chatMessage": {
+                "text": "added 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -55,11 +61,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "Elkg40VrfQS"
               }
             },
             {
               "chatMessage": {
+                "text": "[Evgenii Im](https://code.jetbrains.team/m/Evgenii.Im?utm-source=patronus) started a cherry-pick into `master`\nTrack progress at https://patronus.labs.jb.gg/robot/9ddfc33f-cb9b-4432-a777-fa6e8077123c",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -68,11 +76,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElkgH0VrfQX"
               }
             },
             {
               "chatMessage": {
+                "text": "[Evgenii Im](https://code.jetbrains.team/m/Evgenii.Im?utm-source=patronus) started a cherry-pick into `261`\nTrack progress at https://patronus.labs.jb.gg/robot/918144ac-eee0-4e03-997b-7b59b3eb45e9",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -81,11 +91,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElkgI0VrfQY"
               }
             },
             {
               "chatMessage": {
+                "text": "❌ Cherry-Pick \"[qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\" failed\n[Show Merge Request in SpaceCode](https://code.jetbrains.team/p/IJ/reviews/202718/timeline?utm-source=patronus)\n\nRepository: `ultimate`\nTo: `master`\n\nChecks failed:\n• [CLion Aggregator](https://patronus.labs.jb.gg/robot/9ddfc33f-cb9b-4432-a777-fa6e8077123c?check=ijplatform_master_CIDR_CLion_Aggregator_Tests&attempt=3) (18 tests, 10 builds)\n…also 12 checks passed\n\nTested changes:\n• [7f5738a](https://code.jetbrains.team/p/IJ/repositories/ultimate/revision/7f5738ad5c316fc6421f6b94236ede11ce7c9591?utm-source=patronus) [qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\n\n[https://patronus.labs.jb.gg/robot/9ddfc33f-cb9b-4432-a777-fa6e8077123c](https://patronus.labs.jb.gg/robot/9ddfc33f-cb9b-4432-a777-fa6e8077123c)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -94,11 +106,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "Elo2b0Vrimz"
               }
             },
             {
               "chatMessage": {
+                "text": "❌ Cherry-Pick \"[qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\" failed\n[Show Merge Request in SpaceCode](https://code.jetbrains.team/p/IJ/reviews/202718/timeline?utm-source=patronus)\n\nRepository: `ultimate`\nTo: `261`\n\nChecks failed:\n• [Rider Qodana](https://patronus.labs.jb.gg/robot/918144ac-eee0-4e03-997b-7b59b3eb45e9?check=ijplatform_IjPlatform261_Net_Rider_Tests_CompositeTriggers_PatronusTests_Qodana&attempt=2) (1 tests, 2 builds)\n…also 11 checks passed\n\nTested changes:\n• [064ec57](https://code.jetbrains.team/p/IJ/repositories/ultimate/revision/064ec57e7fa68ceb5426d0e156cf42312b029405?utm-source=patronus) [qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\n\n[https://patronus.labs.jb.gg/robot/918144ac-eee0-4e03-997b-7b59b3eb45e9](https://patronus.labs.jb.gg/robot/918144ac-eee0-4e03-997b-7b59b3eb45e9)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -107,11 +121,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElnjW0Vrj0w"
               }
             },
             {
               "chatMessage": {
+                "text": "[Evgenii Im](https://code.jetbrains.team/m/Evgenii.Im?utm-source=patronus) started a cherry-pick into `261`\nTrack progress at https://patronus.labs.jb.gg/robot/08857aa6-adec-430c-ab80-77980cdc24c1",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -120,11 +136,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElCi00VsDeW"
               }
             },
             {
               "chatMessage": {
+                "text": "[Evgenii Im](https://code.jetbrains.team/m/Evgenii.Im?utm-source=patronus) started a cherry-pick into `master`\nTrack progress at https://patronus.labs.jb.gg/robot/1ba5df0d-1f06-45f7-a37e-e755c0679579",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -133,11 +151,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElCi30VsDeZ"
               }
             },
             {
               "chatMessage": {
+                "text": "✅ Cherry-Pick \"[qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\" success\n[Show Merge Request in SpaceCode](https://code.jetbrains.team/p/IJ/reviews/202718/timeline?utm-source=patronus)\n\nRepository: `ultimate`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/1ba5df0d-1f06-45f7-a37e-e755c0679579/changes/space)):\n• [27c4866](https://code.jetbrains.team/p/IJ/repositories/ultimate/revision/27c4866d0c06e76c8f0c18347440b0acf783d97f?utm-source=patronus) [qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\n\n[https://patronus.labs.jb.gg/robot/1ba5df0d-1f06-45f7-a37e-e755c0679579](https://patronus.labs.jb.gg/robot/1ba5df0d-1f06-45f7-a37e-e755c0679579)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -146,11 +166,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElCCq0VsEDI"
               }
             },
             {
               "chatMessage": {
+                "text": "✅ Cherry-Pick \"[qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\" success\n[Show Merge Request in SpaceCode](https://code.jetbrains.team/p/IJ/reviews/202718/timeline?utm-source=patronus)\n\nRepository: `ultimate`\nTo: `261`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/08857aa6-adec-430c-ab80-77980cdc24c1/changes/space)):\n• [bb0f6d0](https://code.jetbrains.team/p/IJ/repositories/ultimate/revision/bb0f6d0a832ef922af572f100b020489dc99eb12?utm-source=patronus) [qodana] [QD-14173](https://youtrack.jetbrains.com/issue/QD-14173) Make problem title copyable\n\n[https://patronus.labs.jb.gg/robot/08857aa6-adec-430c-ab80-77980cdc24c1](https://patronus.labs.jb.gg/robot/08857aa6-adec-430c-ab80-77980cdc24c1)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -159,13 +181,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "ElDqZ0VsEFv"
               }
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],
