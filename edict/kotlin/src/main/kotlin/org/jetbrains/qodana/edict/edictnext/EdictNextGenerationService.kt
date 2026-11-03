@@ -291,8 +291,14 @@ internal class EdictNextGenerationService(
     val reports = analyzedExampleReports[cluster.signalIds].orEmpty()
     // An example written after the analysis is checked now: an example made from a finding must be reported as it is.
     val created = findings.mapNotNull { it.exampleId }.filter { it in labels && it !in reports }
+    val assigned = cluster.signals.mapNotNull(EdictNextSignal::syntheticExampleId).toSet()
+    for (finding in findings) {
+      val exampleId = finding.exampleId?.takeIf { it in created && it !in assigned } ?: continue
+      val example = cluster.examples.single { it.metadata.id == exampleId }
+      if (example.metadata.contextPath != finding.path) repository.setCodeExampleContextPath(clusterId, exampleId, finding.path)
+    }
     val createdReports = if (created.isEmpty()) emptyMap() else {
-      inspection.reports(cluster, checkNotNull(analyzedCodes[cluster.signalIds]))
+      inspection.reports(loadPendingCluster(clusterId), checkNotNull(analyzedCodes[cluster.signalIds]))
     }
     for (finding in findings) {
       val where = "${finding.path}:${finding.line}"

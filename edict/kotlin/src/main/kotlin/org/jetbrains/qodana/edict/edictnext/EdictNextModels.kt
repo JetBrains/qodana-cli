@@ -136,6 +136,7 @@ internal data class EdictNextCodeExampleMetadata(
   val fileName: String,
   val label: EdictNextSignalLabel,
   val expectedRanges: List<EdictNextLineRange>? = null,
+  val contextPath: String? = null,
 )
 
 @Serializable

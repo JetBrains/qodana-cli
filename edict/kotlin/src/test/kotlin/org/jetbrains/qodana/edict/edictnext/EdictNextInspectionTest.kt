@@ -51,6 +51,35 @@ class EdictNextInspectionTest {
   }
 
   @Test
+  fun `examples run in the module of the source they were reduced from`() = runBlocking {
+    val fromFinding = example("from-finding", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1)))
+      .let { it.copy(metadata = it.metadata.copy(contextPath = "src/Finding.kt")) }
+    val unlinked = example("unlinked", EdictNextSignalLabel.NEGATIVE, null)
+    val results = batchResult(
+      InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
+      InspectionKtsFileResult("negative", "Negative.kt"),
+      InspectionKtsFileResult("from-finding", "FromFinding.kt", listOf(problem(1))),
+      InspectionKtsFileResult("unlinked", "Unlinked.kt"),
+    )
+    val requests = mutableListOf<InspectionKtsExampleRequest>()
+    val client = FakeInspectionKtsClient(
+      compilation = { results.compilation },
+      examples = { _, examples -> results.also { requests += examples } },
+    )
+    EdictNextInspection({ client }, client::analyzeProject).validate(cluster(fromFinding, unlinked), "inspection")
+
+    assertEquals(
+      mapOf(
+        "positive" to "src/positive-signal.kt",
+        "negative" to "src/negative-signal.kt",
+        "from-finding" to "src/Finding.kt",
+        "unlinked" to "src/negative-signal.kt",
+      ),
+      requests.associate { it.id to it.contextPath },
+    )
+  }
+
+  @Test
   fun `rejects compiled metadata that does not match cluster`() = runBlocking {
     val cluster = cluster()
     val client = ideClient(
