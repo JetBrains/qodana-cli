@@ -42,6 +42,7 @@ internal class EdictYamlConfigurationTest {
       EdictConfiguration(
         mcpPort = 27200,
         statePath = "../edict-state",
+        stateBranch = "edict/kotlin-state",
         ci = KOTLIN,
         promotion = PromotionConfiguration("reviewer-login", "release/2.3", "quality/inspections", KOTLIN_EDICT),
         extraction = ExtractionConfiguration(250),
@@ -183,6 +184,7 @@ internal class EdictYamlConfigurationTest {
   @CsvSource(
     "ci.url,",
     "statePath, '   '",
+    "stateBranch, ''",
     "promotion.reviewer, ' '",
     "promotion.targetBranch, ''",
     "promotion.inspectionsDirectory, ' '",

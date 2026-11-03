@@ -31,7 +31,8 @@ YAML
   config_arguments=(--config "$edict_config")
 fi
 stop_leftover_servers "$edict_port"
-QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start \
+# The benchmark owns the server process (common.sh stops its group), so it serves in the foreground.
+QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start --foreground \
   ${config_arguments[@]+"${config_arguments[@]}"} \
   --ide-wait-timeout 20m \
   --ide-property="-Xmx${BENCHMARK_IDE_XMX:-8g}" --ide-property=java.awt.headless=true --ide-property=idea.is.internal=true \

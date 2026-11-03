@@ -23,11 +23,15 @@ edict:
 
 # setup, in the inspected project (a future `qodana edict setup` replaces these two calls)
 cd <project>
-qodana edict install [--deny <path>]...
-qodana edict mcp start [--ide-* ...]
+qodana edict install [--config <qodana.yaml>] [--deny <path>]...
+qodana edict mcp start [--config <qodana.yaml>] [--ide-* ...]   # returns once the server serves MCP
 
 # run, in the same directory
 codex exec '$edict_manager process inbox and generate new rules'
+
+# finish
+qodana edict mcp stop
+qodana edict state push [--message <message>]
 ```
 
 - The global `$CODEX_HOME` holds only the provider and the project trust; Edict never writes it. Codex reads the
@@ -38,15 +42,27 @@ codex exec '$edict_manager process inbox and generate new rules'
   - `.codex/config.toml`: `approval_policy = "never"`, the `edict` permission profile, `multi_agent`, agent limits
     (depth 5, 50 threads), and `[mcp_servers.edict-mcp]` with a loopback URL;
   - the profile extends `:read-only` (reads everywhere, so a state root outside the project needs no rule): `<cwd>`
-    read, `<cwd>/log/agent-work` write, `<cwd>/log/process-log` deny (token-bearing logs), and every `--deny` path deny;
+    read, `<cwd>/log/agent-work` write, `<cwd>/log/process-log` deny (token-bearing logs), `$CODEX_HOME/sessions` and
+    `$CODEX_HOME/log` deny (other agents' transcripts), and every `--deny` path deny;
   - the port is `edict.mcpPort` from `qodana.yaml`; re-run `install` after changing it.
-- `qodana edict mcp start` serves Streamable HTTP on `edict.mcpPort`. It fails fast when `.codex/config.toml` is missing
-  or names another port, and when the port is busy. The project is the working directory; state comes from
+- In a git repository, `install` also checks out the state branch `edict.stateBranch` (default `edict/state`) as a
+  worktree at `edict.statePath`: from origin when it has the branch, else as a new branch whose only commit is empty.
+  The branch shares no history with the project's branches, the project's checkout stays on its branch, and
+  `.git/info/exclude` keeps the state out of the project's status. A state directory that already holds files, or a
+  project outside git, keeps the state as a plain directory.
+- `qodana edict mcp start` serves Streamable HTTP on `edict.mcpPort` in the background: it returns once the server
+  serves MCP, its output goes to a server log in the user cache, and `qodana edict mcp stop` stops it and its IDE
+  (killing what is left after a minute). `--foreground` serves in the calling process instead. It fails fast when
+  `.codex/config.toml` is missing or names another port, and when the port is busy. The project is the working directory; state comes from
   `edict.statePath` in `qodana.yaml`, defaulting to `<cwd>/.edict`. Relative state paths resolve from the project. Each
   run (process, named by its UTC start time) logs to
   `<cwd>/log/process-log/<run-id>`. The state is also the reference repository for
   distribution checks, and the project's Git repository validates commit Signals. It forwards the
   IntelliJ inspection tools, starting the IDE on the first inspection call, so Codex configures only `edict-mcp`.
+  The IDE gets project-independent defaults (half of the detected memory, no online duplicates or VFS health checks,
+  a 2 GiB Kotlin daemon, a one-minute Gradle daemon idle timeout); `--ide-property` replaces any of them.
+- `qodana edict state push` commits the state on its branch and pushes it to origin, rebasing onto a branch another
+  run pushed meanwhile. It fails while a server owns the state.
 - The request carries no paths or CI repository identity. Skills call `edict_context` with their task token for
   `projectDirectory`, `stateDirectory` (read-only; the state repository Edict Next tools change in place), task-owned
   `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch/<task-id>`), and `reviewRepository`, read from
@@ -56,15 +72,15 @@ codex exec '$edict_manager process inbox and generate new rules'
   without its token, or while an active promotion belongs to a repository other than the promotion one.
 
 The benchmark (`scripts/edict-benchmark/`) follows this shape: `install-codex.sh` writes the temporary global home,
-`prepare.sh` runs `install --deny` and `mcp start` in the project, and `generate.sh` runs the explicit `$edict_manager`
-request.
+`prepare.sh` runs `install --deny` and `mcp start --foreground` in the project, and `generate.sh` runs the explicit
+`$edict_manager` request.
 
 ## Agents
 
 The root loads only `edict_manager`. Every other skill runs in a fresh native
 subagent with no inherited conversation, and every Qodana MCP call uses the inspected IntelliJ project as `projectPath`.
-The state root is read-only to agents and written only through Edict MCP tools, which change it in place; there is no
-second copy, branch, worktree, commit, or push. Every mutation validates its own change; there is no final
+The state root is read-only to agents and written only through Edict MCP tools, which change it in place; they never
+commit or push it, and there is no second copy. `qodana edict state push` commits and pushes after the server stops. Every mutation validates its own change; there is no final
 repository-wide validation.
 
 ## Managed protocol (every task)
