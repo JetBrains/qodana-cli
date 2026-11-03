@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.qodana.edict.common.ignoreFileAddition
 import org.jetbrains.qodana.edict.common.randomId
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.ci.ReviewRepository
@@ -434,11 +435,7 @@ internal class EdictNextRepositoryState(
     val entries = content.lineSequence().map { it.removeSuffix("\r") }.toSet()
     val missing = MANAGEMENT_GITIGNORE_ENTRIES.filterNot { it in entries || "/$it" in entries }
     if (missing.isEmpty()) return
-    val addition = buildString {
-      if (content.isNotEmpty() && !content.endsWith('\n')) append('\n')
-      missing.forEach { append(it).append('\n') }
-    }
-    Files.writeString(path, addition, CREATE, APPEND)
+    Files.writeString(path, ignoreFileAddition(content, missing), CREATE, APPEND)
   }
 
   private fun authorize(token: String): Capability = lookup(token).also { capability ->

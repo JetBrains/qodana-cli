@@ -107,3 +107,12 @@ class GitRepository(directory: Path) {
         }
     }
 }
+
+/**
+ * The text that appends [entries] to an ignore file holding [content]: on lines of their own, so the file's last line
+ * is ended first.
+ */
+internal fun ignoreFileAddition(content: String, entries: List<String>): String = buildString {
+    if (content.isNotEmpty() && !content.endsWith('\n')) append('\n')
+    entries.forEach { append(it).append('\n') }
+}

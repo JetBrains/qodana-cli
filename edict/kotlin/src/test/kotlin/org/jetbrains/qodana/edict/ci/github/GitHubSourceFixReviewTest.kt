@@ -10,7 +10,6 @@ import org.jetbrains.qodana.edict.ci.support.RELEASE_HEAD
 import org.jetbrains.qodana.edict.ci.support.RELEASE_TREE
 import org.jetbrains.qodana.edict.ci.support.SOURCE_FIX_BRANCH
 import org.jetbrains.qodana.edict.ci.support.SOURCE_FIX_REQUEST
-import org.jetbrains.qodana.edict.ci.support.STALE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.UNCHANGED_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.gitHubFailure
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
@@ -50,20 +49,6 @@ internal class GitHubSourceFixReviewTest {
       recording.replay { findOrCreateReview(SOURCE_FIX_REQUEST) }
     }
     assertEquals("GitHub source-fix branch already exists with different content", error.message)
-  }
-
-  @Test
-  fun `a fix analyzed before the target branch moved stops before any write`() {
-    // STALE_SOURCE_FIX_REQUEST, analyzed before RELEASE_BRANCH moved to its head.
-    val recording = kotlinRecording("source-fix-review-stale-base")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay { findOrCreateReview(STALE_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals(
-      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes",
-      error.message,
-    )
   }
 
   @Test

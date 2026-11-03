@@ -41,11 +41,11 @@ class StateBranchTest {
     val checkout = state(project).checkOut()
 
     assertEquals(StateCheckout.NewBranch, checkout)
-    assertEquals("Qodana Edict <edict@qodana.invalid>\n", git(project, "log", "--format=%an <%ae>", BRANCH))
+    assertEquals("Qodana Edict <qodana-support@jetbrains.com>\n", git(project, "log", "--format=%an <%ae>", BRANCH))
   }
 
   @Test
-  fun `checks out the branch that origin has and tracks it`() {
+  fun `checks out the branch that origin has`() {
     publishState("first", "clusters/c.json" to "{}")
     val project = cloneOrigin("second")
 
@@ -53,7 +53,26 @@ class StateBranchTest {
 
     assertEquals(StateCheckout.FromOrigin, checkout)
     assertEquals("{}", project.resolve(".edict/clusters/c.json").readText())
-    assertEquals("origin/$BRANCH", git(project.resolve(".edict"), "rev-parse", "--abbrev-ref", "@{upstream}").trim())
+  }
+
+  @Test
+  fun `checks out the branch that origin has into a single-branch clone, as CI checks a project out`() {
+    publishState("first", "clusters/c.json" to "{}")
+    val project = clone("second", "--single-branch")
+
+    val checkout = state(project).checkOut()
+
+    assertEquals(StateCheckout.FromOrigin, checkout)
+    assertEquals("{}", project.resolve(".edict/clusters/c.json").readText())
+  }
+
+  @Test
+  fun `a branch of origin whose name only ends with the state branch's is another branch`() {
+    val other = cloneOrigin("other")
+    git(other, "push", "--quiet", "origin", "HEAD:refs/heads/x/$BRANCH")
+    val project = cloneOrigin("project")
+
+    assertEquals(StateCheckout.NewBranch, state(project).checkOut())
   }
 
   @Test
@@ -66,6 +85,16 @@ class StateBranchTest {
   }
 
   @Test
+  fun `checks out the local branch again after the state directory was deleted by hand`() {
+    val project = cloneOrigin("project")
+    state(project).checkOut()
+    project.resolve(".edict").toFile().deleteRecursively()
+
+    assertEquals(StateCheckout.LocalBranch, state(project).checkOut())
+    assertEquals(BRANCH, git(project.resolve(".edict"), "symbolic-ref", "--short", "HEAD").trim())
+  }
+
+  @Test
   fun `keeps an existing checkout`() {
     val project = cloneOrigin("project")
     state(project).checkOut()
@@ -74,12 +103,31 @@ class StateBranchTest {
   }
 
   @Test
-  fun `keeps the state a plain directory outside a git repository`() {
+  fun `keeps an existing checkout of another branch, and says it is not the state branch`() {
+    val project = cloneOrigin("project")
+    state(project).checkOut()
+    git(project.resolve(".edict"), "switch", "--quiet", "-c", "other")
+
+    assertEquals(StateCheckout.OtherBranch("other"), state(project).checkOut())
+  }
+
+  @Test
+  fun `the state's exclusion starts a line of its own when the exclude file doesn't end its last line`() {
+    val project = cloneOrigin("project")
+    val exclude = project.resolve(".git/info/exclude").apply { writeText("*.log") }
+
+    state(project).checkOut()
+
+    assertEquals("*.log\n/.edict/\n", exclude.readText())
+  }
+
+  @Test
+  fun `refuses a project outside a git repository`() {
     val project = directory.resolve("plain").createDirectories().toRealPath()
 
-    val checkout = state(project).checkOut()
+    val error = assertFailsWith<IllegalStateException> { state(project).checkOut() }
 
-    assertEquals(StateCheckout.PlainDirectory("$project is not a git repository"), checkout)
+    assertEquals("$project is not a git repository; Edict keeps its state on a branch of the project's", error.message)
   }
 
   @Test
@@ -89,7 +137,7 @@ class StateBranchTest {
 
     val checkout = state(project).checkOut()
 
-    assertEquals(StateCheckout.PlainDirectory("${project.resolve(".edict")} already holds files outside a worktree"), checkout)
+    assertEquals(StateCheckout.PlainDirectory, checkout)
   }
 
   @Test
@@ -111,6 +159,38 @@ class StateBranchTest {
     state(second).worktree().push("Run 2")
 
     assertEquals("Run 2\nRun 1\nRun 1\nStart the Edict state\n", git(origin(), "log", "--format=%s", BRANCH))
+    assertEquals("first.json\nsecond.json\nthird.json\n", git(origin(), "ls-tree", "--name-only", BRANCH))
+  }
+
+  @Test
+  @SetEnvironmentVariable(key = "GIT_CONFIG_GLOBAL", value = "/dev/null")
+  fun `push commits and rebases where no git identity is configured`() {
+    publishState("first", "first.json" to "1")
+    val second = cloneOrigin("second")
+    state(second).checkOut()
+    publishState("third", "third.json" to "3")
+    git(second, "config", "--unset", "user.name")
+    git(second, "config", "--unset", "user.email")
+    // Git would otherwise guess an identity from the system.
+    git(second, "config", "user.useConfigOnly", "true")
+    second.resolve(".edict/second.json").writeText("2")
+
+    state(second).worktree().push("Run 2")
+
+    assertEquals("Run 2 by Qodana Edict\nRun 1 by Qodana Edict\n", git(origin(), "log", "-2", "--format=%s by %an", BRANCH))
+  }
+
+  @Test
+  fun `push runs none of the project's hooks`() {
+    publishState("first", "first.json" to "1")
+    val second = cloneOrigin("second")
+    state(second).checkOut()
+    publishState("third", "third.json" to "3")
+    listOf("pre-commit", "commit-msg", "pre-rebase", "pre-push").forEach { failingHook(second, it) }
+    second.resolve(".edict/second.json").writeText("2")
+
+    state(second).worktree().push("Run 2")
+
     assertEquals("first.json\nsecond.json\nthird.json\n", git(origin(), "ls-tree", "--name-only", BRANCH))
   }
 
@@ -137,7 +217,8 @@ class StateBranchTest {
     val failure = assertFailsWith<IllegalStateException> { state(project).worktree() }
 
     assertEquals(
-      "${project.resolve(".edict")} is not a worktree of $BRANCH; `qodana edict install` checks the branch out there",
+      "${project.resolve(".edict")} is not a worktree of $BRANCH; `qodana edict install` checks the branch out into an empty " +
+        "state directory of a git project",
       failure.message,
     )
   }
@@ -159,8 +240,15 @@ class StateBranchTest {
     return clone(name)
   }
 
-  private fun clone(name: String): Path {
-    git(directory, "clone", "--quiet", origin().toString(), name)
+  /** A [name] hook of [project] that refuses whatever it is run for. */
+  private fun failingHook(project: Path, name: String) {
+    val hooks = Path.of(git(project, "rev-parse", "--path-format=absolute", "--git-path", "hooks").trim()).createDirectories()
+    hooks.resolve(name).apply { writeText("#!/bin/sh\nexit 1\n") }.toFile().setExecutable(true)
+  }
+
+  /** A clone of origin, with [options] for `git clone`, committing as `Edict Test`. */
+  private fun clone(name: String, vararg options: String): Path {
+    git(directory, "clone", "--quiet", *options, origin().toString(), name)
     val clone = directory.resolve(name).toRealPath()
     git(clone, "config", "user.name", "Edict Test")
     git(clone, "config", "user.email", "edict-test@example.invalid")

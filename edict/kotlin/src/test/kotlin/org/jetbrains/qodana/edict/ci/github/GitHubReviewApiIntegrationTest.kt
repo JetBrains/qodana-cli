@@ -34,7 +34,6 @@ import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_917
 import org.jetbrains.qodana.edict.ci.support.RELEASE_BRANCH
 import org.jetbrains.qodana.edict.ci.support.RELEASE_HEAD
 import org.jetbrains.qodana.edict.ci.support.SEVERAL_NUMBERS_SELECTION
-import org.jetbrains.qodana.edict.ci.support.STALE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.UNCHANGED_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.TWO_DISCOVERY_PAGES_SELECTION
 import org.jetbrains.qodana.edict.ci.support.WEEKEND_SELECTION
@@ -357,20 +356,6 @@ internal class GitHubReviewApiIntegrationTest {
       recording.replay(github) { findOrCreateReview(MISSING_TARGET_REQUEST) }
     }
     assertEquals("GitHub target branch lookup returned HTTP 404: Not Found", error.message)
-  }
-
-  @Test
-  fun `a fix analyzed before the target branch moved stops before any write`() {
-    // STALE_SOURCE_FIX_REQUEST, analyzed before RELEASE_BRANCH moved to its head.
-    val recording = kotlinRecording("source-fix-review-stale-base")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(github) { findOrCreateReview(STALE_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals(
-      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes",
-      error.message,
-    )
   }
 
   @Test

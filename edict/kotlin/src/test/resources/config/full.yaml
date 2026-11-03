@@ -17,6 +17,9 @@ edict:
     reviewer: reviewer-login
     targetBranch: release/2.3
     inspectionsDirectory: quality/inspections
+    targetPrecision: 0.95
+    targetRecall: 0.7
+    targetF1: 0.85
     url: https://github.com/qodana/kotlin-edict
   extraction:
     defaultSignalCount: 250

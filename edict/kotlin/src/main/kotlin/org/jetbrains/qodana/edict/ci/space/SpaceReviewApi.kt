@@ -118,7 +118,7 @@ internal class SpaceReviewApi(
         null
       }
     }
-    return ReviewFetchResult(pullRequests, problems)
+    return ReviewFetchResult(pullRequests, problems, reachedMaxPrs = selection.prNumbers.isEmpty() && numbers.size == selection.maxPrs)
   }
 
   private fun fetchPullRequest(

@@ -52,6 +52,7 @@ func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
 	bundled := bundledSkills(t)
 	t.Chdir(project)
 	project = realWorkingDirectory(t)
+	initGitRepository(t, project)
 	useFakeCodex(t)
 	t.Setenv("CODEX_HOME", codexHome)
 	// Codex ignores the local config of an untrusted project; TestEdictInstallRequiresCodexTrust checks the real rule.
@@ -151,6 +152,7 @@ func TestEdictInstallRequiresCodexTrust(t *testing.T) {
 	t.Setenv("CODEX_BIN", codex)
 	t.Chdir(t.TempDir())
 	project := realWorkingDirectory(t)
+	initGitRepository(t, project)
 	codexHome := t.TempDir()
 	t.Setenv("CODEX_HOME", codexHome)
 	if output, err := runEdictInstall(); err == nil || !strings.Contains(output, "is not trusted") {
@@ -380,14 +382,19 @@ func prepareEdictProject(t *testing.T) string {
 	project := realWorkingDirectory(t)
 	useFakeCodex(t)
 	trustCodexProject(t, t.TempDir(), project)
-	// TODO: drop once server startup no longer requires a Git repository (Main.kt GitRepository).
-	if output, err := exec.Command("git", "init", "-q", project).CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v\n%s", err, output)
-	}
+	initGitRepository(t, project)
 	// A free port keeps tests independent of a real server on the default port.
 	writeEdictPort(t, freePort(t))
 	installEdict(t)
 	return project
+}
+
+// initGitRepository makes project a git repository, which install requires for the state branch.
+func initGitRepository(t *testing.T, project string) {
+	t.Helper()
+	if output, err := exec.Command("git", "init", "-q", project).CombinedOutput(); err != nil {
+		t.Fatalf("git init: %v\n%s", err, output)
+	}
 }
 
 func writeEdictPort(t *testing.T, port int) {
@@ -526,9 +533,7 @@ func TestEdictStatePushBeforeInstallLeavesTheStateDirectoryToInstall(t *testing.
 	project := realWorkingDirectory(t)
 	useFakeCodex(t)
 	trustCodexProject(t, t.TempDir(), project)
-	if output, err := exec.Command("git", "init", "-q", project).CombinedOutput(); err != nil {
-		t.Fatalf("git init: %v\n%s", err, output)
-	}
+	initGitRepository(t, project)
 	writeEdictPort(t, freePort(t))
 	push := newEdictStateCommand()
 	push.SetArgs([]string{"push"})

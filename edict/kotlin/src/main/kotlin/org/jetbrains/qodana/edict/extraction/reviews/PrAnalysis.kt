@@ -133,7 +133,7 @@ internal class PrAnalysis(
     val fetched = fetch(selection)
     val prs = fetched.pullRequests
     require(prs.all { selection.containsDate(it.closeTimestamp) }) { "Provider returned a PR outside the requested dates" }
-    if (prs.size < FULL_DATE_FETCH_LIMIT) return fetched
+    if (!fetched.reachedMaxPrs) return fetched
     require(startDate != endDate) {
       "Cannot prove that UTC date $startDate was fetched completely: it contains at least $FULL_DATE_FETCH_LIMIT PRs"
     }
@@ -201,8 +201,6 @@ internal class PrAnalysis(
       ?: error("Unknown work item in PR batch")
   }
 
-  // TODO(R11): drafts are mapped while `failures` and `ordinals` are filled as side effects; map each draft to its
-  //  outcome (stored Signal or failure) and split the outcomes afterwards.
   fun store(
     token: String,
     batchId: String,
@@ -303,8 +301,10 @@ internal class PrAnalysis(
     require(diff.before in listOf(item.pr.baseRevision, item.thread.originalCommitSha) && diff.after == item.pr.headRevision) {
       "Diff must compare prepared base/comment revision to head"
     }
-    val evidencePath = if (draft.label == EdictNextSignalLabel.POSITIVE) diff.beforePath else diff.afterPath
+    val (evidenceRevision, evidencePath) =
+      if (draft.label == EdictNextSignalLabel.POSITIVE) diff.before to diff.beforePath else diff.after to diff.afterPath
     require(draft.fileRevision.path == evidencePath) { "Signal path must match its diff side" }
+    require(draft.fileRevision.revision == evidenceRevision) { "Signal revision must match its diff side" }
     val canonical = reviews().diff(diff.before, diff.after, diff.beforePath, diff.afterPath)
     val excerpt = UnifiedDiff.excerpt(canonical, draft.label, draft.fileRevision.expectedRanges.orEmpty(), SignalValidation.MAX_DIFF_CHARS)
       ?: error("The changes at the Signal's lines do not fit ${SignalValidation.MAX_DIFF_CHARS} characters; narrow its ranges")
@@ -385,7 +385,6 @@ internal class PrAnalysis(
     return reviews().file(revision, path)
   }
 
-  // TODO(R11): each read appends to `notes` from `onFailure`; give each read a result with its own note and collect them.
   fun evidence(item: PrItem): PrItemEvidence {
     val thread = item.thread
     // Valid threads have both anchor ends or neither.
@@ -485,6 +484,7 @@ internal fun ReviewFetchResult.withValidThreads(): ReviewFetchResult {
         threads.second.map { "PR ${pr.number} discussion ${it.threadId}: invalid path, revision or anchors" }
       }
     },
+    reachedMaxPrs,
   )
 }
 
