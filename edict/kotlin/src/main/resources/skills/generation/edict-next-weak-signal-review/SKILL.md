@@ -60,6 +60,10 @@ radius 20, then 5 and 0, until every requested range line is visible) and read e
 - `FP`: it does not and must not be reported.
 - `UNCERTAIN`: the needed evidence is genuinely unavailable or ambiguous.
 
+You may read other files to understand a finding. When its label depends on code outside the finding's file, such as
+where a declaration is used, classify it `UNCERTAIN` with that reason: an example holds only the finding's file, so it
+could not show why it has that label.
+
 Strong evidence always wins. If a finding has the same shape as a strong example but the contract would give it the
 opposite label, the description is wrong, not the strong example: classify it by the strong example and record a
 `contract mismatch` with both ids. The strong example represents it only when the analyzed inspection reports that
