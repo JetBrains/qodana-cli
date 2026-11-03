@@ -239,8 +239,7 @@ internal class EdictNextGenerationService(
       "Finalise the last analyzed candidate Generated regardless of strong- or weak-example accuracy"
     }
     val findings = inspection.analyzeProject(cluster, code, projectRevision)
-    val key = findings.reviewKey()
-    val unchanged = reviewedFindings.put(cluster.signalIds, key) == key
+    val unchanged = reviewedFindings[cluster.signalIds] == findings.reviewKey()
     val reports = validatedExampleReports[cluster.signalIds]?.takeIf { it.first == findings.candidateDigest }?.second.orEmpty()
     analyzedExampleReports[cluster.signalIds] = reports
     val strong = cluster.strongExampleIds()
@@ -333,6 +332,7 @@ internal class EdictNextGenerationService(
       }
     }
     weakReviewResults.merge(cluster.signalIds, findings.associateBy { it.path to it.line }) { old, new -> old + new }
+    reviewedFindings[cluster.signalIds] = analysis.reviewKey()
     return EdictNextMutationResponse(true, "Recorded ${findings.size} reviewed finding(s) of cluster '$clusterId'")
   }
 
