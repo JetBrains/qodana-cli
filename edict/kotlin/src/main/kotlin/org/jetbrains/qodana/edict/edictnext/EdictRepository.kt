@@ -131,6 +131,19 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     )
   }
 
+  fun setCodeExampleContextPath(clusterId: String, exampleId: String, contextPath: String) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
+      ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+    val document = EdictNextJson.parseToJsonElement(example.directory.metadataPath.readText()).jsonObject
+    writeAtomically(
+      example.directory.metadataPath,
+      JsonObject(document + ("contextPath" to JsonPrimitive(contextPath))),
+      JsonObject.serializer(),
+    )
+  }
+
   fun assignCodeExample(clusterId: String, signalId: String, exampleId: String) {
     val cluster = loadCluster(clusterId)
     val signal = cluster.signals.singleOrNull { it.id == signalId }

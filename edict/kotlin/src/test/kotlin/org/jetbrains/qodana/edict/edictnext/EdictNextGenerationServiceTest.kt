@@ -829,6 +829,19 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
+  fun `an example written from a finding keeps the finding's path`() = withGeneration { generation, repository ->
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report skip=reduced-negative findings=2")
+    generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
+    val reduced = EdictNextCodeExampleMetadata("reduced-negative", "Reduced.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", reduced.id, EdictNextJson.encodeToString(reduced), "class Reduced {}")
+    val finding = EdictNextReviewedFinding("src/Found.java", 1, EdictNextFindingClassification.FP, reduced.id)
+
+    assertFailsWith<IllegalArgumentException> { generation.recordWeakReview("busy-wait", listOf(finding)) }
+    val stored = repository.loadCluster("busy-wait").examples.single { it.metadata.id == reduced.id }
+    assertEquals("src/Found.java", stored.metadata.contextPath)
+  }
+
+  @Test
   fun `the next round sees examples that no longer reproduce their findings`() = withGeneration { generation, repository ->
     val scratch = directory.resolve("scratch").toString()
     val negative = EdictNextCodeExampleMetadata("aliased-negative", "Aliased.java", EdictNextSignalLabel.NEGATIVE, emptyList())
