@@ -9,13 +9,16 @@
       "response": {
         "status": 200,
         "body": {
+          "ref": "refs/heads/edict/weak-w-cccccccccccccccccccccccc",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/edict/weak-w-cccccccccccccccccccccccc",
           "object": {
             "sha": "1111111111111111111111111111111111111111",
-            "type": "commit"
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/1111111111111111111111111111111111111111"
           }
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -32,10 +35,12 @@
           "encoding": "base64",
           "size": 38,
           "name": "gradlew",
+          "path": "gradlew",
+          "sha": "5555555555555555555555555555555555555555",
           "content": "IyEvdXNyL2Jpbi9lbnYgc2gKIyBGaXhlZCBkaWZmZXJlbnRseQo=\n"
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     }
   ],
   "result": "IllegalArgumentException: GitHub source-fix branch already exists with different content"

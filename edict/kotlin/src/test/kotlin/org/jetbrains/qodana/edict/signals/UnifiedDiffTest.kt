@@ -60,6 +60,7 @@ internal class UnifiedDiffTest {
 
   @Test
   fun `a quoted path is unquoted with its octal escapes as UTF-8`() {
+    // A one-line change; the a/ and b/ paths are Git-quoted, with octal escapes for the "é" of "café".
     assertEquals(
       Changes(mapOf("src/café 1.kt" to listOf(1)), mapOf("src/café 2.kt" to listOf(1))),
       UnifiedDiff.parse(diff("quoted-paths")),
@@ -68,6 +69,7 @@ internal class UnifiedDiffTest {
 
   @Test
   fun `the files of a Git diff are parsed in order, ignoring its extended headers`() {
+    // Git diff of A.kt (with an index header, change on line 2) and B.kt (hunk at line 5, change on line 6).
     assertEquals(
       Changes(mapOf("A.kt" to listOf(2), "B.kt" to listOf(6)), mapOf("A.kt" to listOf(2), "B.kt" to listOf(6))),
       UnifiedDiff.parse(diff("two-files")),
@@ -144,31 +146,38 @@ internal class UnifiedDiffTest {
 
   @Test
   fun `a positive excerpt keeps the change at its line with three context lines`() {
+    // The hunk around line 100 of LARGE, with three context lines, and the file headers.
     assertEquals(diff("large-positive-100"), UnifiedDiff.excerpt(LARGE, POSITIVE, onLine(100), 4000))
   }
 
   @Test
   fun `a negative excerpt keeps the insertion at its line with three context lines`() {
+    // The hunk around the insertion at line 151 of LARGE, with three context lines either side.
     assertEquals(diff("large-negative-151"), UnifiedDiff.excerpt(LARGE, NEGATIVE, onLine(151), 4000))
   }
 
   @Test
   fun `an excerpt keeps the changes within 20 lines of its line while they fit`() {
+    // Two hunks, for the changes of lines 10 and 20, each with three context lines.
     assertEquals(diff("nearby-changes-with-neighbour"), UnifiedDiff.excerpt(NEARBY_CHANGES, POSITIVE, onLine(10), 197))
   }
 
   @Test
-  fun `an excerpt that cannot fit the nearby changes keeps its line's change with three context lines`() {
+  fun `an excerpt that cannot fit the nearby changes keeps its line's change and three diff lines either side`() {
+    // One hunk for the change of line 10, three diff lines either side of its removed line: three context lines before,
+    // the added line and two context lines after. The change of line 20 is dropped.
     assertEquals(diff("nearby-changes-three-context-lines"), UnifiedDiff.excerpt(NEARBY_CHANGES, POSITIVE, onLine(10), 196))
   }
 
   @Test
   fun `an excerpt that cannot fit three context lines keeps one`() {
+    // One hunk for the change of line 10 with a single context line, before it.
     assertEquals(diff("nearby-changes-one-context-line"), UnifiedDiff.excerpt(NEARBY_CHANGES, POSITIVE, onLine(10), 99))
   }
 
   @Test
   fun `an excerpt that cannot fit one context line keeps only its line`() {
+    // One hunk holding only the removed line 10, with no context lines.
     assertEquals(diff("nearby-changes-only-line"), UnifiedDiff.excerpt(NEARBY_CHANGES, POSITIVE, onLine(10), 65))
   }
 
@@ -179,16 +188,20 @@ internal class UnifiedDiffTest {
 
   @Test
   fun `an excerpt keeps the missing-newline marker with its line`() {
+    // The deletion of line 3 followed by the "No newline at end of file" marker.
     assertEquals(diff("change-without-newline-only-line"), UnifiedDiff.excerpt(CHANGE_WITHOUT_NEWLINE, POSITIVE, onLine(3), 75))
   }
 
   @Test
   fun `an excerpt whose lines are outside every hunk keeps every change`() {
+    // Three hunks, for the change of line 100, the insertion at line 151 and the change of line 180, each with three
+    // context lines.
     assertEquals(diff("large-every-change"), UnifiedDiff.excerpt(LARGE, POSITIVE, listOf(EdictNextLineRange(500, 600)), 4000))
   }
 
   @Test
   fun `a diff keeps the requested number of context lines around the change`() {
+    // The hunk of the change on line 3 with one context line either side.
     assertEquals(diff("between-one-context-line"), UnifiedDiff.between(beforeSource, afterSource, fixturePath, fixturePath, 1))
   }
 
@@ -199,16 +212,19 @@ internal class UnifiedDiffTest {
 
   @Test
   fun `an added file is diffed from dev null`() {
+    // A new file: headers from /dev/null and one hunk of five added lines.
     assertEquals(diff("between-added"), UnifiedDiff.between(null, afterSource, fixturePath, fixturePath, 3))
   }
 
   @Test
   fun `a deleted file is diffed to dev null`() {
+    // A deleted file: headers to /dev/null and one hunk of five removed lines.
     assertEquals(diff("between-deleted"), UnifiedDiff.between(beforeSource, null, fixturePath, fixturePath, 3))
   }
 
   @Test
   fun `a moved file is diffed between its two paths`() {
+    // Headers name Equality.java before and Strings.java after; one hunk with the change on line 3.
     assertEquals(
       diff("between-renamed"),
       UnifiedDiff.between(beforeSource, afterSource, "module/src/Equality.java", "module/src/Strings.java", 3),
@@ -217,6 +233,7 @@ internal class UnifiedDiffTest {
 
   @Test
   fun `a path with non-ASCII or control characters is quoted as Git quotes it`() {
+    // Git-quoted headers, "src/caf\303\251 1.kt" and "src/tab\there.kt"; one hunk with the change on line 3.
     assertEquals(diff("between-quoted-paths"), UnifiedDiff.between(beforeSource, afterSource, "src/café 1.kt", "src/tab\there.kt", 3))
   }
 

@@ -94,12 +94,18 @@ internal val CORRECTION: PullRequest = correctionAnchoredAt(2)
 /** The range of the one UTC [date]. */
 internal fun day(date: LocalDate): PrAnalysisDateRange = PrAnalysisDateRange(date.toString(), date.toString())
 
-/** The files of [CORRECTION], by revision and path: `bad()` on line 2 at its base and comment revisions, `good()` at its head. */
+/**
+ * The files of [CORRECTION], by revision and path: `bad()` on line 2 at its base, [COMMENTED_SOURCE] at its comment
+ * revision, and `good()` at its head, so diffs from the base and from the comment differ.
+ */
 internal fun correctionFiles(): Map<Pair<String, String>, String> = mapOf(
   (BASE to CORRECTED_PATH) to "fun a() {\n  bad()\n}\n",
-  (COMMENTED to CORRECTED_PATH) to "fun a() {\n  bad()\n}\n",
+  (COMMENTED to CORRECTED_PATH) to COMMENTED_SOURCE,
   (HEAD to CORRECTED_PATH) to "fun a() {\n  good()\n}\n",
 )
+
+/** [CORRECTED_PATH] at the comment revision: a commit after the base added `log()` below the commented `bad()`. */
+internal const val COMMENTED_SOURCE = "fun a() {\n  bad()\n  log()\n}\n"
 
 /**
  * Files of [CORRECTION] whose diff is over 4000 characters: line 100 changes from `bad()` to `good()`, and lines 200 to

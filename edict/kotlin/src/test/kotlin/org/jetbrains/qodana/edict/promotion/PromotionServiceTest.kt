@@ -210,8 +210,9 @@ internal class PromotionServiceTest {
   }
 
   @Test
-  fun `an inspection promoted in another repository is promoted in the configured one`() {
-    val foreign = inspectionPromotion(id = "p-${"f".repeat(24)}", pullRequest = foreignReview(1))
+  fun `an inspection accepted in another repository is promoted in the configured one`() {
+    // Accepted: startup refuses to run while a promotion of another repository is on review.
+    val foreign = inspectionPromotion(id = "p-${"f".repeat(24)}", pullRequest = foreignReview(1), state = PromotionPrState.ACCEPTED)
     repository.store(referencedCluster(promotions = listOf(foreign)))
 
     assertEquals(PromotionPromoteResponse(listOf(PROMOTED_RULE)), service.promote())

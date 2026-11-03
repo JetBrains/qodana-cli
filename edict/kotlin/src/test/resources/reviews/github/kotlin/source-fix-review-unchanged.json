@@ -9,9 +9,10 @@
       "response": {
         "status": 404,
         "body": {
-          "message": "Not Found"
-        },
-        "hasNext": false
+          "message": "Not Found",
+          "documentation_url": "https://docs.github.com/rest/git/refs#get-a-reference",
+          "status": "404"
+        }
       }
     },
     {
@@ -23,12 +24,15 @@
       "response": {
         "status": 200,
         "body": {
+          "ref": "refs/heads/1.3.70",
+          "node_id": "MDM6UmVmMzQzMjI2NjpyZWZzL2hlYWRzLzEuMy43MA==",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/1.3.70",
           "object": {
             "sha": "00708e800293156c9c4acaaaa7c06cb78e96ae69",
-            "type": "commit"
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/00708e800293156c9c4acaaaa7c06cb78e96ae69"
           }
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -43,12 +47,22 @@
         "status": 200,
         "body": {
           "name": ".bunch",
+          "path": ".bunch",
+          "sha": "74ca7d6a374ea1756b87ed0d5b6e95b2b28804a3",
           "size": 84,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/.bunch?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/.bunch",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/74ca7d6a374ea1756b87ed0d5b6e95b2b28804a3",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/00708e800293156c9c4acaaaa7c06cb78e96ae69/.bunch",
           "type": "file",
           "content": "MTkzCjIwMQoxOTIKMTkxXzE5MgoxODNfMTkxXzE5MgphczM0XzE4M18xOTFf\nMTkyCmFzMzVfMTkxXzE5MgphczM2XzE5MgphczQwCmFzNDFfMjAx\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/.bunch?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/74ca7d6a374ea1756b87ed0d5b6e95b2b28804a3",
+            "html": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/.bunch"
+          }
+        }
       }
     }
   ],

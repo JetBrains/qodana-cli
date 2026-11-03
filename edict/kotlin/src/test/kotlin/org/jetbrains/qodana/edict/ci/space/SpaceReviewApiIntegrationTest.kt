@@ -4,18 +4,15 @@ package org.jetbrains.qodana.edict.ci.space
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.DefaultCiHttpTransport
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
-import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_API
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_CLOSED_REVIEW
-import org.jetbrains.qodana.edict.ci.support.ULTIMATE_INSPECTION_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_INVISIBLE_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW_BASE
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_OPEN_REVIEW
-import org.jetbrains.qodana.edict.ci.support.ULTIMATE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_STALE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_STARLARK_FILE
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST
@@ -29,7 +26,8 @@ import kotlin.test.assertFailsWith
 
 /**
  * The Space client reading the real IJ/ultimate: each test expects what its recording holds, so the recordings
- * the other tests replay stay true. Writes are answered by the recording and never reach Space.
+ * the other tests replay stay true. Recordings with scripted answers, such as every write path's, are only replayed
+ * mocked: Space can't answer as the script has the repository.
  */
 @Tag("integration")
 @EnabledIfEnvironmentVariable(named = "SPACE_TOKEN", matches = ".+")
@@ -91,11 +89,10 @@ internal class SpaceReviewApiIntegrationTest {
     )
   }
 
-  /** Also pins the 1-based lines of its discussions, and the old lines of the one on removed lines. */
   @Test
-  fun `a feed in two pages is read to its end`() {
-    // Review 232019: a feed of two pages; `util.kt` is anchored on 0-based line 30, `ProjectViewService.kt` on
-    // // removed lines, oldLine 8 to 9 of `cc94f6cc`, the revision before the change.
+  fun `discussions are anchored on their lines, counted from 1, or on the old lines of removed ones`() {
+    // Review 232019: `util.kt` is anchored on 0-based line 30, `ProjectViewService.kt` on removed lines, oldLine 8 to 9
+    // of `cc94f6cc`, the revision before the change.
     val recording = ultimateRecording("fetch-paged-feed-232019")
 
     assertEquals(
@@ -105,8 +102,9 @@ internal class SpaceReviewApiIntegrationTest {
   }
 
   @Test
-  fun `a discussion spans its lines to its end anchor`() {
-    // Review 230194: the discussion of `CodeInsightContextManager.kt` spans 0-based lines 90 to 91.
+  fun `a feed in two pages is read to its end`() {
+    // Review 230194: a feed of two pages, whose second page adds the discussions FAIwK0W7A8i and FAKgK0W7AHc; the
+    // discussion of `CodeInsightContextManager.kt` spans 0-based lines 90 to 91.
     val recording = ultimateRecording("fetch-multiline-discussion-230194")
 
     assertEquals(
@@ -225,7 +223,7 @@ internal class SpaceReviewApiIntegrationTest {
   @Test
   fun `the evidence of a review holds each message of its people once, without events and bots`() {
     // ULTIMATE_MERGED_REVIEW's feed: its discussions' messages, its people's events, and texts and events of the
-    // // "Patronus" application and of the "JetBrains Space" service.
+    // "Patronus" application and of the "JetBrains Space" service.
     val recording = ultimateRecording("evidence-merged")
 
     assertEquals(
@@ -240,28 +238,6 @@ internal class SpaceReviewApiIntegrationTest {
     val recording = ultimateRecording("evidence-open")
 
     assertEquals(recording.result<ReviewStatus>(), recording.replay(space) { reviewWithEvidence(ULTIMATE_OPEN_REVIEW) })
-  }
-
-  @Test
-  fun `an inspection review is opened from a new branch at the real target head`() {
-    // ULTIMATE_INSPECTION_REQUEST opened from a new branch at the real head of RELEASE_191; writes scripted.
-    val recording = ultimateRecording("inspection-review-opened")
-
-    assertEquals(
-      recording.result<ReviewReference>(),
-      recording.replay(space) { findOrCreateReview(ULTIMATE_INSPECTION_REQUEST) },
-    )
-  }
-
-  @Test
-  fun `a source fix is opened from a new branch at the real target head`() {
-    // ULTIMATE_SOURCE_FIX_REQUEST opened from a new branch at the real head of RELEASE_191; writes scripted.
-    val recording = ultimateRecording("source-fix-review-opened")
-
-    assertEquals(
-      recording.result<ReviewReference>(),
-      recording.replay(space) { findOrCreateReview(ULTIMATE_SOURCE_FIX_REQUEST) },
-    )
   }
 
   @Test

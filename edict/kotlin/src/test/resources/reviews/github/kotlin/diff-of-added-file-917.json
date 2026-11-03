@@ -11,9 +11,10 @@
       "response": {
         "status": 404,
         "body": {
-          "message": "Not Found"
-        },
-        "hasNext": false
+          "message": "Not Found",
+          "documentation_url": "https://docs.github.com/rest/repos/contents#get-repository-content",
+          "status": "404"
+        }
       }
     },
     {
@@ -28,12 +29,22 @@
         "status": 200,
         "body": {
           "name": "basic.kt",
+          "path": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
+          "sha": "705d3825ec1cfc921854e329bd6faa2bf0436afa",
           "size": 76,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/705d3825ec1cfc921854e329bd6faa2bf0436afa",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/fdb8e1026aee542994c512a524bf45672738cf68/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
           "type": "file",
           "content": "Ly8gIkFkZCBJbmxpbmUgdG8gcmVpZmllZCBmdW5jdGlvbiIgInRydWUiCgpm\ndW4gPDxjYXJldD5yZWlmaWVkIFQ+IGZuKCkgewoKfQ==\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/705d3825ec1cfc921854e329bd6faa2bf0436afa",
+            "html": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt"
+          }
+        }
       }
     }
   ],

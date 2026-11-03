@@ -18,13 +18,12 @@ import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.support.withTools
 import org.jetbrains.qodana.edict.support.launch
 
-/** Fetches the batch of PR [prNumber] from [reviews] as the PR-analysis coordinator does through the MCP server. */
-internal fun EdictRepository.fetchPrBatch(reviews: ReviewApi, prNumber: Int) = withManagement(reviews) { state, management ->
-  management.callOrFail("edict_fetch_pr_batch", buildJsonObject {
+/** Fetches the batch of PR [prNumber] as the PR-analysis coordinator of the run in [state] does through the MCP server. */
+internal fun EdictManagementService.fetchPrBatch(state: EdictNextRepositoryState, prNumber: Int) =
+  callOrFail("edict_fetch_pr_batch", buildJsonObject {
     put("token", state.worker("edict-pr-signal-analysis").token)
     put("prNumbers", JsonArray(listOf(JsonPrimitive(prNumber))))
   })
-}
 
 /** Publishes [signal] to the inbox as the weak-signal promotion checker does through the MCP server. */
 internal fun EdictRepository.publishToInbox(signal: EdictNextSignal) = withManagement(null) { state, management ->
@@ -34,7 +33,8 @@ internal fun EdictRepository.publishToInbox(signal: EdictNextSignal) = withManag
   })
 }
 
-private fun <T> EdictRepository.withManagement(
+/** Runs [action] with the state of a run on this repository and its management service, reading reviews from [reviews]. */
+internal fun <T> EdictRepository.withManagement(
   reviews: ReviewApi?,
   action: (EdictNextRepositoryState, EdictManagementService) -> T,
 ): T = EdictNextRepositoryState.open(paths.root).use { state ->

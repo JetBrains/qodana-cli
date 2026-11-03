@@ -39,7 +39,7 @@ class PromotionIntegrationTest : IntegrationTest() {
     workspace.state.createDirectories()
     val repository = EdictRepository(EdictRepositoryDirectory(workspace.state))
     createGeneratedCluster(repository)
-    val provider = FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.test", "JetBrains", "target"))
+    val provider = FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "target"))
 
     workspace.withPromotionCodex(
       prompt = "Promote all generated inspections",
@@ -60,7 +60,7 @@ class PromotionIntegrationTest : IntegrationTest() {
       val description = request.description
       assertContains(description, "## Description")
       assertContains(description, "## Evidence")
-      repeat(5) { index -> assertContains(description, "https://github.test/source/project/pull/${index + 1}") }
+      repeat(5) { index -> assertContains(description, "https://github.com/source/project/pull/${index + 1}") }
       assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
       assertTrue("z-duplicate" !in description)
       val stored = repository.loadCluster("integration-rule").manifest.promotions.single()
@@ -82,7 +82,7 @@ class PromotionIntegrationTest : IntegrationTest() {
         "s-$index",
         fileRevision = EdictNextFileRevision("Example$index.kt", "a".repeat(40), listOf(EdictNextLineRange(1, 1))),
         source = EdictNextSignalSource.FromPR(
-          index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.test/source/project/pull/${index + 1}",
+          index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.com/source/project/pull/${index + 1}",
         ),
         label = EdictNextSignalLabel.POSITIVE,
         description = "positive $index",

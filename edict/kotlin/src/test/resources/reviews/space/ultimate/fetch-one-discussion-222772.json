@@ -25,9 +25,9 @@
               "ref": "0bf2a40f3d06465ca8c1c274d30dfd00017f6f90"
             },
             "isMerged": true
-          }
-        },
-        "hasNext": false
+          },
+          "description": null
+        }
       }
     },
     {
@@ -43,9 +43,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849987141",
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -60,6 +62,7 @@
             },
             {
               "chatMessage": {
+                "text": "added 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -74,6 +77,7 @@
             },
             {
               "chatMessage": {
+                "text": "Fix for TW-102566: the \"Copy Prompt\" button logged no FUS event.\n\nThe change registers a new `copy.prompt.clicked` event in `BuildsViewCollector`, bumps the `teamcity.builds.view` group version to 3, and logs both click events in `BuildOverviewPanel` next to the buttons. A new test clicks both buttons and asserts the logged events.\n\nNote for the reviewer: `build/events/FUS.properties` needs a description key `teamcity.builds.view.copy.prompt.clicked`. The automation may modify only `plugins/teamcity-intellij`, so the key is not part of this change.\n\nAIR automation run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/177ac64b-cafa-4747-adbc-4b80c6747011?run=9f7bf925-3831-4695-a36c-6624605a685d\n\nProduced by Air Automations. Name: TeamCity IJ plugin bug fixer / Run: https://air.jetbrains.cloud/org/05cf1a7f-6ab5-713b-abd3-29d0c8a05e2d/automations/177ac64b-cafa-4747-adbc-4b80c6747011?run=9f7bf925-3831-4695-a36c-6624605a685d",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -88,6 +92,7 @@
             },
             {
               "chatMessage": {
+                "text": "FUS events are verified by QAs, and don't have tests for them in the plugin",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -102,14 +107,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "e8dff5768daa9a02056478db76e89b4bd79e3020",
                       "filename": "/plugins/teamcity-intellij/src/test/com/intellij/teamcity/ui/toolwindow/TeamCityToolWindowTest.kt",
-                      "line": 610
+                      "line": 610,
+                      "oldLine": null
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "20NyBn21e5p3"
                     }
@@ -126,6 +134,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -140,6 +149,7 @@
             },
             {
               "chatMessage": {
+                "text": "approved",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -154,6 +164,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -168,6 +179,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"[teamcity-intellij] [TW-102566](https://youtrack.jetbrains.com/issue/TW-102566): Log FUS click events for Fix with AI and Copy Prompt\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/222772/timeline)\n\nRepository: `ultimate`\nFrom: `teamcity/air/TW-102566`\nTo: `master`\n\nChanges:\n• [e6a3478](https://jetbrains.team/p/IJ/repositories/ultimate/revision/e6a3478c570bac5659578e7dee956b23f100ac56) [teamcity-intellij] [TW-102566](https://youtrack.jetbrains.com/issue/TW-102566): Log FUS click events for Fix with AI and Copy Prompt\n\n[https://patronus.labs.jb.gg/robot/2c2889a3-a80a-4769-9e11-91230f6ea77e](https://patronus.labs.jb.gg/robot/2c2889a3-a80a-4769-9e11-91230f6ea77e)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -182,6 +194,7 @@
             },
             {
               "chatMessage": {
+                "text": "merged the teamcity/air/TW-102566 branch into master and deleted it",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -196,6 +209,7 @@
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -210,6 +224,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge \"[teamcity-intellij] [TW-102566](https://youtrack.jetbrains.com/issue/TW-102566): Log FUS click events for Fix with AI and Copy Prompt\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/222772/timeline)\n\nRepository: `ultimate`\nFrom: `teamcity/air/TW-102566`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/2c2889a3-a80a-4769-9e11-91230f6ea77e/changes/space)):\n• [1b4e315](https://jetbrains.team/p/IJ/repositories/ultimate/revision/1b4e31500596e0a99348194cc7bcf008580c6134) [teamcity-intellij] [TW-102566](https://youtrack.jetbrains.com/issue/TW-102566): Log FUS click events for Fix with AI and Copy Prompt\n\n[https://patronus.labs.jb.gg/robot/2c2889a3-a80a-4769-9e11-91230f6ea77e](https://patronus.labs.jb.gg/robot/2c2889a3-a80a-4769-9e11-91230f6ea77e)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -224,8 +239,7 @@
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -255,14 +269,18 @@
                 }
               },
               "created": {
+                "iso": "2026-09-11T19:15:52.483Z",
                 "timestamp": 1789154152483
               },
               "id": "Ewf100W3PRW"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-09-11T19:15:52.483Z",
+            "timestamp": 1789154152483
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],

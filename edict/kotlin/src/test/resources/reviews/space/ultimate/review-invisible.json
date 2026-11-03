@@ -10,8 +10,7 @@
       },
       "response": {
         "status": 200,
-        "body": null,
-        "hasNext": false
+        "body": null
       }
     }
   ],

@@ -8,8 +8,7 @@
       },
       "response": {
         "status": 200,
-        "body": null,
-        "hasNext": false
+        "body": null
       }
     },
     {
@@ -22,19 +21,44 @@
         "status": 200,
         "body": {
           "branchInfo": {
+            "head": "refs/heads/191",
             "ref": "17795949cee5953ee3e18b810af8db74f641dc54"
           },
           "lastCommit": {
+            "id": "17795949cee5953ee3e18b810af8db74f641dc54",
             "message": "set majorReleaseDate for RubyMine\n\nSpace-RevId: 0789542778d35e2bc9140e695ff123c67ec53f34",
+            "authorDate": 1587564855000,
+            "commitDate": 1587564902000,
             "author": {
-              "name": "Andrey Vokin"
+              "name": "Andrey Vokin",
+              "email": "andrey.vokin@jetbrains.com"
+            },
+            "authorProfile": {
+              "id": "2DytII2KCztQ"
             },
             "committer": {
-              "name": "Andrey Vokin"
-            }
-          }
-        },
-        "hasNext": false
+              "name": "Andrey Vokin",
+              "email": "andrey.vokin@jetbrains.com"
+            },
+            "committerProfile": {
+              "id": "2DytII2KCztQ"
+            },
+            "parents": [
+              "941e1f00fa10c29eb2eb021ca6baa738dd915417"
+            ],
+            "heads": [
+              "refs/heads/191"
+            ],
+            "signature": null,
+            "committerIsSpace": null,
+            "treeId": "8e97c879683807159a4f8539ad64505016602f4d"
+          },
+          "stats": {
+            "ahead": 5496,
+            "isBehind": true
+          },
+          "default": false
+        }
       }
     },
     {
@@ -50,10 +74,13 @@
         "status": 200,
         "body": [
           {
+            "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
             "path": "community/build.txt",
             "blob": "ee358d2380f97c7b56130fd5a7a13dc91e55cd66",
             "type": "FILE",
             "properties": {
+              "lfs": null,
+              "executable": null,
               "attributes": [
                 {
                   "name": "text",
@@ -63,8 +90,7 @@
               ]
             }
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -82,8 +108,7 @@
         "body": {
           "totalSize": 13,
           "partBase64": "MTkxLlNOQVBTSE9UCg=="
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -99,10 +124,13 @@
         "status": 200,
         "body": [
           {
+            "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
             "path": "community/.gitignore",
             "blob": "51e317984fa34daa4ef77d3d0f84779c93de12dd",
             "type": "FILE",
             "properties": {
+              "lfs": null,
+              "executable": null,
               "attributes": [
                 {
                   "name": "text",
@@ -112,8 +140,7 @@
               ]
             }
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -131,8 +158,7 @@
         "body": {
           "totalSize": 290,
           "partBase64": "YnVpbGQvZGVwZW5kZW5jaWVzLy5ncmFkbGUKYnVpbGQvZGVwZW5kZW5jaWVzL2J1aWxkCi9jb25maWcKL3N5c3RlbQouaWRlYS93b3Jrc3BhY2UueG1sCi9vdXQKLkRTX1N0b3JlCi90ZXN0LXN5c3RlbQovdGVzdC1jb25maWcKKi5weWMKLmlkZWEvbGlicmFyaWVzL0dyYWRsZV9fKi54bWwKLmlkZWEvZ3JhZGxlX2V4dGVuc2lvbnMueG1sCi5pZGVhL3VzYWdlLnN0YXRpc3RpY3MueG1sCmVkdS9kZXBlbmRlbmNpZXMvYnVpbGQKZWR1L2RlcGVuZGVuY2llcy8uZ3JhZGxlCi9weXRob24vaGVscGVycy8uaWRlYQo="
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -147,9 +173,9 @@
       },
       "response": {
         "status": 200,
-        "body": null,
-        "hasNext": false
-      }
+        "body": null
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -183,9 +209,9 @@
         "body": {
           "success": true,
           "message": ""
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -198,16 +224,16 @@
           "state": "Opened",
           "$skip": "0",
           "$top": "100",
-          "$fields": "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))"
+          "$fields": "data(review(id,number,state,branchPair(repository,sourceBranch,targetBranch)))"
         }
       },
       "response": {
         "status": 200,
         "body": {
           "data": []
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -220,16 +246,16 @@
           "state": "Closed",
           "$skip": "0",
           "$top": "100",
-          "$fields": "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))"
+          "$fields": "data(review(id,number,state,branchPair(repository,sourceBranch,targetBranch)))"
         }
       },
       "response": {
         "status": 200,
         "body": {
           "data": []
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -249,9 +275,9 @@
         "body": {
           "id": "2EdIcT0ReVu1",
           "number": 240001
-        },
-        "hasNext": false
-      }
+        }
+      },
+      "scripted": true
     },
     {
       "request": {
@@ -264,9 +290,9 @@
       },
       "response": {
         "status": 200,
-        "body": null,
-        "hasNext": false
-      }
+        "body": null
+      },
+      "scripted": true
     }
   ],
   "result": {

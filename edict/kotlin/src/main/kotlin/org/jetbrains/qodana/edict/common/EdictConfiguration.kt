@@ -260,7 +260,7 @@ internal fun reviewRepository(url: String, path: String): ReviewRepository {
     "$path must be an https URL without a port, credentials, query or fragment: $url"
   }
   val host = uri.host.lowercase()
-  val segments = uri.path.trim('/').split('/')
+  val segments = uri.path.split('/').filter(String::isNotEmpty)
   return when {
     segments.size == 2 -> ReviewRepository(CiProviderId.GITHUB, host, segments[0], segments[1].removeSuffix(".git"))
     segments.size == 4 && segments[0] == "p" && segments[2] == "repositories" ->

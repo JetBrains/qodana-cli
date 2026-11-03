@@ -12,6 +12,7 @@
         "status": 200,
         "body": {
           "className": "MergeRequestRecord",
+          "id": "1mKGVx0oZHzg",
           "number": 230785,
           "title": "RUBY-36128 rubocop 1910 recognize new rubocop next directive in the formatter",
           "state": "Closed",
@@ -26,8 +27,7 @@
             "isMerged": true
           },
           "description": "The formatter now recognizes the `# rubocop:next` directive from RuboCop 1.91.0 by adding next to the regex in RubyRubocopCommentDetector, so Reformat Code no longer moves a trailing rubocop:next comment into the body and changes which statement it covers."
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -43,9 +43,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849983622",
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -60,6 +62,7 @@
             },
             {
               "chatMessage": {
+                "text": "added 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -74,6 +77,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -88,6 +92,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [RubyMine](https://codeowners.labs.jb.gg/group/rubymine?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/34a4c5161d11ffb3405430eecf7c65a52a234aa3/.ownership/review-rules.yaml?line=186) | `ruby/**`, `ruby/impl/**` | ⏳ **[Dmitry Pogrebnoy](https://jetbrains.team/m/Dmitry.Pogrebnoy)**, <br/><details><summary>More</summary>[Domján Dániel Lajos](https://jetbrains.team/m/Daniel.Domjan), <br/>[Darya Sharkova](https://jetbrains.team/m/Darya.Sharkova), <br/>[Henry Wylde](https://jetbrains.team/m/Henry.Wylde), <br/>~~[Egor Kukoverov](https://jetbrains.team/m/Egor.Kukoverov) (away)~~</details> | ⏳ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -102,6 +107,7 @@
             },
             {
               "chatMessage": {
+                "text": "⚪ rubocop_inline.txt:21: The three new cases are all positive, and the file still has no trailing comment that is not a RuboCop directive. Add one such block, and put the moved comment in the expected half, so the test also fails if the pattern becomes too broad.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -116,9 +122,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
+                    "anchor": {
+                      "revision": "cdf4998a48a0a067f0a6f94bdb322fd513982c40",
+                      "filename": "/ruby/tests/resources/org/jetbrains/plugins/ruby/ruby/lang/formatter/comments/line/rubocop_inline.txt",
+                      "line": 21,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
                     "channel": {
                       "id": "1SXJqP18HtHm"
                     }
@@ -135,6 +149,7 @@
             },
             {
               "chatMessage": {
+                "text": "AI Review done\n🔴 0 blocking, 🟡 0 important, ⚪ 1 nitpicks",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -149,6 +164,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -163,6 +179,7 @@
             },
             {
               "chatMessage": {
+                "text": "pushed 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -177,6 +194,7 @@
             },
             {
               "chatMessage": {
+                "text": "removed 2 commits from the merge request",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -191,6 +209,7 @@
             },
             {
               "chatMessage": {
+                "text": "pushed 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -205,6 +224,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -219,6 +239,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"[RUBY-36128](https://youtrack.jetbrains.com/issue/RUBY-36128) rubocop 1910 recognize new rubocop next directive in the formatter\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230785/timeline)\n\nRepository: `ultimate`\nFrom: `kortowski/RUBY-36128-rubocop-1910-recognize-new-rubocop-next-directive-in-the-formatter`\nTo: `master`\n\nChanges:\n• [76aadac](https://jetbrains.team/p/IJ/repositories/ultimate/revision/76aadacb727c625b3956d9eeebcc921d97f8730e) [RUBY-36128](https://youtrack.jetbrains.com/issue/RUBY-36128) rubocop 1910 recognize new rubocop next directive in the formatter [IJ-MR-230785](https://jetbrains.team/p/IJ/reviews/230785/timeline)\n\n[https://patronus.labs.jb.gg/robot/afd10aaf-1b46-49b8-9bee-d5ae213c0c39](https://patronus.labs.jb.gg/robot/afd10aaf-1b46-49b8-9bee-d5ae213c0c39)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -233,6 +254,7 @@
             },
             {
               "chatMessage": {
+                "text": "merged the kortowski/RUBY-36128-rubocop-1910-recognize-new-rubocop-next-directive-in-the-formatter branch into master and deleted it",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -247,6 +269,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge \"[RUBY-36128](https://youtrack.jetbrains.com/issue/RUBY-36128) rubocop 1910 recognize new rubocop next directive in the formatter\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/230785/timeline)\n\nRepository: `ultimate`\nFrom: `kortowski/RUBY-36128-rubocop-1910-recognize-new-rubocop-next-directive-in-the-formatter`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/afd10aaf-1b46-49b8-9bee-d5ae213c0c39/changes/space)):\n• [580bb41](https://jetbrains.team/p/IJ/repositories/ultimate/revision/580bb413f26f24e276826e2ec48a24a8363ecc00) [RUBY-36128](https://youtrack.jetbrains.com/issue/RUBY-36128) rubocop 1910 recognize new rubocop next directive in the formatter [IJ-MR-230785](https://jetbrains.team/p/IJ/reviews/230785/timeline)\n\n[https://patronus.labs.jb.gg/robot/afd10aaf-1b46-49b8-9bee-d5ae213c0c39](https://patronus.labs.jb.gg/robot/afd10aaf-1b46-49b8-9bee-d5ae213c0c39)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -261,6 +284,7 @@
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -275,8 +299,7 @@
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -295,6 +318,7 @@
         "body": {
           "messages": [
             {
+              "text": "⚪ rubocop_inline.txt:21: The three new cases are all positive, and the file still has no trailing comment that is not a RuboCop directive. Add one such block, and put the moved comment in the expected half, so the test also fails if the pattern becomes too broad.",
               "details": {
                 "className": "M2TextItemContent"
               },
@@ -304,12 +328,19 @@
                   "className": "CApplicationPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-11-02T09:20:16.083Z",
+                "timestamp": 1793611216083
+              },
               "id": "F9LTt0W7ZOP"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-11-02T09:20:16.083Z",
+            "timestamp": 1793611216083
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],

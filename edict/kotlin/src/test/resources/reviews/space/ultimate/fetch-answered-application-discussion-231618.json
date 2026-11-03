@@ -25,9 +25,9 @@
               "ref": "216997be332854eece3adeb41137240d5f4562cc"
             },
             "isMerged": true
-          }
-        },
-        "hasNext": false
+          },
+          "description": null
+        }
       }
     },
     {
@@ -43,9 +43,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849954734",
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -60,6 +62,7 @@
             },
             {
               "chatMessage": {
+                "text": "added 5 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -74,6 +77,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [RubyMine](https://codeowners.labs.jb.gg/group/rubymine?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/54c3884309b7837c2f9b21094ee852e578242609/.ownership/review-rules.yaml?line=186) | `ruby/**` | **[Darya Sharkova](https://jetbrains.team/m/Darya.Sharkova)**, <br/><details><summary>More</summary>[Domján Dániel Lajos](https://jetbrains.team/m/Daniel.Domjan), <br/>[Dmitry Pogrebnoy](https://jetbrains.team/m/Dmitry.Pogrebnoy), <br/>[Egor Kukoverov](https://jetbrains.team/m/Egor.Kukoverov) (away soon)</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -88,6 +92,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -102,6 +107,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge Dry Run \"hjwylde/review/ruby-35347-remove-gem-tests\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/231618/timeline)\n\nRepository: `ultimate`\nFrom: `hjwylde/review/ruby-35347-remove-gem-tests`\nTo: `master`\n\nChanges:\n• [c1425c5](https://jetbrains.team/p/IJ/repositories/ultimate/revision/c1425c56b5de9390035f2619b9ffb93740bda99b) Pre-merge `master` changes into temp branch for running tests\n• [0b9e8da](https://jetbrains.team/p/IJ/repositories/ultimate/revision/0b9e8da6502173d26907c3a91389a552d7144a4d) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove version restrictions on ckedit and turbolinks in SprocketsCompletionContributorTest\n• [a6668ec](https://jetbrains.team/p/IJ/repositories/ultimate/revision/a6668ec5f82b28600b9ea09f1b7c51b1998d8a7b) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `cucumber-api-steps` gem in Ruby tests\n• [abd04ef](https://jetbrains.team/p/IJ/repositories/ultimate/revision/abd04ef6d7ab6cbc0d8b7740c20e7a067b50675f) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `extlib` gem in Ruby tests\n• [fa663e6](https://jetbrains.team/p/IJ/repositories/ultimate/revision/fa663e61870ba0e69c13aa41a5c1c43d439fb1ef) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `react-source` gem in Ruby tests\n(displayed 5 of 6)\n\n[https://patronus.labs.jb.gg/robot/00c1d8af-c868-4d6c-96d3-c9e0fda13350](https://patronus.labs.jb.gg/robot/00c1d8af-c868-4d6c-96d3-c9e0fda13350)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -116,6 +122,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -130,6 +137,7 @@
             },
             {
               "chatMessage": {
+                "text": "Main test that we may have wished to keep here is the one regarding `thin`, though we also have that marked as a candidate for support removal, so I'm not super worried. For now just removing the test to progress merging gems data in the monorepo.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -144,6 +152,7 @@
             },
             {
               "chatMessage": {
+                "text": "🟡 SprocketsCompletionContributorTest:20: `turbolinks` loses its version constraint while `ckeditor` on the next line keeps one, so `testResolveGemAssetInLibDirectory` and `testResolveToMostAppropriateGemFile` now follow whatever `turbolinks` version gems-data holds. Today that is 1.1.1 on master and 1.3.1 on `hjwylde/draft/ruby-35347-gem-updates`, and both ship `lib/assets/javascripts/turbolinks.js.coffee`. A later major bump changes the asset name and breaks both assertions. Add an upper bound, like the `ckeditor` one.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -158,14 +167,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "0b9e8da6502173d26907c3a91389a552d7144a4d",
                       "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/rails/codeInsight/sprockets/SprocketsCompletionContributorTest.java",
+                      "line": 19,
                       "oldLine": null
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "3v1xs52Wr5v9"
                     }
@@ -182,6 +194,7 @@
             },
             {
               "chatMessage": {
+                "text": "🟡 SprocketsCompletionContributorTest:244: `testReactDirectiveCompletionExcludesVariants` stays, but `react-source` left the descriptor, so `ReactSprocketsDirectiveContextProvider.getCompletionFilter` finds no gem `build` folder and accepts every item. The assertion then passes on a completion list that never held `react.min.js`, and the provider is left with no test at all. Delete this test together with the gem, or keep `react-source` attached.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -196,14 +209,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "0b9e8da6502173d26907c3a91389a552d7144a4d",
                       "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/rails/codeInsight/sprockets/SprocketsCompletionContributorTest.java",
+                      "line": 243,
                       "oldLine": null
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "hPLIE2Irfw6"
                     }
@@ -220,6 +236,7 @@
             },
             {
               "chatMessage": {
+                "text": "🟡 RailsCommandLineGeneratorTest:81: `testThinBuiltCommandLine` was the only test of `ThinServerRunCommandLineGenerator`, and `ExternalRailsSettings` still offers \"Thin\" as a server type. The `bin/thin start` command line now ships untested. Record the dropped coverage in RUBY-35347, or remove the Thin server type in the same change.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -234,14 +251,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "e1d28def059bace41670d459bee244ec9d1ab52a",
                       "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/rails/run/commandLine/RailsCommandLineGeneratorTest.java",
+                      "line": null,
                       "oldLine": 80
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "99tNr1rpsI6"
                     }
@@ -258,6 +278,7 @@
             },
             {
               "chatMessage": {
+                "text": "⚪ CucumberRubyResolveTest:20: `testResolveStepInCucumberApiGem` was the only test that resolves a step call to a step definition inside a gem. No other test under `ruby/tests/src/.../cucumber/` or `.../rspec/codeInsight/cucumber/` attaches a gem. Record the dropped coverage in RUBY-35347.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -272,14 +293,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "abd04ef6d7ab6cbc0d8b7740c20e7a067b50675f",
                       "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/cucumber/codeinsight/CucumberRubyResolveTest.java",
+                      "line": null,
                       "oldLine": 19
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "kBnP420xGYj"
                     }
@@ -296,6 +320,7 @@
             },
             {
               "chatMessage": {
+                "text": "⚪ Ruby4502Test:16: This assertion was the only test that a gem attached to the module shows up in `require '<caret>'` completion. `RubyResolveRequireInGemTest` covers the resolve side only, and `BundlerParamDefProviderTest` covers `gem '<caret>'` in a Gemfile. Record the dropped coverage in RUBY-35347.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -310,14 +335,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "fa663e61870ba0e69c13aa41a5c1c43d439fb1ef",
                       "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/ruby/lang/psi/Ruby4502Test.java",
+                      "line": null,
                       "oldLine": 15
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "jecMS1e956l"
                     }
@@ -334,6 +362,7 @@
             },
             {
               "chatMessage": {
+                "text": "⚪ Ruby4502Test:6: `tests/classes-duration/seasons/Ruby_Common_Tests.csv:837` still lists `org.jetbrains.plugins.ruby.ruby.lang.psi.Ruby4502Test,1957`, so the bucketing data keeps a duration for a class that no longer exists. Delete the row in this change, as RUBY-34991 and RUBY-34992 did for their removed classes.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -348,14 +377,17 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
                     "anchor": {
                       "revision": "fa663e61870ba0e69c13aa41a5c1c43d439fb1ef",
                       "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/ruby/lang/psi/Ruby4502Test.java",
+                      "line": null,
                       "oldLine": 5
                     },
+                    "endAnchor": null,
                     "channel": {
                       "id": "4e1zli2VguA2"
                     }
@@ -372,6 +404,7 @@
             },
             {
               "chatMessage": {
+                "text": "AI Review done\n🔴 0 blocking, 🟡 3 important, ⚪ 3 nitpicks",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -386,6 +419,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge Dry Run \"hjwylde/review/ruby-35347-remove-gem-tests\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/231618/timeline)\n\nRepository: `ultimate`\nFrom: `hjwylde/review/ruby-35347-remove-gem-tests`\nTo: `master`\n\n[https://patronus.labs.jb.gg/robot/00c1d8af-c868-4d6c-96d3-c9e0fda13350](https://patronus.labs.jb.gg/robot/00c1d8af-c868-4d6c-96d3-c9e0fda13350)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -400,6 +434,7 @@
             },
             {
               "chatMessage": {
+                "text": "build succeeded\n**[Patronus](https://patronus.labs.jb.gg/robot/00c1d8af-c868-4d6c-96d3-c9e0fda13350)**\n14 checks passed\n14 checks passed\n**[Patronus](https://patronus.labs.jb.gg/robot/00c1d8af-c868-4d6c-96d3-c9e0fda13350)**\n14 checks passed\n14 checks passed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -414,6 +449,7 @@
             },
             {
               "chatMessage": {
+                "text": "Lgtm!",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -428,6 +464,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -442,6 +479,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -456,6 +494,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -470,6 +509,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -484,6 +524,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -498,6 +539,7 @@
             },
             {
               "chatMessage": {
+                "text": "Autogenerated",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -512,6 +554,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -526,6 +569,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -540,6 +584,7 @@
             },
             {
               "chatMessage": {
+                "text": "pushed 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -554,6 +599,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -568,6 +614,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"hjwylde/review/ruby-35347-remove-gem-tests\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/231618/timeline)\n\nRepository: `ultimate`\nFrom: `hjwylde/review/ruby-35347-remove-gem-tests`\nTo: `master`\n\nChanges:\n• [46f2885](https://jetbrains.team/p/IJ/repositories/ultimate/revision/46f28853f0c622bce422d8fbe16bd8d4f66ec89c) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove version restrictions on ckedit and turbolinks in SprocketsCompletionContributorTest\n• [0935ea1](https://jetbrains.team/p/IJ/repositories/ultimate/revision/0935ea1b4761143bf10c13cfab9c43a9424b5663) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `cucumber-api-steps` gem in Ruby tests\n• [648652e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/648652ec12607573f0911687cc7b51bcf8bc6fe3) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `extlib` gem in Ruby tests\n• [4328710](https://jetbrains.team/p/IJ/repositories/ultimate/revision/4328710d5039356e05fd77a11195d832d1f138a9) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `react-source` gem in Ruby tests\n• [fed31c4](https://jetbrains.team/p/IJ/repositories/ultimate/revision/fed31c4943a93551860a91843f1d4c8343424f53) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `thin` gem in Ruby tests\n\n[https://patronus.labs.jb.gg/robot/d124571c-87f7-4263-a702-b71e92424a4c](https://patronus.labs.jb.gg/robot/d124571c-87f7-4263-a702-b71e92424a4c)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -582,6 +629,7 @@
             },
             {
               "chatMessage": {
+                "text": "merged the hjwylde/review/ruby-35347-remove-gem-tests branch into master and deleted it",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -596,6 +644,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge \"hjwylde/review/ruby-35347-remove-gem-tests\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/231618/timeline)\n\nRepository: `ultimate`\nFrom: `hjwylde/review/ruby-35347-remove-gem-tests`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/d124571c-87f7-4263-a702-b71e92424a4c/changes/space)):\n• [91d3569](https://jetbrains.team/p/IJ/repositories/ultimate/revision/91d3569772506a4d6236d269db17050bc21f0c83) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove version restrictions on ckedit and turbolinks in SprocketsCompletionContributorTest\n• [2ed0bf1](https://jetbrains.team/p/IJ/repositories/ultimate/revision/2ed0bf142e70b865e3ffa086b7a80b69da3b2ad2) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `cucumber-api-steps` gem in Ruby tests\n• [4d8e6c7](https://jetbrains.team/p/IJ/repositories/ultimate/revision/4d8e6c7108f5332e6c1b40c5eb7e2b668ace1253) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `extlib` gem in Ruby tests\n• [56f2087](https://jetbrains.team/p/IJ/repositories/ultimate/revision/56f20873fe4d5b2bfe08c002f7f85490941f9220) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `react-source` gem in Ruby tests\n• [7383b5d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7383b5d49b149815c99a19abfdcb1d49bd87ab3f) [RUBY-35347](https://youtrack.jetbrains.com/issue/RUBY-35347) remove use of `thin` gem in Ruby tests\n\n[https://patronus.labs.jb.gg/robot/d124571c-87f7-4263-a702-b71e92424a4c](https://patronus.labs.jb.gg/robot/d124571c-87f7-4263-a702-b71e92424a4c)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -610,6 +659,7 @@
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -624,8 +674,7 @@
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -644,6 +693,7 @@
         "body": {
           "messages": [
             {
+              "text": "🟡 SprocketsCompletionContributorTest:20: `turbolinks` loses its version constraint while `ckeditor` on the next line keeps one, so `testResolveGemAssetInLibDirectory` and `testResolveToMostAppropriateGemFile` now follow whatever `turbolinks` version gems-data holds. Today that is 1.1.1 on master and 1.3.1 on `hjwylde/draft/ruby-35347-gem-updates`, and both ship `lib/assets/javascripts/turbolinks.js.coffee`. A later major bump changes the asset name and breaks both assertions. Add an upper bound, like the `ckeditor` one.",
               "details": {
                 "className": "M2TextItemContent"
               },
@@ -653,9 +703,14 @@
                   "className": "CApplicationPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-27T04:24:13.557Z",
+                "timestamp": 1793075053557
+              },
               "id": "F9yMt0W751D"
             },
             {
+              "text": "User resolved the discussion",
               "details": {
                 "className": "MCMessage"
               },
@@ -665,12 +720,19 @@
                   "className": "CUserPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-28T01:30:59.082Z",
+                "timestamp": 1793151059082
+              },
               "id": "FAJEv0W79uH"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T01:30:59.082Z",
+            "timestamp": 1793151059082
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -689,6 +751,7 @@
         "body": {
           "messages": [
             {
+              "text": "🟡 SprocketsCompletionContributorTest:244: `testReactDirectiveCompletionExcludesVariants` stays, but `react-source` left the descriptor, so `ReactSprocketsDirectiveContextProvider.getCompletionFilter` finds no gem `build` folder and accepts every item. The assertion then passes on a completion list that never held `react.min.js`, and the provider is left with no test at all. Delete this test together with the gem, or keep `react-source` attached.",
               "details": {
                 "className": "M2TextItemContent"
               },
@@ -698,9 +761,14 @@
                   "className": "CApplicationPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-27T04:24:20.919Z",
+                "timestamp": 1793075060919
+              },
               "id": "F9yN30W751F"
             },
             {
+              "text": "User resolved the discussion",
               "details": {
                 "className": "MCMessage"
               },
@@ -710,12 +778,19 @@
                   "className": "CUserPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-28T01:29:27.533Z",
+                "timestamp": 1793150967533
+              },
               "id": "FAJEp0W79uB"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T01:29:27.533Z",
+            "timestamp": 1793150967533
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -734,6 +809,7 @@
         "body": {
           "messages": [
             {
+              "text": "🟡 RailsCommandLineGeneratorTest:81: `testThinBuiltCommandLine` was the only test of `ThinServerRunCommandLineGenerator`, and `ExternalRailsSettings` still offers \"Thin\" as a server type. The `bin/thin start` command line now ships untested. Record the dropped coverage in RUBY-35347, or remove the Thin server type in the same change.",
               "details": {
                 "className": "M2TextItemContent"
               },
@@ -743,9 +819,14 @@
                   "className": "CApplicationPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-27T04:24:27.200Z",
+                "timestamp": 1793075067200
+              },
               "id": "F9yN50W751H"
             },
             {
+              "text": "User resolved the discussion",
               "details": {
                 "className": "MCMessage"
               },
@@ -755,12 +836,19 @@
                   "className": "CUserPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-28T01:29:43.133Z",
+                "timestamp": 1793150983133
+              },
               "id": "FAJEy0W79uC"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T01:29:43.133Z",
+            "timestamp": 1793150983133
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -779,6 +867,7 @@
         "body": {
           "messages": [
             {
+              "text": "⚪ CucumberRubyResolveTest:20: `testResolveStepInCucumberApiGem` was the only test that resolves a step call to a step definition inside a gem. No other test under `ruby/tests/src/.../cucumber/` or `.../rspec/codeInsight/cucumber/` attaches a gem. Record the dropped coverage in RUBY-35347.",
               "details": {
                 "className": "M2TextItemContent"
               },
@@ -788,9 +877,14 @@
                   "className": "CApplicationPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-27T04:24:33.123Z",
+                "timestamp": 1793075073123
+              },
               "id": "F9yMz0W751J"
             },
             {
+              "text": "User resolved the discussion",
               "details": {
                 "className": "MCMessage"
               },
@@ -800,12 +894,19 @@
                   "className": "CUserPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-28T01:29:53.445Z",
+                "timestamp": 1793150993445
+              },
               "id": "FAJEz0W79uD"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T01:29:53.445Z",
+            "timestamp": 1793150993445
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -824,6 +925,7 @@
         "body": {
           "messages": [
             {
+              "text": "⚪ Ruby4502Test:16: This assertion was the only test that a gem attached to the module shows up in `require '<caret>'` completion. `RubyResolveRequireInGemTest` covers the resolve side only, and `BundlerParamDefProviderTest` covers `gem '<caret>'` in a Gemfile. Record the dropped coverage in RUBY-35347.",
               "details": {
                 "className": "M2TextItemContent"
               },
@@ -833,9 +935,14 @@
                   "className": "CApplicationPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-27T04:24:38.471Z",
+                "timestamp": 1793075078471
+              },
               "id": "F9yN10W751L"
             },
             {
+              "text": "User resolved the discussion",
               "details": {
                 "className": "MCMessage"
               },
@@ -845,12 +952,19 @@
                   "className": "CUserPrincipalDetails"
                 }
               },
+              "created": {
+                "iso": "2026-10-28T01:30:18.101Z",
+                "timestamp": 1793151018101
+              },
               "id": "FAJF00W79uE"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T01:30:18.101Z",
+            "timestamp": 1793151018101
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -880,6 +994,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-27T04:24:47.754Z",
                 "timestamp": 1793075087754
               },
               "id": "F9yNB0W751N"
@@ -896,6 +1011,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T01:30:53.020Z",
                 "timestamp": 1793151053020
               },
               "id": "FAJF10W79uF"
@@ -912,14 +1028,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T01:30:54.074Z",
                 "timestamp": 1793151054074
               },
               "id": "FAJEu0W79uG"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-28T01:30:54.074Z",
+            "timestamp": 1793151054074
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],

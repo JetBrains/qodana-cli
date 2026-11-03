@@ -9,49 +9,396 @@
       "response": {
         "status": 200,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+          "id": 4405753484,
+          "node_id": "PR_kwDOADRfSs8AAAABBpp2jA",
           "html_url": "https://github.com/JetBrains/kotlin/pull/7832",
+          "diff_url": "https://github.com/JetBrains/kotlin/pull/7832.diff",
+          "patch_url": "https://github.com/JetBrains/kotlin/pull/7832.patch",
+          "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/7832",
+          "commits_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832/commits",
+          "review_comments_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832/comments",
+          "review_comment_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}",
+          "comments_url": "https://api.github.com/repos/JetBrains/kotlin/issues/7832/comments",
+          "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/e11e8f4afba2b364617b1c89b13746174083acf5",
           "number": 7832,
+          "state": "closed",
+          "locked": false,
           "title": "Introduce 'possibleSmartCasts' in 'KaScopeContext'",
           "user": {
             "login": "yanex",
-            "type": "User"
+            "id": 95996,
+            "node_id": "MDQ6VXNlcjk1OTk2",
+            "avatar_url": "https://avatars.githubusercontent.com/u/95996?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/yanex",
+            "html_url": "https://github.com/yanex",
+            "followers_url": "https://api.github.com/users/yanex/followers",
+            "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+            "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+            "organizations_url": "https://api.github.com/users/yanex/orgs",
+            "repos_url": "https://api.github.com/users/yanex/repos",
+            "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/yanex/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
           "body": "The new endpoint makes it possible to track potential smart casts in a particular position, even if a real cast isn't yet present in the source code.",
+          "labels": [],
+          "milestone": null,
+          "active_lock_reason": null,
+          "created_at": "2026-08-31T19:53:18Z",
+          "updated_at": "2026-09-02T01:33:03Z",
+          "closed_at": "2026-09-02T01:33:01Z",
           "merged_at": "2026-09-02T01:33:01Z",
+          "merge_commit_sha": "9f27f51dd5349129c08e300c1957a9085c313853",
+          "assignee": null,
+          "assignees": [],
+          "requested_reviewers": [],
+          "requested_teams": [],
           "head": {
+            "label": "JetBrains:rr/yan.scope.context.smartcasts",
+            "ref": "rr/yan.scope.context.smartcasts",
             "repo": {
+              "id": 3432266,
+              "node_id": "MDEwOlJlcG9zaXRvcnkzNDMyMjY2",
               "name": "kotlin",
+              "full_name": "JetBrains/kotlin",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
-              }
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": false,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [
+                "compiler",
+                "gradle-plugin",
+                "intellij-plugin",
+                "kotlin",
+                "kotlin-library",
+                "maven-plugin",
+                "programming-language",
+                "wasm",
+                "webassembly"
+              ],
+              "forks_count": 6452,
+              "forks": 6452,
+              "stargazers_count": 53536,
+              "watchers_count": 53536,
+              "watchers": 53536,
+              "open_issues_count": 485,
+              "open_issues": 485,
+              "size": 4391464,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": false,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-11-03T15:08:21Z",
+              "created_at": "2012-02-13T17:29:58Z",
+              "updated_at": "2026-11-03T14:54:36Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/JetBrains/kotlin",
+              "html_url": "https://github.com/JetBrains/kotlin",
+              "archive_url": "https://api.github.com/repos/JetBrains/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/JetBrains/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/JetBrains/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/JetBrains/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/JetBrains/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/JetBrains/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/JetBrains/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/JetBrains/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/JetBrains/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/JetBrains/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/JetBrains/kotlin/events",
+              "forks_url": "https://api.github.com/repos/JetBrains/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/JetBrains/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/JetBrains/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/JetBrains/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/JetBrains/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/JetBrains/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/JetBrains/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/JetBrains/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/JetBrains/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/JetBrains/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/JetBrains/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/JetBrains/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/JetBrains/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/JetBrains/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/JetBrains/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:JetBrains/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/JetBrains/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/JetBrains/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/JetBrains/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/JetBrains/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/JetBrains/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/JetBrains/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/JetBrains/kotlin/hooks",
+              "svn_url": "https://github.com/JetBrains/kotlin"
             },
             "sha": "e11e8f4afba2b364617b1c89b13746174083acf5",
             "user": {
               "login": "JetBrains",
-              "type": "Organization"
+              "id": 878437,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/JetBrains",
+              "html_url": "https://github.com/JetBrains",
+              "followers_url": "https://api.github.com/users/JetBrains/followers",
+              "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+              "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+              "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+              "repos_url": "https://api.github.com/users/JetBrains/repos",
+              "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
           "base": {
+            "label": "JetBrains:master",
+            "ref": "master",
             "repo": {
+              "id": 3432266,
+              "node_id": "MDEwOlJlcG9zaXRvcnkzNDMyMjY2",
               "name": "kotlin",
+              "full_name": "JetBrains/kotlin",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
-              }
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": false,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [
+                "compiler",
+                "gradle-plugin",
+                "intellij-plugin",
+                "kotlin",
+                "kotlin-library",
+                "maven-plugin",
+                "programming-language",
+                "wasm",
+                "webassembly"
+              ],
+              "forks_count": 6452,
+              "forks": 6452,
+              "stargazers_count": 53536,
+              "watchers_count": 53536,
+              "watchers": 53536,
+              "open_issues_count": 485,
+              "open_issues": 485,
+              "size": 4391464,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": false,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-11-03T15:08:21Z",
+              "created_at": "2012-02-13T17:29:58Z",
+              "updated_at": "2026-11-03T14:54:36Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/JetBrains/kotlin",
+              "html_url": "https://github.com/JetBrains/kotlin",
+              "archive_url": "https://api.github.com/repos/JetBrains/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/JetBrains/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/JetBrains/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/JetBrains/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/JetBrains/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/JetBrains/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/JetBrains/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/JetBrains/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/JetBrains/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/JetBrains/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/JetBrains/kotlin/events",
+              "forks_url": "https://api.github.com/repos/JetBrains/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/JetBrains/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/JetBrains/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/JetBrains/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/JetBrains/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/JetBrains/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/JetBrains/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/JetBrains/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/JetBrains/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/JetBrains/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/JetBrains/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/JetBrains/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/JetBrains/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/JetBrains/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/JetBrains/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:JetBrains/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/JetBrains/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/JetBrains/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/JetBrains/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/JetBrains/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/JetBrains/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/JetBrains/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/JetBrains/kotlin/hooks",
+              "svn_url": "https://github.com/JetBrains/kotlin"
             },
             "sha": "16f6e7a006d3b36950a03df9f87f1193005864a9",
             "user": {
               "login": "JetBrains",
-              "type": "Organization"
+              "id": 878437,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/JetBrains",
+              "html_url": "https://github.com/JetBrains",
+              "followers_url": "https://api.github.com/users/JetBrains/followers",
+              "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+              "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+              "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+              "repos_url": "https://api.github.com/users/JetBrains/repos",
+              "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
+          "_links": {
+            "comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/7832/comments"
+            },
+            "commits": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832/commits"
+            },
+            "statuses": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/statuses/e11e8f4afba2b364617b1c89b13746174083acf5"
+            },
+            "html": {
+              "href": "https://github.com/JetBrains/kotlin/pull/7832"
+            },
+            "issue": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/7832"
+            },
+            "review_comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832/comments"
+            },
+            "review_comment": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}"
+            },
+            "self": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+            }
+          },
+          "author_association": "MEMBER",
+          "auto_merge": null,
+          "draft": false,
+          "merged": true,
+          "mergeable": null,
+          "rebaseable": null,
+          "mergeable_state": "unknown",
           "merged_by": {
             "login": "KotlinBuild",
-            "type": "User"
-          }
-        },
-        "hasNext": false
+            "id": 11723187,
+            "node_id": "MDQ6VXNlcjExNzIzMTg3",
+            "avatar_url": "https://avatars.githubusercontent.com/u/11723187?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/KotlinBuild",
+            "html_url": "https://github.com/KotlinBuild",
+            "followers_url": "https://api.github.com/users/KotlinBuild/followers",
+            "following_url": "https://api.github.com/users/KotlinBuild/following{/other_user}",
+            "gists_url": "https://api.github.com/users/KotlinBuild/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/KotlinBuild/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/KotlinBuild/subscriptions",
+            "organizations_url": "https://api.github.com/users/KotlinBuild/orgs",
+            "repos_url": "https://api.github.com/users/KotlinBuild/repos",
+            "events_url": "https://api.github.com/users/KotlinBuild/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/KotlinBuild/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "comments": 7,
+          "review_comments": 10,
+          "maintainer_can_modify": false,
+          "commits": 4,
+          "additions": 9474,
+          "deletions": 9,
+          "changed_files": 109
+        }
       }
     },
     {
@@ -67,142 +414,721 @@
         "status": 200,
         "body": [
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904675514",
+            "pull_request_review_id": 5078741791,
             "id": 3904675514,
+            "node_id": "PRRC_kwDOADRfSs7ovJ66",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).\n+     */\n+    public val source: KaSmartCastSource<KaVariableSymbol>\n+\n+    /**\n+     * Types that [source] may be automatically cast to.\n+     */\n+    public val resultingTypes: List<KaType>\n+\n+    /**\n+     * Whether the smart cast [source] is stable at the context position.\n+     *\n+     * The same [source] can have different smart cast stability depending on the context position.\n+     * Such as, in the code snippet below, a smart cast will be applied to the first usage of `value`. However, after the conditional\n+     * expression, the compiler is not sure anymore that the `value` is still set, so a compilation error is reported.\n+     *\n+     * ```\n+     * fun test() {\n+     *     var value: String? = System.getProperty(\"some.property\")\n+     *     if (value == null) {\n+     *         return\n+     *     }\n+     *\n+     *     value.length  // Smart cast is applied\n+     *\n+     *     if (Random.nextBoolean()) {\n+     *         value = null\n+     *     }\n+     *\n+     *     value.length  // UNSAFE_CALL\n+     * }\n+     * ```\n+     *\n+     * For more information on the smart cast stability, check the Kotlin specification:\n+     * [Smart cast sink stability](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability).\n+     */\n+    public val isStable: Boolean\n+}\n+\n+/**\n+ * Either a symbol for which a smart cast is generated, or one of its receivers.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastSource<T : KaDeclarationSymbol> : KaLifetimeOwner {",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "abelkov",
-              "type": "User"
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "In the [specification](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability) \"smart cast source\" has a different meaning. In the spec terms, this is a smart cast sink. To avoid using the word \"sink\", maybe we should call it `KaSmartCastPosition`?",
             "created_at": "2026-09-01T13:39:14Z",
+            "updated_at": "2026-09-01T13:51:00Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904675514",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904675514"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904675514"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904675514/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 373,
-            "subject_type": "line"
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 82,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904686039",
+            "pull_request_review_id": 5078741791,
             "id": 3904686039,
+            "node_id": "PRRC_kwDOADRfSs7ovMfX",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).\n+     */\n+    public val source: KaSmartCastSource<KaVariableSymbol>\n+\n+    /**\n+     * Types that [source] may be automatically cast to.\n+     */\n+    public val resultingTypes: List<KaType>\n+\n+    /**\n+     * Whether the smart cast [source] is stable at the context position.\n+     *\n+     * The same [source] can have different smart cast stability depending on the context position.\n+     * Such as, in the code snippet below, a smart cast will be applied to the first usage of `value`. However, after the conditional\n+     * expression, the compiler is not sure anymore that the `value` is still set, so a compilation error is reported.\n+     *\n+     * ```\n+     * fun test() {\n+     *     var value: String? = System.getProperty(\"some.property\")\n+     *     if (value == null) {\n+     *         return\n+     *     }\n+     *\n+     *     value.length  // Smart cast is applied\n+     *\n+     *     if (Random.nextBoolean()) {\n+     *         value = null\n+     *     }\n+     *\n+     *     value.length  // UNSAFE_CALL\n+     * }\n+     * ```\n+     *\n+     * For more information on the smart cast stability, check the Kotlin specification:\n+     * [Smart cast sink stability](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability).\n+     */\n+    public val isStable: Boolean\n+}\n+\n+/**\n+ * Either a symbol for which a smart cast is generated, or one of its receivers.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastSource<T : KaDeclarationSymbol> : KaLifetimeOwner {\n+    /**\n+     * A declaration participating in the smart cast path.\n+     *\n+     * Smart casts to the same declaration can be allowed or prohibited, depending on how that declaration is accessed.\n+     * In the following example, the [symbol] will be `val value: Any`. However, only for `a.value` a smart cast will be produced.\n+     *\n+     * ```\n+     * class Holder(val value: Any)\n+     *\n+     * fun test(a: Holder, b: Holder) {\n+     *     if (a.value is String) {\n+     *         a.value.length  // OK\n+     *         b.value.length  // compilation error\n+     *     }\n+     * }\n+     * ```\n+     *\n+     * For `a.value` from the example above, a [KaSmartCastSource] is generated, [symbol] of which points to `val value: Any` (a property),\n+     * and the [dispatchReceiver] will be the `a: Holder` value parameter.\n+     */\n+    public val symbol: T\n+\n+    /**\n+     * The required dispatch receiver for this path component, if any.\n+     *\n+     * The [symbol] only participates in the smart cast if its dispatch receiver is the same as this one. E.g.:\n+     *\n+     * ```\n+     * class Holder(val value: Any)\n+     *\n+     * fun test(holder: Holder) {\n+     *     if (holder.value is String) {\n+     *         holder.value.legnth  // Context position\n+     *     }\n+     * }\n+     * ```\n+     *\n+     * In the example above, the `holder` parameter is a required dispatch receiver for `value`. If any other receiver is passed,\n+     * such as `Holder().value`, the smart cast is not generated.\n+     */\n+    public val dispatchReceiver: KaSmartCastSource<KaDeclarationSymbol>?\n+\n+    /**\n+     * The required extension receiver for this path component, if any.\n+     */\n+    public val extensionReceiver: KaSmartCastSource<KaDeclarationSymbol>?\n+\n+    /**\n+     * The original type of the [symbol].\n+     */\n+    public val type: KaType",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "abelkov",
-              "type": "User"
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "Maybe `originalType` like we already have in `KaSmartCastInfo`? It could be clearer in use-site code.",
             "created_at": "2026-09-01T13:40:22Z",
+            "updated_at": "2026-09-01T13:51:00Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904686039",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904686039"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904686039"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904686039/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 424,
-            "subject_type": "line"
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 133,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904701730",
+            "pull_request_review_id": 5078741791,
             "id": 3904701730,
+            "node_id": "PRRC_kwDOADRfSs7ovQUi",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "71cd3a13b7d0de313084b13ced4521e6ead994e1",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "abelkov",
-              "type": "User"
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "I think something is wrong with the grammar here. It's better to proofread the docs before merging.",
             "created_at": "2026-09-01T13:42:07Z",
+            "updated_at": "2026-09-01T13:51:00Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904701730",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904701730"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904701730"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904701730/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 330,
-            "subject_type": "line"
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 39,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904712965",
+            "pull_request_review_id": 5078741791,
             "id": 3904712965,
+            "node_id": "PRRC_kwDOADRfSs7ovTEF",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).\n+     */\n+    public val source: KaSmartCastSource<KaVariableSymbol>\n+\n+    /**\n+     * Types that [source] may be automatically cast to.\n+     */\n+    public val resultingTypes: List<KaType>",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "abelkov",
-              "type": "User"
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "Maybe `smartCastTypes` (for consistency with `KaSmartCastInfo`)?",
             "created_at": "2026-09-01T13:43:21Z",
+            "updated_at": "2026-09-01T13:51:00Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904712965",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904712965"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904712965"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904712965/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 337,
-            "subject_type": "line"
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 46,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904783992",
+            "pull_request_review_id": 5078741791,
             "id": 3904783992,
+            "node_id": "PRRC_kwDOADRfSs7ovkZ4",
+            "diff_hunk": "",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "e11e8f4afba2b364617b1c89b13746174083acf5",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "abelkov",
-              "type": "User"
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "Analysis from Codex:\r\n\r\nFound three issues:\r\n\r\n1. **[P1] New API is added to the frozen legacy surface** — [KaScopeProvider.kt:317](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:317)\r\n\r\n   `possibleSmartCasts` and its public types are under `components/`, which is frozen during the endpoint-architecture migration. `AnalysisApiLegacySurfaceDumpTest` and `AnalysisApiLegacyCallableDumpTest` both fail. This should be exposed from a domain package as a context-session endpoint rather than updating the legacy dumps.\r\n\r\n2. **[P1] New public interfaces are unintentionally extensible** — [KaScopeProvider.kt:328](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:328), [KaScopeProvider.kt:373](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:373)\r\n\r\n   `KaSmartCastPossibility` and `KaSmartCastSource` lack `@SubclassOptInRequired(KaImplementationDetail::class)` or `@KaSpi`. `AnalysisApiExtensibilityTest` consequently fails, and the current API accidentally promises client implementability.\r\n\r\n3. **[P2] Dispatch-receiver smart casts are silently discarded** — [KaFirScopeProvider.kt:380](/Users/alexey.belkov/code/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirScopeProvider.kt:380)\r\n\r\n   FIR represents a member function’s `this` as a `FirRegularClassSymbol`, which becomes a class symbol rather than `KaVariableSymbol`. The `takeIf` therefore drops valid cases such as `if (this is Bar)`. Widen the source representation to `KaDeclarationSymbol` or explicitly model `this`, and add the existing LL `dispatchReceiver.kt` scenario to the Analysis API tests.",
             "created_at": "2026-09-01T13:50:46Z",
+            "updated_at": "2026-09-01T13:53:07Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904783992",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904783992"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904783992"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3904783992/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": 1,
             "original_line": 1,
-            "subject_type": "file"
+            "side": "RIGHT",
+            "author_association": "MEMBER",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "file",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3905584034",
+            "pull_request_review_id": 5079827002,
             "id": 3905584034,
+            "node_id": "PRRC_kwDOADRfSs7oynui",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).\n+     */\n+    public val source: KaSmartCastSource<KaVariableSymbol>\n+\n+    /**\n+     * Types that [source] may be automatically cast to.\n+     */\n+    public val resultingTypes: List<KaType>\n+\n+    /**\n+     * Whether the smart cast [source] is stable at the context position.\n+     *\n+     * The same [source] can have different smart cast stability depending on the context position.\n+     * Such as, in the code snippet below, a smart cast will be applied to the first usage of `value`. However, after the conditional\n+     * expression, the compiler is not sure anymore that the `value` is still set, so a compilation error is reported.\n+     *\n+     * ```\n+     * fun test() {\n+     *     var value: String? = System.getProperty(\"some.property\")\n+     *     if (value == null) {\n+     *         return\n+     *     }\n+     *\n+     *     value.length  // Smart cast is applied\n+     *\n+     *     if (Random.nextBoolean()) {\n+     *         value = null\n+     *     }\n+     *\n+     *     value.length  // UNSAFE_CALL\n+     * }\n+     * ```\n+     *\n+     * For more information on the smart cast stability, check the Kotlin specification:\n+     * [Smart cast sink stability](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability).\n+     */\n+    public val isStable: Boolean\n+}\n+\n+/**\n+ * Either a symbol for which a smart cast is generated, or one of its receivers.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastSource<T : KaDeclarationSymbol> : KaLifetimeOwner {",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "yanex",
-              "type": "User"
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "The word \"position\" clashes with the literal position in code (text offsets), whereas an interface represents a node in the smart cast chain.",
             "created_at": "2026-09-01T15:16:34Z",
+            "updated_at": "2026-09-01T15:16:35Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3905584034",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3905584034"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3905584034"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3905584034/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 373,
+            "side": "RIGHT",
             "in_reply_to_id": 3904675514,
-            "subject_type": "line"
+            "author_association": "MEMBER",
+            "original_position": 82,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907484207",
+            "pull_request_review_id": 5082012370,
             "id": 3907484207,
+            "node_id": "PRRC_kwDOADRfSs7o53ov",
+            "diff_hunk": "",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "e11e8f4afba2b364617b1c89b13746174083acf5",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "yanex",
-              "type": "User"
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "1. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/c5db5ba3b2aa7f2b01a03c6362925cb5653bd490.\r\n2. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/c4df335902a8ae99c4d8a9f4d00dbc3608c2e488.\r\n3. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/ee0c772f8f696f40dbbabab89494b0203d36ee91, https://github.com/JetBrains/kotlin/pull/7832/changes/b846e9381784e7a247e75234175fd2b853b1ab1b and https://github.com/JetBrains/kotlin/pull/7832/changes/6d6a73f7e4ab25226820cb8366695639e35a1e4f.",
             "created_at": "2026-09-01T19:09:30Z",
+            "updated_at": "2026-09-01T19:09:31Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907484207",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907484207"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907484207"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907484207/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": 1,
             "original_line": 1,
+            "side": "RIGHT",
             "in_reply_to_id": 3904783992,
-            "subject_type": "file"
+            "author_association": "MEMBER",
+            "original_position": 1,
+            "position": 1,
+            "subject_type": "file",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907490539",
+            "pull_request_review_id": 5082019664,
             "id": 3907490539,
+            "node_id": "PRRC_kwDOADRfSs7o55Lr",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).\n+     */\n+    public val source: KaSmartCastSource<KaVariableSymbol>\n+\n+    /**\n+     * Types that [source] may be automatically cast to.\n+     */\n+    public val resultingTypes: List<KaType>",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "yanex",
-              "type": "User"
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "Renamed in https://github.com/JetBrains/kotlin/pull/7832/changes/53f8856dbf3bd2965257973f42553bf745bce464.",
             "created_at": "2026-09-01T19:10:13Z",
+            "updated_at": "2026-09-01T19:10:13Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907490539",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907490539"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907490539"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907490539/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 337,
+            "side": "RIGHT",
             "in_reply_to_id": 3904712965,
-            "subject_type": "line"
+            "author_association": "MEMBER",
+            "original_position": 46,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907492338",
+            "pull_request_review_id": 5082021659,
             "id": 3907492338,
+            "node_id": "PRRC_kwDOADRfSs7o55ny",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).\n+     */\n+    public val source: KaSmartCastSource<KaVariableSymbol>\n+\n+    /**\n+     * Types that [source] may be automatically cast to.\n+     */\n+    public val resultingTypes: List<KaType>\n+\n+    /**\n+     * Whether the smart cast [source] is stable at the context position.\n+     *\n+     * The same [source] can have different smart cast stability depending on the context position.\n+     * Such as, in the code snippet below, a smart cast will be applied to the first usage of `value`. However, after the conditional\n+     * expression, the compiler is not sure anymore that the `value` is still set, so a compilation error is reported.\n+     *\n+     * ```\n+     * fun test() {\n+     *     var value: String? = System.getProperty(\"some.property\")\n+     *     if (value == null) {\n+     *         return\n+     *     }\n+     *\n+     *     value.length  // Smart cast is applied\n+     *\n+     *     if (Random.nextBoolean()) {\n+     *         value = null\n+     *     }\n+     *\n+     *     value.length  // UNSAFE_CALL\n+     * }\n+     * ```\n+     *\n+     * For more information on the smart cast stability, check the Kotlin specification:\n+     * [Smart cast sink stability](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability).\n+     */\n+    public val isStable: Boolean\n+}\n+\n+/**\n+ * Either a symbol for which a smart cast is generated, or one of its receivers.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastSource<T : KaDeclarationSymbol> : KaLifetimeOwner {\n+    /**\n+     * A declaration participating in the smart cast path.\n+     *\n+     * Smart casts to the same declaration can be allowed or prohibited, depending on how that declaration is accessed.\n+     * In the following example, the [symbol] will be `val value: Any`. However, only for `a.value` a smart cast will be produced.\n+     *\n+     * ```\n+     * class Holder(val value: Any)\n+     *\n+     * fun test(a: Holder, b: Holder) {\n+     *     if (a.value is String) {\n+     *         a.value.length  // OK\n+     *         b.value.length  // compilation error\n+     *     }\n+     * }\n+     * ```\n+     *\n+     * For `a.value` from the example above, a [KaSmartCastSource] is generated, [symbol] of which points to `val value: Any` (a property),\n+     * and the [dispatchReceiver] will be the `a: Holder` value parameter.\n+     */\n+    public val symbol: T\n+\n+    /**\n+     * The required dispatch receiver for this path component, if any.\n+     *\n+     * The [symbol] only participates in the smart cast if its dispatch receiver is the same as this one. E.g.:\n+     *\n+     * ```\n+     * class Holder(val value: Any)\n+     *\n+     * fun test(holder: Holder) {\n+     *     if (holder.value is String) {\n+     *         holder.value.legnth  // Context position\n+     *     }\n+     * }\n+     * ```\n+     *\n+     * In the example above, the `holder` parameter is a required dispatch receiver for `value`. If any other receiver is passed,\n+     * such as `Holder().value`, the smart cast is not generated.\n+     */\n+    public val dispatchReceiver: KaSmartCastSource<KaDeclarationSymbol>?\n+\n+    /**\n+     * The required extension receiver for this path component, if any.\n+     */\n+    public val extensionReceiver: KaSmartCastSource<KaDeclarationSymbol>?\n+\n+    /**\n+     * The original type of the [symbol].\n+     */\n+    public val type: KaType",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "yanex",
-              "type": "User"
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "Renamed in https://github.com/JetBrains/kotlin/pull/7832/changes/d80b4d23c935646feb0d6ad5e1734b5d5cbf0a9d.",
             "created_at": "2026-09-01T19:10:23Z",
+            "updated_at": "2026-09-01T19:10:23Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907492338",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907492338"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907492338"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907492338/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 424,
+            "side": "RIGHT",
             "in_reply_to_id": 3904686039,
-            "subject_type": "line"
+            "author_association": "MEMBER",
+            "original_position": 133,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           },
           {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907594875",
+            "pull_request_review_id": 5082133037,
             "id": 3907594875,
+            "node_id": "PRRC_kwDOADRfSs7o6Sp7",
+            "diff_hunk": "@@ -302,6 +304,124 @@ public interface KaScopeContext : KaLifetimeOwner {\n      * The list is sorted according to the order of scopes in the scope tower (from innermost to outermost).\n      */\n     public val scopes: List<KaScopeWithKind>\n+\n+    /**\n+     * The list of smart casts available at the context position.\n+     *\n+     * Note that the actual smart cast will only appear if the original expression type does not match the expected type.\n+     * For actual smart cast application, check [KaDataFlowProvider.smartCastInfo].\n+     *\n+     * The list has an arbitrary (but stable) order.\n+     */\n+    @KaExperimentalApi\n+    public val possibleSmartCasts: List<KaSmartCastPossibility>\n+}\n+\n+/**\n+ * Represents a possible smart cast at a fixed context position.\n+ *\n+ * The word \"possible\" means that the compiler is allowed to produce smart casts for the [source] expression if there is a need to do so.\n+ * Note that unless [isStable] is set, the smart cast will not be applied. In addition, the `SMARTCAST_IMPOSSIBLE` error is issued\n+ * in certain cases.\n+ */\n+@KaExperimentalApi\n+public interface KaSmartCastPossibility : KaLifetimeOwner {\n+    /**\n+     * A declaration, references to which smart cast may be applied (if [isStable] is `true`).",
             "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "commit_id": "71cd3a13b7d0de313084b13ced4521e6ead994e1",
             "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
             "user": {
               "login": "yanex",
-              "type": "User"
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             },
             "body": "Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/0f2ea971a890d52729bec35811ef73a5fed556c2.",
             "created_at": "2026-09-01T19:22:36Z",
+            "updated_at": "2026-09-01T19:22:37Z",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907594875",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "_links": {
+              "self": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907594875"
+              },
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3907594875"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "reactions": {
+              "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments/3907594875/reactions",
+              "total_count": 0,
+              "+1": 0,
+              "-1": 0,
+              "laugh": 0,
+              "hooray": 0,
+              "confused": 0,
+              "heart": 0,
+              "rocket": 0,
+              "eyes": 0
+            },
+            "start_line": null,
+            "original_start_line": null,
+            "start_side": null,
+            "line": null,
             "original_line": 330,
+            "side": "RIGHT",
             "in_reply_to_id": 3904701730,
-            "subject_type": "line"
+            "author_association": "MEMBER",
+            "original_position": 39,
+            "position": 1,
+            "subject_type": "line",
+            "is_copilot_code_review": false,
+            "copilot_code_review_sources": []
           }
-        ],
-        "hasNext": false
+        ]
       }
     },
     {
@@ -219,55 +1145,299 @@
         "body": [
           {
             "id": 5078741791,
+            "node_id": "PRR_kwDOADRfSs8AAAABLrdzHw",
             "user": {
               "login": "abelkov",
-              "type": "User"
-            }
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?u=2d974d58500780b084eb7e18a327bb5f2181b39e&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "CHANGES_REQUESTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5078741791",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5078741791"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T13:51:00Z",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa"
           },
           {
             "id": 5079827002,
+            "node_id": "PRR_kwDOADRfSs8AAAABLsgCOg",
             "user": {
               "login": "yanex",
-              "type": "User"
-            }
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?u=08c0348d443b965b323dfa6c22353d03a8d50e85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5079827002",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5079827002"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T15:16:34Z",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa"
           },
           {
             "id": 5082012370,
+            "node_id": "PRR_kwDOADRfSs8AAAABLula0g",
             "user": {
               "login": "yanex",
-              "type": "User"
-            }
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?u=08c0348d443b965b323dfa6c22353d03a8d50e85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082012370",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082012370"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T19:09:30Z",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa"
           },
           {
             "id": 5082019664,
+            "node_id": "PRR_kwDOADRfSs8AAAABLul3UA",
             "user": {
               "login": "yanex",
-              "type": "User"
-            }
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?u=08c0348d443b965b323dfa6c22353d03a8d50e85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082019664",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082019664"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T19:10:13Z",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa"
           },
           {
             "id": 5082021659,
+            "node_id": "PRR_kwDOADRfSs8AAAABLul_Gw",
             "user": {
               "login": "yanex",
-              "type": "User"
-            }
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?u=08c0348d443b965b323dfa6c22353d03a8d50e85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082021659",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082021659"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T19:10:23Z",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa"
           },
           {
             "id": 5082133037,
+            "node_id": "PRR_kwDOADRfSs8AAAABLusyLQ",
             "user": {
               "login": "yanex",
-              "type": "User"
-            }
+              "id": 95996,
+              "node_id": "MDQ6VXNlcjk1OTk2",
+              "avatar_url": "https://avatars.githubusercontent.com/u/95996?u=08c0348d443b965b323dfa6c22353d03a8d50e85&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/yanex",
+              "html_url": "https://github.com/yanex",
+              "followers_url": "https://api.github.com/users/yanex/followers",
+              "following_url": "https://api.github.com/users/yanex/following{/other_user}",
+              "gists_url": "https://api.github.com/users/yanex/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/yanex/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/yanex/subscriptions",
+              "organizations_url": "https://api.github.com/users/yanex/orgs",
+              "repos_url": "https://api.github.com/users/yanex/repos",
+              "events_url": "https://api.github.com/users/yanex/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/yanex/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "",
+            "state": "COMMENTED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082133037",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082133037"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T19:22:37Z",
+            "commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa"
           },
           {
             "id": 5082196953,
+            "node_id": "PRR_kwDOADRfSs8AAAABLuwr2Q",
             "user": {
               "login": "abelkov",
-              "type": "User"
-            }
+              "id": 7702679,
+              "node_id": "MDQ6VXNlcjc3MDI2Nzk=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/7702679?u=2d974d58500780b084eb7e18a327bb5f2181b39e&v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/abelkov",
+              "html_url": "https://github.com/abelkov",
+              "followers_url": "https://api.github.com/users/abelkov/followers",
+              "following_url": "https://api.github.com/users/abelkov/following{/other_user}",
+              "gists_url": "https://api.github.com/users/abelkov/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/abelkov/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/abelkov/subscriptions",
+              "organizations_url": "https://api.github.com/users/abelkov/orgs",
+              "repos_url": "https://api.github.com/users/abelkov/repos",
+              "events_url": "https://api.github.com/users/abelkov/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/abelkov/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
+            },
+            "body": "/final",
+            "state": "APPROVED",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082196953",
+            "pull_request_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832",
+            "author_association": "MEMBER",
+            "_links": {
+              "html": {
+                "href": "https://github.com/JetBrains/kotlin/pull/7832#pullrequestreview-5082196953"
+              },
+              "pull_request": {
+                "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/7832"
+              }
+            },
+            "is_copilot_code_review": false,
+            "copilot_code_review_effort": null,
+            "submitted_at": "2026-09-01T19:29:25Z",
+            "commit_id": "e11e8f4afba2b364617b1c89b13746174083acf5"
           }
-        ],
-        "hasNext": false
+        ]
       }
     }
   ],

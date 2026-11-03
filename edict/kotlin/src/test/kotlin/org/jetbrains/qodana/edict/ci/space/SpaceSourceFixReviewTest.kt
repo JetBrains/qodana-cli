@@ -19,14 +19,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 /**
- * Opening a source-fix review on IJ/ultimate: the regular run reads the real repository with its writes scripted;
- * each other test answers one step differently. The review search, creation and reviewer steps it shares with
+ * Opening a source-fix review on IJ/ultimate: the regular run reads the real repository until its first write, from
+ * which on every answer is scripted; each other test answers one step differently. The review search, creation and reviewer steps it shares with
  * inspection reviews are tested in [SpaceInspectionReviewTest].
  */
 internal class SpaceSourceFixReviewTest {
   @Test
   fun `all fixed files are committed at once to a new branch at their base`() {
-    // ULTIMATE_SOURCE_FIX_REQUEST opened from a new branch at the real head of RELEASE_191; writes scripted.
+    // ULTIMATE_SOURCE_FIX_REQUEST opened from a new branch at the real head of RELEASE_191; scripted from the first write on.
     val recording = ultimateRecording("source-fix-review-opened")
 
     assertEquals(ULTIMATE_NEW_REVIEW, recording.replay { findOrCreateReview(ULTIMATE_SOURCE_FIX_REQUEST) })

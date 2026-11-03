@@ -11,8 +11,7 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
+        "body": []
       }
     }
   ],

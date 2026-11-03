@@ -12,12 +12,22 @@
         "status": 200,
         "body": {
           "className": "MergeRequestRecord",
+          "id": "201aA50kbTmt",
           "number": 1946,
+          "title": "arseniy/simplify-educational-releases",
+          "state": "Closed",
+          "timestamp": 1593086878600,
+          "feedChannelId": "2loPNo2LuKEl",
           "branchPair": {
-            "repository": "ultimate-teamcity-config"
-          }
-        },
-        "hasNext": false
+            "repository": "ultimate-teamcity-config",
+            "sourceBranchRef": "d89d6e496621f3b0de21871df536f5f705f14439",
+            "targetBranchInfo": {
+              "ref": "80d65829eb6afb2663c2b98c0ef6054b54e0b012"
+            },
+            "isMerged": false
+          },
+          "description": null
+        }
       }
     }
   ],

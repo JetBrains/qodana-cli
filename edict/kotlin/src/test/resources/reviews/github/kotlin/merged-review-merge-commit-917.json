@@ -9,45 +9,386 @@
       "response": {
         "status": 200,
         "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/917",
+          "id": 81086724,
+          "node_id": "MDExOlB1bGxSZXF1ZXN0ODEwODY3MjQ=",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/917",
+          "diff_url": "https://github.com/JetBrains/kotlin/pull/917.diff",
+          "patch_url": "https://github.com/JetBrains/kotlin/pull/917.patch",
+          "issue_url": "https://api.github.com/repos/JetBrains/kotlin/issues/917",
+          "commits_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/917/commits",
+          "review_comments_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/917/comments",
+          "review_comment_url": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}",
+          "comments_url": "https://api.github.com/repos/JetBrains/kotlin/issues/917/comments",
+          "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1",
+          "number": 917,
+          "state": "closed",
+          "locked": false,
           "title": "Add inline",
           "user": {
             "login": "mglukhikh",
-            "type": "User"
+            "id": 1127631,
+            "node_id": "MDQ6VXNlcjExMjc2MzE=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1127631?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/mglukhikh",
+            "html_url": "https://github.com/mglukhikh",
+            "followers_url": "https://api.github.com/users/mglukhikh/followers",
+            "following_url": "https://api.github.com/users/mglukhikh/following{/other_user}",
+            "gists_url": "https://api.github.com/users/mglukhikh/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/mglukhikh/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/mglukhikh/subscriptions",
+            "organizations_url": "https://api.github.com/users/mglukhikh/orgs",
+            "repos_url": "https://api.github.com/users/mglukhikh/repos",
+            "events_url": "https://api.github.com/users/mglukhikh/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/mglukhikh/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
+          "body": "",
+          "labels": [],
+          "milestone": null,
+          "active_lock_reason": null,
+          "created_at": "2016-08-12T08:55:22Z",
+          "updated_at": "2016-08-12T12:50:02Z",
+          "closed_at": "2016-08-12T08:55:27Z",
           "merged_at": "2016-08-12T08:55:27Z",
           "merge_commit_sha": "fdb8e1026aee542994c512a524bf45672738cf68",
+          "assignee": null,
+          "assignees": [],
+          "requested_reviewers": [],
+          "requested_teams": [],
           "head": {
+            "label": "shiraji:add_inline",
+            "ref": "add_inline",
             "repo": {
+              "id": 62323288,
+              "node_id": "MDEwOlJlcG9zaXRvcnk2MjMyMzI4OA==",
               "name": "kotlin",
+              "full_name": "shiraji/kotlin",
               "owner": {
                 "login": "shiraji",
-                "type": "User"
-              }
+                "id": 3675458,
+                "node_id": "MDQ6VXNlcjM2NzU0NTg=",
+                "avatar_url": "https://avatars.githubusercontent.com/u/3675458?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/shiraji",
+                "html_url": "https://github.com/shiraji",
+                "followers_url": "https://api.github.com/users/shiraji/followers",
+                "following_url": "https://api.github.com/users/shiraji/following{/other_user}",
+                "gists_url": "https://api.github.com/users/shiraji/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/shiraji/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/shiraji/subscriptions",
+                "organizations_url": "https://api.github.com/users/shiraji/orgs",
+                "repos_url": "https://api.github.com/users/shiraji/repos",
+                "events_url": "https://api.github.com/users/shiraji/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/shiraji/received_events",
+                "type": "User",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": true,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language",
+              "homepage": "http://kotlinlang.org/",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [],
+              "forks_count": 0,
+              "forks": 0,
+              "stargazers_count": 2,
+              "watchers_count": 2,
+              "watchers": 2,
+              "open_issues_count": 0,
+              "open_issues": 0,
+              "size": 628321,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": true,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2020-06-29T00:36:13Z",
+              "created_at": "2016-06-30T15:44:52Z",
+              "updated_at": "2020-06-20T12:05:43Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/shiraji/kotlin",
+              "html_url": "https://github.com/shiraji/kotlin",
+              "archive_url": "https://api.github.com/repos/shiraji/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/shiraji/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/shiraji/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/shiraji/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/shiraji/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/shiraji/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/shiraji/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/shiraji/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/shiraji/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/shiraji/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/shiraji/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/shiraji/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/shiraji/kotlin/events",
+              "forks_url": "https://api.github.com/repos/shiraji/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/shiraji/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/shiraji/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/shiraji/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/shiraji/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/shiraji/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/shiraji/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/shiraji/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/shiraji/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/shiraji/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/shiraji/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/shiraji/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/shiraji/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/shiraji/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/shiraji/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/shiraji/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:shiraji/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/shiraji/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/shiraji/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/shiraji/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/shiraji/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/shiraji/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/shiraji/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/shiraji/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/shiraji/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/shiraji/kotlin/hooks",
+              "svn_url": "https://github.com/shiraji/kotlin"
             },
+            "sha": "145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1",
             "user": {
               "login": "shiraji",
-              "type": "User"
+              "id": 3675458,
+              "node_id": "MDQ6VXNlcjM2NzU0NTg=",
+              "avatar_url": "https://avatars.githubusercontent.com/u/3675458?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/shiraji",
+              "html_url": "https://github.com/shiraji",
+              "followers_url": "https://api.github.com/users/shiraji/followers",
+              "following_url": "https://api.github.com/users/shiraji/following{/other_user}",
+              "gists_url": "https://api.github.com/users/shiraji/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/shiraji/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/shiraji/subscriptions",
+              "organizations_url": "https://api.github.com/users/shiraji/orgs",
+              "repos_url": "https://api.github.com/users/shiraji/repos",
+              "events_url": "https://api.github.com/users/shiraji/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/shiraji/received_events",
+              "type": "User",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
           "base": {
+            "label": "JetBrains:add_inline",
+            "ref": "add_inline",
             "repo": {
+              "id": 3432266,
+              "node_id": "MDEwOlJlcG9zaXRvcnkzNDMyMjY2",
               "name": "kotlin",
+              "full_name": "JetBrains/kotlin",
               "owner": {
                 "login": "JetBrains",
-                "type": "Organization"
-              }
+                "id": 878437,
+                "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+                "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/JetBrains",
+                "html_url": "https://github.com/JetBrains",
+                "followers_url": "https://api.github.com/users/JetBrains/followers",
+                "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+                "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+                "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+                "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+                "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+                "repos_url": "https://api.github.com/users/JetBrains/repos",
+                "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+                "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+                "type": "Organization",
+                "user_view_type": "public",
+                "site_admin": false
+              },
+              "private": false,
+              "fork": false,
+              "archived": false,
+              "disabled": false,
+              "description": "The Kotlin Programming Language. ",
+              "homepage": "https://kotlinlang.org",
+              "language": "Kotlin",
+              "visibility": "public",
+              "is_template": false,
+              "topics": [
+                "compiler",
+                "gradle-plugin",
+                "intellij-plugin",
+                "kotlin",
+                "kotlin-library",
+                "maven-plugin",
+                "programming-language",
+                "wasm",
+                "webassembly"
+              ],
+              "forks_count": 6452,
+              "forks": 6452,
+              "stargazers_count": 53536,
+              "watchers_count": 53536,
+              "watchers": 53536,
+              "open_issues_count": 485,
+              "open_issues": 485,
+              "size": 4391464,
+              "default_branch": "master",
+              "has_issues": false,
+              "has_projects": false,
+              "has_wiki": false,
+              "has_pages": false,
+              "has_downloads": false,
+              "has_discussions": false,
+              "has_pull_requests": true,
+              "pushed_at": "2026-11-03T15:08:21Z",
+              "created_at": "2012-02-13T17:29:58Z",
+              "updated_at": "2026-11-03T14:54:36Z",
+              "allow_forking": true,
+              "web_commit_signoff_required": false,
+              "pull_request_creation_policy": "all",
+              "license": null,
+              "url": "https://api.github.com/repos/JetBrains/kotlin",
+              "html_url": "https://github.com/JetBrains/kotlin",
+              "archive_url": "https://api.github.com/repos/JetBrains/kotlin/{archive_format}{/ref}",
+              "assignees_url": "https://api.github.com/repos/JetBrains/kotlin/assignees{/user}",
+              "blobs_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs{/sha}",
+              "branches_url": "https://api.github.com/repos/JetBrains/kotlin/branches{/branch}",
+              "collaborators_url": "https://api.github.com/repos/JetBrains/kotlin/collaborators{/collaborator}",
+              "comments_url": "https://api.github.com/repos/JetBrains/kotlin/comments{/number}",
+              "commits_url": "https://api.github.com/repos/JetBrains/kotlin/commits{/sha}",
+              "compare_url": "https://api.github.com/repos/JetBrains/kotlin/compare/{base}...{head}",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/{+path}",
+              "contributors_url": "https://api.github.com/repos/JetBrains/kotlin/contributors",
+              "deployments_url": "https://api.github.com/repos/JetBrains/kotlin/deployments",
+              "downloads_url": "https://api.github.com/repos/JetBrains/kotlin/downloads",
+              "events_url": "https://api.github.com/repos/JetBrains/kotlin/events",
+              "forks_url": "https://api.github.com/repos/JetBrains/kotlin/forks",
+              "git_commits_url": "https://api.github.com/repos/JetBrains/kotlin/git/commits{/sha}",
+              "git_refs_url": "https://api.github.com/repos/JetBrains/kotlin/git/refs{/sha}",
+              "git_tags_url": "https://api.github.com/repos/JetBrains/kotlin/git/tags{/sha}",
+              "git_url": "git://github.com/JetBrains/kotlin.git",
+              "issue_comment_url": "https://api.github.com/repos/JetBrains/kotlin/issues/comments{/number}",
+              "issue_events_url": "https://api.github.com/repos/JetBrains/kotlin/issues/events{/number}",
+              "issues_url": "https://api.github.com/repos/JetBrains/kotlin/issues{/number}",
+              "keys_url": "https://api.github.com/repos/JetBrains/kotlin/keys{/key_id}",
+              "labels_url": "https://api.github.com/repos/JetBrains/kotlin/labels{/name}",
+              "languages_url": "https://api.github.com/repos/JetBrains/kotlin/languages",
+              "merges_url": "https://api.github.com/repos/JetBrains/kotlin/merges",
+              "milestones_url": "https://api.github.com/repos/JetBrains/kotlin/milestones{/number}",
+              "notifications_url": "https://api.github.com/repos/JetBrains/kotlin/notifications{?since,all,participating}",
+              "pulls_url": "https://api.github.com/repos/JetBrains/kotlin/pulls{/number}",
+              "releases_url": "https://api.github.com/repos/JetBrains/kotlin/releases{/id}",
+              "ssh_url": "git@github.com:JetBrains/kotlin.git",
+              "stargazers_url": "https://api.github.com/repos/JetBrains/kotlin/stargazers",
+              "statuses_url": "https://api.github.com/repos/JetBrains/kotlin/statuses/{sha}",
+              "subscribers_url": "https://api.github.com/repos/JetBrains/kotlin/subscribers",
+              "subscription_url": "https://api.github.com/repos/JetBrains/kotlin/subscription",
+              "tags_url": "https://api.github.com/repos/JetBrains/kotlin/tags",
+              "teams_url": "https://api.github.com/repos/JetBrains/kotlin/teams",
+              "trees_url": "https://api.github.com/repos/JetBrains/kotlin/git/trees{/sha}",
+              "clone_url": "https://github.com/JetBrains/kotlin.git",
+              "mirror_url": null,
+              "hooks_url": "https://api.github.com/repos/JetBrains/kotlin/hooks",
+              "svn_url": "https://github.com/JetBrains/kotlin"
             },
+            "sha": "6cf90cfc4eb5474cdc655caf90da7e4889178148",
             "user": {
               "login": "JetBrains",
-              "type": "Organization"
+              "id": 878437,
+              "node_id": "MDEyOk9yZ2FuaXphdGlvbjg3ODQzNw==",
+              "avatar_url": "https://avatars.githubusercontent.com/u/878437?v=4",
+              "gravatar_id": "",
+              "url": "https://api.github.com/users/JetBrains",
+              "html_url": "https://github.com/JetBrains",
+              "followers_url": "https://api.github.com/users/JetBrains/followers",
+              "following_url": "https://api.github.com/users/JetBrains/following{/other_user}",
+              "gists_url": "https://api.github.com/users/JetBrains/gists{/gist_id}",
+              "starred_url": "https://api.github.com/users/JetBrains/starred{/owner}{/repo}",
+              "subscriptions_url": "https://api.github.com/users/JetBrains/subscriptions",
+              "organizations_url": "https://api.github.com/users/JetBrains/orgs",
+              "repos_url": "https://api.github.com/users/JetBrains/repos",
+              "events_url": "https://api.github.com/users/JetBrains/events{/privacy}",
+              "received_events_url": "https://api.github.com/users/JetBrains/received_events",
+              "type": "Organization",
+              "user_view_type": "public",
+              "site_admin": false
             }
           },
+          "_links": {
+            "comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/917/comments"
+            },
+            "commits": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/917/commits"
+            },
+            "statuses": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/statuses/145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1"
+            },
+            "html": {
+              "href": "https://github.com/JetBrains/kotlin/pull/917"
+            },
+            "issue": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/issues/917"
+            },
+            "review_comments": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/917/comments"
+            },
+            "review_comment": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/comments{/number}"
+            },
+            "self": {
+              "href": "https://api.github.com/repos/JetBrains/kotlin/pulls/917"
+            }
+          },
+          "author_association": "MEMBER",
+          "auto_merge": null,
+          "draft": false,
+          "merged": true,
+          "mergeable": false,
+          "rebaseable": false,
+          "mergeable_state": "dirty",
           "merged_by": {
             "login": "mglukhikh",
-            "type": "User"
-          }
-        },
-        "hasNext": false
+            "id": 1127631,
+            "node_id": "MDQ6VXNlcjExMjc2MzE=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1127631?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/mglukhikh",
+            "html_url": "https://github.com/mglukhikh",
+            "followers_url": "https://api.github.com/users/mglukhikh/followers",
+            "following_url": "https://api.github.com/users/mglukhikh/following{/other_user}",
+            "gists_url": "https://api.github.com/users/mglukhikh/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/mglukhikh/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/mglukhikh/subscriptions",
+            "organizations_url": "https://api.github.com/users/mglukhikh/orgs",
+            "repos_url": "https://api.github.com/users/mglukhikh/repos",
+            "events_url": "https://api.github.com/users/mglukhikh/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/mglukhikh/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
+          },
+          "comments": 0,
+          "review_comments": 0,
+          "maintainer_can_modify": false,
+          "commits": 3,
+          "additions": 72,
+          "deletions": 0,
+          "changed_files": 5
+        }
       }
     },
     {
@@ -63,50 +404,158 @@
         "status": 200,
         "body": {
           "sha": "fdb8e1026aee542994c512a524bf45672738cf68",
+          "node_id": "MDY6Q29tbWl0MzQzMjI2NjpmZGI4ZTEwMjZhZWU1NDI5OTRjNTEyYTUyNGJmNDU2NzI3MzhjZjY4",
           "commit": {
             "author": {
-              "name": "Mikhail Glukhikh"
+              "name": "Mikhail Glukhikh",
+              "email": "glukhikh@mail.ru",
+              "date": "2016-08-12T08:55:27Z"
             },
             "committer": {
-              "name": "GitHub"
+              "name": "GitHub",
+              "email": "noreply@github.com",
+              "date": "2016-08-12T08:55:27Z"
             },
-            "message": "Merge pull request #917 from shiraji/add_inline\n\nAdd inline"
+            "message": "Merge pull request #917 from shiraji/add_inline\n\nAdd inline",
+            "tree": {
+              "sha": "d33b407996269fbaf52ba4e54b40ebd6cf2a252d",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/git/trees/d33b407996269fbaf52ba4e54b40ebd6cf2a252d"
+            },
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/fdb8e1026aee542994c512a524bf45672738cf68",
+            "comment_count": 0,
+            "verification": {
+              "verified": false,
+              "reason": "unsigned",
+              "signature": null,
+              "payload": null,
+              "verified_at": null
+            }
           },
+          "url": "https://api.github.com/repos/JetBrains/kotlin/commits/fdb8e1026aee542994c512a524bf45672738cf68",
+          "html_url": "https://github.com/JetBrains/kotlin/commit/fdb8e1026aee542994c512a524bf45672738cf68",
+          "comments_url": "https://api.github.com/repos/JetBrains/kotlin/commits/fdb8e1026aee542994c512a524bf45672738cf68/comments",
           "author": {
             "login": "mglukhikh",
-            "type": "User"
+            "id": 1127631,
+            "node_id": "MDQ6VXNlcjExMjc2MzE=",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1127631?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/mglukhikh",
+            "html_url": "https://github.com/mglukhikh",
+            "followers_url": "https://api.github.com/users/mglukhikh/followers",
+            "following_url": "https://api.github.com/users/mglukhikh/following{/other_user}",
+            "gists_url": "https://api.github.com/users/mglukhikh/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/mglukhikh/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/mglukhikh/subscriptions",
+            "organizations_url": "https://api.github.com/users/mglukhikh/orgs",
+            "repos_url": "https://api.github.com/users/mglukhikh/repos",
+            "events_url": "https://api.github.com/users/mglukhikh/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/mglukhikh/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
           "committer": {
             "login": "web-flow",
-            "type": "User"
+            "id": 19864447,
+            "node_id": "MDQ6VXNlcjE5ODY0NDQ3",
+            "avatar_url": "https://avatars.githubusercontent.com/u/19864447?v=4",
+            "gravatar_id": "",
+            "url": "https://api.github.com/users/web-flow",
+            "html_url": "https://github.com/web-flow",
+            "followers_url": "https://api.github.com/users/web-flow/followers",
+            "following_url": "https://api.github.com/users/web-flow/following{/other_user}",
+            "gists_url": "https://api.github.com/users/web-flow/gists{/gist_id}",
+            "starred_url": "https://api.github.com/users/web-flow/starred{/owner}{/repo}",
+            "subscriptions_url": "https://api.github.com/users/web-flow/subscriptions",
+            "organizations_url": "https://api.github.com/users/web-flow/orgs",
+            "repos_url": "https://api.github.com/users/web-flow/repos",
+            "events_url": "https://api.github.com/users/web-flow/events{/privacy}",
+            "received_events_url": "https://api.github.com/users/web-flow/received_events",
+            "type": "User",
+            "user_view_type": "public",
+            "site_admin": false
           },
           "parents": [
             {
-              "sha": "6cf90cfc4eb5474cdc655caf90da7e4889178148"
+              "sha": "6cf90cfc4eb5474cdc655caf90da7e4889178148",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/commits/6cf90cfc4eb5474cdc655caf90da7e4889178148",
+              "html_url": "https://github.com/JetBrains/kotlin/commit/6cf90cfc4eb5474cdc655caf90da7e4889178148"
             },
             {
-              "sha": "145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1"
+              "sha": "145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1",
+              "url": "https://api.github.com/repos/JetBrains/kotlin/commits/145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1",
+              "html_url": "https://github.com/JetBrains/kotlin/commit/145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1"
             }
           ],
+          "stats": {
+            "total": 72,
+            "additions": 72,
+            "deletions": 0
+          },
           "files": [
             {
-              "filename": "idea/src/org/jetbrains/kotlin/idea/quickfix/AddInlineToReifiedFunctionFix.kt"
+              "sha": "6f3d261982374b532c5fafb7228ade8300f82a6e",
+              "filename": "idea/src/org/jetbrains/kotlin/idea/quickfix/AddInlineToReifiedFunctionFix.kt",
+              "status": "added",
+              "additions": 45,
+              "deletions": 0,
+              "changes": 45,
+              "blob_url": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FAddInlineToReifiedFunctionFix.kt",
+              "raw_url": "https://github.com/JetBrains/kotlin/raw/fdb8e1026aee542994c512a524bf45672738cf68/idea%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FAddInlineToReifiedFunctionFix.kt",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FAddInlineToReifiedFunctionFix.kt?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+              "patch": "@@ -0,0 +1,45 @@\n+/*\n+ * Copyright 2010-2016 JetBrains s.r.o.\n+ *\n+ * Licensed under the Apache License, Version 2.0 (the \"License\");\n+ * you may not use this file except in compliance with the License.\n+ * You may obtain a copy of the License at\n+ *\n+ * http://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing, software\n+ * distributed under the License is distributed on an \"AS IS\" BASIS,\n+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n+ * See the License for the specific language governing permissions and\n+ * limitations under the License.\n+ */\n+\n+package org.jetbrains.kotlin.idea.quickfix\n+\n+import com.intellij.codeInsight.intention.IntentionAction\n+import com.intellij.openapi.editor.Editor\n+import com.intellij.openapi.project.Project\n+import com.intellij.psi.PsiElement\n+import org.jetbrains.kotlin.diagnostics.Diagnostic\n+import org.jetbrains.kotlin.diagnostics.Errors\n+import org.jetbrains.kotlin.lexer.KtTokens\n+import org.jetbrains.kotlin.psi.KtFile\n+import org.jetbrains.kotlin.psi.KtNamedFunction\n+import org.jetbrains.kotlin.psi.psiUtil.getNonStrictParentOfType\n+\n+class AddInlineToReifiedFunctionFix(element: PsiElement) : KotlinQuickFixAction<PsiElement>(element) {\n+    companion object Factory : KotlinSingleIntentionActionFactory() {\n+        override fun createAction(diagnostic: Diagnostic): IntentionAction {\n+            val casted = Errors.REIFIED_TYPE_PARAMETER_NO_INLINE.cast(diagnostic)\n+            return AddInlineToReifiedFunctionFix(casted.psiElement)\n+        }\n+    }\n+\n+    override fun getFamilyName() = text\n+\n+    override fun getText() = \"Add Inline to reified function\"\n+\n+    override fun invoke(project: Project, editor: Editor?, file: KtFile) {\n+        element.getNonStrictParentOfType<KtNamedFunction>()?.addModifier(KtTokens.INLINE_KEYWORD)\n+    }\n+}\n\\ No newline at end of file"
             },
             {
-              "filename": "idea/src/org/jetbrains/kotlin/idea/quickfix/QuickFixRegistrar.kt"
+              "sha": "7ba23ca651ce7875f8ab5bbbdf62b8ae9d22a289",
+              "filename": "idea/src/org/jetbrains/kotlin/idea/quickfix/QuickFixRegistrar.kt",
+              "status": "modified",
+              "additions": 2,
+              "deletions": 0,
+              "changes": 2,
+              "blob_url": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FQuickFixRegistrar.kt",
+              "raw_url": "https://github.com/JetBrains/kotlin/raw/fdb8e1026aee542994c512a524bf45672738cf68/idea%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FQuickFixRegistrar.kt",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea%2Fsrc%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FQuickFixRegistrar.kt?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+              "patch": "@@ -401,5 +401,7 @@ class QuickFixRegistrar : QuickFixContributor {\n         UNUSED_LAMBDA_EXPRESSION.registerFactory(AddRunToLambdaFix)\n \n         WRONG_LONG_SUFFIX.registerFactory(WrongLongSuffixFix)\n+\n+        REIFIED_TYPE_PARAMETER_NO_INLINE.registerFactory(AddInlineToReifiedFunctionFix)\n     }\n }"
             },
             {
-              "filename": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt"
+              "sha": "705d3825ec1cfc921854e329bd6faa2bf0436afa",
+              "filename": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
+              "status": "added",
+              "additions": 5,
+              "deletions": 0,
+              "changes": 5,
+              "blob_url": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea%2FtestData%2Fquickfix%2FaddInlineToReifiedFunctionFix%2Fbasic.kt",
+              "raw_url": "https://github.com/JetBrains/kotlin/raw/fdb8e1026aee542994c512a524bf45672738cf68/idea%2FtestData%2Fquickfix%2FaddInlineToReifiedFunctionFix%2Fbasic.kt",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea%2FtestData%2Fquickfix%2FaddInlineToReifiedFunctionFix%2Fbasic.kt?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+              "patch": "@@ -0,0 +1,5 @@\n+// \"Add Inline to reified function\" \"true\"\n+\n+fun <<caret>reified T> fn() {\n+\n+}\n\\ No newline at end of file"
             },
             {
-              "filename": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt.after"
+              "sha": "e97e11b66e36424f75e1fe9b8e2efb5d756fecf1",
+              "filename": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt.after",
+              "status": "added",
+              "additions": 5,
+              "deletions": 0,
+              "changes": 5,
+              "blob_url": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea%2FtestData%2Fquickfix%2FaddInlineToReifiedFunctionFix%2Fbasic.kt.after",
+              "raw_url": "https://github.com/JetBrains/kotlin/raw/fdb8e1026aee542994c512a524bf45672738cf68/idea%2FtestData%2Fquickfix%2FaddInlineToReifiedFunctionFix%2Fbasic.kt.after",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea%2FtestData%2Fquickfix%2FaddInlineToReifiedFunctionFix%2Fbasic.kt.after?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+              "patch": "@@ -0,0 +1,5 @@\n+// \"Add Inline to reified function\" \"true\"\n+\n+inline fun <reified T> fn() {\n+\n+}\n\\ No newline at end of file"
             },
             {
-              "filename": "idea/tests/org/jetbrains/kotlin/idea/quickfix/QuickFixTestGenerated.java"
+              "sha": "c1bccd30971d1a6b40a21b7986dcb65d3c43c7d1",
+              "filename": "idea/tests/org/jetbrains/kotlin/idea/quickfix/QuickFixTestGenerated.java",
+              "status": "modified",
+              "additions": 15,
+              "deletions": 0,
+              "changes": 15,
+              "blob_url": "https://github.com/JetBrains/kotlin/blob/fdb8e1026aee542994c512a524bf45672738cf68/idea%2Ftests%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FQuickFixTestGenerated.java",
+              "raw_url": "https://github.com/JetBrains/kotlin/raw/fdb8e1026aee542994c512a524bf45672738cf68/idea%2Ftests%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FQuickFixTestGenerated.java",
+              "contents_url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea%2Ftests%2Forg%2Fjetbrains%2Fkotlin%2Fidea%2Fquickfix%2FQuickFixTestGenerated.java?ref=fdb8e1026aee542994c512a524bf45672738cf68",
+              "patch": "@@ -383,6 +383,21 @@ public void testTopLevelPropertyWithGetter() throws Exception {\n         }\n     }\n \n+    @TestMetadata(\"idea/testData/quickfix/addInlineToReifiedFunctionFix\")\n+    @TestDataPath(\"$PROJECT_ROOT\")\n+    @RunWith(JUnit3RunnerWithInners.class)\n+    public static class AddInlineToReifiedFunctionFix extends AbstractQuickFixTest {\n+        public void testAllFilesPresentInAddInlineToReifiedFunctionFix() throws Exception {\n+            KotlinTestUtils.assertAllTestsPresentByMetadata(this.getClass(), new File(\"idea/testData/quickfix/addInlineToReifiedFunctionFix\"), Pattern.compile(\"^([\\\\w\\\\-_]+)\\\\.kt$\"), true);\n+        }\n+\n+        @TestMetadata(\"basic.kt\")\n+        public void testBasic() throws Exception {\n+            String fileName = KotlinTestUtils.navigationMetadata(\"idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt\");\n+            doTest(fileName);\n+        }\n+    }\n+\n     @TestMetadata(\"idea/testData/quickfix/addNoinline\")\n     @TestDataPath(\"$PROJECT_ROOT\")\n     @RunWith(JUnit3RunnerWithInners.class)"
             }
           ]
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -120,8 +569,7 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
+        "body": []
       }
     },
     {
@@ -135,8 +583,7 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
+        "body": []
       }
     },
     {
@@ -150,8 +597,7 @@
       },
       "response": {
         "status": 200,
-        "body": [],
-        "hasNext": false
+        "body": []
       }
     }
   ],

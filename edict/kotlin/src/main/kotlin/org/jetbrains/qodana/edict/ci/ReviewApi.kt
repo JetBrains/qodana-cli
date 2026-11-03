@@ -22,8 +22,9 @@ interface ReviewApi {
 
   /**
    * Pushes the [request]'s branch and returns its review: the one already opened from that branch into its target
-   * branch, in any state, or a new one. Requests the configured reviewer either way, so a retry after an interrupted
-   * creation is safe.
+   * branch, in any state, or a new one. Requests the configured reviewer on an open review, so a retry after an
+   * interrupted creation is safe. A closed review gets no request, and neither does a review its reviewer opened on
+   * GitHub, which refuses a pull request's author as its reviewer.
    */
   fun findOrCreateReview(request: CreateReviewRequest): ReviewReference
   fun review(reference: ReviewReference): ReviewStatus
@@ -32,7 +33,7 @@ interface ReviewApi {
   fun diff(before: String, after: String, beforePath: String, afterPath: String, context: Int = 200): String =
     UnifiedDiff.between(fileOrNull(before, beforePath), fileOrNull(after, afterPath), beforePath, afterPath, context)
 
-  fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = review(reference)
+  fun reviewWithEvidence(reference: ReviewReference): ReviewStatus
   fun mergedReview(reference: ReviewReference): MergedReview =
     error("Exact merged-change evidence is unavailable for ${reference.url}")
 }

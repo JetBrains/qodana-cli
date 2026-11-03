@@ -87,7 +87,10 @@ data class CreateReviewRequest(
 @Serializable
 data class ReviewFetchResult(
   val pullRequests: List<PullRequest>,
-  /** Why pull requests or threads were left out, one human-readable message each. */
+  /**
+   * Why pull requests or threads were left out, one human-readable message each. Pull requests that are not merged, or
+   * merged outside the selected dates, are left out without one.
+   */
   val problems: List<String> = emptyList(),
 )
 
@@ -119,10 +122,16 @@ data class ReviewSelection(
 }
 
 @Serializable
-data class ReviewMessage(val author: String, val body: String, val createdAt: String)
+data class ReviewMessage(
+  val author: String,
+  val body: String,
+  /** When the message was posted, as the provider's ISO-8601 instant. */
+  val createdAt: String,
+)
 
 @Serializable
 data class ReviewThread(
+  /** `<provider>-<review number>-<root comment id>`: unique among the threads of all fetched reviews. */
   val threadId: String,
   val reviewDiscussionUrl: String,
   val filePath: String,
@@ -140,6 +149,7 @@ data class PullRequest(
   val body: String,
   val baseRevision: String,
   val headRevision: String,
+  /** When the review was merged, in epoch milliseconds; on Space, its last change, which for a merged review is its merge. */
   val closeTimestamp: Long,
   val threads: List<ReviewThread> = emptyList(),
 )

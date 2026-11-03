@@ -12,11 +12,22 @@
         "status": 200,
         "body": {
           "name": "kotlin13.png",
+          "path": "idea/resources/org/jetbrains/kotlin/idea/icons/kotlin13.png",
+          "sha": "cb04caea51a7034a1cd906872701b06ac79778a0",
+          "size": 280,
+          "url": "https://api.github.com/repos/JetBrains/kotlin/contents/idea/resources/org/jetbrains/kotlin/idea/icons/kotlin13.png?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+          "html_url": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/idea/resources/org/jetbrains/kotlin/idea/icons/kotlin13.png",
+          "git_url": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/cb04caea51a7034a1cd906872701b06ac79778a0",
+          "download_url": "https://raw.githubusercontent.com/JetBrains/kotlin/00708e800293156c9c4acaaaa7c06cb78e96ae69/idea/resources/org/jetbrains/kotlin/idea/icons/kotlin13.png",
           "type": "file",
           "content": "iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAA30lEQVR42mNg\nIBfwrfv/HxmbL735/3Gb2f9vbfL/v7fJwfHB/qDzQHkBDE2mS+79v17n//91\nvdn/j82ayBrnY7XJaNGT/6cqMv/frQj8/6TaBVnjfKzOM1j48v/egqb/Fwpy\n/l8riUfWOB+rnyRW/vy/IWvO/0MZHf9P5lQha5yPMyD6io7/35y87P/u1Klw\njf2tc9/DPY0NLE49+391yi64xrrmLbCAOY9T4+y0h/9hGkvrT/xHiwLsGien\nf/kP0pjd8ABdA26N/en//yc2/sClAbvG+Kb/hDQQ9iMhAADL2g4bCPcrRQAA\nAABJRU5ErkJggg==\n",
-          "encoding": "base64"
-        },
-        "hasNext": false
+          "encoding": "base64",
+          "_links": {
+            "self": "https://api.github.com/repos/JetBrains/kotlin/contents/idea/resources/org/jetbrains/kotlin/idea/icons/kotlin13.png?ref=00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "git": "https://api.github.com/repos/JetBrains/kotlin/git/blobs/cb04caea51a7034a1cd906872701b06ac79778a0",
+            "html": "https://github.com/JetBrains/kotlin/blob/00708e800293156c9c4acaaaa7c06cb78e96ae69/idea/resources/org/jetbrains/kotlin/idea/icons/kotlin13.png"
+          }
+        }
       }
     }
   ],

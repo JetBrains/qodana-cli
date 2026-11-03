@@ -9,9 +9,10 @@
       "response": {
         "status": 404,
         "body": {
-          "message": "Not Found"
-        },
-        "hasNext": false
+          "message": "Not Found",
+          "documentation_url": "https://docs.github.com/rest/pulls/pulls#get-a-pull-request",
+          "status": "404"
+        }
       }
     }
   ],

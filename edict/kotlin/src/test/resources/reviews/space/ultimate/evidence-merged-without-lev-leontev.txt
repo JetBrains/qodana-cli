@@ -1,0 +1,52 @@
+I don't think so. It is the same pattern as AbstractGotoSEContributor: the whole fetch runs in one read action with write-action priority, so a pending write cancels it. resolveLabel only does VFS/PSI lookups, with no refresh. Before this change, resolveLabel ran in a plain runReadAction that blocked writes, so this is better for freezes.
+
+Agreed, removed in 4ed87a3fc7691.
+
+Done in 4ed87a3fc7691: a rule without a name is skipped now.
+
+According to cached values documentation, this is incorrect. The cached value is not invalidatedwhen subtree is changed. Do we really need to cache the list? Are there any evidences that this is the hotspont?
+
+The `PsiFile` dependency is invalidated on any change inside the file, not only when the file object is replaced. From the `CachedValueProvider.Result.getDependencyItems` Javadoc: "Instances of PsiElement. Such a cache is invalidated on any change in the element's containing PsiFile." For a PSI dependency, `PsiCachedValue.getTimeStamp` returns `containingFile.getModificationStamp()`, and that stamp changes on every PSI change in the file. `StarlarkTargetRuleLookupTest.lookup refreshes after a rule name edit` covers this: it renames a rule inside the file, and after that the old name no longer resolves.
+
+About the hotspot: I have no profiler snapshot or freeze report. I have only the operation count in the description (M matching labels × R rules in one BUILD file, with a full rule-list rebuild for each label). The same lookup is also used by `BazelLabelReference.resolve` → `resolveLabel` → `findTargetRule`, so a BUILD file with many local `:target` references does the same scan during highlighting. If you prefer not to add a cache without a measurement, I can remove the `StarlarkFile` change and keep only the contributor change. That change resolves each match only when it is needed and stops when the consumer returns false, so the first result does not wait for all matches to resolve.
+
+Sorry, I do not understand your answer. We are talking about this method you have used:
+``` java
+  /**
+   * Create a cached value with the given provider and non-tracked return value, store it in PSI element's user data. If it's already stored, reuse it.
+   * The passed cached value provider may only depend on the passed context PSI element and project/application components/services,
+   * see {@link CachedValue} documentation for more details.
+   * @return The cached value
+   */
+  public static <T> T getCachedValue(final @NotNull PsiElement context, final @NotNull CachedValueProvider<T> provider) {
+    return getCachedValue(context, getKeyForClass(provider.getClass(), globalKeyForProvider), provider);
+  }
+```
+
+Here are no "DependencyItems"
+
+Agreed. The contributor change is dropped in d6df49ab, so the loop again resolves each label in its own `runReadAction` and releases the lock in between.
+
+Done in d6df49ab: I kept the cache, restored the contributor to its master version, and removed the early-stop test that covered only that change. The MR title and description now describe only the cache.
+
+As Lev suggested, the cache stays and the contributor change is dropped in d6df49ab.
+
+??? AI - before closing discussion address the concern first
+
+Sorry, I missed your reply and resolved this too early. I leave it open for you.
+
+The dependency items are in the `Result` that the provider returns, not in the `getCachedValue` call. The last line of the lambda is below the visible snippet:
+
+```kotlin
+CachedValueProvider.Result.create(rulesByName, this)
+```
+
+`this` is the `StarlarkFile`, so the file is the dependency. For a `PsiElement` dependency, `PsiCachedValue.getTimeStamp` returns `containingFile.getModificationStamp()`, and that stamp changes on any PSI change inside the file, including changes in the subtree.
+
+About "may only depend on the passed context": the provider reads only `this` (the file, which is also the context) and its children. It captures no parameters and no other PSI. `targetName` is used only after `getCachedValue` returns the map.
+
+The test `lookup refreshes after a rule name edit` checks this. It renames a rule through PSI. After that, `findTargetRule("old")` returns null and `findTargetRule("new")` finds the rule.
+
+Ok, the answer is pretty correct and valid. However, please, extract "this" into variable as the first statement of method and use it then. The second argument of "CachedValueProvider.Result.create" has "Any" type, and "this" value in lambda is always a source of problems.
+
+Done in 34791b7b: `findTargetRule` now starts with `val file = this`, and the lambda uses only `file` for the rule scan and the `Result.create` dependency.

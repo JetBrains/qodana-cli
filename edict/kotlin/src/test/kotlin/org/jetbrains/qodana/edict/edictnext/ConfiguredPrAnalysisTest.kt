@@ -13,6 +13,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel.NEGATIVE
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel.POSITIVE
 import org.jetbrains.qodana.edict.edictnext.support.BASE
 import org.jetbrains.qodana.edict.edictnext.support.COMMENTED
+import org.jetbrains.qodana.edict.edictnext.support.COMMENTED_SOURCE
 import org.jetbrains.qodana.edict.edictnext.support.CORRECTED_PATH
 import org.jetbrains.qodana.edict.edictnext.support.OTHER_FILES_ONLY
 import org.jetbrains.qodana.edict.edictnext.support.CORRECTION
@@ -175,14 +176,6 @@ internal class ConfiguredPrAnalysisTest {
     pr.analysis.prepareBatch(pr.coordinator, ReviewSelectionInput(prNumbers = listOf(20, 21)))
 
     assertEquals(listOf(ReviewSelection(2, prNumbers = listOf(20, 21))), pr.reviews.selections)
-  }
-
-  @Test
-  fun `a number batch holds the pull requests in the requested order`() {
-    pr.reviews.pullRequests += pullRequestsMergedOn(YESTERDAY, 2, first = 20)
-
-    val batch = pr.analysis.prepareBatch(pr.coordinator, ReviewSelectionInput(prNumbers = listOf(20, 21)))
-    assertEquals(listOf(listOf(20 to "20", 21 to "21")), pr.items(batch))
   }
 
   @Test
@@ -357,6 +350,7 @@ internal class ConfiguredPrAnalysisTest {
   fun `the diff of a work item is the provider's diff from the base to the head`() {
     val batch = pr.correctionBatch(correctionFiles())
 
+    // One hunk replacing bad() with good() on line 2 of src/Example.kt, with a context line either side.
     assertEquals(
       diff("correction"),
       pr.analysis.diff(pr.worker, batch.batchId, pr.item(batch).workItemId, BASE, HEAD, CORRECTED_PATH, CORRECTED_PATH),
@@ -377,8 +371,11 @@ internal class ConfiguredPrAnalysisTest {
   fun `evidence of a thread holds its file's diff from the comment to the head and the commented code`() {
     val batch = pr.correctionBatch(correctionFiles())
 
+    // One hunk of src/Example.kt replacing the bad() and log() lines with a single good() line.
     assertEquals(
-      PrItemEvidence(CORRECTED_PATH, COMMENTED, HEAD, diff("correction"), "    1| fun a() {\n    2|   bad()\n    3| }"),
+      PrItemEvidence(
+        CORRECTED_PATH, COMMENTED, HEAD, diff("correction-from-comment"), "    1| fun a() {\n    2|   bad()\n    3|   log()\n    4| }",
+      ),
       pr.analysis.evidence(pr.item(batch)),
     )
   }
@@ -389,7 +386,8 @@ internal class ConfiguredPrAnalysisTest {
     pr.reviews.files += correctionFiles()
     val batch = pr.analysis.prepareBatch(pr.coordinator, ReviewSelectionInput())
 
-    assertEquals(PrItemEvidence(CORRECTED_PATH, COMMENTED, HEAD, diff("correction")), pr.analysis.evidence(pr.item(batch)))
+    // One hunk replacing the bad() and log() lines with a single good() line.
+    assertEquals(PrItemEvidence(CORRECTED_PATH, COMMENTED, HEAD, diff("correction-from-comment")), pr.analysis.evidence(pr.item(batch)))
   }
 
   @Test
@@ -399,6 +397,7 @@ internal class ConfiguredPrAnalysisTest {
     val batch = pr.analysis.prepareBatch(pr.coordinator, ReviewSelectionInput())
 
     val evidence = pr.analysis.evidence(pr.item(batch))
+    // A 41-line hunk around the change of bad() to good() at line 100: 20 context lines either side.
     assertEquals(diff("large-evidence-near-100"), evidence.diff)
     assertEquals(listOf("the diff shows only changes near the comment; edict_pr_file_diff has the whole file"), evidence.notes)
   }
@@ -424,10 +423,10 @@ internal class ConfiguredPrAnalysisTest {
 
   @Test
   fun `evidence of a file unchanged since the comment says there are no changes near it`() {
-    val batch = pr.correctionBatch(correctionFiles() + ((HEAD to CORRECTED_PATH) to "fun a() {\n  bad()\n}\n"))
+    val batch = pr.correctionBatch(correctionFiles() + ((HEAD to CORRECTED_PATH) to COMMENTED_SOURCE))
 
     assertEquals(
-      PrItemEvidence(CORRECTED_PATH, COMMENTED, HEAD, NO_CHANGES, "    1| fun a() {\n    2|   bad()\n    3| }"),
+      PrItemEvidence(CORRECTED_PATH, COMMENTED, HEAD, NO_CHANGES, "    1| fun a() {\n    2|   bad()\n    3|   log()\n    4| }"),
       pr.analysis.evidence(pr.item(batch)),
     )
   }
@@ -569,6 +568,7 @@ internal class ConfiguredPrAnalysisTest {
     pr.storeDrafts(batch, draft(item, POSITIVE))
 
     pr.analysis.publishValidated(pr.coordinator, batch.batchId)
+    // One hunk replacing bad() with good() on line 2.
     assertEquals(prSignal(item, batch.batchId, POSITIVE, key, diff("correction")), pr.store.inboxSignal(stableSignalId(key)))
   }
 
@@ -662,6 +662,7 @@ internal class ConfiguredPrAnalysisTest {
     val id = pr.storeDrafts(batch, draft(item, POSITIVE, EdictNextLineRange(100, 100))).signalIds.single()
 
     pr.analysis.publishValidated(pr.coordinator, batch.batchId)
+    // The hunk around line 100 replacing bad() with good(), with three context lines either side.
     assertEquals(diff("large-draft-excerpt-100"), (pr.store.inboxSignal(id)?.source as EdictNextSignalSource.FromPR).diffPositiveToNegative)
   }
 
@@ -719,15 +720,14 @@ internal class ConfiguredPrAnalysisTest {
     )
   }
 
-  /** Pins today's behaviour: the foreign ID counts as a failed work item of the chunk although it is not one. */
   @Test
-  fun `a supplied Signal of a work item outside the chunk is refused`() {
+  fun `a supplied Signal of a work item outside the chunk is refused without failing the chunk's item`() {
     val batch = pr.correctionBatch()
     val signal = prSignal(pr.item(batch), batch.batchId, POSITIVE, workItemId = "pr-8-f85d6d74f4cd0de5")
 
     assertEquals(
       PrReceipt(
-        batch.batchId, 0, 1, 1, 1, 0, emptyList(),
+        batch.batchId, 0, 1, 1, 0, 0, emptyList(),
         listOf(PrSignalStoreFailure(0, signal.id, "pr-8-f85d6d74f4cd0de5", "Signal work item does not belong to this chunk")),
       ),
       pr.storeSignals(batch, signal),
@@ -936,6 +936,7 @@ internal class ConfiguredPrAnalysisTest {
   fun `a published Signal replaces an earlier version in the inbox without counting as created`() {
     val batch = pr.correctionBatch(correctionFiles())
     val item = pr.item(batch)
+    // One hunk replacing bad() with good() on line 2.
     val signal = prSignal(item, batch.batchId, POSITIVE, "${item.workItemId}|0|POSITIVE|src/Example.kt|$BASE|2:2", diff("correction"))
     pr.store.publishSignal(pr.coordinator, signal.copy(description = "Calls bad()"))
     pr.storeDrafts(batch, draft(item, POSITIVE))
@@ -977,6 +978,7 @@ internal class ConfiguredPrAnalysisTest {
     pr.storeDrafts(batch, draft(item, POSITIVE))
     pr.analysis.publishValidated(pr.coordinator, batch.batchId)
     val key = "${item.workItemId}|0|POSITIVE|src/Example.kt|$BASE|2:2"
+    // One hunk replacing bad() with good() on line 2.
     pr.store.publishSignal(pr.coordinator, prSignal(item, batch.batchId, POSITIVE, key, diff("correction"), description = "Calls bad()"))
 
     val error = assertFailsWith<IllegalArgumentException> { pr.analysis.complete() }

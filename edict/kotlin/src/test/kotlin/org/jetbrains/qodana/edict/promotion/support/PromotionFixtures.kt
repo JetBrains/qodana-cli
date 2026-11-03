@@ -86,6 +86,7 @@ internal val RULE_REVIEW_REQUEST = CreateReviewRequest(
   targetPath = "inspections/rule.inspection.kts",
   inspectionDigest = INSPECTION_DIGEST,
   inspectionContent = INSPECTION,
+  // Five signals from five distinct files, with descriptions "positive 0" to "positive 4" from PRs 1 to 5.
   description = expectedText("rule-description.md"),
 )
 
