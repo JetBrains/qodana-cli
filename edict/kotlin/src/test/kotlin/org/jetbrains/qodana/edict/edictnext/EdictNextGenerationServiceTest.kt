@@ -783,6 +783,22 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
+  fun `findings are unchanged only when the previous analysis was reviewed`() = withGeneration { generation, _ ->
+    val scratch = directory.resolve("scratch").toString()
+    generation.saveCandidateInspection("empty-catch", "// empty-catch report findings=1")
+    assertFalse(generation.getNewInspectionResults("empty-catch", scratch).findingsUnchanged)
+    assertFalse(generation.getNewInspectionResults("empty-catch", scratch).findingsUnchanged)
+
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=1")
+    assertFalse(generation.getNewInspectionResults("busy-wait", scratch).findingsUnchanged)
+    generation.recordWeakReview(
+      "busy-wait",
+      listOf(EdictNextReviewedFinding("src/Found.java", 1, EdictNextFindingClassification.TP, "busy-wait-example")),
+    )
+    assertTrue(generation.getNewInspectionResults("busy-wait", scratch).findingsUnchanged)
+  }
+
+  @Test
   fun `only an example the analyzed inspection reports can represent a finding`() = withGeneration { generation, _ ->
     val negative = EdictNextCodeExampleMetadata("fixed-negative", "Fixed.java", EdictNextSignalLabel.NEGATIVE, emptyList())
     generation.saveCodeExample("busy-wait", negative.id, EdictNextJson.encodeToString(negative), "class Fixed {}")
