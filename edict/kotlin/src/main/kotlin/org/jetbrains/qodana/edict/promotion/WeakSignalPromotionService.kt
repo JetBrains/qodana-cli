@@ -234,9 +234,10 @@ internal class WeakSignalPromotionService(
     inspectionDigest: String,
     signals: List<EdictNextSignal>,
   ): List<EdictNextSignal> {
-    require(repository.loadActiveWeakSignalPromotions()[clusterId].orEmpty().any { it.pullRequest == pullRequest && it.state == PromotionPrState.ACCEPTED }) {
+    val promotion = requireNotNull(repository.loadActiveWeakSignalPromotions()[clusterId].orEmpty().firstOrNull { it.pullRequest == pullRequest }) {
       "Review does not belong to source cluster '$clusterId'"
     }
+    require(promotion.state == PromotionPrState.ACCEPTED) { "Review of source cluster '$clusterId' is not accepted" }
     require(signals.isNotEmpty()) { "Supply actual merged corrections, not proposed fixes" }
     val merged = mergedReview(pullRequest)
     val canonical = mutableMapOf<ReviewFileChange, String>()

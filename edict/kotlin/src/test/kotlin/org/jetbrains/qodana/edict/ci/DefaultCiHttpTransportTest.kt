@@ -5,6 +5,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.jetbrains.qodana.edict.ci.transport.support.API_PATH
 import org.jetbrains.qodana.edict.ci.transport.support.MAX_RESPONSE_BYTES
 import org.jetbrains.qodana.edict.ci.transport.support.ProviderApiServer
 import org.jetbrains.qodana.edict.ci.transport.support.ReceivedRequest
@@ -53,7 +54,8 @@ internal class DefaultCiHttpTransportTest {
 
   @Test
   fun `a redirect is returned as it is, not followed`() {
-    api.answer(301, headers = mapOf("Location" to "https://api.github.com/repositories/3432266"))
+    // A followed redirect would reach this server again, so it would show among the received requests.
+    api.answer(301, headers = mapOf("Location" to "${api.origin}$API_PATH/repositories/3432266"))
 
     assertEquals(CiHttpResponse(301, JsonNull), api.transport().send("GET", "/repos/JetBrains/kotlin"))
     assertEquals(listOf("/api/v3/repos/JetBrains/kotlin"), api.received.map(ReceivedRequest::target))

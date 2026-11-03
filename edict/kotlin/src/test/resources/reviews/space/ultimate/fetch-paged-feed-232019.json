@@ -27,8 +27,7 @@
             "isMerged": true
           },
           "description": "Review this PR commit by commit. \n\nMain changes:\n- The sync console shows all project view problems, with their file and line. An error stops the sync.\n- The editor highlights a required import that has no file.\n- Inspect Code shows the quick fixes of project view problems.\n- A `# suppress: <id>` comment above an item or a section suppresses its warning. \n- The monorepo `.bazelproject` files suppress the warnings of the sections that the Bazel plugin before 263 still needs."
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -48,6 +47,7 @@
           "data": [
             {
               "chatMessage": {
+                "text": "created the merge request",
                 "details": {
                   "className": "ReviewCreatedEvent"
                 },
@@ -62,6 +62,7 @@
             },
             {
               "chatMessage": {
+                "text": "added 9 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -76,6 +77,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [Bazel](https://codeowners.labs.jb.gg/group/bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e4f4f9de8fa67c8585cdb7875f970ef420b1d388/.ownership/review-rules.yaml?line=35) | `plugins/bazel/**` | ✅ [Damian Przemysław Baczyński](https://jetbrains.team/m/Damian.Baczynski), <br/><details><summary>More</summary>[Eugene Zhuravlev](https://jetbrains.team/m/JEKA), <br/>[Klaus Thomas Aehlig](https://jetbrains.team/m/Klaus.Aehlig), <br/>[Krystian Gajewski [External]](https://jetbrains.team/m/Krystian.Gajewski), <br/>[Lev Leontev](https://jetbrains.team/m/Lev.Leontev), <br/>[Marcin Kocot [External]](https://jetbrains.team/m/Marcin.Kocot.external), <br/>[Evgenii Pasynkov](https://jetbrains.team/m/pasynkov), <br/>[Marta Hering-Zagrocka](https://jetbrains.team/m/Marta.Hering-zagrocka) (away soon)</details> | ✅ 1/1 |\n| [Bazel Migration Team](https://codeowners.labs.jb.gg/group/bazel-migration-team?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e4f4f9de8fa67c8585cdb7875f970ef420b1d388/.ownership/review-rules.yaml?line=76) | `/.bazel*`, `community/.bazel*` | **[Leonid Shalupov](https://jetbrains.team/m/Leonid.Shalupov)**, <br/><details><summary>More</summary>[Dmitrii Panov](https://jetbrains.team/m/Dmitriy.Panov), <br/>[Evgenii Ilichev](https://jetbrains.team/m/Evgenii.Ilichev), <br/>[Ilia Kirianovskii](https://jetbrains.team/m/Ilia.Kirianovskii), <br/>[Marcin Laskowski](https://jetbrains.team/m/Marcin.Laskowski), <br/>[Vladimir Krivosheev](https://jetbrains.team/m/Vladimir.Krivosheev), <br/>~~[Mikhail Filippov](https://jetbrains.team/m/Mikhail.Filippov) (away)~~</details> | ➖ 0/1 |\n| [Bazel QA](https://codeowners.labs.jb.gg/group/bazel-qa?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e4f4f9de8fa67c8585cdb7875f970ef420b1d388/.ownership/review-rules.yaml?line=40) | `plugins/bazel/**` | **[Elena Semenova](https://jetbrains.team/m/Elena.Semenova)**, <br/><details><summary>More</summary>[Danil Tereshchenko](https://jetbrains.team/m/Danil.Tereshchenko)</details> | ➖ 0/1 |\n| [CLion Bazel](https://codeowners.labs.jb.gg/group/clion-bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/e4f4f9de8fa67c8585cdb7875f970ef420b1d388/.ownership/review-rules.yaml?line=43) | `plugins/bazel/clion/**` | **[Daniel Brauner](https://jetbrains.team/m/Daniel.Brauner)**, <br/><details><summary>More</summary>~~[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (away)~~</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -90,6 +92,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -104,6 +107,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge Dry Run \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [be41ef4](https://jetbrains.team/p/IJ/repositories/ultimate/revision/be41ef4a9bec4e65d2ce629944be1a984672cd9a) Pre-merge `master` changes into temp branch for running tests\n• [5662d9f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/5662d9fb84f1ac29d0122f21e78390cd32e25eed) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [5c77dec](https://jetbrains.team/p/IJ/repositories/ultimate/revision/5c77decbd3d453075d76a1bd07bed1dd30f23935) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [b28ce04](https://jetbrains.team/p/IJ/repositories/ultimate/revision/b28ce040de8889f28fc80db6bac7481d28a3140c) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [7f1670c](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7f1670c26d92acdf096cc7a849f44c9725670eab) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n(displayed 5 of 10)\n\n[https://patronus.labs.jb.gg/robot/26d1d7eb-ddfb-4acb-9cd1-44d9e8fe4d7b](https://patronus.labs.jb.gg/robot/26d1d7eb-ddfb-4acb-9cd1-44d9e8fe4d7b)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -118,6 +122,7 @@
             },
             {
               "chatMessage": {
+                "text": "added description",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -132,6 +137,7 @@
             },
             {
               "chatMessage": {
+                "text": "Sync warnings example:",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -146,6 +152,7 @@
             },
             {
               "chatMessage": {
+                "text": "Import errors in editor:",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -160,6 +167,7 @@
             },
             {
               "chatMessage": {
+                "text": "Suppressions and Inspect Code window",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -174,6 +182,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 2 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -188,6 +197,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [Bazel](https://codeowners.labs.jb.gg/group/bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/6e54e9e6318f024d8c246047a68c648e6861fb08/.ownership/review-rules.yaml?line=35) | `plugins/bazel/**` | ✅ [Damian Przemysław Baczyński](https://jetbrains.team/m/Damian.Baczynski), <br/><details><summary>More</summary>[Eugene Zhuravlev](https://jetbrains.team/m/JEKA), <br/>[Klaus Thomas Aehlig](https://jetbrains.team/m/Klaus.Aehlig), <br/>[Krystian Gajewski [External]](https://jetbrains.team/m/Krystian.Gajewski), <br/>[Lev Leontev](https://jetbrains.team/m/Lev.Leontev), <br/>[Marcin Kocot [External]](https://jetbrains.team/m/Marcin.Kocot.external), <br/>[Evgenii Pasynkov](https://jetbrains.team/m/pasynkov), <br/>[Marta Hering-Zagrocka](https://jetbrains.team/m/Marta.Hering-zagrocka) (away soon)</details> | ✅ 1/1 |\n| [Bazel Migration Team](https://codeowners.labs.jb.gg/group/bazel-migration-team?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/6e54e9e6318f024d8c246047a68c648e6861fb08/.ownership/review-rules.yaml?line=76) | `/.bazel*`, `community/.bazel*` | **[Leonid Shalupov](https://jetbrains.team/m/Leonid.Shalupov)**, <br/><details><summary>More</summary>[Dmitrii Panov](https://jetbrains.team/m/Dmitriy.Panov), <br/>[Evgenii Ilichev](https://jetbrains.team/m/Evgenii.Ilichev), <br/>[Ilia Kirianovskii](https://jetbrains.team/m/Ilia.Kirianovskii), <br/>[Marcin Laskowski](https://jetbrains.team/m/Marcin.Laskowski), <br/>[Vladimir Krivosheev](https://jetbrains.team/m/Vladimir.Krivosheev), <br/>~~[Mikhail Filippov](https://jetbrains.team/m/Mikhail.Filippov) (away)~~</details> | ➖ 0/1 |\n| [Bazel QA](https://codeowners.labs.jb.gg/group/bazel-qa?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/6e54e9e6318f024d8c246047a68c648e6861fb08/.ownership/review-rules.yaml?line=40) | `plugins/bazel/**` | **[Elena Semenova](https://jetbrains.team/m/Elena.Semenova)**, <br/><details><summary>More</summary>[Danil Tereshchenko](https://jetbrains.team/m/Danil.Tereshchenko)</details> | ➖ 0/1 |\n| [CLion Bazel](https://codeowners.labs.jb.gg/group/clion-bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/6e54e9e6318f024d8c246047a68c648e6861fb08/.ownership/review-rules.yaml?line=43) | `plugins/bazel/clion/**` | **[Daniel Brauner](https://jetbrains.team/m/Daniel.Brauner)**, <br/><details><summary>More</summary>~~[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (away)~~</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -202,6 +212,7 @@
             },
             {
               "chatMessage": {
+                "text": "canceled the dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -216,6 +227,7 @@
             },
             {
               "chatMessage": {
+                "text": "✋ Safe Merge Dry Run \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" canceled\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChecks failed:\n• [Qodana: Split Mode Compatibility (Incremental)](https://patronus.labs.jb.gg/robot/26d1d7eb-ddfb-4acb-9cd1-44d9e8fe4d7b?check=ijplatform_master_SplitModeCompatibilityInspections&attempt=2) (1 tests, 2 builds)\n…also 50 checks passed, 12 checks canceled\n\n[https://patronus.labs.jb.gg/robot/26d1d7eb-ddfb-4acb-9cd1-44d9e8fe4d7b](https://patronus.labs.jb.gg/robot/26d1d7eb-ddfb-4acb-9cd1-44d9e8fe4d7b)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -230,6 +242,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -244,6 +257,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge Dry Run \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [1f19f34](https://jetbrains.team/p/IJ/repositories/ultimate/revision/1f19f34e1b88f6f899c88a9cec5a830f83d835d6) Pre-merge `master` changes into temp branch for running tests\n• [aec1917](https://jetbrains.team/p/IJ/repositories/ultimate/revision/aec19176ea30846c32d87a3b5fa43f63fa24d940) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [cfbefc2](https://jetbrains.team/p/IJ/repositories/ultimate/revision/cfbefc20de3e3ec2d48acb048d6c328f452db1b2) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [b28ce04](https://jetbrains.team/p/IJ/repositories/ultimate/revision/b28ce040de8889f28fc80db6bac7481d28a3140c) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [7f1670c](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7f1670c26d92acdf096cc7a849f44c9725670eab) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n(displayed 5 of 10)\n\n[https://patronus.labs.jb.gg/robot/ac677f91-36e4-4930-86de-987191d1c15d](https://patronus.labs.jb.gg/robot/ac677f91-36e4-4930-86de-987191d1c15d)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -258,6 +272,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -272,6 +287,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -286,6 +302,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -300,6 +317,7 @@
             },
             {
               "chatMessage": {
+                "text": "",
                 "details": {
                   "className": "CodeSuggestedEditHeadContentDetails",
                   "codeDiscussion": {
@@ -326,6 +344,7 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
@@ -352,6 +371,7 @@
             },
             {
               "chatMessage": {
+                "text": "\"This section ....\" in a tree look ugly :( It'd be much better to name it, like \"Targets section is not supported .....\"",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -366,6 +386,7 @@
             },
             {
               "chatMessage": {
+                "text": "Since you already touched this, it'd be great to refactor the TaskConsole and get rid of `registerException` method from console API. The method is ugly and was introduced as a quick and dirty fix to prevent the same error displayed on multiple levels. It would be better to handle this case inside console implementation based on provided failed result, and prevent displaying error if previously the same failure result was displayed",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -380,6 +401,7 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
@@ -406,6 +428,7 @@
             },
             {
               "chatMessage": {
+                "text": "waits for updates",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -420,6 +443,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge Dry Run \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\n[https://patronus.labs.jb.gg/robot/ac677f91-36e4-4930-86de-987191d1c15d](https://patronus.labs.jb.gg/robot/ac677f91-36e4-4930-86de-987191d1c15d)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -434,6 +458,7 @@
             },
             {
               "chatMessage": {
+                "text": "build succeeded\n**[Patronus](https://patronus.labs.jb.gg/robot/ac677f91-36e4-4930-86de-987191d1c15d)**\n63 checks passed\n63 checks passed\n**[Patronus](https://patronus.labs.jb.gg/robot/ac677f91-36e4-4930-86de-987191d1c15d)**\n63 checks passed\n63 checks passed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -448,6 +473,7 @@
             },
             {
               "chatMessage": {
+                "text": "Why `StateFlow<...>` here got removed?",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -462,6 +488,7 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
@@ -472,6 +499,7 @@
                       "oldLine": 8
                     },
                     "endAnchor": {
+                      "line": null,
                       "oldLine": 9
                     },
                     "channel": {
@@ -490,6 +518,7 @@
             },
             {
               "chatMessage": {
+                "text": "waits for updates",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -504,6 +533,7 @@
             },
             {
               "chatMessage": {
+                "text": "It does not seem to have any purpose here. It was updated like regular field (not using e.g. update {}) and never collected.  Current implementation seems to have the same properties as the previous one, just does not provide observability, which was not used. Do you have any plans for that?",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -518,6 +548,7 @@
             },
             {
               "chatMessage": {
+                "text": "I changed it to `ProjectViewService.getInstance` because IDE suggests that when .service is used.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -532,6 +563,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 9 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -546,6 +578,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -560,6 +593,7 @@
             },
             {
               "chatMessage": {
+                "text": "Safe Merge of these changes into **master** requires a review approval:\n\n| Group | Rule | Suggested | Review |\n| --- | --- | --- | --- |\n| [Bazel](https://codeowners.labs.jb.gg/group/bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/5c1a44f83af5846a9eb24e6f3215cd1d96f1c6f0/.ownership/review-rules.yaml?line=35) | `plugins/bazel/**` | ✅ [Damian Przemysław Baczyński](https://jetbrains.team/m/Damian.Baczynski), <br/>⏳ **[Krystian Gajewski [External]](https://jetbrains.team/m/Krystian.Gajewski)**, <br/>⏳ **[Evgenii Pasynkov](https://jetbrains.team/m/pasynkov)**, <br/><details><summary>More</summary>[Eugene Zhuravlev](https://jetbrains.team/m/JEKA), <br/>[Klaus Thomas Aehlig](https://jetbrains.team/m/Klaus.Aehlig), <br/>[Lev Leontev](https://jetbrains.team/m/Lev.Leontev), <br/>[Marcin Kocot [External]](https://jetbrains.team/m/Marcin.Kocot.external), <br/>~~[Marta Hering-Zagrocka](https://jetbrains.team/m/Marta.Hering-zagrocka) (away)~~</details> | ✅ 1/1 |\n| [Bazel Migration Team](https://codeowners.labs.jb.gg/group/bazel-migration-team?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/5c1a44f83af5846a9eb24e6f3215cd1d96f1c6f0/.ownership/review-rules.yaml?line=76) | `/.bazel*`, `community/.bazel*` | **[Evgenii Ilichev](https://jetbrains.team/m/Evgenii.Ilichev)**, <br/><details><summary>More</summary>[Ilia Kirianovskii](https://jetbrains.team/m/Ilia.Kirianovskii), <br/>[Leonid Shalupov](https://jetbrains.team/m/Leonid.Shalupov), <br/>[Marcin Laskowski](https://jetbrains.team/m/Marcin.Laskowski), <br/>[Mikhail Filippov](https://jetbrains.team/m/Mikhail.Filippov), <br/>[Vladimir Krivosheev](https://jetbrains.team/m/Vladimir.Krivosheev), <br/>[Dmitrii Panov](https://jetbrains.team/m/Dmitriy.Panov) (away soon)</details> | ➖ 0/1 |\n| [Bazel QA](https://codeowners.labs.jb.gg/group/bazel-qa?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/5c1a44f83af5846a9eb24e6f3215cd1d96f1c6f0/.ownership/review-rules.yaml?line=40) | `plugins/bazel/**` | **[Elena Semenova](https://jetbrains.team/m/Elena.Semenova)**, <br/><details><summary>More</summary>[Danil Tereshchenko](https://jetbrains.team/m/Danil.Tereshchenko) (away soon)</details> | ➖ 0/1 |\n| [CLion Bazel](https://codeowners.labs.jb.gg/group/clion-bazel?p=r)<br/>[rule](https://jetbrains.team/p/IJ/repositories/ultimate/files/5c1a44f83af5846a9eb24e6f3215cd1d96f1c6f0/.ownership/review-rules.yaml?line=43) | `plugins/bazel/clion/**` | **[Daniel Brauner](https://jetbrains.team/m/Daniel.Brauner)**, <br/><details><summary>More</summary>~~[Daniel Below](https://jetbrains.team/m/Daniel.Below) (backup)~~, <br/>~~[Evgenii Novozhilov](https://jetbrains.team/m/Evgenii.Novozhilov) (backup)~~, <br/>~~[Jan Papesch](https://jetbrains.team/m/Jan.Papesch) (backup)~~, <br/>~~[Tomas Husak](https://jetbrains.team/m/Tomas.Husak) (backup)~~, <br/>~~[Edem Ibraimov](https://jetbrains.team/m/Edem.Ibraimov) (backup)~~, <br/>~~[Alexander Karaev](https://jetbrains.team/m/Alexander.Karaev) (away)~~</details> | ➖ 0/1 |\n",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -574,6 +608,7 @@
             },
             {
               "chatMessage": {
+                "text": "Updated:",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -588,6 +623,7 @@
             },
             {
               "chatMessage": {
+                "text": "Let's leave it this way, we can add it back when needed.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -602,6 +638,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -616,6 +653,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -630,6 +668,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -644,6 +683,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -658,6 +698,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -672,6 +713,7 @@
             },
             {
               "chatMessage": {
+                "text": "I'd still prefer it, if we'd drop this option for the CLion specific part.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -686,6 +728,7 @@
             },
             {
               "chatMessage": {
+                "text": "posted a comment",
                 "details": {
                   "className": "CodeDiscussionAddedFeedEvent",
                   "codeDiscussion": {
@@ -712,6 +755,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -726,6 +770,7 @@
             },
             {
               "chatMessage": {
+                "text": "Your comment is on the main monorepo `.bazelproject`. The `clwb.bazelproject` dose not contain this option. \n\nAlso, if there are no \"pre 263 Bazel plugin\" consumers of the `clwb.bazelproject` I can migrate/remove those old options already.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -740,6 +785,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -754,6 +800,7 @@
             },
             {
               "chatMessage": {
+                "text": "added a reviewer",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -768,6 +815,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a dry run",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -782,6 +830,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge Dry Run \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [f806072](https://jetbrains.team/p/IJ/repositories/ultimate/revision/f806072dc977c89c32ad03e66ca3dcb76de67b88) Pre-merge `master` changes into temp branch for running tests\n• [a85123d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/a85123d43875f88025749de6aef82164fd8ac59e) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [4e28e04](https://jetbrains.team/p/IJ/repositories/ultimate/revision/4e28e040a62b2512b76113d2e14d9b70e18e96d5) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [7c325c8](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7c325c839ec1183cceb7f16af10581444b7f5609) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [62e1d6b](https://jetbrains.team/p/IJ/repositories/ultimate/revision/62e1d6b66ba96dd16114d7ccd7b41b84da477c80) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n(displayed 5 of 10)\n\n[https://patronus.labs.jb.gg/robot/e4cbdb4d-7f2f-4b15-943c-57b034a09f37](https://patronus.labs.jb.gg/robot/e4cbdb4d-7f2f-4b15-943c-57b034a09f37)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -796,6 +845,7 @@
             },
             {
               "chatMessage": {
+                "text": "**AI review**\n\nQA passed for `a85123d43875f88025749de6aef82164fd8ac59e`.\n\n- All 129 focused project-view, quick-fix, sync, and console tests passed.\n- Warning suppression and quick fixes passed in both the editor and Inspect Code.\n- Sync tests confirmed error aborts, warning-only continuation, and one diagnostic for nested failures and cancellation.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -810,6 +860,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -824,6 +875,7 @@
             },
             {
               "chatMessage": {
+                "text": "accepted the changes and finalized approval",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -838,6 +890,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 4 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -852,6 +905,7 @@
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge Dry Run \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\n[https://patronus.labs.jb.gg/robot/e4cbdb4d-7f2f-4b15-943c-57b034a09f37](https://patronus.labs.jb.gg/robot/e4cbdb4d-7f2f-4b15-943c-57b034a09f37)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -866,6 +920,7 @@
             },
             {
               "chatMessage": {
+                "text": "build succeeded\n**[Patronus](https://patronus.labs.jb.gg/robot/e4cbdb4d-7f2f-4b15-943c-57b034a09f37)**\n64 checks passed\n64 checks passed\n**[Patronus](https://patronus.labs.jb.gg/robot/e4cbdb4d-7f2f-4b15-943c-57b034a09f37)**\n64 checks passed\n64 checks passed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -880,6 +935,7 @@
             },
             {
               "chatMessage": {
+                "text": "Wait sorry, probably got lost in the diff.",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -894,6 +950,7 @@
             },
             {
               "chatMessage": {
+                "text": "User resolved the discussion",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -908,6 +965,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 1 commit",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -922,6 +980,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -936,6 +995,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [c0209a5](https://jetbrains.team/p/IJ/repositories/ultimate/revision/c0209a5c11fcd8fb50ce7fb4bae56d343ebc26bb) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [3ea8bbd](https://jetbrains.team/p/IJ/repositories/ultimate/revision/3ea8bbd2320272823f88f32d762e986902f22444) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [77abdd3](https://jetbrains.team/p/IJ/repositories/ultimate/revision/77abdd328920815364d77cb99b69abc831981859) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [baca50b](https://jetbrains.team/p/IJ/repositories/ultimate/revision/baca50bbc506ddb545786f550373da8028dd40b8) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [38b6b18](https://jetbrains.team/p/IJ/repositories/ultimate/revision/38b6b18fd3ccd039ed858138aacb778056ad9824) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/289f398f-7e27-4ddd-af8c-7b15edbb6cd7](https://patronus.labs.jb.gg/robot/289f398f-7e27-4ddd-af8c-7b15edbb6cd7)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -950,6 +1010,7 @@
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -964,6 +1025,7 @@
             },
             {
               "chatMessage": {
+                "text": "✋ Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" canceled\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChecks passed: 60, canceled: 4\n\n[https://patronus.labs.jb.gg/robot/289f398f-7e27-4ddd-af8c-7b15edbb6cd7](https://patronus.labs.jb.gg/robot/289f398f-7e27-4ddd-af8c-7b15edbb6cd7)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -978,6 +1040,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 9 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -992,6 +1055,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1006,6 +1070,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [5a932bc](https://jetbrains.team/p/IJ/repositories/ultimate/revision/5a932bc4474fb57fd5d7a0e289e2251fca0ebac0) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [817c815](https://jetbrains.team/p/IJ/repositories/ultimate/revision/817c81538faa585bcbfd2c1f47c0f1e488319535) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [06cccaa](https://jetbrains.team/p/IJ/repositories/ultimate/revision/06cccaa8d2844c10f2c2471bd76d5948eb124a4d) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [d96462a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d96462a3a957b31613331ac35dc1c22f80a61ee7) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [8186486](https://jetbrains.team/p/IJ/repositories/ultimate/revision/81864860c2cc2e811031461de1b36c73d31b81fe) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f](https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1020,6 +1085,7 @@
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nProblems:\n• ⚠️ Important build failure in the check 'Incremental Compilation'\n\nChecks failed:\n• [Incremental Compilation](https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f?check=ijplatform_master_IncrementalCompilation&attempt=1) (2 builds)\n…also 2 checks passed, 61 checks canceled\n\nTested changes:\n• [5a932bc](https://jetbrains.team/p/IJ/repositories/ultimate/revision/5a932bc4474fb57fd5d7a0e289e2251fca0ebac0) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [817c815](https://jetbrains.team/p/IJ/repositories/ultimate/revision/817c81538faa585bcbfd2c1f47c0f1e488319535) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [06cccaa](https://jetbrains.team/p/IJ/repositories/ultimate/revision/06cccaa8d2844c10f2c2471bd76d5948eb124a4d) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [d96462a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d96462a3a957b31613331ac35dc1c22f80a61ee7) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [8186486](https://jetbrains.team/p/IJ/repositories/ultimate/revision/81864860c2cc2e811031461de1b36c73d31b81fe) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f](https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1034,6 +1100,7 @@
             },
             {
               "chatMessage": {
+                "text": "build failed\n**[Patronus](https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f)**\n1 check failed\n1 check failed\n**[Patronus](https://patronus.labs.jb.gg/robot/f4d3cee3-8767-425b-906c-0b3c8fface1f)**\n1 check failed\n1 check failed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1048,6 +1115,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1062,6 +1130,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [903f029](https://jetbrains.team/p/IJ/repositories/ultimate/revision/903f0299ea2caf729ed7008376051e9e2aee919a) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [f6a5083](https://jetbrains.team/p/IJ/repositories/ultimate/revision/f6a50838f6d158dbd7de54dd6f5e7f93c4993b64) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [b987efd](https://jetbrains.team/p/IJ/repositories/ultimate/revision/b987efda368e986d095ea453ccd993dd95dba029) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [36e838f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/36e838f1868178439920120f84a2cc29be5c66b4) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [7ac3473](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7ac3473ff49ef6468c2e42d94eeab3e1b0c4d50b) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537](https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1076,6 +1145,7 @@
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nProblems:\n• ⚠️ Important build failure in the check 'Incremental Compilation'\n\nChecks failed:\n• [Incremental Compilation](https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537?check=ijplatform_master_IncrementalCompilation&attempt=1) (2 builds)\n…also 63 checks canceled\n\nTested changes:\n• [903f029](https://jetbrains.team/p/IJ/repositories/ultimate/revision/903f0299ea2caf729ed7008376051e9e2aee919a) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [f6a5083](https://jetbrains.team/p/IJ/repositories/ultimate/revision/f6a50838f6d158dbd7de54dd6f5e7f93c4993b64) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [b987efd](https://jetbrains.team/p/IJ/repositories/ultimate/revision/b987efda368e986d095ea453ccd993dd95dba029) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [36e838f](https://jetbrains.team/p/IJ/repositories/ultimate/revision/36e838f1868178439920120f84a2cc29be5c66b4) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [7ac3473](https://jetbrains.team/p/IJ/repositories/ultimate/revision/7ac3473ff49ef6468c2e42d94eeab3e1b0c4d50b) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537](https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1090,6 +1160,7 @@
             },
             {
               "chatMessage": {
+                "text": "build failed\n**[Patronus](https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537)**\n1 check failed\n1 check failed\n**[Patronus](https://patronus.labs.jb.gg/robot/5d7d2d33-0931-42ef-bc5f-eefd06994537)**\n1 check failed\n1 check failed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1104,6 +1175,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 9 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1118,6 +1190,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1132,6 +1205,7 @@
             },
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [d4e477a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d4e477a3ff409c9a1576b6ed30791cc3834680a7) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [d9efe72](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d9efe729ef36f74962c0d694aacfabb9928d8ffd) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [3173643](https://jetbrains.team/p/IJ/repositories/ultimate/revision/31736433bbf8bfe947e10016ab52c06705424e0b) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [8c6a63a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8c6a63a08611e193fd261fc4f6466390439f4b9d) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [8d17433](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8d17433631a735ea9dc4234afad5fc6cd06b253f) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46](https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1146,6 +1220,7 @@
             },
             {
               "chatMessage": {
+                "text": "❌ Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" failed\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nProblems:\n• ⚠️ Important build failure in the check 'Incremental Compilation'\n\nChecks failed:\n• [Incremental Compilation](https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46?check=ijplatform_master_IncrementalCompilation&attempt=1) (2 builds)\n…also 1 check passed, 62 checks canceled\n\nTested changes:\n• [d4e477a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d4e477a3ff409c9a1576b6ed30791cc3834680a7) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [d9efe72](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d9efe729ef36f74962c0d694aacfabb9928d8ffd) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [3173643](https://jetbrains.team/p/IJ/repositories/ultimate/revision/31736433bbf8bfe947e10016ab52c06705424e0b) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [8c6a63a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8c6a63a08611e193fd261fc4f6466390439f4b9d) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [8d17433](https://jetbrains.team/p/IJ/repositories/ultimate/revision/8d17433631a735ea9dc4234afad5fc6cd06b253f) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46](https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1160,6 +1235,7 @@
             },
             {
               "chatMessage": {
+                "text": "build failed\n**[Patronus](https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46)**\n1 check failed\n1 check failed\n**[Patronus](https://patronus.labs.jb.gg/robot/920497ef-e342-4a12-9229-1ebff7b8be46)**\n1 check failed\n1 check failed",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1174,6 +1250,7 @@
             },
             {
               "chatMessage": {
+                "text": "force-pushed 9 commits",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1188,6 +1265,7 @@
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1202,8 +1280,7 @@
             }
           ],
           "hasMore": true
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -1219,9 +1296,11 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849983790",
           "data": [
             {
               "chatMessage": {
+                "text": "🚀 Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" started\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nChanges:\n• [a8e9c1a](https://jetbrains.team/p/IJ/repositories/ultimate/revision/a8e9c1a8927c56b78960f82c7a06e41ecb253d1e) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [138ee8d](https://jetbrains.team/p/IJ/repositories/ultimate/revision/138ee8dd35a4118d5c3e81cc46e6c9130a87bfc1) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [5eb269e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/5eb269e6aa52b6e57a7c3689774b82d2479d3502) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [e131ed0](https://jetbrains.team/p/IJ/repositories/ultimate/revision/e131ed0871f18ba2d1fbfdbce02d1bae204f81fa) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [91f6409](https://jetbrains.team/p/IJ/repositories/ultimate/revision/91f6409745ed1edd7f8c8dc210c97ee620227e0e) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/770388c6-b968-42f0-b7c0-4ec93bf39354](https://patronus.labs.jb.gg/robot/770388c6-b968-42f0-b7c0-4ec93bf39354)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1230,11 +1309,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9NkJ0W7b7n"
               }
             },
             {
               "chatMessage": {
+                "text": "merged the bazel/dbaczynski/BAZEL-3699 branch into master and deleted it",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1243,11 +1324,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9QcX0W7f3x"
               }
             },
             {
               "chatMessage": {
+                "text": "canceled the safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1256,11 +1339,13 @@
                   "details": {
                     "className": "CBuiltInServicePrincipalDetails"
                   }
-                }
+                },
+                "id": "F9QcZ0W7f3z"
               }
             },
             {
               "chatMessage": {
+                "text": "started a safe merge",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1269,11 +1354,13 @@
                   "details": {
                     "className": "CUserPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9NkG0W7b7k"
               }
             },
             {
               "chatMessage": {
+                "text": "✅ Safe Merge \"bazel/dbaczynski/[BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699)\" success\n[Show Merge Request in SpaceCode](https://jetbrains.team/p/IJ/reviews/232019/timeline)\n\nRepository: `ultimate`\nFrom: `bazel/dbaczynski/BAZEL-3699`\nTo: `master`\n\nDelivered changes ([create review](https://patronus.labs.jb.gg/robot/770388c6-b968-42f0-b7c0-4ec93bf39354/changes/space)):\n• [c9d2bb1](https://jetbrains.team/p/IJ/repositories/ultimate/revision/c9d2bb10ab3f4cf65a1450096e32db2ef2977700) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) suppress the warnings in monorepo .bazelproject files\n• [1e6847e](https://jetbrains.team/p/IJ/repositories/ultimate/revision/1e6847e6f7797acddad18555cb167f1eea77926a) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) a comment can suppress a project view warning\n• [d375fa4](https://jetbrains.team/p/IJ/repositories/ultimate/revision/d375fa49171fa59a2cde20a1ccf5a6608df3922e) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) Inspect Code gets the quick fixes of project view problems\n• [73b4f88](https://jetbrains.team/p/IJ/repositories/ultimate/revision/73b4f88cab5913686b4771639e939a3932c8e86a) [BAZEL-3699](https://youtrack.jetbrains.com/issue/BAZEL-3699) the sync console and the editor report all project view problems\n• [4b80ced](https://jetbrains.team/p/IJ/repositories/ultimate/revision/4b80ced1ac23c9e1b9a9a7253d00af614d54d70e) refactor bazel: a project view checker returns a lazy sequence of problems\n(displayed 5 of 9)\n\n[https://patronus.labs.jb.gg/robot/770388c6-b968-42f0-b7c0-4ec93bf39354](https://patronus.labs.jb.gg/robot/770388c6-b968-42f0-b7c0-4ec93bf39354)",
                 "details": {
                   "className": "M2TextItemContent"
                 },
@@ -1282,11 +1369,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9QcS0W7f40"
               }
             },
             {
               "chatMessage": {
+                "text": "Cherry-Pick into `263` failed to start:\nUnable to rebase commit c9d2bb10 due to conflicts in file: .bazelproject\n\nCherry-Pick of these changes into **263** requires approval by at least **one person** from the group below:\n• Platform QA Team: _[Alesia Matuzok](https://jetbrains.team/m/Alesia.Matuzok) (recommended, less reviews)_, [Tatiana Ovsiannikova](https://jetbrains.team/m/Tatiana.Ovsiannikova), [Dmitry Yudin](https://jetbrains.team/m/Dmitry.Yudin), [Vasilii Chernov](https://jetbrains.team/m/Vasily.Chernov), [Olga Lavrenteva](https://jetbrains.team/m/Olga.Lavrenteva), [Yulia Devyatkina](https://jetbrains.team/m/Yulia.Devyatkina), [Irma Zhinkina](https://jetbrains.team/m/Irma.Zhinkina), [Olga Pavlova](https://jetbrains.team/m/Olga.Pavlova), ~~[Gyulnara Nevezhina](https://jetbrains.team/m/Gyulnara.Nevezhina) (unavailable)~~, ~~[Veronika Leko](https://jetbrains.team/m/Veronika.Timkina) (unavailable)~~\n\n\nIt's impossible to collect approvals in the current review[IJ-MR-232019](https://jetbrains.team/p/IJ/reviews/232019/timeline). Please open a new merge request.\n\n**YouTrack issue must be specified and have 'Planned for' set for the target version.**\nRead more about review approvals in [the YouTrack article](https://youtrack.jetbrains.com/articles/IDEA-A-236159428)\nTo reuse existing approvals in Safe Push or Safe Merge, add current review identifier [IJ-MR-232019](https://jetbrains.team/p/IJ/reviews/232019/timeline) to commit messages.\n\nhttps://patronus.labs.jb.gg/robot/01b2c647-db38-40a0-9bc6-837e8240589f",
                 "details": {
                   "className": "MCMessage"
                 },
@@ -1295,13 +1384,13 @@
                   "details": {
                     "className": "CApplicationPrincipalDetails"
                   }
-                }
+                },
+                "id": "F9Qcw0W7f4M"
               }
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -1331,6 +1420,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T10:25:09.083Z",
                 "timestamp": 1793269509083
               },
               "id": "FALO70W7C3T"
@@ -1347,14 +1437,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T17:15:01.163Z",
                 "timestamp": 1793294101163
               },
               "id": "FARDk0W7Gp2"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-29T17:15:01.163Z",
+            "timestamp": 1793294101163
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -1384,6 +1478,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-28T17:58:33.934Z",
                 "timestamp": 1793210313934
               },
               "id": "FAL6I0W7CIg"
@@ -1400,14 +1495,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T17:15:22.676Z",
                 "timestamp": 1793294122676
               },
               "id": "FARDy0W7Gp8"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-29T17:15:22.676Z",
+            "timestamp": 1793294122676
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -1437,6 +1536,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T10:25:11.708Z",
                 "timestamp": 1793269511708
               },
               "id": "FAP2q0W7Ee0"
@@ -1453,6 +1553,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T10:32:26.214Z",
                 "timestamp": 1793269946214
               },
               "id": "FAP4O0W7EfY"
@@ -1469,6 +1570,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T17:34:36.572Z",
                 "timestamp": 1793295276572
               },
               "id": "FAQkj0W7Gt3"
@@ -1485,14 +1587,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-29T17:34:38.107Z",
                 "timestamp": 1793295278107
               },
               "id": "FAQkl0W7Gt5"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-29T17:34:38.107Z",
+            "timestamp": 1793295278107
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -1522,6 +1628,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-30T10:12:52.411Z",
                 "timestamp": 1793355172411
               },
               "id": "FAAzL0W7IAh"
@@ -1538,6 +1645,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-30T10:46:59.368Z",
                 "timestamp": 1793357219368
               },
               "id": "FAAgA0W7IOQ"
@@ -1554,6 +1662,7 @@
                 }
               },
               "created": {
+                "iso": "2026-10-30T14:16:17.720Z",
                 "timestamp": 1793369777720
               },
               "id": "FADQB0W7Lfb"
@@ -1570,14 +1679,18 @@
                 }
               },
               "created": {
+                "iso": "2026-10-30T14:29:45.902Z",
                 "timestamp": 1793370585902
               },
               "id": "FADVC0W7Lkc"
             }
           ],
+          "nextStartFromDate": {
+            "iso": "2026-10-30T14:29:45.902Z",
+            "timestamp": 1793370585902
+          },
           "orgLimitReached": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],
@@ -1592,6 +1705,21 @@
         "headRevision": "e83f292b6348ddcc7d1f32d6a5f1e0aa02ab15a3",
         "closeTimestamp": 1793620846639,
         "threads": [
+          {
+            "threadId": "space-232019-FALOG0W7C3U",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FALOG0W7C3U&channel=2eiGne2NMDoT",
+            "filePath": "plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/flow/open/ValidateProjectViewPreSyncHook.kt",
+            "originalCommitSha": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
+            "anchorLine": 22,
+            "anchorEndLine": 22,
+            "messages": [
+              {
+                "author": "Damian.Baczynski",
+                "body": "I changed it to `ProjectViewService.getInstance` because IDE suggests that when .service is used.",
+                "createdAt": "2026-10-29T17:15:01.163Z"
+              }
+            ]
+          },
           {
             "threadId": "space-232019-FAL6J0W7CIh",
             "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FAL6J0W7CIh&channel=2eiGne2NMDoT",
@@ -1629,21 +1757,6 @@
                 "author": "Krystian.Gajewski",
                 "body": "Let's leave it this way, we can add it back when needed.",
                 "createdAt": "2026-10-29T17:34:36.572Z"
-              }
-            ]
-          },
-          {
-            "threadId": "space-232019-FALOG0W7C3U",
-            "reviewDiscussionUrl": "https://jetbrains.team/im/review/3hxBlO2OjDie?message=FALOG0W7C3U&channel=2eiGne2NMDoT",
-            "filePath": "plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/flow/open/ValidateProjectViewPreSyncHook.kt",
-            "originalCommitSha": "aec19176ea30846c32d87a3b5fa43f63fa24d940",
-            "anchorLine": 22,
-            "anchorEndLine": 22,
-            "messages": [
-              {
-                "author": "Damian.Baczynski",
-                "body": "I changed it to `ProjectViewService.getInstance` because IDE suggests that when .service is used.",
-                "createdAt": "2026-10-29T17:15:01.163Z"
               }
             ]
           },

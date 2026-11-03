@@ -4,6 +4,7 @@ package org.jetbrains.qodana.edict.common
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.support.KOTLIN
+import org.jetbrains.qodana.edict.ci.support.ULTIMATE
 import org.jetbrains.qodana.edict.common.support.KOTLIN_URL
 import org.jetbrains.qodana.edict.common.support.MAX_QODANA_YAML_BYTES
 import org.jetbrains.qodana.edict.common.support.edictYaml
@@ -86,8 +87,10 @@ internal class EdictYamlConfigurationTest {
   }
 
   @Test
-  fun `a GitHub URL with a trailing slash names the same repository`() {
-    assertEquals(EdictConfiguration(ci = KOTLIN), EdictYamlConfiguration.load(edictYaml(directory, "ci.url" to "$KOTLIN_URL/")))
+  fun `a GitHub URL's empty path segments are ignored`() {
+    val url = "https://github.com//JetBrains//kotlin/"
+
+    assertEquals(EdictConfiguration(ci = KOTLIN), EdictYamlConfiguration.load(edictYaml(directory, "ci.url" to url)))
   }
 
   @Test
@@ -298,4 +301,3 @@ internal class EdictYamlConfigurationTest {
 private const val KOTLIN_EDICT_URL = "https://github.com/qodana/kotlin-edict"
 private const val ULTIMATE_URL = "https://jetbrains.team/p/ij/repositories/ultimate"
 private val KOTLIN_EDICT = ReviewRepository(CiProviderId.GITHUB, "github.com", "qodana", "kotlin-edict")
-private val ULTIMATE = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "ij", "ultimate")

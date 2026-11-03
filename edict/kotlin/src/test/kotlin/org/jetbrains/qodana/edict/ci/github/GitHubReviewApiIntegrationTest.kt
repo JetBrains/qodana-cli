@@ -5,7 +5,6 @@ import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.DefaultCiHttpTransport
 import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
-import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.support.ADDED_BY_917
@@ -14,7 +13,6 @@ import org.jetbrains.qodana.edict.ci.support.BEFORE_917
 import org.jetbrains.qodana.edict.ci.support.BINARY_FILE_PATH
 import org.jetbrains.qodana.edict.ci.support.DIRECTORY_PATH
 import org.jetbrains.qodana.edict.ci.support.FIRST_TWO_MERGED_SELECTION
-import org.jetbrains.qodana.edict.ci.support.INSPECTION_REQUEST
 import org.jetbrains.qodana.edict.ci.support.KOTLIN
 import org.jetbrains.qodana.edict.ci.support.KOTLIN_BOTS
 import org.jetbrains.qodana.edict.ci.support.LARGE_FILE_PATH
@@ -26,7 +24,6 @@ import org.jetbrains.qodana.edict.ci.support.MISSING_REVISION
 import org.jetbrains.qodana.edict.ci.support.MISSING_TARGET_REQUEST
 import org.jetbrains.qodana.edict.ci.support.NEW_FILE
 import org.jetbrains.qodana.edict.ci.support.NEW_FILE_SOURCE_FIX_REQUEST
-import org.jetbrains.qodana.edict.ci.support.NOT_COLLABORATOR
 import org.jetbrains.qodana.edict.ci.support.PATH_6007
 import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_1393
 import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_5976
@@ -37,9 +34,9 @@ import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_917
 import org.jetbrains.qodana.edict.ci.support.RELEASE_BRANCH
 import org.jetbrains.qodana.edict.ci.support.RELEASE_HEAD
 import org.jetbrains.qodana.edict.ci.support.SEVERAL_NUMBERS_SELECTION
-import org.jetbrains.qodana.edict.ci.support.SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.STALE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.UNCHANGED_SOURCE_FIX_REQUEST
+import org.jetbrains.qodana.edict.ci.support.TWO_DISCOVERY_PAGES_SELECTION
 import org.jetbrains.qodana.edict.ci.support.WEEKEND_SELECTION
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
 import org.junit.jupiter.api.Tag
@@ -51,7 +48,8 @@ import kotlin.test.assertFailsWith
 
 /**
  * The recordings the mocked GitHub tests replay must still be true of the real JetBrains/kotlin: the client sends the
- * same reads and returns the same result. Writes are answered by the recording and never reach GitHub.
+ * same reads and returns the same result. Recordings with scripted answers, such as every write path's, are only
+ * replayed mocked: GitHub can't answer as the script has the repository.
  */
 @Tag("integration")
 @EnabledIfEnvironmentVariable(named = "GITHUB_TOKEN", matches = ".+")
@@ -60,8 +58,8 @@ internal class GitHubReviewApiIntegrationTest {
 
 
   @Test
-  fun `a merged pull request has its threads, each with its replies in the order they were written`() {
-    // PR 6007, merged: a thread of seven replies and one of a single reply, interleaved in time.
+  fun `a merged pull request has its threads, each with its replies`() {
+    // PR 6007, merged: a thread of seven messages and one of two, interleaved in time.
     val recording = kotlinRecording("fetch-merged-6007")
 
     assertEquals(recording.result<ReviewFetchResult>(), recording.replay(github) { fetch(selectionOf(6007)) })
@@ -96,7 +94,7 @@ internal class GitHubReviewApiIntegrationTest {
 
   @Test
   fun `pull requests are fetched in the requested order, past missing and unmerged ones`() {
-    // SEVERAL_NUMBERS_SELECTION: two merged PRs, a missing one and one closed unmerged.
+    // SEVERAL_NUMBERS_SELECTION: three merged PRs in neither number order, a missing one and one closed unmerged.
     val recording = kotlinRecording("fetch-several-numbers")
 
     assertEquals(recording.result<ReviewFetchResult>(), recording.replay(github) { fetch(SEVERAL_NUMBERS_SELECTION) })
@@ -127,6 +125,18 @@ internal class GitHubReviewApiIntegrationTest {
     assertEquals(
       recording.result<ReviewFetchResult>(),
       GitHubReviewApi(KOTLIN, github, KOTLIN_BOTS).fetch(WEEKEND_SELECTION),
+    )
+  }
+
+  // Only the result, for the same reason.
+  @Test
+  fun `discovery reads the next page while the first lists only pull requests updated after the range`() {
+    // TWO_DISCOVERY_PAGES_SELECTION: the first page lists only pull requests updated after 2026-10-28.
+    val recording = kotlinRecording("fetch-two-discovery-pages")
+
+    assertEquals(
+      recording.result<ReviewFetchResult>(),
+      GitHubReviewApi(KOTLIN, github, KOTLIN_BOTS).fetch(TWO_DISCOVERY_PAGES_SELECTION),
     )
   }
 
@@ -339,39 +349,6 @@ internal class GitHubReviewApiIntegrationTest {
   }
 
   @Test
-  fun `an inspection review is opened from a new branch at the target head`() {
-    // INSPECTION_REQUEST opened from a new branch at RELEASE_HEAD; the four writes are scripted.
-    val recording = kotlinRecording("inspection-review")
-
-    assertEquals(
-      recording.result<ReviewReference>(),
-      recording.replay(github) { findOrCreateReview(INSPECTION_REQUEST) },
-    )
-  }
-
-  @Test
-  fun `an inspection branch creation GitHub refuses with 422 fails before committing`() {
-    // inspection-review, but GitHub refuses the branch with 422 "Reference already exists" (scripted).
-    val recording = kotlinRecording("inspection-review-branch-refused")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(github) { findOrCreateReview(INSPECTION_REQUEST) }
-    }
-    assertEquals("GitHub branch creation returned HTTP 422: Reference already exists", error.message)
-  }
-
-  @Test
-  fun `a reviewer who is not a collaborator fails`() {
-    // inspection-review, but GitHub refuses the reviewer with 422: not a collaborator (scripted).
-    val recording = kotlinRecording("inspection-review-reviewer-not-collaborator")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(github) { findOrCreateReview(INSPECTION_REQUEST) }
-    }
-    assertEquals("GitHub reviewer assignment returned HTTP 422: $NOT_COLLABORATOR", error.message)
-  }
-
-  @Test
   fun `a missing target branch stops before creating the inspection branch`() {
     // MISSING_TARGET_REQUEST, against a branch the repository doesn't have.
     val recording = kotlinRecording("inspection-review-missing-target")
@@ -380,17 +357,6 @@ internal class GitHubReviewApiIntegrationTest {
       recording.replay(github) { findOrCreateReview(MISSING_TARGET_REQUEST) }
     }
     assertEquals("GitHub target branch lookup returned HTTP 404: Not Found", error.message)
-  }
-
-  @Test
-  fun `all fixed files are committed at once to a new branch, keeping their modes`() {
-    // SOURCE_FIX_REQUEST committed to a new branch at RELEASE_HEAD; the five writes are scripted.
-    val recording = kotlinRecording("source-fix-review")
-
-    assertEquals(
-      recording.result<ReviewReference>(),
-      recording.replay(github) { findOrCreateReview(SOURCE_FIX_REQUEST) },
-    )
   }
 
   @Test

@@ -8,7 +8,6 @@ import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ACCEPTED
 import org.jetbrains.qodana.edict.promotion.support.activeReviewsText
 import org.jetbrains.qodana.edict.promotion.support.expectedText
 import org.jetbrains.qodana.edict.promotion.support.promotionRepository
-import org.jetbrains.qodana.edict.promotion.support.review
 import org.jetbrains.qodana.edict.promotion.support.store
 import org.jetbrains.qodana.edict.promotion.support.storeLegacyActiveReview
 import org.jetbrains.qodana.edict.promotion.support.weakCluster
@@ -26,6 +25,7 @@ internal class PromotionStorageTest {
 
   @Test
   fun `a weak-signal promotion is stored as its review and state`() {
+    // Only the pull request (GitHub, JetBrains/qodana-cli #1) and the ACCEPTED state, no other fields.
     assertEquals(
       EdictNextJson.parseToJsonElement(expectedText("weak-signal-promotion.json")),
       EdictNextJson.encodeToJsonElement(WeakSignalPromotion.serializer(), SOURCE_FIX_ACCEPTED),

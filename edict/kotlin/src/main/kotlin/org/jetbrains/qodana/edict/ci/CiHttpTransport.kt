@@ -20,7 +20,6 @@ internal fun urlPart(value: String): String = URLEncoder.encode(value, Charsets.
 internal data class CiHttpResponse(
   val status: Int,
   val body: JsonElement,
-  val hasNext: Boolean = false,
 )
 
 internal interface CiHttpTransport {
@@ -84,11 +83,7 @@ internal class DefaultCiHttpTransport(
     catch (e: Exception) {
       throw IllegalStateException("Invalid ${provider.name.lowercase()} API JSON response (HTTP ${response.statusCode()})", e)
     }
-    return CiHttpResponse(
-      response.statusCode(),
-      parsed,
-      response.headers().firstValue("Link").orElse("").contains("rel=\"next\""),
-    )
+    return CiHttpResponse(response.statusCode(), parsed)
   }
 
   private companion object {

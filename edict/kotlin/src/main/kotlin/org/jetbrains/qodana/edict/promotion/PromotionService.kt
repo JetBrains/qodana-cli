@@ -27,7 +27,7 @@ internal class PromotionService(
   // TODO I think we should require non-null promotionReviews. The whole class depends on this. If promotion step itsel is missing we can make promotion service nullable
   /** The promotion repository's client; null when neither `edict.promotion.url` nor `edict.ci.url` is configured. */
   private val promotionReviews: ReviewApi?,
-  /** Review text and review failures reach agents, so they are redacted, and before they are bounded. */
+  /** Review text and review failures reach agents, so they are redacted before they are cut to their bounds. */
   private val redactor: TokenRedactor,
   private val clock: Clock = Clock.systemUTC(),
   executionBranch: () -> String = { error("The project execution branch is unavailable") },

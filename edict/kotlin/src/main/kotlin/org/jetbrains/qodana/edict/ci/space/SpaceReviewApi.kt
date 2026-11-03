@@ -52,10 +52,13 @@ internal class SpaceReviewApi(
   /** The usernames, in any case, of accounts that post as users but are bots. */
   private val bots: Set<String>,
 ) : ReviewApi {
+  /** The endpoints of the repository and of its project's code reviews, under which this client's requests go. */
+  private val repositoryRoot = "/projects/key:${urlPart(repository.owner)}/repositories/${urlPart(repository.repository)}"
+  private val reviewsRoot = "/projects/key:${urlPart(repository.owner)}/code-reviews"
+
   // TODO(R11): discovery pages and PR reads append to `numbers` and `problems` from nested loops; map each page and PR
   //  to its result (numbers or reviews, plus its own problems) and combine them at the end.
   override fun fetch(selection: ReviewSelection): ReviewFetchResult {
-    val root = "/projects/key:${urlPart(repository.owner)}/code-reviews"
     val numbers = selection.prNumbers.toMutableList()
     val problems = mutableListOf<String>()
     if (numbers.isEmpty()) {
@@ -67,7 +70,7 @@ internal class SpaceReviewApi(
       // by `timestamp`, so the first review changed before the start date ends the range.
       for (page in 0 until MAX_PAGES) {
         val response = get(
-          root,
+          reviewsRoot,
           mapOf(
             "\$skip" to "${page * PAGE_SIZE}",
             "\$top" to "$PAGE_SIZE",
@@ -108,7 +111,7 @@ internal class SpaceReviewApi(
     }
     val pullRequests = numbers.mapNotNull { number ->
       try {
-        fetchPullRequest(root, number, selection, problems)
+        fetchPullRequest(number, selection, problems)
       }
       catch (e: Exception) {
         problems += "Space PR $number: ${e.message ?: e.javaClass.simpleName}"
@@ -119,7 +122,6 @@ internal class SpaceReviewApi(
   }
 
   private fun fetchPullRequest(
-    root: String,
     number: Int,
     selection: ReviewSelection,
     problems: MutableList<String>,
@@ -162,7 +164,7 @@ internal class SpaceReviewApi(
         problems += "Space PR $number feed item $index: ${e.message ?: e.javaClass.simpleName}"
         null
       }
-    }.sortedWith(compareBy({ it.messages.first().createdAt }, { it.threadId }))
+    }
     return PullRequest(
       number,
       "https://${repository.host}/p/${urlPart(repository.owner)}/reviews/$number",
@@ -180,17 +182,16 @@ internal class SpaceReviewApi(
     return readFile(revision, path)
   }
 
-  /** Reads without validation, for branch revisions this client resolved itself. */
+  /** Reads without [file]'s checks of [revision] and [path], for revisions and paths a checked request or Space gave. */
   private fun readFile(revision: String, path: String): String {
-    val root = repositoryEndpoint()
     // Space answers 404 for a revision it doesn't have, which the read reports, and no file for a missing path.
-    val files = get("$root/files", mapOf("commit" to revision, "path" to path)).body as? JsonArray
+    val files = get("$repositoryRoot/files", mapOf("commit" to revision, "path" to path)).body as? JsonArray
       ?: error("Space API did not return a file list")
     val file = files.map { it.jsonObject }
       .firstOrNull { it.text("path") == path && it.text("type") in listOf("FILE", "EXE_FILE") }
       ?: throw NoSuchFileException(path)
     val value = get(
-      root + "/content",
+      "$repositoryRoot/content",
       mapOf("blobId" to file.text("blob"), "skip" to "0", "limit" to "16777216"),
     ).body.jsonObject
     val bytes = Base64.getDecoder().decode(value.text("partBase64").replace("\n", "").replace("\r", ""))
@@ -202,7 +203,7 @@ internal class SpaceReviewApi(
 
   // Space answers the default branch as a ref, refs/heads/<name>.
   override fun resolveTargetBranch(configured: String?): String =
-    configured ?: expectObject(http.send("GET", repositoryEndpoint()), 200).obj("defaultBranch").text("head")
+    configured ?: expectObject(http.send("GET", repositoryRoot), 200).obj("defaultBranch").text("head")
       .removePrefix("refs/heads/").also { require(it.isNotBlank()) { "Space repository has no default branch" } }
 
   override fun findOrCreateReview(request: CreateReviewRequest): ReviewReference {
@@ -211,8 +212,7 @@ internal class SpaceReviewApi(
     if (request.sourceFix != null) ensureSourceFixBranch(request, branchHead)
     else ensureInspectionBranch(request, branchHead)
 
-    val reviewsRoot = "/projects/key:${urlPart(repository.owner)}/code-reviews"
-    val review = findReview(reviewsRoot, request, branch) ?: expectObject(http.send(
+    val review = findReview(request, branch) ?: expectObject(http.send(
       "POST",
       "$reviewsRoot/merge-requests",
       body = buildJsonObject {
@@ -227,23 +227,25 @@ internal class SpaceReviewApi(
     require(reviewId.isNotBlank()) { "Space code review has no id" }
     val number = review.number("number")
     require(number > 0) { "Space code review has no number" }
-    var reviewer = assignReviewer(reviewsRoot, reviewId, request.reviewer)
-    // A bare value is interpreted as a profile ID. Also accept configured usernames.
-    if (reviewer.status == 404 && ':' !in request.reviewer) {
-      reviewer = assignReviewer(reviewsRoot, reviewId, "username:${request.reviewer}")
+    // A closed review takes no reviewers.
+    if (review.text("state") != "Closed") {
+      var reviewer = assignReviewer(reviewId, request.reviewer)
+      // A bare value is interpreted as a profile ID. Also accept configured usernames.
+      if (reviewer.status == 404 && ':' !in request.reviewer) {
+        reviewer = assignReviewer(reviewId, "username:${request.reviewer}")
+      }
+      expectStatus(reviewer, "Space reviewer assignment", 200, 201)
     }
-    expectStatus(reviewer, "Space reviewer assignment", 200, 201)
     return repository.reference(reviewId, "https://${repository.host}/p/${urlPart(repository.owner)}/reviews/$number")
   }
 
-  private fun assignReviewer(reviewsRoot: String, reviewId: String, identifier: String): CiHttpResponse = http.send(
+  private fun assignReviewer(reviewId: String, identifier: String): CiHttpResponse = http.send(
     "POST", "$reviewsRoot/${urlPart(reviewId)}/participants/${urlPart(identifier)}",
     body = buildJsonObject { put("role", "Reviewer") },
   )
 
   private fun ensureInspectionBranch(request: CreateReviewRequest, branchHead: String) {
-    val endpoint = repositoryEndpoint()
-    val existingBranch = readBranch(endpoint, branchHead)
+    val existingBranch = readBranch(branchHead)
     val existingRevision = existingBranch?.obj("branchInfo")?.text("ref")?.also {
       require(it.isNotBlank()) { "Space inspection branch has no revision" }
     }
@@ -252,14 +254,14 @@ internal class SpaceReviewApi(
       catch (_: NoSuchFileException) { null }
     }
     if (existingContent != request.inspectionContent) {
-      val base = requireNotNull(readBranch(endpoint, request.targetBranch)) { "Space target branch does not exist" }
+      val base = requireNotNull(readBranch(request.targetBranch)) { "Space target branch does not exist" }
       val revision = base.obj("branchInfo").text("ref")
       require(revision.isNotBlank()) { "Space target branch has no revision" }
       require(existingBranch == null || existingRevision == revision) {
         "Space inspection branch already exists with different content"
       }
       if (existingBranch == null) {
-        val created = http.send("POST", "$endpoint/head", body = buildJsonObject {
+        val created = http.send("POST", "$repositoryRoot/head", body = buildJsonObject {
           put("head", branchHead)
           put("target", revision)
         })
@@ -287,8 +289,7 @@ internal class SpaceReviewApi(
 
   private fun ensureSourceFixBranch(request: CreateReviewRequest, branchHead: String) {
     val changes = requireNotNull(request.sourceFix)
-    val endpoint = repositoryEndpoint()
-    val existing = readBranch(endpoint, branchHead)
+    val existing = readBranch(branchHead)
     val revision = existing?.obj("branchInfo")?.text("ref")
     if (revision != null && revision != changes.baseRevision) {
       require(changes.files.all { (path, content) -> readFile(revision, path) == content }) {
@@ -296,12 +297,12 @@ internal class SpaceReviewApi(
       }
       return
     }
-    requireNotNull(readBranch(endpoint, request.targetBranch)) { "Space target branch does not exist" }
+    requireNotNull(readBranch(request.targetBranch)) { "Space target branch does not exist" }
     changes.files.forEach { (path, content) ->
       require(readFile(changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
     }
     if (existing == null) {
-      expectStatus(http.send("POST", "$endpoint/head", body = buildJsonObject {
+      expectStatus(http.send("POST", "$repositoryRoot/head", body = buildJsonObject {
         put("head", branchHead)
         put("target", changes.baseRevision)
       }), "Space source-fix branch creation", 200, 201)
@@ -324,25 +325,25 @@ internal class SpaceReviewApi(
     require(result.flag("success") == true) { "Space source-fix commit failed: ${result.text("message").take(1000)}" }
   }
 
-  private fun readBranch(repository: String, branch: String): JsonObject? {
+  private fun readBranch(branch: String): JsonObject? {
     val head = if (branch.startsWith("refs/heads/")) branch else "refs/heads/$branch"
-    val response = http.send("GET", "$repository/branches/${urlPart(head)}")
+    val response = http.send("GET", "$repositoryRoot/branches/${urlPart(head)}")
     if (response.status == 404) return null
     expectStatus(response, "Space branch lookup", 200)
     return if (response.body == JsonNull) null else response.body.jsonObject
   }
 
-  private fun findReview(root: String, request: CreateReviewRequest, branch: String): JsonObject? {
+  private fun findReview(request: CreateReviewRequest, branch: String): JsonObject? {
     for (state in listOf("Opened", "Closed")) {
       for (page in 0 until MAX_PAGES) {
-        val response = expectObject(http.send("GET", root, mapOf(
+        val response = expectObject(http.send("GET", reviewsRoot, mapOf(
           "repository" to repository.repository,
           "sourceBranch" to branch,
           "targetBranch" to request.targetBranch,
           "state" to state,
           "\$skip" to "${page * PAGE_SIZE}",
           "\$top" to "$PAGE_SIZE",
-          "\$fields" to "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))",
+          "\$fields" to "data(review(id,number,state,branchPair(repository,sourceBranch,targetBranch)))",
         )), 200)
         val entries = response["data"] as? JsonArray ?: error("Space review lookup returned no data array")
         for (entry in entries) {
@@ -501,7 +502,8 @@ internal class SpaceReviewApi(
   /**
    * A person's text message: Space marks events and state changes, such as a resolved discussion, with other content
    * classes, and gives applications and built-in services, such as "RubyMine Workflow" and "JetBrains Space", other
-   * author classes than users. Users named in [bots] aren't people either.
+   * author classes than users. Users named in [bots] aren't people either. A message Space can't show, such as a
+   * deleted one, comes with an `InaccessibleFields` error instead of its text, author and content, so it is none.
    */
   private fun JsonObject.isPersonText(): Boolean =
     obj("details").text("className") == "M2TextItemContent" && text("text").isNotBlank() &&
@@ -515,12 +517,9 @@ internal class SpaceReviewApi(
 
   /** The [fields] of the review named by [selector], `id:` or `number:` and the path-encoded id or number. */
   private fun reviewRecord(selector: String, fields: String): JsonObject =
-    get("/projects/key:${urlPart(repository.owner)}/code-reviews/$selector", mapOf("\$fields" to fields)).body as? JsonObject
+    get("$reviewsRoot/$selector", mapOf("\$fields" to fields)).body as? JsonObject
       // Space answers null for a review that doesn't exist or that the token may not read.
       ?: throw IllegalArgumentException("Space review $selector is missing or not visible")
-
-  private fun repositoryEndpoint(): String =
-    "/projects/key:${urlPart(repository.owner)}/repositories/${urlPart(repository.repository)}"
 
   private fun expectObject(response: CiHttpResponse, vararg expected: Int): JsonObject {
     expectStatus(response, "Space API", *expected)

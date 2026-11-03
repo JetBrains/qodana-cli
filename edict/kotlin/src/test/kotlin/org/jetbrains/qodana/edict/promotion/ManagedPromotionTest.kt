@@ -6,7 +6,6 @@ import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.edictnext.PromotionPrState
 import org.jetbrains.qodana.edict.promotion.support.PROMOTION_REPOSITORY
-import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ACCEPTED
 import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ON_REVIEW
 import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_REVIEW
 import org.jetbrains.qodana.edict.promotion.support.UNCOVERED_CORRECTION
@@ -19,6 +18,7 @@ import org.jetbrains.qodana.edict.promotion.support.store
 import org.jetbrains.qodana.edict.promotion.support.storeActiveReview
 import org.jetbrains.qodana.edict.promotion.support.weakCluster
 import org.jetbrains.qodana.edict.promotion.support.weakSignalService
+import org.jetbrains.qodana.edict.promotion.support.withManagement
 import org.jetbrains.qodana.edict.support.FakeReviewApi
 import org.jetbrains.qodana.edict.support.ReviewStep
 import org.junit.jupiter.api.io.TempDir
@@ -40,8 +40,10 @@ internal class ManagedPromotionTest {
     repository.storeActiveReview(SOURCE_FIX_ON_REVIEW)
     reviews.statuses[SOURCE_FIX_REVIEW] = ReviewStatus(ReviewState.OPEN)
 
-    val checked = reviews.whileWaitingAt(ReviewStep.STATUS, weakSignalService(repository, reviews)::checkReviews) {
-      repository.fetchPrBatch(reviews, PR_NUMBER)
+    val checked = repository.withManagement(reviews) { state, management ->
+      // The checker redacts with the run's state, as the server wires it, so both tasks share that state.
+      val checker = weakSignalService(repository, reviews, redactor = state)
+      reviews.whileWaitingAt(ReviewStep.STATUS, checker::checkReviews) { management.fetchPrBatch(state, PR_NUMBER) }
     }
 
     assertEquals(listOf(PR_SELECTION), reviews.selections)
@@ -49,9 +51,8 @@ internal class ManagedPromotionTest {
   }
 
   @Test
-  fun `a merged correction no example covers goes to the inbox and leaves the source cluster alone`() {
+  fun `a correction no example covers goes to the inbox and leaves the cluster alone`() {
     val cluster = repository.store(correctableCluster())
-    repository.storeActiveReview(SOURCE_FIX_ACCEPTED)
 
     repository.publishToInbox(UNCOVERED_CORRECTION)
 

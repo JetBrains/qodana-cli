@@ -66,14 +66,13 @@ object UnifiedDiff {
         val header = diff.lineSequence().takeWhile { !it.startsWith("@@") }.joinToString("") { "$it\n" }
         val lines = parseDiff(diff).hunks.flatMapIndexed { hunk, it -> it.lines.map { line -> hunk to line } }
         val positive = label == EdictNextSignalLabel.POSITIVE
-        fun onSide(line: Line) = line.content[0] == ' ' || line.content[0] == (if (positive) '-' else '+')
-        fun number(line: Line) = if (positive) line.before else line.after
-        fun changed(line: Line) = line.content[0] == '-' || line.content[0] == '+'
-        val focus = lines.indices.filter { i -> onSide(lines[i].second) && ranges.any { number(lines[i].second) in it.start..it.end } }
+        val focus = lines.indices.filter { i ->
+            lines[i].second.isOnSide(positive) && ranges.any { lines[i].second.number(positive) in it.start..it.end }
+        }
         return EXCERPT_LEVELS.firstNotNullOfOrNull { (context, radius) ->
             val near = lines.indices.filter { i ->
-                changed(lines[i].second) &&
-                    (focus.isEmpty() || ranges.any { number(lines[i].second) in (it.start - radius)..(it.end + radius) })
+                lines[i].second.isChange &&
+                    (focus.isEmpty() || ranges.any { lines[i].second.number(positive) in (it.start - radius)..(it.end + radius) })
             }
             val kept = BooleanArray(lines.size)
             (focus + near).forEach { i ->
@@ -104,6 +103,17 @@ object UnifiedDiff {
         }
     }
 
+    /** Whether this line is on the side of a [positive] or a negative example: unchanged, or removed or added. */
+    private fun Line.isOnSide(positive: Boolean) = content[0] == ' ' || content[0] == (if (positive) '-' else '+')
+
+    /** This line's number on the side of a [positive] or a negative example: before or after the change. */
+    private fun Line.number(positive: Boolean) = if (positive) before else after
+
+    private val Line.isChange get() = content[0] == '-' || content[0] == '+'
+
+    private fun requireWellFormed(index: Int, condition: Boolean) =
+        require(condition) { "Malformed unified diff at line ${index + 1}" }
+
     /** Context lines and the radius around the ranges for nearby changes, from the widest excerpt to the narrowest. */
     private val EXCERPT_LEVELS = listOf(3 to 20, 3 to 0, 1 to 0, 0 to 0)
 
@@ -118,14 +128,13 @@ object UnifiedDiff {
         var oldRemaining = 0
         var newRemaining = 0
         diff.split('\n').forEachIndexed { index, line ->
-            fun valid(condition: Boolean) = require(condition) { "Malformed unified diff at line ${index + 1}" }
             if (line == "\\ No newline at end of file") {
-                valid(hunks.isNotEmpty() && hunks.last().lines.isNotEmpty())
+                requireWellFormed(index, hunks.isNotEmpty() && hunks.last().lines.isNotEmpty())
                 hunks.last().lines += Line(oldLine, newLine, line)
                 return@forEachIndexed
             }
             if (oldRemaining > 0 || newRemaining > 0) {
-                valid(line.isNotEmpty())
+                requireWellFormed(index, line.isNotEmpty())
                 hunks.last().lines += Line(oldLine, newLine, line)
                 when (line[0]) {
                     ' ' -> {
@@ -142,9 +151,9 @@ object UnifiedDiff {
                         newRemaining--; newLine++
                     }
 
-                    else -> valid(false)
+                    else -> requireWellFormed(index, false)
                 }
-                valid(oldRemaining >= 0 && newRemaining >= 0)
+                requireWellFormed(index, oldRemaining >= 0 && newRemaining >= 0)
             } else when {
                 line.startsWith("diff --git ") -> {
                     beforePath = ""; afterPath = ""
@@ -158,18 +167,18 @@ object UnifiedDiff {
 
                 line.startsWith("@@") -> {
                     val match = hunk.matchEntire(line)
-                    valid(match != null && beforePath.isNotEmpty() && afterPath.isNotEmpty())
+                    requireWellFormed(index, match != null && beforePath.isNotEmpty() && afterPath.isNotEmpty())
                     val values = match!!.groupValues
                     oldLine = values[1].toInt(); oldRemaining = values[2].ifEmpty { "1" }.toInt()
                     newLine = values[3].toInt(); newRemaining = values[4].ifEmpty { "1" }.toInt()
-                    valid((oldRemaining == 0 || oldLine > 0) && (newRemaining == 0 || newLine > 0))
+                    requireWellFormed(index, (oldRemaining == 0 || oldLine > 0) && (newRemaining == 0 || newLine > 0))
                     // A zero-length side names the line preceding the insertion/deletion.
                     if (oldRemaining == 0) oldLine++
                     if (newRemaining == 0) newLine++
                     hunks += Hunk(beforePath, afterPath)
                 }
 
-                line.startsWith('+') || line.startsWith('-') || line.startsWith(' ') -> valid(false)
+                line.startsWith('+') || line.startsWith('-') || line.startsWith(' ') -> requireWellFormed(index, false)
             }
         }
         require(oldRemaining == 0 && newRemaining == 0) { "Truncated unified diff" }

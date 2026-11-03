@@ -17,8 +17,7 @@
           "branchPair": {
             "isMerged": true
           }
-        },
-        "hasNext": false
+        }
       }
     },
     {
@@ -34,6 +33,7 @@
       "response": {
         "status": 200,
         "body": {
+          "etag": "1669849976487",
           "data": [
             {
               "chatMessage": {
@@ -171,7 +171,19 @@
               "chatMessage": {
                 "text": "posted a comment",
                 "details": {
-                  "className": "CodeDiscussionAddedFeedEvent"
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "7446562d4c8eaccb605e7dbbc04fd66cf79b3d8f",
+                      "filename": "/plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/ui/widgets/LabelSearchEverywhereContributor.kt",
+                      "line": 74,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "1NDrO50CkcWa"
+                    }
+                  }
                 },
                 "author": {
                   "name": "Lev.Leontev",
@@ -201,7 +213,19 @@
               "chatMessage": {
                 "text": "posted a comment",
                 "details": {
-                  "className": "CodeDiscussionAddedFeedEvent"
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "7446562d4c8eaccb605e7dbbc04fd66cf79b3d8f",
+                      "filename": "/plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/languages/starlark/psi/StarlarkFile.kt",
+                      "line": 40,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "cI4ig12N1mQ"
+                    }
+                  }
                 },
                 "author": {
                   "name": "Lev.Leontev",
@@ -231,7 +255,19 @@
               "chatMessage": {
                 "text": "posted a comment",
                 "details": {
-                  "className": "CodeDiscussionAddedFeedEvent"
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "7446562d4c8eaccb605e7dbbc04fd66cf79b3d8f",
+                      "filename": "/plugins/bazel/intellij.bazel.core/src/org/jetbrains/bazel/languages/starlark/psi/StarlarkFile.kt",
+                      "line": 41,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "9yEoU06C9zK"
+                    }
+                  }
                 },
                 "author": {
                   "name": "Lev.Leontev",
@@ -396,7 +432,19 @@
               "chatMessage": {
                 "text": "posted a comment",
                 "details": {
-                  "className": "CodeDiscussionAddedFeedEvent"
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "4ed87a3fc7691c14a21d42128d1ec014d42320e9",
+                      "filename": "/plugins/bazel/intellij.bazel.languages/src/org/jetbrains/bazel/languages/starlark/psi/StarlarkFile.kt",
+                      "line": 36,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "4cfuBk4TvP1Z"
+                    }
+                  }
                 },
                 "author": {
                   "name": "pasynkov",
@@ -542,7 +590,19 @@
               "chatMessage": {
                 "text": "posted a comment",
                 "details": {
-                  "className": "CodeDiscussionAddedFeedEvent"
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "4ed87a3fc7691c14a21d42128d1ec014d42320e9",
+                      "filename": "/plugins/bazel/intellij.bazel.languages/src/org/jetbrains/bazel/languages/starlark/psi/StarlarkFile.kt",
+                      "line": 35,
+                      "oldLine": null
+                    },
+                    "endAnchor": null,
+                    "channel": {
+                      "id": "2QeKWS45yDRQ"
+                    }
+                  }
                 },
                 "author": {
                   "name": "Lev.Leontev",
@@ -1001,8 +1061,7 @@
             }
           ],
           "hasMore": false
-        },
-        "hasNext": false
+        }
       }
     }
   ],

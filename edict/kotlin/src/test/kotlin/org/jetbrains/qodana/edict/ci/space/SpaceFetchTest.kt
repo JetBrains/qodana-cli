@@ -5,6 +5,7 @@ import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewThread
+import org.jetbrains.qodana.edict.ci.support.UltimateScripts
 import org.jetbrains.qodana.edict.ci.support.ultimateRecording
 import org.jetbrains.qodana.edict.extraction.reviews.withValidThreads
 import kotlin.test.Test
@@ -56,11 +57,10 @@ internal class SpaceFetchTest {
 
   @Test
   fun `a feed in two pages is read to its end`() {
-    // Review 232019: a feed of two pages; `util.kt` is anchored on 0-based line 30, `ProjectViewService.kt` on
-    // removed lines, oldLine 8 to 9 of `cc94f6cc`, the revision before the change.
-    val recording = ultimateRecording("fetch-paged-feed-232019")
+    // Review 230194: a feed of two pages, whose second page adds the discussions FAIwK0W7A8i and FAKgK0W7AHc.
+    val recording = ultimateRecording("fetch-multiline-discussion-230194")
 
-    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(ReviewSelection(1, listOf(232019))) })
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(ReviewSelection(1, listOf(230194))) })
   }
 
   @Test
@@ -106,61 +106,58 @@ internal class SpaceFetchTest {
     assertEquals(listOf(listOf("Henry.Wylde")), fetched.pullRequests.single().threads.map { it.messages.map(ReviewMessage::author) })
   }
 
-  /** The variant repeats the discussion's one real message 51 times. */
+  @Test
+  fun `a configured bot's messages are left out of discussions, whatever the case of its name`() {
+    // Review 231618: six discussions "RubyMine Workflow" opened; only Henry.Wylde answered one of them.
+    val recording = ultimateRecording("fetch-answered-application-discussion-231618", bots = setOf("henry.wylde"))
+
+    assertEquals(emptyList(), recording.replay { fetch(ReviewSelection(1, listOf(231618))) }.pullRequests.single().threads)
+  }
+
   @Test
   fun `a discussion in two pages is read to its end`() {
-    // Variant of review 222772: 51 copies of its message, in discussion pages of at most 50.
-    val recording = ultimateRecording("fetch-paged-discussion-222772")
+    // Review 222772, with its discussion's one message repeated 51 times, in a page of 50 and a page of 1 (scripted).
+    val recording = UltimateScripts.discussionInTwoPages()
 
-    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(ReviewSelection(1, listOf(222772))) })
+    val expected = oneDiscussion().withThreads { thread -> listOf(thread.copy(messages = List(51) { thread.messages.single() })) }
+    assertEquals(expected, recording.replay { fetch(REVIEW_222772) })
   }
 
-  /** The variant drops the lines from the discussion's anchor. */
   @Test
   fun `a discussion on a whole file has no anchor lines`() {
-    // Variant of review 222772: its discussion's anchor names the file without a line.
-    val recording = ultimateRecording("fetch-unanchored-discussion-222772")
+    // Review 222772, with its discussion anchored on its file, without lines (scripted).
+    val recording = UltimateScripts.wholeFileDiscussion()
 
-    val fetched = recording.replay { fetch(ReviewSelection(1, listOf(222772))) }
-
-    assertEquals(recording.result<ReviewFetchResult>(), fetched)
-    assertEquals(null to null, fetched.pullRequests.single().threads.single().let { it.anchorLine to it.anchorEndLine })
+    val expected = oneDiscussion().withThreads { thread -> listOf(thread.copy(anchorLine = null, anchorEndLine = null)) }
+    assertEquals(expected, recording.replay { fetch(REVIEW_222772) })
   }
 
-  /** The variant sets `orgLimitReached` on the discussion page. */
   @Test
   fun `a discussion whose history Space limits is reported and left out`() {
-    // Variant of review 222772: Space says the discussion's history is limited.
-    val recording = ultimateRecording("fetch-limited-discussion-history-222772")
+    // Review 222772, with Space saying its discussion's history is limited (scripted).
+    val recording = UltimateScripts.limitedDiscussionHistory()
 
-    val fetched = recording.replay { fetch(ReviewSelection(1, listOf(222772))) }
-
-    assertEquals(emptyList(), fetched.pullRequests.single().threads)
-    assertEquals(listOf("Space PR 222772 discussion 20NyBn21e5p3 page 1: history unavailable or limited"), fetched.problems)
+    val expected = oneDiscussion().withThreads { emptyList() }
+      .copy(problems = listOf("Space PR 222772 discussion 20NyBn21e5p3 page 1: history unavailable or limited"))
+    assertEquals(expected, recording.replay { fetch(REVIEW_222772) })
   }
 
-  /** The variant sets `hasMore` on the feed page and answers with the cursor it was read with. */
   @Test
   fun `a feed whose cursor doesn't advance is reported and its messages kept`() {
-    // Variant of review 222772: its feed page says more follow, under the cursor it was read with.
-    val recording = ultimateRecording("fetch-stalled-feed-222772")
+    // Review 222772, with its feed saying more follow, under the cursor it was read with (scripted).
+    val recording = UltimateScripts.stalledFeed()
 
-    val fetched = recording.replay { fetch(ReviewSelection(1, listOf(222772))) }
-
-    assertEquals(recording.result<ReviewFetchResult>(), fetched)
-    assertEquals(listOf("Space PR 222772 feed page 1: pagination did not advance"), fetched.problems)
+    val expected = oneDiscussion().copy(problems = listOf("Space PR 222772 feed page 1: pagination did not advance"))
+    assertEquals(expected, recording.replay { fetch(REVIEW_222772) })
   }
 
-  /** The variant replaces the first feed element with `null`. */
   @Test
   fun `a malformed feed element is reported and the review kept`() {
-    // Variant of review 222772: the first element of its feed is null.
-    val recording = ultimateRecording("fetch-malformed-feed-element-222772")
+    // Review 222772, with the first element of its feed, a review event, null (scripted).
+    val recording = UltimateScripts.malformedFeedElement()
 
-    val fetched = recording.replay { fetch(ReviewSelection(1, listOf(222772))) }
-
-    assertEquals(recording.result<ReviewFetchResult>(), fetched)
-    assertEquals(listOf("Space PR 222772 feed page 1 data[0]: expected object"), fetched.problems)
+    val expected = oneDiscussion().copy(problems = listOf("Space PR 222772 feed page 1 data[0]: expected object"))
+    assertEquals(expected, recording.replay { fetch(REVIEW_222772) })
   }
 
   @Test
@@ -184,23 +181,20 @@ internal class SpaceFetchTest {
     assertEquals(listOf(230194, 232745), fetched.pullRequests.map { it.number })
   }
 
-  /** The variant prepends `null`, an element without a review, and a repeat of the page's first review. */
   @Test
   fun `malformed discovery elements are reported and skipped`() {
-    // Variant of the first two merged on 2026-11-01: page two starts with null, a reviewless element and a repeat.
-    val recording = ultimateRecording("fetch-malformed-discovery-2026-11-01")
+    // The first two reviews merged on 2026-11-01, with null, a reviewless element and a repeat first on the page.
+    val recording = UltimateScripts.malformedDiscovery()
 
-    val fetched = recording.replay { fetch(ReviewSelection(2, startDate = "2026-11-01", endDate = "2026-11-01")) }
-
-    assertEquals(recording.result<ReviewFetchResult>(), fetched)
-    assertEquals(
-      listOf(
-        "Space review discovery page 2 data[0]: expected object",
-        "Space review discovery page 2 data[1]: missing review object",
-        "Space review discovery page 2 data[3]: invalid or repeated review",
+    // The first two reviews merged on 2026-11-01, as recorded.
+    val expected = ultimateRecording("fetch-first-two-merged-on-2026-11-01").result<ReviewFetchResult>().copy(
+      problems = listOf(
+        "Space review discovery page 1 data[0]: expected object",
+        "Space review discovery page 1 data[1]: missing review object",
+        "Space review discovery page 1 data[3]: invalid or repeated review",
       ),
-      fetched.problems,
     )
+    assertEquals(expected, recording.replay { fetch(ReviewSelection(2, startDate = "2026-11-01", endDate = "2026-11-01")) })
   }
 
   @Test
@@ -220,3 +214,12 @@ private fun ReviewFetchResult.thread(pathSuffix: String): ReviewThread =
 
 /** The revision and the first and last line a thread is anchored on. */
 private fun ReviewThread.anchor(): Triple<String, Int?, Int?> = Triple(originalCommitSha, anchorLine, anchorEndLine)
+
+private val REVIEW_222772 = ReviewSelection(1, listOf(222772))
+
+/** What review 222772 fetches as recorded: one code discussion with one person's message. */
+private fun oneDiscussion(): ReviewFetchResult = ultimateRecording("fetch-one-discussion-222772").result()
+
+/** This result with each review's threads replaced by what [change] makes of each. */
+private fun ReviewFetchResult.withThreads(change: (ReviewThread) -> List<ReviewThread>): ReviewFetchResult =
+  copy(pullRequests = pullRequests.map { it.copy(threads = it.threads.flatMap(change)) })

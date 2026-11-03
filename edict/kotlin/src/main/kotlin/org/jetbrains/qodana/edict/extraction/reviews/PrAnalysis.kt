@@ -267,7 +267,8 @@ internal class PrAnalysis(
         )
       }
     }
-    val failedIds = failedWorkItemIds.toSet() + failures.map(PrSignalStoreFailure::workItemId)
+    // A Signal may name a work item of another chunk; its failure fails no work item of this one.
+    val failedIds = (failedWorkItemIds + failures.map(PrSignalStoreFailure::workItemId)).filter(inspected::contains).toSet()
     val successfulIds = inspected.toSet() - failedIds
     batch.storedChunks[chunkIndex] = StoredChunk(stored, failures, problems, successfulIds)
     PrReceipt(

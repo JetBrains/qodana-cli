@@ -11,9 +11,10 @@
       "response": {
         "status": 404,
         "body": {
-          "message": "No commit found for the ref 0000000000000000000000000000000000000000"
-        },
-        "hasNext": false
+          "message": "No commit found for the ref 0000000000000000000000000000000000000000",
+          "documentation_url": "https://docs.github.com/v3/repos/contents/",
+          "status": "404"
+        }
       }
     }
   ],

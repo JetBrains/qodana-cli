@@ -588,7 +588,7 @@ internal class WeakSignalPromotionServiceTest {
     val error = assertFailsWith<IllegalArgumentException> {
       service.recordSignals("rule", SOURCE_FIX_REVIEW, INSPECTION_DIGEST, CORRECTIONS)
     }
-    assertEquals("Review does not belong to source cluster 'rule'", error.message)
+    assertEquals("Review of source cluster 'rule' is not accepted", error.message)
   }
 
   @Test

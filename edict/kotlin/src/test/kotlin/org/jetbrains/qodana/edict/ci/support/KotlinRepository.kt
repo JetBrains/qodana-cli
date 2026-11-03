@@ -17,7 +17,7 @@ internal val KOTLIN = ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBr
 /** The build server that reports on JetBrains/kotlin pull requests as the user `KotlinBuild`, configured in lowercase. */
 internal val KOTLIN_BOTS = setOf("kotlinbuild")
 
-/** A merged pull request with two review threads, one of them with seven replies. */
+/** A merged pull request with two review threads: a comment with six replies, and one with a single reply. */
 internal val PULL_REQUEST_6007 = kotlinPullRequest(6007)
 
 /** A pull request closed without merging. */
@@ -108,8 +108,9 @@ internal const val RELEASE_TREE = "c66b387caf282113acb0c01a43e1048869961df9"
 /** A branch [KOTLIN] doesn't have. */
 internal const val MISSING_BRANCH = "edict-missing-branch"
 
-/** Two merged pull requests out of number order, a number GitHub doesn't have, and a pull request closed unmerged. */
-internal val SEVERAL_NUMBERS_SELECTION = ReviewSelection(maxPrs = 4, prNumbers = listOf(9413, 9173, MISSING_PULL_REQUEST, 5976))
+/** Three merged pull requests in neither number order, a number GitHub doesn't have, and one closed unmerged. */
+internal val SEVERAL_NUMBERS_SELECTION =
+  ReviewSelection(maxPrs = 5, prNumbers = listOf(9413, 6007, 9173, MISSING_PULL_REQUEST, 5976))
 
 /** Pull requests closed on the weekend of 2026-10-31, when only pull request 9413 was merged. */
 internal val WEEKEND_SELECTION = ReviewSelection(maxPrs = 10, startDate = "2026-10-31", endDate = "2026-11-01")
@@ -120,19 +121,13 @@ internal val WEEKEND_SELECTION = ReviewSelection(maxPrs = 10, startDate = "2026-
  */
 internal val FIRST_TWO_MERGED_SELECTION = ReviewSelection(maxPrs = 2, startDate = "2026-10-29", endDate = "2026-10-30")
 
-/** A generated inspection, opened for review against [RELEASE_BRANCH]. */
-internal val INSPECTION_CONTENT = recording("avoid-thread-sleep.inspection.kts")
-internal const val INSPECTION_PATH = "inspections/avoid-thread-sleep.inspection.kts"
-internal const val INSPECTION_TITLE = "Add Edict inspection avoid-thread-sleep"
-internal const val INSPECTION_DESCRIPTION = "Reviewers asked five times to replace Thread.sleep with explicit synchronization."
-internal const val REVIEWER = "reviewer"
+/**
+ * The first ten pull requests merged on 2026-10-28: the first discovery page lists only pull requests updated later,
+ * and the second holds 31 merged that day.
+ */
+internal val TWO_DISCOVERY_PAGES_SELECTION = ReviewSelection(maxPrs = 10, startDate = "2026-10-28", endDate = "2026-10-28")
 
-/** The SHA-256 hex of [INSPECTION_CONTENT]. */
-internal const val INSPECTION_DIGEST = "9cc450caa078baaa35ba265ebde3acedaeaba9ad74f328c9bb89133022b29d5a"
-
-/** The inspection's branch: its cluster and the first 12 hex digits of [INSPECTION_DIGEST]. */
-internal const val INSPECTION_BRANCH = "edict/avoid-thread-sleep-9cc450caa078"
-
+/** The [INSPECTION_CONTENT] opened for review against [RELEASE_BRANCH]. */
 internal val INSPECTION_REQUEST = CreateReviewRequest(
   operationId = "p-aaaaaaaaaaaaaaaaaaaaaaaa",
   clusterId = "avoid-thread-sleep",
