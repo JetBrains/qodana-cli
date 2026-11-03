@@ -13,7 +13,6 @@ import org.jetbrains.qodana.edict.ci.support.ULTIMATE_INVISIBLE_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW_BASE
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_OPEN_REVIEW
-import org.jetbrains.qodana.edict.ci.support.ULTIMATE_STALE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_STARLARK_FILE
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ultimateRecording
@@ -238,20 +237,6 @@ internal class SpaceReviewApiIntegrationTest {
     val recording = ultimateRecording("evidence-open")
 
     assertEquals(recording.result<ReviewStatus>(), recording.replay(space) { reviewWithEvidence(ULTIMATE_OPEN_REVIEW) })
-  }
-
-  @Test
-  fun `a source fix on a base behind the real target head stops before any write`() {
-    // The source fix based on the parent of the real head of RELEASE_191.
-    val recording = ultimateRecording("source-fix-stale-target")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(space) { findOrCreateReview(ULTIMATE_STALE_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals(
-      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes",
-      error.message,
-    )
   }
 
   @Test

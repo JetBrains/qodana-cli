@@ -176,9 +176,6 @@ internal val SOURCE_FIX_REQUEST = CreateReviewRequest(
   sourceFix = SOURCE_FIX,
 )
 
-/** The source fix analyzed at [RELEASE_PARENT], before the branch moved to [RELEASE_HEAD]. */
-internal val STALE_SOURCE_FIX_REQUEST = SOURCE_FIX_REQUEST.copy(sourceFix = SOURCE_FIX.copy(baseRevision = RELEASE_PARENT))
-
 /** `.bunch` at [RELEASE_HEAD], byte for byte, so a fix to it changes nothing. */
 internal const val BUNCH_CONTENT = "193\n201\n192\n191_192\n183_191_192\nas34_183_191_192\nas35_191_192\nas36_192\nas40\nas41_201"
 internal val UNCHANGED_SOURCE_FIX_REQUEST =

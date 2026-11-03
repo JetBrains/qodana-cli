@@ -45,8 +45,9 @@ import org.jetbrains.qodana.edict.promotion.support.storeActiveReview
 import org.jetbrains.qodana.edict.promotion.support.storeArchivedReview
 import org.jetbrains.qodana.edict.promotion.support.storeUnreadableArchive
 import org.jetbrains.qodana.edict.promotion.support.storeUnreadableCluster
+import org.jetbrains.qodana.edict.promotion.support.PROMOTION
 import org.jetbrains.qodana.edict.promotion.support.store
-import org.jetbrains.qodana.edict.promotion.support.unreferencedCluster
+import org.jetbrains.qodana.edict.promotion.support.missedCluster
 import org.jetbrains.qodana.edict.promotion.support.weakCluster
 import org.jetbrains.qodana.edict.promotion.support.weakSignalService
 import org.jetbrains.qodana.edict.promotion.support.withEvaluation
@@ -95,8 +96,8 @@ internal class WeakSignalPromotionServiceTest {
   }
 
   @Test
-  fun `a cluster whose strong signals have no references is a candidate`() {
-    repository.store(unreferencedCluster().withEvaluation(projectReview()))
+  fun `a cluster whose strong signals' examples the inspection misses is a candidate`() {
+    repository.store(missedCluster().withEvaluation(projectReview()))
 
     assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE), emptyList()), service.prepare())
   }
@@ -202,6 +203,16 @@ internal class WeakSignalPromotionServiceTest {
   }
 
   @Test
+  fun `source fixes target the branch the run checked out, not the inspections' target branch`() {
+    repository.store(weakCluster())
+
+    weakSignalService(repository, reviews, PROMOTION.copy(targetBranch = "release")).publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION)
+
+    // The request targets main, the execution branch.
+    assertEquals(listOf(SOURCE_FIX_REQUEST), reviews.requests)
+  }
+
+  @Test
   fun `a published source-fix review is active on review`() {
     repository.store(weakCluster())
 
@@ -272,7 +283,7 @@ internal class WeakSignalPromotionServiceTest {
 
     val error = assertFailsWith<IllegalArgumentException> { service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION) }
     assertEquals(
-      "Cluster 'rule' must be Generated with referenced strong positive Signals from fewer than five distinct source files",
+      "Cluster 'rule' must be Generated with satisfied, referenced strong positive Signals from fewer than five distinct source files",
       error.message,
     )
   }

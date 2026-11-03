@@ -33,9 +33,9 @@ state root needs no rule because it is read-only to agents and `:read-only` allo
 limits, and the `edict-mcp` server on loopback port `edict.mcpPort`. The port and state path come from the
 `edict` section of the project's `qodana.yml` or `qodana.yaml` (27182 and `.edict` when absent); re-run
 `install` after changing the port. Installation logs the installed names. Existing unrelated skills are preserved.
-In a git repository, `install` then checks out the state branch `edict.stateBranch` (default `edict/state`, no shared
-history with the project's branches) as a worktree at the state path, from origin when it has the branch; the
-project's checkout stays on its branch. `qodana edict state push` commits the state and pushes the branch to origin.
+`install` then checks out the state branch `edict.stateBranch` (default `edict/state`, no shared history with the
+project's branches) as a worktree at the state path, from origin when it has the branch; the project's checkout stays
+on its branch. It fails outside a git repository, and keeps a state path that already holds files as it is. `qodana edict state push` commits the state and pushes the branch to origin.
 Then run Codex in the project with an explicit `$edict_manager <request>`; skills read the run's
 paths from the `edict_context` tool.
 
@@ -136,7 +136,7 @@ The manager includes only the run total in its final response after the pipeline
 
 Weak-signal source fixes always target the Git branch checked out in the project where the skills run,
 independently of the inspection publication `targetBranch`. Detached checkouts must check out a branch
-before running the skills. The target head must still match the analyzed revision; refresh analysis if it has moved.
+before running the skills. The fixes are based on the analyzed revision, even when the target branch has moved on.
 
 ## What is ported
 
@@ -147,8 +147,8 @@ before running the skills. The target head must still match the analyzed revisio
   inspection with satisfied, referenced strong positive Signals from fewer than five distinct source files, attempts focused source fixes, and opens a GitHub or Space
   PR asking users to accept the improvements if they agree. It runs after normal promotion in the default pipeline.
   Review evidence is persisted in `evaluation.json`; older inspections need regeneration to populate it. Source-fix
-  PRs require the configured target to remain at the analyzed revision, and are recorded separately from inspection
-  promotion so repeated runs do not create duplicate PRs.
+  PRs are based on the analyzed revision, and are recorded separately from inspection promotion so repeated runs do
+  not create duplicate PRs.
   The default pipeline runs `edict-check-weak-signal-promotion` as a separate step alongside signal extraction. It refreshes created
   weak-signal source-fix PRs. Promotion records contain only review references and states; actual merged corrections
   become regular strong Signals. Covered evidence goes directly to the originating cluster, implicitly processed;
@@ -374,9 +374,8 @@ GitHub Enterprise Server, and `<host>/api/http` for Space. A review belongs to t
 Each configured repository needs its provider token in the host environment, `GITHUB_TOKEN`
 (or `GH_TOKEN`) or `SPACE_TOKEN`; the server does not start without it. Provider credentials
 are never tool arguments. Redirects are disabled and incomplete provider evidence fails
-validation. The server also refuses to start while an inspection promotion on review or an
-active weak-signal review belongs to a repository other than the promotion one; resolved
-promotions may come from an earlier repository.
+validation. Changing `edict.promotion.url` while promotions are on review is not supported yet: the
+new promotion client cannot check reviews of the earlier repository.
 
 Review comments of bots are no evidence. Providers mark apps themselves (GitHub's `Bot` accounts, Space applications
 and built-in services); name the accounts that post as users, such as a build server's, in `edict.bots`:

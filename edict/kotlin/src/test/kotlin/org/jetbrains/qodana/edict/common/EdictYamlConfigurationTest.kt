@@ -45,7 +45,7 @@ internal class EdictYamlConfigurationTest {
         statePath = "../edict-state",
         stateBranch = "edict/kotlin-state",
         ci = KOTLIN,
-        promotion = PromotionConfiguration("reviewer-login", "release/2.3", "quality/inspections", KOTLIN_EDICT),
+        promotion = PromotionConfiguration("reviewer-login", "release/2.3", "quality/inspections", 0.95, 0.7, 0.85, KOTLIN_EDICT),
         extraction = ExtractionConfiguration(250),
         distribution = DistributionConfiguration(750),
         generation = GenerationConfiguration(maxProjectAnalyses = 5, defaultGenerationCount = 10),
@@ -196,7 +196,16 @@ internal class EdictYamlConfigurationTest {
   fun `a missing or blank value of a configured section is required`(key: String, value: String?) {
     val error = assertFailsWith<IllegalStateException> { EdictYamlConfiguration.load(promotionYaml(directory, key to value)) }
 
-    assertEquals("edict.$key is required", error.message)
+    assertEquals("edict.$key is required to be defined as non-empty string", error.message)
+  }
+
+  @Test
+  fun `a blank bot is refused by its index`() {
+    val error = assertFailsWith<IllegalStateException> {
+      EdictYamlConfiguration.load(edictYaml(directory, "bots" to listOf("KotlinBuild", " ")))
+    }
+
+    assertEquals("edict.bots[1] is required to be defined as non-empty string", error.message)
   }
 
   @ParameterizedTest
@@ -211,6 +220,28 @@ internal class EdictYamlConfigurationTest {
   )
   fun `a number out of its range is refused with the value`(key: String, value: Int, message: String) {
     val error = assertFailsWith<IllegalArgumentException> { EdictYamlConfiguration.load(edictYaml(directory, key to value)) }
+
+    assertEquals(message, error.message)
+  }
+
+  @Test
+  fun `promotion metric targets of 0 and 1 are accepted`() {
+    val path = promotionYaml(directory, "promotion.targetPrecision" to 0.0, "promotion.targetRecall" to 1.0, "promotion.targetF1" to 1.0)
+
+    assertEquals(
+      PromotionConfiguration("reviewer", targetPrecision = 0.0, targetRecall = 1.0, targetF1 = 1.0),
+      EdictYamlConfiguration.load(path).promotion,
+    )
+  }
+
+  @ParameterizedTest
+  @CsvSource(
+    "targetPrecision, -0.1, edict.promotion.targetPrecision must be between 0 and 1: -0.1",
+    "targetRecall, 1.1, edict.promotion.targetRecall must be between 0 and 1: 1.1",
+    "targetF1, NaN, edict.promotion.targetF1 must be between 0 and 1: NaN",
+  )
+  fun `a promotion metric target out of 0 to 1 is refused with the value`(key: String, value: Double, message: String) {
+    val error = assertFailsWith<IllegalArgumentException> { EdictYamlConfiguration.load(promotionYaml(directory, "promotion.$key" to value)) }
 
     assertEquals(message, error.message)
   }

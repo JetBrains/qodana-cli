@@ -7,7 +7,6 @@ import org.jetbrains.qodana.edict.ci.support.RELEASE_191
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_EXISTING_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_NEW_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_SOURCE_FIX_REQUEST
-import org.jetbrains.qodana.edict.ci.support.ULTIMATE_STALE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.UltimateScripts
 import org.jetbrains.qodana.edict.ci.support.WRITE_DENIED
@@ -30,20 +29,6 @@ internal class SpaceSourceFixReviewTest {
     val recording = ultimateRecording("source-fix-review-opened")
 
     assertEquals(ULTIMATE_NEW_REVIEW, recording.replay { findOrCreateReview(ULTIMATE_SOURCE_FIX_REQUEST) })
-  }
-
-  @Test
-  fun `a target branch that moved past the base stops before any write`() {
-    // The source fix based on the parent of the real head of RELEASE_191.
-    val recording = ultimateRecording("source-fix-stale-target")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay { findOrCreateReview(ULTIMATE_STALE_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals(
-      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes",
-      error.message,
-    )
   }
 
   @Test

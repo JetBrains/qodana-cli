@@ -92,6 +92,11 @@ data class ReviewFetchResult(
    * merged outside the selected dates, are left out without one.
    */
   val problems: List<String> = emptyList(),
+  /**
+   * Discovery by dates stopped at [ReviewSelection.maxPrs] pull requests, so the dates may hold more. It counts the pull
+   * requests found, including those left out with a problem.
+   */
+  val reachedMaxPrs: Boolean = false,
 )
 
 @Serializable

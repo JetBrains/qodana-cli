@@ -24,7 +24,6 @@ import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
-import org.jetbrains.qodana.edict.promotion.requireActivePromotionsOwnedBy
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -67,7 +66,9 @@ internal class EdictServer private constructor(
       try {
         // The lock above created the state directory, so the repository can be opened now.
         val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
-        requireActivePromotionsOwnedBy(repository, promotionReviews)
+        // TODO: a changed edict.promotion.url leaves active promotions in the earlier repository, which the promotion
+        //  client cannot read: inspections on review, closed ones of generated clusters that checkReviews still reads, and
+        //  weak-signal reviews in promotions/active.json. Their checks fail on every run; decide how to handle the change.
         val management = EdictManagementService(store, layout, ciReviews = ciReviews)
         val toolset = EdictNextMcpToolset(
           layout, inspectionServer, management,

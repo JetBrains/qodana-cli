@@ -73,7 +73,8 @@ internal class FakeReviewApi(
       selection.prNumbers.mapNotNull { number -> pullRequests.find { it.number == number } }
     }
     val missing = selection.prNumbers.filter { number -> pullRequests.none { it.number == number } }
-    return ReviewFetchResult(selected, problems.toList() + missing.map { "No pull request $it" })
+    val reachedMaxPrs = selection.prNumbers.isEmpty() && selected.size == selection.maxPrs
+    return ReviewFetchResult(selected, problems.toList() + missing.map { "No pull request $it" }, reachedMaxPrs)
   }
 
   override fun file(revision: String, path: String): String {

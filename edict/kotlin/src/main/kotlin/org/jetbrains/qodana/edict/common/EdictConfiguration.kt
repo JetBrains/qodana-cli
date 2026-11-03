@@ -171,8 +171,8 @@ internal class EdictYaml {
 
   fun toConfiguration() = EdictConfiguration(
     mcpPort = mcpPort ?: DEFAULT_EDICT_MCP_PORT,
-    statePath = statePath?.required("edict.statePath") ?: DEFAULT_EDICT_STATE_PATH,
-    stateBranch = stateBranch?.required("edict.stateBranch") ?: DEFAULT_EDICT_STATE_BRANCH,
+    statePath = statePath?.checkNotEmpty("edict.statePath") ?: DEFAULT_EDICT_STATE_PATH,
+    stateBranch = stateBranch?.checkNotEmpty("edict.stateBranch") ?: DEFAULT_EDICT_STATE_BRANCH,
     ci = ci?.toConfiguration(),
     promotion = promotion?.toConfiguration(),
     extraction = extraction?.toConfiguration() ?: ExtractionConfiguration(),
@@ -180,7 +180,7 @@ internal class EdictYaml {
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
     calculatePrice = calculatePrice ?: false,
     projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes ?: DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
-    bots = bots.orEmpty().map { it.required("edict.bots") }.toSet(),
+    bots = bots.orEmpty().mapIndexed { i, bot -> bot.checkNotEmpty("edict.bots[$i]") }.toSet(),
   )
 }
 
@@ -213,7 +213,7 @@ internal class GenerationYaml {
 internal class EdictCIYaml {
   var url: String? = null
 
-  fun toConfiguration() = reviewRepository(url.required("edict.ci.url"), "edict.ci.url")
+  fun toConfiguration() = reviewRepository(url.checkNotEmpty("edict.ci.url"), "edict.ci.url")
 }
 
 internal class PromotionYaml {
@@ -226,13 +226,13 @@ internal class PromotionYaml {
   var url: String? = null
 
   fun toConfiguration() = PromotionConfiguration(
-    reviewer = reviewer.required("edict.promotion.reviewer"),
-    targetBranch = targetBranch?.required("edict.promotion.targetBranch"),
-    inspectionsDirectory = inspectionsDirectory?.required("edict.promotion.inspectionsDirectory") ?: "inspections",
+    reviewer = reviewer.checkNotEmpty("edict.promotion.reviewer"),
+    targetBranch = targetBranch?.checkNotEmpty("edict.promotion.targetBranch"),
+    inspectionsDirectory = inspectionsDirectory?.checkNotEmpty("edict.promotion.inspectionsDirectory") ?: "inspections",
     targetPrecision = targetPrecision ?: 0.7,
     targetRecall = targetRecall ?: 0.6,
     targetF1 = targetF1 ?: 0.0,
-    repository = url?.required("edict.promotion.url")?.let { reviewRepository(it, "edict.promotion.url") },
+    repository = url?.checkNotEmpty("edict.promotion.url")?.let { reviewRepository(it, "edict.promotion.url") },
   )
 }
 
@@ -242,8 +242,8 @@ private class QodanaPropertyUtils : PropertyUtils() {
     else super.getProperty(type, name)
 }
 
-private fun String?.required(path: String): String =
-  this?.trim()?.takeIf(String::isNotEmpty) ?: error("$path is required")
+private fun String?.checkNotEmpty(name: String): String =
+  this?.trim()?.takeIf(String::isNotEmpty) ?: error("$name is required to be defined as non-empty string")
 
 /**
  * The repository a web URL names, by its path: `https://<host>/<owner>/<repo>` on GitHub and

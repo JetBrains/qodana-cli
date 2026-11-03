@@ -6,7 +6,7 @@ import kotlin.io.path.appendText
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.readLines
+import kotlin.io.path.readText
 
 /**
  * The Edict state on its own [branch] of the project's repository, checked out as a worktree at the layout's state
@@ -18,50 +18,57 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
   private val stateDirectory = layout.stateDirectory
   private val checkedOut: Boolean get() = stateDirectory.resolve(".git").exists()
 
-  /** Checks [branch] out at the state directory, unless the state has to stay a plain directory. */
+  /**
+   * Checks [branch] out at the state directory, unless the directory already holds a state; fails outside a git
+   * repository, where Edict cannot work.
+   */
   fun checkOut(): StateCheckout {
-    if (checkedOut) return StateCheckout.Existing
-    if (!isGitWorkTree(project)) return StateCheckout.PlainDirectory("$project is not a git repository")
-    if (stateDirectory.isDirectory() && stateDirectory.listDirectoryEntries().isNotEmpty()) {
-      return StateCheckout.PlainDirectory("$stateDirectory already holds files outside a worktree")
-    }
+    if (checkedOut) return head().let { if (it == branch) StateCheckout.Existing else StateCheckout.OtherBranch(it) }
+    check(isGitWorkTree(project)) { "$project is not a git repository; Edict keeps its state on a branch of the project's" }
+    if (stateDirectory.isDirectory() && stateDirectory.listDirectoryEntries().isNotEmpty()) return StateCheckout.PlainDirectory
     git(project, "check-ref-format", "--branch", branch)
     excludeFromProject()
     val checkout = when {
       git(project, "branch", "--list", branch).isNotBlank() -> StateCheckout.LocalBranch
       fetchFromOrigin(project) -> {
-        git(project, "branch", "--track", branch, "origin/$branch")
+        // Not tracking: a single-branch clone, as CI checks a project out, has no fetch refspec for the branch.
+        git(project, "branch", "--no-track", branch, "origin/$branch")
         StateCheckout.FromOrigin
       }
       else -> {
         val emptyTree = git(project, "mktree").trim()
-        // Edict's own commit: install must not fail where no git identity is configured, as on a fresh CI runner.
-        val root = git(
-          project, "-c", "user.name=Qodana Edict", "-c", "user.email=edict@qodana.invalid",
-          "commit-tree", emptyTree, "-m", "Start the Edict state",
-        ).trim()
+        val root = git(project, *EDICT_IDENTITY, "commit-tree", emptyTree, "-m", "Start the Edict state").trim()
         git(project, "branch", branch, root)
         StateCheckout.NewBranch
       }
     }
+    // A state directory deleted by hand leaves its worktree registered, which would refuse the new one.
+    git(project, "worktree", "prune")
     git(project, "worktree", "add", stateDirectory.toString(), branch)
     return checkout
   }
 
   /** The checked-out state, which can be pushed; fails while the state is not checked out on [branch]. */
   fun worktree(): Worktree {
-    check(checkedOut) { "$stateDirectory is not a worktree of $branch; `qodana edict install` checks the branch out there" }
-    val head = git(stateDirectory, "symbolic-ref", "--short", "HEAD").trim()
+    check(checkedOut) {
+      "$stateDirectory is not a worktree of $branch; `qodana edict install` checks the branch out into an empty state " +
+        "directory of a git project"
+    }
+    val head = head()
     check(head == branch) { "$stateDirectory is on $head, not on edict.stateBranch $branch" }
     return Worktree()
   }
 
   fun describe(checkout: StateCheckout): String = when (checkout) {
     StateCheckout.Existing -> "Kept the existing checkout in $stateDirectory"
+    is StateCheckout.OtherBranch ->
+      "Kept the existing checkout of ${checkout.head} in $stateDirectory, which is not edict.stateBranch $branch; " +
+        "`qodana edict state push` refuses it until they agree"
     StateCheckout.LocalBranch -> "Checked out $branch at $stateDirectory"
     StateCheckout.FromOrigin -> "Checked out $branch from origin at $stateDirectory"
     StateCheckout.NewBranch -> "Started $branch at $stateDirectory; `qodana edict state push` publishes it"
-    is StateCheckout.PlainDirectory -> "Keeping the Edict state in the plain directory $stateDirectory: ${checkout.reason}"
+    StateCheckout.PlainDirectory ->
+      "Keeping the Edict state in the plain directory $stateDirectory, which already holds files outside a worktree"
   }
 
   inner class Worktree internal constructor() {
@@ -70,26 +77,29 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
      * origin meanwhile, and pushes the branch to origin, setting it as upstream.
      */
     fun push(message: String) {
+      // Edict's own commits: the project's hooks are not for them.
       git(stateDirectory, "add", "--all")
-      if (git(stateDirectory, "status", "--porcelain").isNotBlank()) git(stateDirectory, "commit", "--quiet", "-m", message)
+      if (git(stateDirectory, "status", "--porcelain").isNotBlank()) {
+        git(stateDirectory, *EDICT_IDENTITY, "commit", "--quiet", "--no-verify", "-m", message)
+      }
       if (fetchFromOrigin(stateDirectory)) {
         try {
-          git(stateDirectory, "rebase", "--quiet", "origin/$branch")
+          git(stateDirectory, *EDICT_IDENTITY, "rebase", "--quiet", "--no-verify", "origin/$branch")
         }
         catch (e: IllegalStateException) {
           // A server must not find the state in the middle of a rebase.
-          git(stateDirectory, "rebase", "--abort")
+          runCatching { git(stateDirectory, "rebase", "--abort") }.exceptionOrNull()?.let(e::addSuppressed)
           throw e
         }
       }
-      git(stateDirectory, "push", "--quiet", "--set-upstream", "origin", "HEAD:refs/heads/$branch")
+      git(stateDirectory, "push", "--quiet", "--no-verify", "--set-upstream", "origin", "HEAD:refs/heads/$branch")
     }
   }
 
   /** Fetches [branch] from origin into `origin/<branch>`; false when there is no origin or it has no such branch. */
   private fun fetchFromOrigin(directory: Path): Boolean {
     if ("origin" !in git(directory, "remote").lines()) return false
-    if (git(directory, "ls-remote", "--heads", "origin", branch).isBlank()) return false
+    if (git(directory, "ls-remote", "origin", "refs/heads/$branch").isBlank()) return false
     git(directory, "fetch", "--quiet", "--no-tags", "origin", "+refs/heads/$branch:refs/remotes/origin/$branch")
     return true
   }
@@ -102,31 +112,41 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
     if (!state.startsWith(top)) return
     val pattern = "/${top.relativize(state).joinToString("/")}/"
     val exclude = Path.of(git(project, "rev-parse", "--path-format=absolute", "--git-path", "info/exclude").trim())
-    if (exclude.exists() && pattern in exclude.readLines()) return
+    val content = if (exclude.exists()) exclude.readText() else ""
+    if (pattern in content.lines()) return
     exclude.parent.toFile().mkdirs()
-    exclude.appendText("$pattern\n")
+    exclude.appendText(ignoreFileAddition(content, listOf(pattern)))
   }
+
+  /** The branch the state directory is on; `HEAD` when it is on none. */
+  private fun head(): String = git(stateDirectory, "rev-parse", "--abbrev-ref", "HEAD").trim()
 }
 
 /** What [StateBranch.checkOut] did with the state directory. */
 internal sealed interface StateCheckout {
-  /** The state directory already is a git checkout, which is kept as it is. */
+  /** The state directory already is a git checkout of the branch, which is kept as it is. */
   data object Existing : StateCheckout
+
+  /** The state directory already is a git checkout, of [head] instead of the branch; it is kept, but cannot be pushed. */
+  data class OtherBranch(val head: String) : StateCheckout
 
   /** Checked out the branch that the repository already had. */
   data object LocalBranch : StateCheckout
 
-  /** Checked out the branch from origin, tracking it. */
+  /** Checked out the branch from origin; the first push sets it as upstream. */
   data object FromOrigin : StateCheckout
 
   /** Started the branch with an empty commit; the first `qodana edict state push` publishes it. */
   data object NewBranch : StateCheckout
 
-  /** The state stays a plain directory, for [reason]. */
-  data class PlainDirectory(val reason: String) : StateCheckout
+  /** The state directory already holds files outside a worktree, such as a prepared state; it stays a plain directory. */
+  data object PlainDirectory : StateCheckout
 }
 
 internal const val DEFAULT_EDICT_STATE_BRANCH = "edict/state"
+
+/** Edict commits as itself, so it doesn't fail where no git identity is configured, as on a fresh CI runner. */
+private val EDICT_IDENTITY = arrayOf("-c", "user.name=Qodana Edict", "-c", "user.email=qodana-support@jetbrains.com")
 
 private fun git(directory: Path, vararg arguments: String): String = runProcess(directory, listOf("git", *arguments))
 

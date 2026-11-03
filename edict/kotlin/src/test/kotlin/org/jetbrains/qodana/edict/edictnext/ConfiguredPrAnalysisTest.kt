@@ -164,6 +164,24 @@ internal class ConfiguredPrAnalysisTest {
   }
 
   @Test
+  fun `a date range is fetched again in halves when 1000 pull requests were found, even if one was left out`() {
+    // The 1000th pull request lacks exact revisions, so only 999 come back.
+    pr.reviews.pullRequests += pullRequestsMergedOn(TODAY.minusDays(2), 500) + pullRequestsMergedOn(YESTERDAY, 499, first = 501) +
+      pullRequest(1000, base = "f550b76", mergedOn = YESTERDAY)
+
+    pr.analysis.prepareBatch(pr.coordinator, ReviewSelectionInput(startDate = "2026-10-07", endDate = "2026-10-08"))
+
+    assertEquals(
+      listOf(
+        ReviewSelection(1000, startDate = "2026-10-07", endDate = "2026-10-08"),
+        ReviewSelection(1000, startDate = "2026-10-08", endDate = "2026-10-08"),
+        ReviewSelection(1000, startDate = "2026-10-07", endDate = "2026-10-07"),
+      ),
+      pr.reviews.selections,
+    )
+  }
+
+  @Test
   fun `a date of 1000 pull requests cannot be proven fetched completely`() {
     pr.reviews.pullRequests += pullRequestsMergedOn(YESTERDAY, 1000)
 
@@ -648,10 +666,27 @@ internal class ConfiguredPrAnalysisTest {
       listOf(
         PrSignalStoreFailure(
           0, stableSignalId("${item.workItemId}|0|POSITIVE|src/Example.kt|$HEAD|2:2"), item.workItemId,
-          "Evidence revision does not match its PR side",
+          "Signal revision must match its diff side",
         ),
       ),
       pr.storeDrafts(batch, draft(item, POSITIVE, at = HEAD)).failures,
+    )
+  }
+
+  @Test
+  fun `a positive draft at the comment revision but diffed from the base is refused`() {
+    // Both revisions belong to the work item, but its lines would be checked in the base's file.
+    val batch = pr.correctionBatch(correctionFiles())
+    val item = pr.item(batch)
+
+    assertEquals(
+      listOf(
+        PrSignalStoreFailure(
+          0, stableSignalId("${item.workItemId}|0|POSITIVE|src/Example.kt|$COMMENTED|2:2"), item.workItemId,
+          "Signal revision must match its diff side",
+        ),
+      ),
+      pr.storeDrafts(batch, draft(item, POSITIVE, at = COMMENTED)).failures,
     )
   }
 

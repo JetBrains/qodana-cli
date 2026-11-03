@@ -61,11 +61,13 @@ internal class PromotionService(
     val failures = mutableListOf<PromotionFailure>()
     repository.loadClusters().sortedBy { it.id }.forEach { cluster ->
       if (count != null && candidates.size >= count) return@forEach
+      // Only a generated inspection is promoted, so no other cluster's evaluation is read.
+      if (cluster.manifest.status != EdictNextClusterStatus.Generated) return@forEach
       val id = cluster.id
       try {
         val evaluation = repository.loadEvaluation(cluster)
         val eligibility = cluster.promotionEligibility(configuration.ci, evaluation)
-        if (!eligibility.generated || eligibility.strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) return@forEach
+        if (eligibility.strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) return@forEach
         val path = repository.paths.inspectionPath(id)
         require(path.isRegularFile()) { "generated inspection is missing" }
         val digest = sha256Hex(path.readBytes())
@@ -77,8 +79,7 @@ internal class PromotionService(
           precision <= targets.targetPrecision || recall <= targets.targetRecall || f1 <= targets.targetF1) return@forEach
         val targetPath = "${targets.inspectionsDirectory.trim('/')}/$id.inspection.kts"
         if (cluster.manifest.promotions.any {
-          it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath &&
-            reviews.repository.owns(it.pullRequest)
+          it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath
         }) return@forEach
         // Validate the referenced evidence without publishing anything.
         promotionDescription(cluster, digest, configuration.ci, evaluation)
@@ -134,8 +135,7 @@ internal class PromotionService(
     val targetBranch = resolvedTargetBranch.value
     val targetPath = "${promotionConfiguration.inspectionsDirectory.trim('/')}/${cluster.id}.inspection.kts"
     val alreadyPromoted = cluster.manifest.promotions.any {
-      it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath &&
-        reviews.repository.owns(it.pullRequest)
+      it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath
     }
     if (alreadyPromoted) return ClusterPromotion.Skipped
     val target = reviews.repository

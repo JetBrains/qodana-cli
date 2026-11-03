@@ -8,10 +8,13 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextCodeExampleMetadata
 import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
 import org.jetbrains.qodana.edict.edictnext.EdictNextExampleDirectory
+import org.jetbrains.qodana.edict.edictnext.EdictNextExampleEvaluation
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
 import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextProjectReview
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
@@ -20,6 +23,8 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
+import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
+import org.jetbrains.qodana.edict.edictnext.sha256Hex
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeBytes
@@ -35,8 +40,29 @@ internal data class ClusterFixture(
   val inspection: String? = INSPECTION,
   /** Each example's source is [EXAMPLE_SOURCE]. */
   val examples: List<EdictNextCodeExampleMetadata> = emptyList(),
-  val evaluation: EdictNextEvaluation? = null,
+  /** Null when the inspection was never evaluated. */
+  val evaluation: EvaluationFixture? = EvaluationFixture(),
 )
+
+/**
+ * An evaluation of the stored cluster that satisfies the example of each of its Signals but the [missed] ones. It is
+ * current, of the stored inspection and examples, unless [inspectionDigest] or [exampleSetDigest] name others.
+ */
+internal data class EvaluationFixture(
+  val precision: Double = 1.0,
+  val recall: Double = 1.0,
+  /** Ids of the Signals whose examples the inspection misses. */
+  val missed: Set<String> = emptySet(),
+  val projectReview: EdictNextProjectReview? = null,
+  val inspectionDigest: String? = null,
+  val exampleSetDigest: String? = null,
+)
+
+/** The name every fixture evaluation gives the inspection. */
+internal const val INSPECTION_NAME = "Worker thread blocking"
+
+/** The description every fixture evaluation gives the inspection. */
+internal const val INSPECTION_SUMMARY = "Reports blocking calls on the worker thread."
 
 /** The history every stored cluster starts with. */
 internal const val HISTORY = "Created.\n"
@@ -68,11 +94,28 @@ internal fun EdictRepository.store(cluster: ClusterFixture): EdictNextStoredClus
   directory.historyPath.writeText(HISTORY)
   cluster.signals.forEach { directory.signalPath(it.id).writeText(EdictNextJson.encodeToString(it)) }
   cluster.examples.forEach { storeExample(directory, it) }
-  cluster.evaluation?.let { directory.evaluationPath.writeText(EdictNextJson.encodeToString(it)) }
   paths.inspectionsDirectory.createDirectories()
   cluster.inspection?.let { paths.inspectionPath(cluster.id).writeText(it) }
+  cluster.evaluation?.let { directory.evaluationPath.writeText(EdictNextJson.encodeToString(it.of(loadCluster(cluster.id), cluster.inspection ?: INSPECTION))) }
   return loadCluster(cluster.id)
 }
+
+private fun EvaluationFixture.of(cluster: EdictNextStoredCluster, inspection: String): EdictNextEvaluation = EdictNextEvaluation(
+  inspectionHash = inspectionDigest ?: sha256Hex(inspection),
+  exampleSetDigest = exampleSetDigest ?: exampleSetDigest(cluster),
+  action = EdictNextInspectionAction.GENERATE,
+  tp = cluster.signals.size - missed.size,
+  fp = 0,
+  fn = missed.size,
+  precision = precision,
+  recall = recall,
+  examples = cluster.signals.filter { it.syntheticExampleId != null }.associate {
+    it.syntheticExampleId!! to EdictNextExampleEvaluation(it.label, it.strength == EdictNextSignalStrength.STRONG, it.id !in missed, 0, 1)
+  },
+  projectReview = projectReview,
+  inspectionName = INSPECTION_NAME,
+  inspectionDescription = INSPECTION_SUMMARY,
+)
 
 /** Replaces the generated inspection of [clusterId] with [content], as a later generation or a broken write would. */
 internal fun EdictRepository.replaceInspection(clusterId: String, content: ByteArray) {
@@ -94,16 +137,20 @@ private fun storeExample(cluster: EdictNextClusterDirectory, metadata: EdictNext
 /** The id of the fixture Signal numbered [index]; two digits, so ids sort as their numbers do. */
 internal fun signalId(index: Int): String = "signal-%02d".format(index)
 
-/** A strong positive Signal numbered [index] in `Example<file>.kt`, from a PR whose discussion it links to. */
+/**
+ * A strong positive Signal numbered [index] on lines 3 to 5 of `Example<file>.kt`, from a PR whose discussion it links
+ * to; its example is `example-<index>`.
+ */
 internal fun referencedSignal(index: Int, file: Int = index): EdictNextSignal = EdictNextSignal(
   id = signalId(index),
-  fileRevision = EdictNextFileRevision("Example$file.kt", SIGNAL_REVISION),
+  fileRevision = EdictNextFileRevision("Example$file.kt", SIGNAL_REVISION, listOf(EdictNextLineRange(3, 5))),
   source = EdictNextSignalSource.FromPR(
     index + 1, "Correction $index", listOf("Fix the problem"), "",
     "https://github.com/source/project/pull/${index + 1}#discussion_r${index + 1}",
   ),
   label = EdictNextSignalLabel.POSITIVE,
   description = "positive $index",
+  syntheticExampleId = "example-$index",
 )
 
 /** A generated cluster [id] with one referenced strong positive Signal in each of [files] source files. */
@@ -113,13 +160,17 @@ internal fun referencedCluster(
   id: String = "rule",
 ): ClusterFixture = ClusterFixture((0 until files).map(::referencedSignal), id, promotions = promotions)
 
+/** The cluster with every Signal from [source]. */
+internal fun ClusterFixture.withSources(source: EdictNextSignalSource): ClusterFixture = copy(signals = signals.map { it.copy(source = source) })
+
 /** [referencedCluster] whose last Signal comes from [source]. */
 internal fun clusterWithSource(source: EdictNextSignalSource): ClusterFixture =
   referencedCluster().let { cluster -> cluster.copy(signals = cluster.signals.dropLast(1) + cluster.signals.last().copy(source = source)) }
 
-/** A generated cluster with strong positive Signals in six source files, none of which links to a PR or commit diff. */
-internal fun unreferencedCluster(): ClusterFixture =
-  ClusterFixture(List(6) { referencedSignal(it).copy(source = EdictNextSignalSource.FromCommit(COMMIT_REVISION)) })
+/** A generated cluster with referenced strong positive Signals in six source files, whose examples the inspection misses. */
+internal fun missedCluster(): ClusterFixture = ClusterFixture(List(6, ::referencedSignal)).let {
+  it.copy(evaluation = EvaluationFixture(missed = it.signals.mapTo(HashSet(), EdictNextSignal::id)))
+}
 
 /** Eight Signals of one source file, each at another revision, alternately positive and negative. */
 internal fun oneFileAtEightRevisions(): ClusterFixture = ClusterFixture(List(8) { index ->
@@ -159,13 +210,11 @@ internal fun describedCluster(): ClusterFixture = ClusterFixture(listOf(
   ),
 ))
 
-/** [referencedCluster] whose first Signal and second PR title use Markdown syntax. */
+/** [referencedCluster] whose first Signal's description uses Markdown syntax over two lines. */
 internal fun markdownCluster(): ClusterFixture = referencedCluster().let { cluster ->
-  val second = cluster.signals[1]
   cluster.copy(signals = listOf(
-    cluster.signals[0].copy(description = "Do not use [unsafe](https://wrong.test) <markup> or `ticks`\nacross lines"),
-    second.copy(source = (second.source as EdictNextSignalSource.FromPR).copy(title = "Fix *bold* _under_ #1 & co\\")),
-  ) + cluster.signals.drop(2))
+    cluster.signals[0].copy(description = "Do not use [unsafe](https://wrong.test) <markup> or `ticks` & *bold* _under_ #1\\\nacross lines"),
+  ) + cluster.signals.drop(1))
 }
 
 /**
@@ -180,15 +229,7 @@ internal fun sharedFileCluster(): ClusterFixture = ClusterFixture(List(10) { ref
   }
 })
 
-/** [referencedCluster] whose first Signal names one line and whose second names a range and a line. */
-internal fun rangedCluster(): ClusterFixture = referencedCluster().let { cluster ->
-  cluster.copy(signals = listOf(
-    cluster.signals[0].withRanges(EdictNextLineRange(3, 3)),
-    cluster.signals[1].withRanges(EdictNextLineRange(7, 9), EdictNextLineRange(12, 12)),
-  ) + cluster.signals.drop(2))
-}
-
-/** Clusters inspection promotion skips: too few strong positive source files, or not generated. */
+/** Clusters inspection promotion does not select: too few strong positive source files, or not generated. */
 internal enum class IneligibleCluster(val cluster: ClusterFixture) {
   FOUR_SOURCE_FILES(referencedCluster(files = 4)),
   PENDING(referencedCluster().copy(status = EdictNextClusterStatus.Pending)),
@@ -196,7 +237,6 @@ internal enum class IneligibleCluster(val cluster: ClusterFixture) {
 
 /** Signal sources that don't link a PR or commit diff a promotion PR can cite. */
 internal enum class UnreferencedSource(val source: EdictNextSignalSource) {
-  COMMIT_WITHOUT_URL(EdictNextSignalSource.FromCommit(COMMIT_REVISION)),
   SUBMITTED_FEEDBACK(EdictNextSignalSource.SubmittedFeedback(url = "https://example.com/feedback")),
   EMPTY_URL(prSource("")),
   SCRIPT(prSource("javascript:alert(1)")),
@@ -219,7 +259,5 @@ private fun commitSignal(index: Int, path: String, label: EdictNextSignalLabel, 
   source = EdictNextSignalSource.FromCommit(COMMIT_REVISION, "https://github.com/source/project/commit/$COMMIT_REVISION"),
   label = label,
   description = description,
+  syntheticExampleId = "example-$index",
 )
-
-private fun EdictNextSignal.withRanges(vararg ranges: EdictNextLineRange) =
-  copy(fileRevision = fileRevision.copy(expectedRanges = ranges.toList()))
