@@ -27,11 +27,15 @@ provider, created before Edict, and trusts the project (`[projects."<project>"] 
 not, so it needs Codex installed. Edict never writes
 `$CODEX_HOME`. `qodana edict install [--deny <path>]...` installs the managed skills into
 `./.codex/skills` and writes `./.codex/config.toml`: the `edict` permission profile (project
-read-only, `log/agent-work` writable for scratch, `log/process-log` and every `--deny` path denied; the
+read-only, `log/agent-work` writable for scratch, `log/process-log`, `$CODEX_HOME/sessions`,
+`$CODEX_HOME/log` and every `--deny` path denied; the
 state root needs no rule because it is read-only to agents and `:read-only` allows reads), agent
 limits, and the `edict-mcp` server on loopback port `edict.mcpPort`. The port and state path come from the
 `edict` section of the project's `qodana.yml` or `qodana.yaml` (27182 and `.edict` when absent); re-run
 `install` after changing the port. Installation logs the installed names. Existing unrelated skills are preserved.
+In a git repository, `install` then checks out the state branch `edict.stateBranch` (default `edict/state`, no shared
+history with the project's branches) as a worktree at the state path, from origin when it has the branch; the
+project's checkout stays on its branch. `qodana edict state push` commits the state and pushes the branch to origin.
 Then run Codex in the project with an explicit `$edict_manager <request>`; skills read the run's
 paths from the `edict_context` tool.
 
@@ -42,8 +46,10 @@ go generate ./internal/tooling/...
 go build -o qodana ./cli
 cd /path/to/project
 /path/to/qodana edict install
-/path/to/qodana edict mcp start
+/path/to/qodana edict mcp start      # returns once the server serves MCP; --foreground keeps it in this process
 codex exec '$edict_manager process inbox and generate new rules'
+/path/to/qodana edict mcp stop
+/path/to/qodana edict state push
 go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
 ```
 
@@ -60,7 +66,9 @@ The server starts IntelliJ only when an inspection tool first needs it: it runs 
 hidden `qodana edict ide-mcp` helper as a child, which prints one readiness line and
 stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`, else
 `--ide-linter <name>` (downloaded by the CLI), else `QODANA_DIST`. Pass
-`--ide-property`/`--ide-wait-timeout` through `edict mcp start`; IDE output goes to
+`--ide-property`/`--ide-wait-timeout` (default 1 hour) through `edict mcp start`; a property replaces the CLI's
+default for the same key (`-XX:MaxRAMPercentage=70`, no online duplicates or VFS health checks, a 2 GiB Kotlin
+daemon, a one-minute Gradle daemon idle timeout; an explicit `-Xmx` wins over the percentage). IDE output goes to
 `intellij-mcp.log` in the run's log folder, and the IDE's own logs to `intellij-mcp/log/idea.log` next to it.
 
 Set `edict.projectAnalysisTimeoutMinutes` in `qodana.yaml` to override the 30-minute timeout for each whole-project

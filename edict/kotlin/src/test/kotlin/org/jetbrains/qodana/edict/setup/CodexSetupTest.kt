@@ -49,6 +49,8 @@ class CodexSetupTest {
         project.root.toString() to "read",
         project.agentWorkRoot.toString() to "write",
         project.processLogRoot.toString() to "deny",
+        codexHome.toRealPath().resolve("sessions").toString() to "deny",
+        codexHome.toRealPath().resolve("log").toString() to "deny",
         gold.toString() to "deny",
         project.root.resolve("benchmark").toString() to "deny",
       ),
