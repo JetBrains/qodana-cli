@@ -45,11 +45,11 @@ qodana edict state push [--message <message>]
     read, `<cwd>/log/agent-work` write, `<cwd>/log/process-log` deny (token-bearing logs), `$CODEX_HOME/sessions` and
     `$CODEX_HOME/log` deny (other agents' transcripts), and every `--deny` path deny;
   - the port is `edict.mcpPort` from `qodana.yaml`; re-run `install` after changing it.
-- In a git repository, `install` also checks out the state branch `edict.stateBranch` (default `edict/state`) as a
+- `install` also checks out the state branch `edict.stateBranch` (default `edict/state`) as a
   worktree at `edict.statePath`: from origin when it has the branch, else as a new branch whose only commit is empty.
   The branch shares no history with the project's branches, the project's checkout stays on its branch, and
-  `.git/info/exclude` keeps the state out of the project's status. A state directory that already holds files, or a
-  project outside git, keeps the state as a plain directory.
+  `.git/info/exclude` keeps the state out of the project's status. A state directory that already holds files keeps the
+  state as a plain directory; outside a git repository, `install` fails.
 - `qodana edict mcp start` serves Streamable HTTP on `edict.mcpPort` in the background: it returns once the server
   serves MCP, its output goes to a server log in the user cache, and `qodana edict mcp stop` stops it and its IDE
   (killing what is left after a minute). `--foreground` serves in the calling process instead. It fails fast when
@@ -69,7 +69,7 @@ qodana edict state push [--message <message>]
   `edict.ci.url`.
 - Provider tokens (`GITHUB_TOKEN`/`GH_TOKEN`, `SPACE_TOKEN`) come from the server environment, never from MCP arguments.
   The server does not start when `edict.ci.url` or `edict.promotion.url` (default `edict.ci.url`) names a provider
-  without its token, or while an active promotion belongs to a repository other than the promotion one.
+  without its token.
 
 The benchmark (`scripts/edict-benchmark/`) follows this shape: `install-codex.sh` writes the temporary global home,
 `prepare.sh` runs `install --deny` and `mcp start --foreground` in the project, and `generate.sh` runs the explicit
@@ -284,8 +284,8 @@ Inspection metadata exists only in the KTS. `promotions/active.json` indexes act
 publication. The `edict-promote-weak-signal` worker selects up to five persisted true positives for a Generated inspection
 with referenced strong positive Signals from fewer than five distinct source files, attempts source fixes in scratch, and publishes a feedback PR through
 `edict_promote_weak_signal`. Its description explains the inspection and asks users to accept/merge if they agree.
-The server rejects unselected locations, stale inspection bytes, or an analyzed revision different from the target
-branch. Recorded proposals are reused across server restarts. After an interrupted publication, identical fixes reuse
+The server rejects unselected locations or stale inspection bytes; the fixes are based on the analyzed revision, even
+when the target branch has moved on. Recorded proposals are reused across server restarts. After an interrupted publication, identical fixes reuse
 their branch and PR; changed fixes use a different branch.
 The separate default-pipeline step `edict-check-weak-signal-promotion` refreshes only indexed active weak-signal PRs,
 without loading all clusters or iterating completed history. Records contain only review references and states. Review evidence and exact

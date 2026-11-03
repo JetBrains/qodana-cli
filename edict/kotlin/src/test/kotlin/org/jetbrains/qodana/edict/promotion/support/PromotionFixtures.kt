@@ -24,10 +24,11 @@ import java.time.ZoneOffset
 /** Where the promotion tests open reviews. */
 internal val PROMOTION_REPOSITORY = ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "qodana-cli")
 
-/** A repository promotions were opened in before the configuration moved to [PROMOTION_REPOSITORY]. */
-internal val FOREIGN_REPOSITORY = ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "kotlin")
 
 internal val PROMOTION = PromotionConfiguration("reviewer", "main")
+
+/** The project branch the run checked out, which source fixes target. */
+internal const val EXECUTION_BRANCH = "main"
 
 /** When a stored promotion was created, before the tests run. */
 internal const val CREATED_AT = "2026-10-01T00:00:00Z"
@@ -57,9 +58,6 @@ internal val SECRET_REDACTION = TokenRedactor { it.replace(SECRET, "[redacted]")
 /** The review numbered [number] in [PROMOTION_REPOSITORY]; the fake opens them from 1 on. */
 internal fun review(number: Int): ReviewReference =
   PROMOTION_REPOSITORY.reference("$number", "https://github.com/JetBrains/qodana-cli/pull/$number")
-
-internal fun foreignReview(number: Int): ReviewReference =
-  FOREIGN_REPOSITORY.reference("$number", "https://github.com/JetBrains/kotlin/pull/$number")
 
 /** A promotion of [INSPECTION] of cluster [clusterId] to its path in the inspections directory. */
 internal fun inspectionPromotion(
@@ -97,7 +95,12 @@ internal fun promotionService(
   promotion: PromotionConfiguration? = PROMOTION,
   redactor: TokenRedactor = NoRedaction,
 ): PromotionService = PromotionService(
-  repository, EdictConfiguration(ci = PROMOTION_REPOSITORY, promotion = promotion), reviews, redactor, Clock.fixed(Instant.parse(NOW), ZoneOffset.UTC),
+  repository,
+  EdictConfiguration(ci = PROMOTION_REPOSITORY, promotion = promotion),
+  reviews,
+  redactor,
+  Clock.fixed(Instant.parse(NOW), ZoneOffset.UTC),
+  executionBranch = { EXECUTION_BRANCH },
 )
 
 /** The weak-signal promotion service of [PROMOTION_REPOSITORY]. */
@@ -107,7 +110,9 @@ internal fun weakSignalService(
   promotion: PromotionConfiguration? = PROMOTION,
   redactor: TokenRedactor = NoRedaction,
 ): WeakSignalPromotionService =
-  WeakSignalPromotionService(repository, EdictConfiguration(ci = PROMOTION_REPOSITORY, promotion = promotion), reviews, redactor)
+  WeakSignalPromotionService(
+    repository, EdictConfiguration(ci = PROMOTION_REPOSITORY, promotion = promotion), reviews, redactor, executionBranch = { EXECUTION_BRANCH },
+  )
 
 /** An expected text from the `promotion` test resources, by its file [name]. */
 internal fun expectedText(name: String): String = resourceText("promotion/$name")

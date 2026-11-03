@@ -76,11 +76,6 @@ internal const val ULTIMATE_NEW_REVIEW_NUMBER = 240001
 internal val ULTIMATE_NEW_REVIEW =
   ULTIMATE.reference(ULTIMATE_NEW_REVIEW_ID, "https://jetbrains.team/p/ij/reviews/$ULTIMATE_NEW_REVIEW_NUMBER")
 
-/** [ULTIMATE_SOURCE_FIX_REQUEST] based on the parent of [RELEASE_191_HEAD], so it finds the target branch moved on. */
-internal val ULTIMATE_STALE_SOURCE_FIX_REQUEST = ULTIMATE_SOURCE_FIX_REQUEST.copy(
-  sourceFix = ULTIMATE_SOURCE_FIX.copy(baseRevision = "941e1f00fa10c29eb2eb021ca6baa738dd915417"),
-)
-
 /** [ULTIMATE_SOURCE_FIX_REQUEST] whose [ULTIMATE_BUILD_TXT] is the file's text at its base. */
 internal val ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST = ULTIMATE_SOURCE_FIX_REQUEST.copy(
   sourceFix = ULTIMATE_SOURCE_FIX.copy(files = ULTIMATE_SOURCE_FIX.files + (ULTIMATE_BUILD_TXT to ULTIMATE_BUILD_TXT_AT_191)),

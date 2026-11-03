@@ -58,18 +58,19 @@ internal fun projectReview(
   description: String = INSPECTION_DESCRIPTION,
 ): EdictNextProjectReview = EdictNextProjectReview(revision, findings.size, findings.size, 0, 0, 0, description, findings)
 
-/** The cluster with a positive and a negative example and an evaluation of the inspection [inspectionDigest] with [review]. */
+/**
+ * The cluster with a positive and a negative example, and its evaluation with [review]; of the inspection
+ * [inspectionDigest] when it names one other than the stored inspection.
+ */
 internal fun ClusterFixture.withEvaluation(
   review: EdictNextProjectReview?,
-  inspectionDigest: String = INSPECTION_DIGEST,
+  inspectionDigest: String? = null,
 ): ClusterFixture = copy(
   examples = listOf(
     EdictNextCodeExampleMetadata("positive", "Example.kt", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))),
     EdictNextCodeExampleMetadata("negative", "Example.kt", EdictNextSignalLabel.NEGATIVE),
   ),
-  evaluation = EdictNextEvaluation(
-    inspectionDigest, "examples", EdictNextInspectionAction.GENERATE, review?.truePositiveFindings.orEmpty().size, 0, 0, 1.0, 1.0, emptyMap(), review,
-  ),
+  evaluation = (evaluation ?: EvaluationFixture()).copy(projectReview = review, inspectionDigest = inspectionDigest),
 )
 
 /** A weak-signal candidate: a generated cluster with one referenced source file and a project review of [findings]. */
