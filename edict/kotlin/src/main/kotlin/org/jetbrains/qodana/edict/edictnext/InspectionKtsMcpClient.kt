@@ -39,6 +39,7 @@ internal data class InspectionKtsExampleRequest(
   val id: String,
   val projectPath: String,
   val targetFilePath: String,
+  val contextPath: String? = null,
 )
 
 @Serializable

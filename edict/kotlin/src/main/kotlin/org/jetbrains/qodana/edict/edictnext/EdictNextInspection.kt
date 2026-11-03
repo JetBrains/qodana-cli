@@ -73,11 +73,16 @@ internal class EdictNextInspection(
   }
 
   private suspend fun measure(cluster: EdictNextStoredCluster, code: String): Measurement {
+    // The example's module comes from the source it was reduced from: its finding, its Signal, or another cluster Signal.
+    val signalPaths = cluster.signals.filter { it.syntheticExampleId != null }
+      .associate { it.syntheticExampleId to it.fileRevision.path }
+    val clusterPath = cluster.signals.minByOrNull(EdictNextSignal::id)?.fileRevision?.path
     val requests = cluster.examples.map { example ->
       InspectionKtsExampleRequest(
         id = example.metadata.id,
         projectPath = example.directory.projectDirectory.toString(),
         targetFilePath = example.directory.projectDirectory.relativize(example.sourcePath).toString(),
+        contextPath = example.metadata.contextPath ?: signalPaths[example.metadata.id] ?: clusterPath,
       )
     }
     val execution = exampleAnalysis(code, requests)
