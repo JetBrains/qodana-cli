@@ -8,9 +8,11 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strconv"
@@ -18,6 +20,8 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 const fakeServerReady = `echo "edict-mcp listening at http://127.0.0.1:27182/mcp"`
@@ -132,6 +136,51 @@ func TestStopEdictServerTreatsARecordOfAnExitedProcessAsNoServer(t *testing.T) {
 	}
 	if _, err := os.Stat(files.record); !os.IsNotExist(err) {
 		t.Fatalf("the record of the exited server was kept: %v", err)
+	}
+}
+
+func TestStopEdictServerTreatsAServerThatExitedUnreapedAsStopped(t *testing.T) {
+	// The background sleep stands in for the server; its parent becomes the exec'd sleep, which never reaps it, as a
+	// container's `tail -f /dev/null` never reaps a detached server.
+	parent := exec.Command("sh", "-c", "sleep 60 & echo $!; exec sleep 60")
+	output, err := parent.StdoutPipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := parent.Start(); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = parent.Process.Kill(); _ = parent.Wait() })
+	line, err := bufio.NewReader(output).ReadString('\n')
+	if err != nil {
+		t.Fatal(err)
+	}
+	pid, err := strconv.Atoi(strings.TrimSpace(line))
+	if err != nil {
+		t.Fatal(err)
+	}
+	server, err := process.NewProcess(int32(pid))
+	if err != nil {
+		t.Fatal(err)
+	}
+	createdAt, err := server.CreateTime()
+	if err != nil {
+		t.Fatal(err)
+	}
+	directory := t.TempDir()
+	files := edictServerFiles{log: filepath.Join(directory, "server.log"), record: filepath.Join(directory, "server.pid")}
+	if err := files.write(edictServerRecord{pid: pid, createdAt: createdAt}); err != nil {
+		t.Fatal(err)
+	}
+
+	var stopOutput bytes.Buffer
+	started := time.Now()
+	if err := stopEdictServer(files, 10*time.Second, &stopOutput); err != nil {
+		t.Fatal(err)
+	}
+
+	if stopOutput.String() != fmt.Sprintf("Stopped the Edict server (pid %d)\n", pid) || time.Since(started) > 5*time.Second {
+		t.Fatalf("stop output %q after %s", stopOutput.String(), time.Since(started))
 	}
 }
 
