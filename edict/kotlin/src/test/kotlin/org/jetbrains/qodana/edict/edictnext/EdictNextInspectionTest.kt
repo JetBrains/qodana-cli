@@ -80,6 +80,31 @@ class EdictNextInspectionTest {
   }
 
   @Test
+  fun `the unresolved references of each example are reported with the module it runs in`() = runBlocking {
+    val results = batchResult(
+      InspectionKtsFileResult("positive", "Positive.kt", listOf(InspectionKtsProblem("Unresolved reference 'extensionList'", 4, "WARNING"))),
+      InspectionKtsFileResult("negative", "Negative.kt"),
+    )
+    val client = FakeInspectionKtsClient(compilation = { results.compilation }, examples = { _, _ -> results })
+
+    assertEquals(
+      mapOf("positive" to EdictNextUnresolvedReferences("src/positive-signal.kt", listOf("line 4 'extensionList'"))),
+      EdictNextInspection({ client }, client::analyzeProject).unresolvedReferences(cluster()),
+    )
+  }
+
+  @Test
+  fun `an example the unresolved-reference check returns nothing for is reported`() = runBlocking {
+    val results = batchResult(InspectionKtsFileResult("positive", "Positive.kt"))
+    val client = FakeInspectionKtsClient(compilation = { results.compilation }, examples = { _, _ -> results })
+
+    assertEquals(
+      mapOf("negative" to EdictNextUnresolvedReferences("src/negative-signal.kt", listOf("the check returned no result"))),
+      EdictNextInspection({ client }, client::analyzeProject).unresolvedReferences(cluster()),
+    )
+  }
+
+  @Test
   fun `rejects compiled metadata that does not match cluster`() = runBlocking {
     val cluster = cluster()
     val client = ideClient(

@@ -63,7 +63,8 @@ the source Signal. A negative example contains one focused allowed occurrence an
 each example in one self-contained source file; support files do not participate in validation.
 
 After reconciling the complete corpus, call `edict_next_validate_cluster_examples(clusterId)`. Repair every
-reported structural issue and repeat until it succeeds. Independently review every created or changed example against
+reported issue and repeat until it succeeds: a reference that does not resolve in the example's module is a defect of
+that example. Independently review every created or changed example against
 its exact source revision because structural validation cannot establish source fidelity.
 
 Examples not referenced by a `STRONG` cluster Signal are weak. Make sure no weak example contradicts a strong Signal:

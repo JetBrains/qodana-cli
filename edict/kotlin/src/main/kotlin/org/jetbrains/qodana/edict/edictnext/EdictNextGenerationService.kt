@@ -99,9 +99,17 @@ internal class EdictNextGenerationService(
     signalId: String,
     exampleId: String,
   ): EdictNextMutationResponse {
-    loadPendingCluster(clusterId)
+    val cluster = loadPendingCluster(clusterId)
     val validation = validateCodeExample(repository, clusterId, exampleId)
     require(validation.success) { validation.summary + ": " + validation.issues.joinToString("; ") }
+    // Checked as assigned: the example then runs in the module of its Signal's file unless it names another.
+    val assigned = cluster.copy(
+      signals = cluster.signals.map { if (it.id == signalId) it.copy(syntheticExampleId = exampleId) else it },
+    )
+    val example = assigned.examples.single { it.metadata.id == exampleId }
+    inspection.unresolvedReferences(assigned, listOf(example))[exampleId]?.let { unresolved ->
+      throw IllegalArgumentException(unresolvedIssue(exampleId, unresolved))
+    }
     repository.assignCodeExample(clusterId, signalId, exampleId)
     return EdictNextMutationResponse(true, "Assigned code example '$exampleId' to Signal '$signalId'")
   }
@@ -194,11 +202,15 @@ internal class EdictNextGenerationService(
         issues = e.issues,
       )
     }
-    val issues = validateClusterExamples(cluster)
+    val directories = cluster.examples.associate { it.metadata.id to it.directory.root.toString() }
+    val unresolved = inspection.unresolvedReferences(cluster).map { (exampleId, references) ->
+      EdictNextValidationIssue(directories.getValue(exampleId), unresolvedIssue(exampleId, references))
+    }
+    val issues = validateClusterExamples(cluster) + unresolved
     return EdictNextCodeExampleValidationResponse(
       success = issues.isEmpty(),
       summary = if (issues.isEmpty()) {
-        "Every Signal has a structurally valid focused code example"
+        "Every Signal has a structurally valid focused code example, and every reference of every example resolves"
       } else {
         "Found ${issues.size} cluster code example issue(s)"
       },
@@ -550,3 +562,9 @@ internal class EdictNextGenerationService(
   ): EdictNextFinaliseClusterResponse =
     EdictNextFinaliseClusterResponse(false, "Cluster cannot be $status and stays as it was: $summary", issues)
 }
+
+/** Why an example cannot run as a self-contained slice in its module, and how to repair it. */
+private fun unresolvedIssue(exampleId: String, unresolved: EdictNextUnresolvedReferences): String =
+  "Code example '$exampleId' has references that do not resolve in the module of " +
+    "${unresolved.contextPath ?: "the project"}: ${unresolved.references.joinToString(", ")}" +
+    ". Declare each one in the example, or set contextPath to a file whose module provides them"
