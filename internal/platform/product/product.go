@@ -232,9 +232,9 @@ var (
 		ProductCode:     QDPOLY,
 		DockerImage:     "jetbrains/qodana-poly",
 		SupportNative:   false,
-		IsPaid:          false,
+		IsPaid:          true,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	// AllLinters Order is important for detection
