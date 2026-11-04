@@ -35,6 +35,7 @@ com.intellij.taintAnalysis
 NodeJS
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.intellij.plugins.webcomponents
 Karma

@@ -19,6 +19,7 @@ com.jetbrains.rubymine.customization
 NodeJS
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.intellij.plugins.webcomponents
 Karma
