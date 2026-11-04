@@ -3,9 +3,8 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 cd "$benchmark_project"
 
-# Agents must not read the benchmark answers or Codex's own session records.
-qodana edict install --deny benchmark --deny .edict/gold.sarif.json \
-  --deny "$benchmark_output/trace" --deny "$benchmark_codex_home/sessions" --deny "$benchmark_codex_home/log"
+# Agents must not read the benchmark answers or the run's traces; install already denies Codex's own session records.
+qodana edict install --deny benchmark --deny .edict/gold.sarif.json --deny "$benchmark_output/trace"
 
 # The server listens on edict.mcpPort, keeps .edict as its state and logs to log/process-log/<run-id>.
 # It starts IntelliJ from QODANA_DIST on the first inspection call and stops it on exit.

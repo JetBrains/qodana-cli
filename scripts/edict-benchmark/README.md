@@ -20,7 +20,8 @@ The pipeline has six steps:
    by the TeamCity artifact dependency.
 4. `prepare.sh` runs `qodana edict install` in `project`, which writes the skills and adds the sandbox
    permissions, agent limits and `edict-mcp` address to `project/.codex`, keeping the fixture's own Codex
-   configuration; `--deny` adds the benchmark answers and Codex session records. The script then starts a
+   configuration; `--deny` adds the benchmark answers and the run's traces, as install already denies the Codex
+   session records in `CODEX_HOME`. The script then starts a
    shared `qodana edict mcp start` HTTP server in `project`. A fixture's `qodana.yaml` holds its Edict
    settings, such as `edict.ci` for Signal revisions missing from the checkout; without one, the script
    writes a configuration on port 27182 that generates 25 clusters and calculates the price. The server uses the checked-out
