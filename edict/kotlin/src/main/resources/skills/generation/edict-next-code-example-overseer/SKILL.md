@@ -38,7 +38,8 @@ it, or when you reduce it yourself, not before delegating it. Until then use onl
 
 For every Signal with an assigned example:
 
-1. Identify the construct covered by its expected range and the source facts that make its label correct.
+1. Identify the construct covered by its expected range and the source facts that make its label correct, wherever they
+   are: in the range, elsewhere in its file, or in declarations it depends on in other files.
 2. Inspect its assigned example. Keep it when it is a faithful, focused semantic slice of the exact source.
 3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals.
 

@@ -41,8 +41,11 @@ Delete irrelevant statements and declarations while preserving the diagnostic ta
 its exact positive or negative meaning. For a Signal about variable V in method M, retain V's declaration, relevant reads, writes,
 aliases, and conditions/control flow affecting V; retain the types and members needed to resolve those operations and relevant
 enclosing method/class modifiers, annotations, generics, hierarchy, and overload contracts. Apply the same dependency reasoning
-to other targets. Replace external dependencies with minimal same-file declarations, interfaces, or stubs only when they preserve
-the compile-time/PSI contracts and label-determining semantics. Do not generalize the Signal, weaken types, move the semantic
+to other targets. The facts that decide the label are not always inside the expected range: they may be elsewhere in the
+source file, or in declarations in other files that the target depends on. Find and read them, at the Signal's revision
+when it is available (read-only Git or `edict_file_at_ref`), and keep them in the example, in a same-file stub when
+they come from another file. Replace external dependencies with minimal same-file declarations, interfaces, or stubs
+only when they preserve the compile-time/PSI contracts and label-determining semantics. Do not generalize the Signal, weaken types, move the semantic
 target, or invent facts to explain its classification. When unsure whether a detail matters, preserve it.
 
 A positive example must contain exactly one reportable problem. Its sole expected range must identify the same semantic target
@@ -57,7 +60,9 @@ For an unassigned Signal, create its example through `edict_next_save_code_examp
 <synthetic-examples-directory>/<example-id>/project/<file-name>.kt|java
 ```
 
-Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Derive the expected ranges from the finished reduced source;
+Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. The example runs in the module of the Signal's file;
+when that file no longer exists in the inspected project, add `contextPath` with the path of the file that now holds its
+code, or of another file in the same module. Derive the expected ranges from the finished reduced source;
 do not retain source line numbers after moving the target. Never copy the complete production source file.
 
 Saving checks the example structurally and refuses it with its issues; repair them and save again. The MCP does not
