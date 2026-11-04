@@ -67,6 +67,7 @@ com.intellij.microservices.ui
 NodeJS
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.intellij.plugins.webcomponents
 Karma
