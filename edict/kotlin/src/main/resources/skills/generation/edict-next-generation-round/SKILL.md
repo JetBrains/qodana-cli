@@ -99,6 +99,7 @@ Implementation constraints:
   to a fixed point;
 - treat an unresolved reference, call, or type the decision depends on as unknown and do not report: never count it
   as a match by name, and never treat it as proof that something is absent;
+- treat a decision that depends on how code outside the current file uses a declaration as unknown and do not report;
 - keep work proportional to the current file: visit each element a bounded number of times, with no whole-body walk
   per field, per call, or per call path; follow a same-file delegation (`this(...)`, a helper call) at most one level,
   or compute one summary per method and reuse it; filter by syntax and names before resolving; preserve cancellation;
