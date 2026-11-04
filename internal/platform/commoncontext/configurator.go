@@ -53,8 +53,8 @@ func isInIgnoredDirectory(path string) bool {
 	return false
 }
 
-// recognizeDirLanguages returns the languages detected in the given directory.
-func recognizeDirLanguages(projectPath string) ([]string, error) {
+// recognizeDirLanguages returns the detected languages and the uniquely dominant language.
+func recognizeDirLanguages(projectPath string) ([]string, string, error) {
 	const limitKb = 64
 	out := make(map[string]int)
 	err := filepath.Walk(
@@ -116,7 +116,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	type languageCount struct {
 		Language string
@@ -128,16 +128,22 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 	}
 	sort.Slice(
 		langCounts, func(i, j int) bool {
+			if langCounts[i].Count == langCounts[j].Count {
+				return langCounts[i].Language < langCounts[j].Language
+			}
 			return langCounts[i].Count > langCounts[j].Count
 		},
 	)
+	dominantLanguage := ""
+	if len(langCounts) > 0 && (len(langCounts) == 1 || langCounts[0].Count > langCounts[1].Count) {
+		dominantLanguage = langCounts[0].Language
+	}
 	languages := make([]string, 0, len(langCounts))
 	for _, langCount := range langCounts {
 		languages = append(languages, langCount.Language)
 	}
 
-	slices.Sort(languages)
-	return languages, nil
+	return languages, dominantLanguage, nil
 }
 
 // readFile reads the file at the given path and returns its content.
