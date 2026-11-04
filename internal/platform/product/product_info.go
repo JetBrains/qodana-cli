@@ -34,16 +34,17 @@ import (
 )
 
 type Product struct {
-	Analyzer       Analyzer
-	Name           string
-	IdeCode        string
-	Code           string
-	Version        string
-	BaseScriptName string
-	IdeScript      string
-	Build          string
-	Home           string
-	IsEap          bool
+	Analyzer            Analyzer
+	Name                string
+	IdeCode             string
+	Code                string
+	Version             string
+	BaseScriptName      string
+	IdeScript           string
+	Build               string
+	Home                string
+	IsEap               bool
+	BuildDateArguments  []string
 }
 
 var ( // base script name
@@ -336,19 +337,23 @@ func GuessProduct(idePath string, analyzer Analyzer) Product {
 	}
 	name := linter.PresentableName
 	build := productInfo.BuildNumber
-	eap := IsEap(productInfo)
+
+	jvmArgs := GetQodanaJvmArguments(productInfo)
+	eap := IsEap(jvmArgs)
+	buildDateArgs := ExtractBuildDateArguments(jvmArgs)
 
 	prod := Product{
-		Analyzer:       analyzer,
-		Name:           name,
-		IdeCode:        ideCode,
-		Code:           code,
-		Version:        version,
-		BaseScriptName: baseScriptName,
-		IdeScript:      ideScript,
-		Build:          build,
-		Home:           homePath,
-		IsEap:          eap,
+		Analyzer:           analyzer,
+		Name:               name,
+		IdeCode:            ideCode,
+		Code:               code,
+		Version:            version,
+		BaseScriptName:     baseScriptName,
+		IdeScript:          ideScript,
+		Build:              build,
+		Home:               homePath,
+		IsEap:              eap,
+		BuildDateArguments: buildDateArgs,
 	}
 
 	log.Debug(prod)
@@ -390,25 +395,40 @@ func toQodanaCode(baseProduct string) string {
 	}
 }
 
-func IsEap(info *InfoJson) bool {
+// GetQodanaJvmArguments extracts AdditionalJvmArguments for the "qodana" command from product-info.json.
+// Returns the list of JVM arguments, or empty slice if not found.
+func GetQodanaJvmArguments(info *InfoJson) []string {
+	for _, launch := range info.Launch {
+		for _, command := range launch.CustomCommands {
+			if slices.Contains(command.Commands, "qodana") {
+				return command.AdditionalJvmArguments
+			}
+		}
+	}
+	return []string{}
+}
+
+// ExtractBuildDateArguments filters JVM arguments to only those related to build date.
+// Returns arguments matching "-Dqodana.build.date=..." pattern.
+func ExtractBuildDateArguments(args []string) []string {
+	var buildDateArgs []string
+	for _, arg := range args {
+		if strings.HasPrefix(arg, "-Dqodana.build.date=") {
+			buildDateArgs = append(buildDateArgs, arg)
+		}
+	}
+	return buildDateArgs
+}
+
+// IsEap checks if the given JVM arguments indicate an EAP build.
+// Returns true if "-Dqodana.eap=true" is present in the arguments.
+func IsEap(jvmArgs []string) bool {
 	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		return true
 	}
 
-	for _, launch := range info.Launch {
-		for _, command := range launch.CustomCommands {
-			for _, cmd := range command.Commands {
-				if cmd == "qodana" {
-					if slices.Contains(command.AdditionalJvmArguments, "-Dqodana.eap=true") {
-						return true
-					}
-				}
-			}
-		}
-	}
-
-	return false
+	return slices.Contains(jvmArgs, "-Dqodana.eap=true")
 }
 
 // ReadIdeProductInfo returns IDE info from the given path.

@@ -534,57 +534,34 @@ func TestProduct_isRuby(t *testing.T) {
 func TestIsEap(t *testing.T) {
 	tests := []struct {
 		name     string
-		info     *InfoJson
+		jvmArgs  []string
 		expected bool
 	}{
 		{
-			name:     "no launch",
-			info:     &InfoJson{},
+			name:     "no arguments",
+			jvmArgs:  []string{},
 			expected: false,
 		},
 		{
-			name: "qodana with eap flag",
-			info: &InfoJson{
-				Launch: []Launch{
-					{
-						CustomCommands: []struct {
-							Commands               []string
-							AdditionalJvmArguments []string
-						}{
-							{
-								Commands:               []string{"qodana"},
-								AdditionalJvmArguments: []string{"-Dqodana.eap=true"},
-							},
-						},
-					},
-				},
-			},
+			name:     "with eap flag",
+			jvmArgs:  []string{"-Dqodana.eap=true"},
 			expected: true,
 		},
 		{
-			name: "qodana without eap flag",
-			info: &InfoJson{
-				Launch: []Launch{
-					{
-						CustomCommands: []struct {
-							Commands               []string
-							AdditionalJvmArguments []string
-						}{
-							{
-								Commands:               []string{"qodana"},
-								AdditionalJvmArguments: []string{},
-							},
-						},
-					},
-				},
-			},
+			name:     "with eap flag and other arguments",
+			jvmArgs:  []string{"-Dqodana.build.date=20240101", "-Dqodana.eap=true"},
+			expected: true,
+		},
+		{
+			name:     "without eap flag",
+			jvmArgs:  []string{"-Dqodana.build.date=20240101"},
 			expected: false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.expected, IsEap(tt.info))
+			assert.Equal(t, tt.expected, IsEap(tt.jvmArgs))
 		})
 	}
 }

@@ -159,6 +159,9 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 		return nil, fmt.Errorf("can't read product-info.json: %v ", err)
 	}
 
+	jvmArgs := product.GetQodanaJvmArguments(productInfo)
+	isEap := product.IsEap(jvmArgs)
+
 	flavourProductCode := product.ReadDistFlavour(dist)
 	if flavourProductCode != "" {
 		linter := product.FindLinterByProductCode(flavourProductCode)
@@ -168,7 +171,7 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 		return &product.PathNativeAnalyzer{
 			Linter: linter,
 			Path:   dist,
-			IsEap:  product.IsEap(productInfo),
+			IsEap:  isEap,
 		}, nil
 	}
 
@@ -179,7 +182,7 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 	return &product.PathNativeAnalyzer{
 		Linter: info.Linter,
 		Path:   dist,
-		IsEap:  product.IsEap(productInfo),
+		IsEap:  isEap,
 	}, nil
 }
 
