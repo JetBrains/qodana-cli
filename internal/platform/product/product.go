@@ -307,6 +307,7 @@ var LangsToLinters = map[string][]Linter{
 	"Ruby":              {RubyLinter},
 	"Rust":              {RustLinter},
 	"Dart":              {PolyLinter},
+	"Lua":               {PolyLinter},
 }
 
 var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })

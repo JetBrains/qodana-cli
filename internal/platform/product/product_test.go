@@ -336,7 +336,7 @@ func TestAllLinters_NotEmpty(t *testing.T) {
 }
 
 func TestLangsToLinters_Coverage(t *testing.T) {
-	langs := []string{"Java", "Kotlin", "PHP", "Python", "JavaScript", "TypeScript", "Go", "C#", "F#", "Visual Basic .NET", "C", "C++", "Ruby", "Rust", "Dart"}
+	langs := []string{"Java", "Kotlin", "PHP", "Python", "JavaScript", "TypeScript", "Go", "C#", "F#", "Visual Basic .NET", "C", "C++", "Ruby", "Rust", "Dart", "Lua"}
 
 	for _, lang := range langs {
 		t.Run(lang, func(t *testing.T) {
@@ -349,6 +349,10 @@ func TestLangsToLinters_Coverage(t *testing.T) {
 
 func TestDartUsesPoly(t *testing.T) {
 	assert.Equal(t, []Linter{PolyLinter}, LangsToLinters["Dart"])
+}
+
+func TestLuaUsesPoly(t *testing.T) {
+	assert.Equal(t, []Linter{PolyLinter}, LangsToLinters["Lua"])
 }
 
 func TestAllLintersFiltered(t *testing.T) {
