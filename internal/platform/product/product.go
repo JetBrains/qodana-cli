@@ -231,7 +231,7 @@ var (
 		Name:            "qodana-poly",
 		ProductCode:     QDPOLY,
 		DockerImage:     "jetbrains/qodana-poly",
-		SupportNative:   false,
+		SupportNative:   true,
 		IsPaid:          false,
 		SupportFixes:    false,
 		EapOnly:         true,
