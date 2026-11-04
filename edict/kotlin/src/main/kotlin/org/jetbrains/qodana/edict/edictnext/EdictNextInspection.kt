@@ -72,12 +72,34 @@ internal class EdictNextInspection(
     }
   }
 
-  private suspend fun measure(cluster: EdictNextStoredCluster, code: String): Measurement {
-    // The example's module comes from the source it was reduced from: its finding, its Signal, or another cluster Signal.
+  suspend fun unresolvedReferences(
+    cluster: EdictNextStoredCluster,
+    examples: List<EdictNextStoredExample> = cluster.examples,
+  ): Map<String, EdictNextUnresolvedReferences> {
+    if (examples.isEmpty()) return emptyMap()
+    val requests = exampleRequests(cluster, examples)
+    val execution = exampleAnalysis(UNRESOLVED_REFERENCES_INSPECTION, requests)
+    check(execution.compilation.compilationSuccess) {
+      "The unresolved-reference check did not compile: ${execution.compilation.compilationStatus}"
+    }
+    return requests.mapNotNull { request ->
+      val result = execution.files.singleOrNull { it.id == request.id }
+      val references = result?.executionError?.let { listOf("the check failed: $it") }
+        ?: result?.foundProblems?.map { "line ${it.lineNumber} ${it.message.substringAfter("reference ")}" }
+        ?: listOf("the check returned no result")
+      if (references.isEmpty()) null else request.id to EdictNextUnresolvedReferences(request.contextPath, references)
+    }.toMap()
+  }
+
+  // The example's module comes from the source it was reduced from: its finding, its Signal, or another cluster Signal.
+  private fun exampleRequests(
+    cluster: EdictNextStoredCluster,
+    examples: List<EdictNextStoredExample> = cluster.examples,
+  ): List<InspectionKtsExampleRequest> {
     val signalPaths = cluster.signals.filter { it.syntheticExampleId != null }
       .associate { it.syntheticExampleId to it.fileRevision.path }
     val clusterPath = cluster.signals.minByOrNull(EdictNextSignal::id)?.fileRevision?.path
-    val requests = cluster.examples.map { example ->
+    return examples.map { example ->
       InspectionKtsExampleRequest(
         id = example.metadata.id,
         projectPath = example.directory.projectDirectory.toString(),
@@ -85,7 +107,10 @@ internal class EdictNextInspection(
         contextPath = example.metadata.contextPath ?: signalPaths[example.metadata.id] ?: clusterPath,
       )
     }
-    val execution = exampleAnalysis(code, requests)
+  }
+
+  private suspend fun measure(cluster: EdictNextStoredCluster, code: String): Measurement {
+    val execution = exampleAnalysis(code, exampleRequests(cluster))
     rejectMetadata(cluster.id, execution.compilation)?.let { return Measurement(it, emptyMap(), emptySet()) }
 
     val failures = mutableListOf<EdictNextInspectionFailure>()
@@ -254,6 +279,15 @@ internal data class EdictNextFindingAssignment(
 
 internal fun EdictNextProjectFinding.location(): Pair<String, Int> =
   fileRevision.path to (fileRevision.expectedRanges?.firstOrNull()?.start ?: 0)
+
+/** The [references] of an example that do not resolve in the module of [contextPath], each as `line <n> '<name>'`. */
+internal data class EdictNextUnresolvedReferences(val contextPath: String?, val references: List<String>)
+
+/** Reports every reference of a Kotlin or Java file that has no target, such as an import its module cannot see. */
+private val UNRESOLVED_REFERENCES_INSPECTION: String =
+  checkNotNull(EdictNextInspection::class.java.getResourceAsStream("/edictnext/unresolved-references.inspection.kts")) {
+    "Missing the unresolved-references inspection resource"
+  }.use { it.readBytes().decodeToString() }
 
 internal fun EdictNextStoredCluster.strongExampleIds(): Set<String> =
   signals.asSequence().filter { it.strength == EdictNextSignalStrength.STRONG }.mapNotNull(EdictNextSignal::syntheticExampleId).toSet()
