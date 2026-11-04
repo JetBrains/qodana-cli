@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -84,7 +85,7 @@ func (files edictServerFiles) running() (*process.Process, error) {
 		createdAt, timeErr := strconv.ParseInt(fields[1], 10, 64)
 		if pidErr == nil && timeErr == nil {
 			if server, err := process.NewProcess(int32(pid)); err == nil {
-				if actual, err := server.CreateTime(); err == nil && actual == createdAt {
+				if actual, err := server.CreateTime(); err == nil && actual == createdAt && !exited(server) {
 					return server, nil
 				}
 			}
@@ -190,13 +191,10 @@ func stopEdictServer(files edictServerFiles, timeout time.Duration, stdout io.Wr
 		}
 	}
 	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		if running, err := server.IsRunning(); err != nil || !running {
-			break
-		}
+	for time.Now().Before(deadline) && !exited(server) {
 		time.Sleep(200 * time.Millisecond)
 	}
-	if running, err := server.IsRunning(); err == nil && running {
+	if !exited(server) {
 		if err := killProcessSession(pid); err != nil {
 			return fmt.Errorf("kill the Edict server (pid %d) after %s: %w", pid, timeout, err)
 		}
@@ -208,6 +206,17 @@ func stopEdictServer(files edictServerFiles, timeout time.Duration, stdout io.Wr
 		return err
 	}
 	return nil
+}
+
+// exited reports whether the process has exited. A detached server outlives the `edict mcp start` that started it, so
+// when it exits its parent is the session's init process, which may never reap it: under a container's
+// `tail -f /dev/null` the server stays a zombie until the container ends.
+func exited(server *process.Process) bool {
+	if running, err := server.IsRunning(); err != nil || !running {
+		return true
+	}
+	status, err := server.Status()
+	return err == nil && slices.Contains(status, process.Zombie)
 }
 
 func tail(path string, lines int) string {
