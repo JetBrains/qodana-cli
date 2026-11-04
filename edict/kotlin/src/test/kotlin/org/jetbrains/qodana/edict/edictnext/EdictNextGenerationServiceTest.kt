@@ -1061,6 +1061,26 @@ class EdictNextGenerationServiceTest {
     }
   }
 
+  @Test
+  fun `an example with a reference its module cannot resolve is not assigned and fails validation`() = runBlocking {
+    val (generation, inspection) = generation()
+    try {
+      val metadata = EdictNextCodeExampleMetadata("imported", "Example.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1)))
+      generation.saveCodeExample("busy-wait", metadata.id, EdictNextJson.encodeToString(metadata), "class Example {} // unresolved=Missing\n")
+      val issue = "Code example 'imported' has references that do not resolve in the module of s-busy-wait.java: " +
+        "line 1 'Missing'. Declare each one in the example, or set contextPath to a file whose module provides them"
+
+      val refused = assertFailsWith<IllegalArgumentException> { generation.assignCodeExample("busy-wait", "s-busy-wait", metadata.id) }
+      assertEquals(issue, refused.message)
+      val validation = generation.validateClusterExamples("busy-wait")
+      assertFalse(validation.success)
+      assertEquals(listOf("${directory.resolve("state/clusters/busy-wait/synthetic-examples/imported")}: $issue"), validation.issues)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
   /**
    * A generation service over `busy-wait` and the [clusters] given by strength and label of their single Signal; the
    * [clusters] have the predecessor [predecessorId] when one is given.
@@ -1149,12 +1169,23 @@ class EdictNextGenerationServiceTest {
 // `id = "<id>"`, and reports line 1 of every example except a skipped one when it says ` report`, and reports lines
 // 1..N of `src/Found.java` in a project analysis.
 private fun markedExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult {
+  if ("id = \"unresolved-references\"" in code) return unresolvedReferences(code, examples)
   val problems = if (" report" in code) listOf(InspectionKtsProblem("found", 1, "WARNING")) else emptyList()
   return InspectionKtsBatchRunResult(
     markedCompilation(code),
     examples.map { InspectionKtsFileResult(it.id, it.targetFilePath, if (" skip=${it.id}" in code) emptyList() else problems) },
   )
 }
+
+/** The unresolved-reference check, which finds the `unresolved=<name>` markers of each example's source on line 1. */
+private fun unresolvedReferences(code: String, examples: List<InspectionKtsExampleRequest>) = InspectionKtsBatchRunResult(
+  markedCompilation(code),
+  examples.map { example ->
+    val source = Path.of(example.projectPath).resolve(example.targetFilePath).readText()
+    val names = Regex("unresolved=(\\w+)").findAll(source).map { it.groupValues[1] }
+    InspectionKtsFileResult(example.id, example.targetFilePath, names.map { InspectionKtsProblem("Unresolved reference '$it'", 1, "WARNING") }.toList())
+  },
+)
 
 private fun markedProjectAnalysis(code: String): InspectionKtsProjectRunResult {
   val findings = Regex("findings=(\\d+)").find(code)?.groupValues?.get(1)?.toInt() ?: 0

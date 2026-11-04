@@ -65,9 +65,10 @@ when that file no longer exists in the inspected project, add `contextPath` with
 code, or of another file in the same module. Derive the expected ranges from the finished reduced source;
 do not retain source line numbers after moving the target. Never copy the complete production source file.
 
-Saving checks the example structurally and refuses it with its issues; repair them and save again. The MCP does not
-establish semantics: independently confirm that the example demonstrates the Signal and that its label and ranges are
-correct.
+Saving checks the example structurally and refuses it with its issues; repair them and save again. Assigning also runs
+the example in its module and refuses it when a reference does not resolve there: declare what it names in the example,
+or set `contextPath` to a file whose module provides it, then save and assign again. The MCP does not establish
+semantics: independently confirm that the example demonstrates the Signal and that its label and ranges are correct.
 
 Only after both checks succeed, call `edict_next_assign_code_example` for a persisted Signal, or set
 `syntheticExampleId` in a transient private-scratch Signal. Return each Signal id with its assigned example ID, or with

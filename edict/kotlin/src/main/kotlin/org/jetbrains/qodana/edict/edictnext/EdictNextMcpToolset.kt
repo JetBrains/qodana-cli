@@ -231,7 +231,8 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_assign_code_example",
-      description = "Assign a structurally valid stored example to one persisted cluster Signal. Only syntheticExampleId is changed.",
+      description = "Assign a structurally valid stored example to one persisted cluster Signal. Only syntheticExampleId is changed. " +
+        "It refuses an example with a reference that does not resolve in the module it runs in: its contextPath's, or the Signal file's.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
         "clusterId" to "Pending cluster chosen for generation",
@@ -274,7 +275,8 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_validate_cluster_examples",
-      description = "Validate that every cluster Signal has one structurally valid focused code example with a matching label.",
+      description = "Validate that every cluster Signal has one structurally valid focused code example with a matching label, " +
+        "and that every reference of every example resolves in the module it runs in.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),
     ) { request ->
       generation
