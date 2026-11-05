@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
@@ -112,6 +113,7 @@ func GetInstallPluginsProperties(c corescan.Context) []string {
 		"-Dqodana.application=true",
 		"-Dintellij.platform.load.app.info.from.resources=true",
 		fmt.Sprintf("-Dqodana.build.number=%s-%s", c.Prod().IdeCode, c.Prod().Build),
+		fmt.Sprintf("-Dqodana.build.date=%s", time.Now().UTC().Format("200601021504")),
 	)
 
 	sort.Strings(lines)
