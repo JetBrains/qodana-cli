@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
@@ -141,16 +142,19 @@ func GetInstallPluginsProperties(c corescan.Context) []string {
 	propertyMaps := createPropertyMaps(c)
 	overrides := maps.Clone(propertyMaps.yamlOverrides)
 	maps.Copy(overrides, propertyMaps.cliOverrides)
-	properties := algorithm.MapValues(propertyMaps.common, func(key, value string) string {
-		if override, ok := overrides[key]; ok {
-			return override
-		}
-		return value
-	})
+	properties := algorithm.MapValues(
+		propertyMaps.common, func(key, value string) string {
+			if override, ok := overrides[key]; ok {
+				return override
+			}
+			return value
+		},
+	)
 	properties["-Didea.headless.enable.statistics"] = "false"
 	properties["-Dqodana.application"] = "true"
 	properties["-Dintellij.platform.load.app.info.from.resources"] = "true"
 	properties["-Dqodana.build.number"] = fmt.Sprintf("%s-%s", c.Prod().IdeCode, c.Prod().Build)
+	properties["-Dqodana.build.date"] = time.Now().UTC().Format("200601021504")
 
 	lines := make([]string, 0, len(properties))
 	for key, value := range properties {
