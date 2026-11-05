@@ -401,7 +401,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_record_evaluation",
-      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Records failing strong and weak examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
+      description = "Last step before finalising Generated: store the analyzed candidate of this run that satisfies the most strong examples, the latest on a tie, then score the inspection that would be published (that candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Records failing strong and weak examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
         "clusterId" to "Pending cluster chosen for generation",

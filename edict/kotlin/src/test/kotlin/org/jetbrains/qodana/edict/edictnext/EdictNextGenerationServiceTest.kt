@@ -191,6 +191,46 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
+  fun `evaluation keeps the analyzed candidate that satisfies the most strong examples`() = withGeneration { generation, repository ->
+    assertEquals(EdictNextInspectionAction.GENERATE, generation.getInspectionAction("busy-wait").action)
+    val scratch = directory.resolve("scratch").toString()
+    // The first candidate reports the strong positive example; the later one reports nothing.
+    val better = "// busy-wait report"
+    generation.saveCandidateInspection("busy-wait", better)
+    generation.getNewInspectionResults("busy-wait", scratch)
+    generation.saveCandidateInspection("busy-wait", "// busy-wait")
+    generation.getNewInspectionResults("busy-wait", scratch)
+
+    val recorded = generation.recordEvaluation("busy-wait")
+
+    assertTrue(recorded.success, recorded.summary)
+    assertEquals(sha256Hex(better), recorded.evaluation?.inspectionHash)
+    val cluster = repository.loadCluster("busy-wait")
+    assertEquals(better, cluster.candidateInspectionPath.readText())
+    assertContains(
+      cluster.historyPath.readText(),
+      "Evaluation kept the candidate of project analysis 1 of 2: it satisfies 1 of 1 strong examples, " +
+        "the stored candidate of analysis 2 0.",
+    )
+    assertTrue(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "Generated").success)
+  }
+
+  @Test
+  fun `evaluation keeps the latest analyzed candidate when an earlier one satisfies no more strong examples`() = withGeneration { generation, repository ->
+    assertEquals(EdictNextInspectionAction.GENERATE, generation.getInspectionAction("busy-wait").action)
+    val scratch = directory.resolve("scratch").toString()
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report")
+    generation.getNewInspectionResults("busy-wait", scratch)
+    val latest = "// busy-wait report findings=1"
+    generation.saveCandidateInspection("busy-wait", latest)
+    generation.getNewInspectionResults("busy-wait", scratch)
+
+    assertTrue(generation.recordEvaluation("busy-wait").success)
+
+    assertEquals(latest, repository.loadCluster("busy-wait").candidateInspectionPath.readText())
+  }
+
+  @Test
   fun `each cluster runs a limited number of project analyses`() = withGeneration { generation, _ ->
     val scratch = directory.resolve("scratch").toString()
     generation.saveCandidateInspection("busy-wait", "// busy-wait report")

@@ -1,5 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
+import kotlinx.coroutines.CancellationException
 import org.jetbrains.qodana.edict.common.DEFAULT_GENERATION_COUNT
 import org.jetbrains.qodana.edict.common.DEFAULT_MAX_PROJECT_ANALYSES
 import org.jetbrains.qodana.edict.common.GitRepository
@@ -31,6 +32,8 @@ internal class EdictNextGenerationService(
   private val validatedExampleReports = ConcurrentHashMap<Set<String>, Pair<String, Map<String, Boolean>>>()
   private val analyzedExampleReports = ConcurrentHashMap<Set<String>, Map<String, Boolean>>()
   private val analyzedCodes = ConcurrentHashMap<Set<String>, String>()
+  /** Every candidate a project analysis of this run ran on, with its findings, oldest first. */
+  private val analyzedCandidates = ConcurrentHashMap<Set<String>, List<AnalyzedCandidate>>()
 
   /** Read-only suggestions from the current repository; does not reserve clusters or start generation. */
   suspend fun selectGenerationClusters(generationCount: Int? = null): EdictNextGenerationClustersResponse {
@@ -157,6 +160,12 @@ internal class EdictNextGenerationService(
     val renamedCode = code?.let(::rename)
     repository.renameCluster(cluster, newClusterId, renamedCode)
     analyzedCodes.computeIfPresent(cluster.signalIds) { _, analyzed -> rename(analyzed) }
+    analyzedCandidates.computeIfPresent(cluster.signalIds) { _, analyzed ->
+      analyzed.map { candidate ->
+        val renamed = rename(candidate.code)
+        AnalyzedCandidate(renamed, candidate.findings.copy(candidateDigest = sha256Hex(renamed)))
+      }
+    }
     if (code != null && renamedCode != null) {
       for (digests in listOf(validatedCandidateDigests, analyzedCandidateDigests)) {
         digests.replace(cluster.signalIds, sha256Hex(code), sha256Hex(renamedCode))
@@ -282,6 +291,7 @@ internal class EdictNextGenerationService(
     analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
     analyzedFindings[cluster.signalIds] = findings
     analyzedCodes[cluster.signalIds] = code
+    analyzedCandidates.merge(cluster.signalIds, listOf(AnalyzedCandidate(code, findings)), List<AnalyzedCandidate>::plus)
     return response.copy(findingsUnchanged = unchanged)
   }
 
@@ -354,6 +364,7 @@ internal class EdictNextGenerationService(
    * Compilation, metadata and execution must be valid, but evidence accuracy does not gate recording.
    */
   suspend fun recordEvaluation(clusterId: String): EdictNextRecordEvaluationResponse {
+    keepBestAnalyzedCandidate(loadPendingCluster(clusterId))
     val cluster = loadPendingCluster(clusterId)
     return when (val selection = selectGeneratedInspection(cluster)) {
       is InspectionSelection.Rejected -> EdictNextRecordEvaluationResponse(false, selection.reason)
@@ -498,6 +509,45 @@ internal class EdictNextGenerationService(
     }
     return InspectionSelection.Selected(action, path, code)
   }
+
+  /**
+   * Stores the analyzed candidate of this run that satisfies the most strong examples, the latest on a tie, when the
+   * stored candidate is an analyzed one: a later round can lose cases an earlier one decided, and only analyzed
+   * candidates have reviewed findings. The examples are those of the cluster now, including ones added after an analysis.
+   */
+  private suspend fun keepBestAnalyzedCandidate(cluster: EdictNextStoredCluster) {
+    if (inspectionActions[cluster.signalIds] != EdictNextInspectionAction.GENERATE) return
+    val candidates = analyzedCandidates[cluster.signalIds].orEmpty()
+    val stored = cluster.candidateInspectionPath.takeIf(Path::isRegularFile)?.readText() ?: return
+    if (candidates.size < 2 || candidates.none { it.code == stored }) return
+    val strong = cluster.strongExampleIds()
+    val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
+    val satisfied = candidates.map { candidate ->
+      val reports = try {
+        inspection.reports(cluster, candidate.code)
+      }
+      catch (e: CancellationException) { throw e }
+      // A candidate whose examples no longer execute cannot be chosen.
+      catch (_: Exception) { return@map -1 }
+      reports.count { (id, reported) -> id in strong && reported == (labels[id] == EdictNextSignalLabel.POSITIVE) }
+    }
+    val best = satisfied.indices.maxWith(compareBy<Int> { satisfied[it] }.thenBy { it })
+    val chosen = candidates[best]
+    if (chosen.code == stored) return
+    repository.saveCandidateInspection(cluster.id, chosen.code)
+    analyzedCandidateDigests[cluster.signalIds] = chosen.findings.candidateDigest
+    analyzedFindings[cluster.signalIds] = chosen.findings
+    analyzedCodes[cluster.signalIds] = chosen.code
+    val storedIndex = candidates.indexOfLast { it.code == stored }
+    repository.appendHistory(
+      cluster.id,
+      "Evaluation kept the candidate of project analysis ${best + 1} of ${candidates.size}: it satisfies " +
+        "${satisfied[best]} of ${strong.size} strong examples, the stored candidate of analysis ${storedIndex + 1} " +
+        "${satisfied[storedIndex]}.",
+    )
+  }
+
+  private class AnalyzedCandidate(val code: String, val findings: EdictNextInspectionFindings)
 
   private sealed interface InspectionSelection {
     data class Selected(val action: EdictNextInspectionAction, val path: Path, val code: String) : InspectionSelection

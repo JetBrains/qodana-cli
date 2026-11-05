@@ -97,8 +97,9 @@ finalise `Invalid` with the failure. When a round fails for any other reason, fi
 
 After `STOP`, append the decision to history, call `edict_next_record_evaluation(token, clusterId)` as the last step
 before finalising, then finalise `Generated`. Do not read or change the candidate: the round left the stored candidate
-the last analyzed one, which `Generated` requires.
-When the server has `QODANA_TOKEN`, finalisation uploads the last project analysis to Qodana Cloud and stores its report URL.
+the last analyzed one, and recording the evaluation stores the analyzed candidate of this run that satisfies the most
+strong examples, which `Generated` publishes.
+When the server has `QODANA_TOKEN`, finalisation uploads that candidate's project analysis to Qodana Cloud and stores its report URL.
 Do not upload separately or handle credentials. An upload failure leaves the cluster Pending; report the infrastructure
 failure rather than claiming generation completed.
 
