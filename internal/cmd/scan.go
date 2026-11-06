@@ -120,6 +120,7 @@ But you can always override qodana.yaml options with the following command-line 
 
 			baseline := platform.ResolveBaseline(
 				scanContext.Baseline(),
+				platform.LauncherBaselineSource(),
 				scanContext.QodanaUploadToken(),
 				scanContext.Analyser().GetLinter().ProductCode,
 				scanContext.CacheDir(),
@@ -129,12 +130,15 @@ But you can always override qodana.yaml options with the following command-line 
 			} else {
 				scanContext = scanContext.WithResolvedBaselineSource(baseline.Source())
 			}
-			qdenv.SetEnv(qdenv.QodanaBaselineSource, baseline.Source())
+			// set over a source of the environment, which qdenv.SetEnv would keep
+			if err := os.Setenv(qdenv.QodanaBaselineSource, baseline.Source()); err != nil {
+				log.Warnf("Failed to set %s: %v", qdenv.QodanaBaselineSource, err)
+			}
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			// not deferred: the exit code checks below leave the process with os.Exit
 			baseline.Cleanup()
-			if !scanContext.Analyser().IsContainer() || baseline.Source() != qdenv.BaselineSourceLocal {
+			if baseline.ReportsUsed(scanContext.Analyser().IsContainer()) {
 				fmt.Println(baseline.UsedMessage())
 			}
 			if qdenv.IsContainer() {
