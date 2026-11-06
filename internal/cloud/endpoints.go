@@ -139,7 +139,7 @@ type QdCloudRequest struct {
 	AcceptedStatuses []int
 	Retries          int
 	Cooldown         int
-	ReadResponse     func(body io.Reader) error
+	ReadResponse     func(statusCode int, body io.Reader) error
 }
 
 func NewCloudRequest(path string) QdCloudRequest {
@@ -210,7 +210,7 @@ func (client *QdClient) doRequestAttempt(request *QdCloudRequest) ([]byte, error
 
 	if request.ReadResponse != nil &&
 		resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
-		return nil, request.ReadResponse(resp.Body)
+		return nil, request.ReadResponse(resp.StatusCode, resp.Body)
 	}
 
 	responseBody, err := io.ReadAll(resp.Body)
