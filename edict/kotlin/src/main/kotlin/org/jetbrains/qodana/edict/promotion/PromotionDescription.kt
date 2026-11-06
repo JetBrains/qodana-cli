@@ -3,7 +3,7 @@ package org.jetbrains.qodana.edict.promotion
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
-import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
+import org.jetbrains.qodana.edict.edictnext.isCurrentEvaluation
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.common.reviewRepository
@@ -62,7 +62,7 @@ internal fun promotionDescription(
   ci: ReviewRepository?,
   evaluation: EdictNextEvaluation?,
 ): String {
-  require(evaluation != null && evaluation.inspectionHash == digest && evaluation.exampleSetDigest == exampleSetDigest(cluster)) {
+  require(evaluation != null && cluster.isCurrentEvaluation(evaluation, digest)) {
     "Promotion requires a current evaluation matching the inspection and examples"
   }
   require(evaluation.inspectionName.isNotBlank() && evaluation.inspectionDescription.isNotBlank()) {

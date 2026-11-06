@@ -25,8 +25,52 @@ func newEdictCommand() *cobra.Command {
 		Use:   "edict",
 		Short: "Edict commands: extract inspection rules from your development history",
 	}
-	cmd.AddCommand(newEdictInstallCommand(), newEdictManagedMCPCommand(), newEdictIDEMCPCommand(), newEdictStateCommand())
+	cmd.AddCommand(
+		newEdictInstallCommand(),
+		newEdictManagedMCPCommand(),
+		newEdictIDEMCPCommand(),
+		newEdictStateCommand(),
+		newEdictFeedbackCommand(),
+	)
 	return cmd
+}
+
+// newEdictFeedbackCommand returns the commands a GitHub Actions run uses to show findings of not yet promoted
+// Edict inspections on pull requests, whose answers become Signals.
+func newEdictFeedbackCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   "feedback",
+		Short: "Show findings of not yet promoted Edict inspections on pull requests",
+	}
+	var stateDir, outputDir, configFile string
+	prepare := &cobra.Command{
+		Use:   "prepare",
+		Short: "Prepare the Edict inspections to run on a pull request",
+		Long: `In a GitHub Actions run for a pull request between branches of the repository, check the Edict
+state branch (edict.stateBranch, edict/state by default) out at --state-dir and copy into --output-dir,
+outside the project and missing or empty, the generated inspections whose findings may become review comments: the
+most precise of the not yet promoted ones. Pass the directory to 'qodana scan' as
+--property qodana.internal.inspections.kts.dir=<directory>, which runs them without reporting their findings.
+
+Copies nothing when the run gets no feedback: it is for no pull request or for one from a fork, the pull
+request already got all its comments, or no inspection qualifies.`,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
+		RunE: func(command *cobra.Command, _ []string) error {
+			args := append(
+				[]string{"feedback-prepare", "--state-dir", stateDir, "--output-dir", outputDir},
+				edictQodanaYamlArguments(".", configFile)...,
+			)
+			return runEdictJVM(command, args...)
+		},
+	}
+	prepare.Flags().StringVar(&stateDir, "state-dir", "", "Directory to check the Edict state out at")
+	_ = prepare.MarkFlagRequired("state-dir")
+	prepare.Flags().StringVar(&outputDir, "output-dir", "", "Missing or empty directory outside the project to copy the inspections to run into")
+	_ = prepare.MarkFlagRequired("output-dir")
+	prepare.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
+	command.AddCommand(prepare)
+	return command
 }
 
 // newEdictStateCommand returns the commands for the Edict state branch that install checks out.

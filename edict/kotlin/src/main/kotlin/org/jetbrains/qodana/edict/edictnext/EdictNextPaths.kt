@@ -10,6 +10,12 @@ internal data class EdictRepositoryDirectory(val root: Path) {
   val promotionsDirectory: Path = root.resolve("promotions")
   val activeWeakSignalPromotionsPath: Path = promotionsDirectory.resolve("active.json")
 
+  /** Findings reserved for review comments that await an answer, one `<record id>.json` each. */
+  val activeFeedbackDirectory: Path = root.resolve("feedback").resolve("active")
+
+  /** Answered or abandoned feedback records, in a `<yyyy-MM>` directory of the month they left [activeFeedbackDirectory]. */
+  val feedbackHistoryDirectory: Path = root.resolve("feedback").resolve("history")
+
   fun weakSignalPromotionHistoryPath(clusterId: String): Path {
     require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
     return promotionsDirectory.resolve("history").resolve("$clusterId.json")

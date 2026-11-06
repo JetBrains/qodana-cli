@@ -797,3 +797,32 @@ internal data class EdictNextStoredExample(
   val sourcePath: Path,
   val code: String,
 )
+
+/** What a cluster's stored generated inspection is worth for ranking; each caller decides what a [Missing] one means. */
+internal sealed interface StoredInspection {
+  /** The cluster has no generated inspection file. */
+  data object Missing : StoredInspection
+
+  /** No evaluation scored exactly the inspection's bytes on the cluster's current examples. */
+  data object NotEvaluated : StoredInspection
+}
+
+/**
+ * The generated inspection of cluster [clusterId] at [path], whose SHA-256 hex is [digest], and the [evaluation] of exactly its bytes
+ * on the current examples.
+ */
+internal data class EvaluatedInspection(
+  val path: Path,
+  val digest: String,
+  val evaluation: EdictNextEvaluation,
+  val clusterId: String,
+) : StoredInspection
+
+/** The generated inspection of [cluster], evaluated if [evaluation] is current for it. */
+internal fun EdictRepository.storedInspection(cluster: EdictNextStoredCluster, evaluation: EdictNextEvaluation?): StoredInspection {
+  val path = paths.inspectionPath(cluster.id)
+  if (!path.isRegularFile()) return StoredInspection.Missing
+  val digest = sha256Hex(path.readBytes())
+  if (evaluation == null || !cluster.isCurrentEvaluation(evaluation, digest)) return StoredInspection.NotEvaluated
+  return EvaluatedInspection(path, digest, evaluation, cluster.id)
+}
