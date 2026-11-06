@@ -49,8 +49,10 @@ const (
 type BaselineStatus int
 
 const (
+	// BaselineUnknown is no answer: the request failed or was never made.
+	BaselineUnknown BaselineStatus = iota
 	// BaselineWritten is a baseline with problems, written to the file.
-	BaselineWritten BaselineStatus = iota + 1
+	BaselineWritten
 	// BaselineEmpty is a cloud baseline which is turned on but has no problems yet.
 	BaselineEmpty
 	// BaselineDisabled is a cloud baseline which is turned off for the project.
@@ -68,7 +70,7 @@ const (
 func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineStatus, error) {
 	request := NewCloudRequest(qodanaBaselineUri + baselineQuery(toolName))
 
-	status := BaselineEmpty
+	status := BaselineUnknown
 	request.ReadResponse = func(statusCode int, body io.Reader) error {
 		// a retried request writes the report anew, over what a failed attempt has left
 		if err := file.Truncate(0); err != nil {
@@ -83,9 +85,12 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineS
 		}
 		out := bufio.NewWriter(file)
 		written, err := writeBaselineSarif(toolName, body, out)
-		if err != nil || !written {
-			status = BaselineEmpty
+		if err != nil {
 			return err
+		}
+		if !written {
+			status = BaselineEmpty
+			return nil
 		}
 		status = BaselineWritten
 		return out.Flush()
@@ -98,7 +103,7 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineS
 			log.Debugf("Qodana Cloud has no baseline endpoint: %v", err)
 			return BaselineUnsupported, nil
 		}
-		return 0, fmt.Errorf("baseline request failed: %w", err)
+		return BaselineUnknown, fmt.Errorf("baseline request failed: %w", err)
 	}
 	return status, nil
 }
