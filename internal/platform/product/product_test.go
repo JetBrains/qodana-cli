@@ -351,6 +351,12 @@ func TestDartUsesPoly(t *testing.T) {
 	assert.Equal(t, []Linter{PolyLinter}, LangsToLinters["Dart"])
 }
 
+func TestPolyIsPaidAndReleased(t *testing.T) {
+	assert.True(t, PolyLinter.IsPaid, "Qodana Poly must require a paid license")
+	assert.False(t, PolyLinter.EapOnly, "Qodana Poly must not be EAP-only")
+	assert.NotContains(t, AllSupportedFreeLinters, PolyLinter)
+}
+
 func TestLuaUsesPoly(t *testing.T) {
 	assert.Equal(t, []Linter{PolyLinter}, LangsToLinters["Lua"])
 }
