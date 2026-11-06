@@ -233,13 +233,13 @@ func TestWriteBaselineSarifUnexpectedResponse(t *testing.T) {
 }
 
 // requestBaseline serves the given handler and writes the baseline it responds with to a file, the
-// way an analysis does. It returns whether a baseline was written and the contents of the file.
-func requestBaseline(t *testing.T, handler http.HandlerFunc) (bool, string, error) {
+// way an analysis does. It returns the status of the request and the contents of the file.
+func requestBaseline(t *testing.T, handler http.HandlerFunc) (BaselineStatus, string, error) {
 	t.Helper()
 	return requestBaselineOf(t, "QDJVM", handler)
 }
 
-func requestBaselineOf(t *testing.T, toolName string, handler http.HandlerFunc) (bool, string, error) {
+func requestBaselineOf(t *testing.T, toolName string, handler http.HandlerFunc) (BaselineStatus, string, error) {
 	t.Helper()
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
@@ -249,17 +249,17 @@ func requestBaselineOf(t *testing.T, toolName string, handler http.HandlerFunc) 
 	require.NoError(t, err)
 
 	endpoints := QdApiEndpoints{RootEndpoint: &QdRootEndpoint{Url: server.URL}, LintersApiUrl: server.URL}
-	written, requestErr := endpoints.NewLintersApiClient("token").WriteBaseline(toolName, file)
+	status, requestErr := endpoints.NewLintersApiClient("token").WriteBaseline(toolName, file)
 	require.NoError(t, file.Close())
 
 	report, err := os.ReadFile(path)
 	require.NoError(t, err)
-	return written, string(report), requestErr
+	return status, string(report), requestErr
 }
 
 func TestWriteBaseline(t *testing.T) {
 	var requestUri, authorization, acceptEncoding string
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			requestUri = r.URL.RequestURI()
 			authorization = r.Header.Get("Authorization")
@@ -269,7 +269,7 @@ func TestWriteBaseline(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.True(t, written)
+	require.Equal(t, BaselineWritten, status)
 	assert.Equal(t, "/linters/baseline?toolName=QDJVM", requestUri)
 	assert.Equal(t, "Bearer token", authorization)
 	assert.Contains(t, acceptEncoding, "gzip", "a streamed baseline should be requested compressed")
@@ -281,7 +281,7 @@ func TestWriteBaseline(t *testing.T) {
 // baseline of the project, which Qodana Cloud answers with the problems of every tool.
 func TestWriteBaselineOfAllTools(t *testing.T) {
 	var requestUri string
-	written, report, err := requestBaselineOf(
+	status, report, err := requestBaselineOf(
 		t, "", func(w http.ResponseWriter, r *http.Request) {
 			requestUri = r.URL.RequestURI()
 			_, _ = w.Write([]byte(baselineBody))
@@ -289,7 +289,7 @@ func TestWriteBaselineOfAllTools(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.True(t, written)
+	require.Equal(t, BaselineWritten, status)
 	assert.Equal(t, "/linters/baseline", requestUri, "no tool name asks for the whole baseline")
 	assert.Contains(t, report, `"name":""`)
 }
@@ -297,7 +297,7 @@ func TestWriteBaselineOfAllTools(t *testing.T) {
 // TestWriteBaselineGzipped verifies that the baseline is read from the compressed response the cloud
 // sends to a client which accepts gzip.
 func TestWriteBaselineGzipped(t *testing.T) {
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			require.Contains(t, r.Header.Get("Accept-Encoding"), "gzip")
 			w.Header().Set("Content-Encoding", "gzip")
@@ -308,14 +308,14 @@ func TestWriteBaselineGzipped(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.True(t, written)
+	require.Equal(t, BaselineWritten, status)
 	assert.Contains(t, report, "VulnerableLibrariesLocal")
 }
 
 // TestWriteBaselineStreamsProblems verifies that a baseline of many problems is written in full.
 func TestWriteBaselineStreamsProblems(t *testing.T) {
 	const problems = 5000
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, `{"baseline":[`)
 			for i := 0; i < problems; i++ {
@@ -332,7 +332,7 @@ func TestWriteBaselineStreamsProblems(t *testing.T) {
 		},
 	)
 	require.NoError(t, err)
-	require.True(t, written)
+	require.Equal(t, BaselineWritten, status)
 
 	var parsed sarif.Report
 	require.NoError(t, json.Unmarshal([]byte(report), &parsed))
@@ -345,7 +345,7 @@ func TestWriteBaselineStreamsProblems(t *testing.T) {
 // request timeout isn't cut off: the timeout covers reading the body, which a big baseline outlasts.
 func TestWriteBaselineOutlastsRequestTimeout(t *testing.T) {
 	t.Setenv(qdenv.QodanaCloudRequestTimeoutEnv, "1")
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, `{"baseline":[`)
 			for i := 0; i < 3; i++ {
@@ -361,7 +361,7 @@ func TestWriteBaselineOutlastsRequestTimeout(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.True(t, written)
+	require.Equal(t, BaselineWritten, status)
 	assert.Contains(t, report, "Rule2")
 }
 
@@ -376,7 +376,7 @@ func TestWriteBaselineTruncatedGzip(t *testing.T) {
 	require.NoError(t, writer.Close())
 	half := compressed.Bytes()[:compressed.Len()/2]
 
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Encoding", "gzip")
 			_, _ = w.Write(half)
@@ -384,7 +384,7 @@ func TestWriteBaselineTruncatedGzip(t *testing.T) {
 	)
 
 	assert.Error(t, err)
-	assert.False(t, written)
+	assert.NotEqual(t, BaselineWritten, status)
 	assert.Empty(t, report)
 }
 
@@ -396,7 +396,7 @@ func TestWriteBaselineStalledBody(t *testing.T) {
 	t.Setenv(qdenv.QodanaCloudRequestRetriesEnv, "1")
 	served := make(chan struct{})
 
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, `{"baseline":[`)
 			w.(http.Flusher).Flush()
@@ -406,7 +406,7 @@ func TestWriteBaselineStalledBody(t *testing.T) {
 	close(served)
 
 	assert.Error(t, err, "a stalled body should fail the download")
-	assert.False(t, written)
+	assert.NotEqual(t, BaselineWritten, status)
 	assert.Empty(t, report)
 }
 
@@ -415,7 +415,7 @@ func TestWriteBaselineStalledBody(t *testing.T) {
 func TestWriteBaselineWithoutTimeout(t *testing.T) {
 	t.Setenv(qdenv.QodanaCloudRequestTimeoutEnv, "0")
 
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			_, _ = io.WriteString(w, `{"baseline":[`)
 			w.(http.Flusher).Flush()
@@ -425,43 +425,72 @@ func TestWriteBaselineWithoutTimeout(t *testing.T) {
 	)
 
 	require.NoError(t, err)
-	require.True(t, written)
+	require.Equal(t, BaselineWritten, status)
 	assert.Contains(t, report, "Rule")
 }
 
+// TestWriteBaselineDisabled verifies that a project whose cloud baseline is turned off, which Qodana
+// Cloud answers with no content, is told apart from one whose baseline is empty.
 func TestWriteBaselineDisabled(t *testing.T) {
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNoContent)
 		},
 	)
 
 	require.NoError(t, err)
-	assert.False(t, written)
+	assert.Equal(t, BaselineDisabled, status)
 	assert.Empty(t, report)
+}
+
+// TestWriteBaselineEmpty verifies that a cloud baseline which is turned on but has no problems yet,
+// which Qodana Cloud answers with an empty body, is reported as empty.
+func TestWriteBaselineEmpty(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		body string
+	}{
+		{"empty body", ""},
+		{"empty object", "{}"},
+		{"empty baseline", `{"baseline": []}`},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				status, report, err := requestBaseline(
+					t, func(w http.ResponseWriter, r *http.Request) {
+						_, _ = io.WriteString(w, tc.body)
+					},
+				)
+
+				require.NoError(t, err)
+				assert.Equal(t, BaselineEmpty, status)
+				assert.Empty(t, report)
+			},
+		)
+	}
 }
 
 // TestWriteBaselineWithoutEndpoint verifies that a Qodana Cloud which doesn't serve baselines
 // doesn't break the analysis.
 func TestWriteBaselineWithoutEndpoint(t *testing.T) {
-	written, report, err := requestBaseline(
+	status, report, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusNotFound)
 		},
 	)
 
 	require.NoError(t, err)
-	assert.False(t, written)
+	assert.Equal(t, BaselineUnsupported, status)
 	assert.Empty(t, report)
 }
 
 func TestWriteBaselineDeclinedToken(t *testing.T) {
-	written, _, err := requestBaseline(
+	status, _, err := requestBaseline(
 		t, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		},
 	)
 
 	assert.ErrorContains(t, err, "baseline request failed")
-	assert.False(t, written)
+	assert.NotEqual(t, BaselineWritten, status)
 }

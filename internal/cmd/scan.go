@@ -118,8 +118,11 @@ But you can always override qodana.yaml options with the following command-line 
 				effectiveConfigFiles.ConfigDir,
 			)
 
+			// the scan command is the outermost CLI, so a baseline source in its environment is a
+			// leftover of another run and not a baseline which was resolved for it
 			baseline := platform.ResolveBaseline(
 				scanContext.Baseline(),
+				"",
 				scanContext.QodanaUploadToken(),
 				scanContext.Analyser().GetLinter().ProductCode,
 				scanContext.CacheDir(),
@@ -129,7 +132,10 @@ But you can always override qodana.yaml options with the following command-line 
 			} else {
 				scanContext = scanContext.WithResolvedBaselineSource(baseline.Source())
 			}
-			qdenv.SetEnv(qdenv.QodanaBaselineSource, baseline.Source())
+			// set over a leftover source, which qdenv.SetEnv would keep
+			if err := os.Setenv(qdenv.QodanaBaselineSource, baseline.Source()); err != nil {
+				log.Warnf("Failed to set %s: %v", qdenv.QodanaBaselineSource, err)
+			}
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			// not deferred: the exit code checks below leave the process with os.Exit

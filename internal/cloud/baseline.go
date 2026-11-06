@@ -45,16 +45,31 @@ const (
 	baselineSarifFooter  = `]}]}`
 )
 
+// BaselineStatus tells how Qodana Cloud has answered the request of a baseline.
+type BaselineStatus int
+
+const (
+	// BaselineWritten is a baseline with problems, written to the file.
+	BaselineWritten BaselineStatus = iota + 1
+	// BaselineEmpty is a cloud baseline which is turned on but has no problems yet.
+	BaselineEmpty
+	// BaselineDisabled is a cloud baseline which is turned off for the project.
+	BaselineDisabled
+	// BaselineUnsupported is a Qodana Cloud which doesn't serve baselines at all.
+	BaselineUnsupported
+)
+
 // WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF
-// report. An empty tool name asks for the baseline of every tool of the project.
+// report. An empty tool name asks for the baseline of every tool of the project. The status tells
+// whether there was a baseline to write, and if there wasn't, why.
 //
 // Qodana Cloud streams the baseline problem by problem, so it is converted the same way: neither the
 // response nor the report is ever held in memory as a whole.
-func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, error) {
+func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineStatus, error) {
 	request := NewCloudRequest(qodanaBaselineUri + baselineQuery(toolName))
 
-	written := false
-	request.ReadResponse = func(body io.Reader) error {
+	status := BaselineEmpty
+	request.ReadResponse = func(statusCode int, body io.Reader) error {
 		// a retried request writes the report anew, over what a failed attempt has left
 		if err := file.Truncate(0); err != nil {
 			return err
@@ -62,11 +77,17 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, err
 		if _, err := file.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
+		if statusCode == http.StatusNoContent {
+			status = BaselineDisabled
+			return nil
+		}
 		out := bufio.NewWriter(file)
-		var err error
-		if written, err = writeBaselineSarif(toolName, body, out); err != nil || !written {
+		written, err := writeBaselineSarif(toolName, body, out)
+		if err != nil || !written {
+			status = BaselineEmpty
 			return err
 		}
+		status = BaselineWritten
 		return out.Flush()
 	}
 
@@ -75,11 +96,11 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, err
 		if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
 			// a Qodana Cloud which doesn't serve baselines at all
 			log.Debugf("Qodana Cloud has no baseline endpoint: %v", err)
-			return false, nil
+			return BaselineUnsupported, nil
 		}
-		return false, fmt.Errorf("baseline request failed: %w", err)
+		return 0, fmt.Errorf("baseline request failed: %w", err)
 	}
-	return written, nil
+	return status, nil
 }
 
 // streaming returns the client to download the baseline with. The download gets no overall

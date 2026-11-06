@@ -130,6 +130,7 @@ func RunThirdPartyLinterAnalysis(
 
 	baseline := ResolveBaseline(
 		context.Baseline(),
+		os.Getenv(qdenv.QodanaBaselineSource),
 		context.CloudData().QodanaToken,
 		context.LinterInfo().ProductCode,
 		context.CacheDir(),
