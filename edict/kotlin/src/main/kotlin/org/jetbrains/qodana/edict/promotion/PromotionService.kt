@@ -14,7 +14,9 @@ import org.jetbrains.qodana.edict.edictnext.TokenRedactor
 import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
-import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
+import org.jetbrains.qodana.edict.edictnext.EvaluatedInspection
+import org.jetbrains.qodana.edict.edictnext.StoredInspection
+import org.jetbrains.qodana.edict.edictnext.storedInspection
 import org.jetbrains.qodana.edict.edictnext.sha256Hex
 import java.time.Clock
 import java.time.Instant
@@ -68,12 +70,13 @@ internal class PromotionService(
         val evaluation = repository.loadEvaluation(cluster)
         val eligibility = cluster.promotionEligibility(configuration.ci, evaluation)
         if (eligibility.strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) return@forEach
-        val path = repository.paths.inspectionPath(id)
-        require(path.isRegularFile()) { "generated inspection is missing" }
-        val digest = sha256Hex(path.readBytes())
-        if (evaluation == null || evaluation.inspectionHash != digest || evaluation.exampleSetDigest != exampleSetDigest(cluster)) return@forEach
-        val precision = evaluation.precision
-        val recall = evaluation.recall
+        val (path, digest, current) = when (val inspection = repository.storedInspection(cluster, evaluation)) {
+          StoredInspection.Missing -> error("generated inspection is missing")
+          StoredInspection.NotEvaluated -> return@forEach
+          is EvaluatedInspection -> inspection
+        }
+        val precision = current.precision
+        val recall = current.recall
         val f1 = if (precision == 0.0 || recall == 0.0) 0.0 else 2 / (1 / precision + 1 / recall)
         if (!precision.isFinite() || precision !in 0.0..1.0 || !recall.isFinite() || recall !in 0.0..1.0 ||
           precision <= targets.targetPrecision || recall <= targets.targetRecall || f1 <= targets.targetF1) return@forEach
@@ -82,8 +85,8 @@ internal class PromotionService(
           it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath
         }) return@forEach
         // Validate the referenced evidence without publishing anything.
-        promotionDescription(cluster, digest, configuration.ci, evaluation)
-        candidates += PromotionCandidate(id, path.toString(), digest, eligibility.referencedSourceFiles, evaluation, f1)
+        promotionDescription(cluster, digest, configuration.ci, current)
+        candidates += PromotionCandidate(id, path.toString(), digest, eligibility.referencedSourceFiles, current, f1)
       }
       catch (e: Exception) {
         failures += PromotionFailure(id, e.message ?: e.javaClass.simpleName)

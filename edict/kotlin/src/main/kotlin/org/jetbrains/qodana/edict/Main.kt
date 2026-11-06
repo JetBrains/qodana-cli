@@ -11,8 +11,12 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.edictnext.defaultQodanaExecutable
+import org.jetbrains.qodana.edict.feedback.actionsEventPath
+import org.jetbrains.qodana.edict.feedback.actionsPullRequest
+import org.jetbrains.qodana.edict.feedback.prepareFeedback
 import org.jetbrains.qodana.edict.setup.CodexSetup
 import org.jetbrains.qodana.edict.setup.EdictConfig
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.system.exitProcess
 
@@ -90,6 +94,13 @@ fun main(args: Array<String>) {
                 }
             }
 
+            "feedback-prepare" -> {
+                require(options.keys.all { it in listOf("qodana-yaml", "state-dir", "output-dir") }) { "Unknown feedback-prepare option" }
+                val stateDirectory = requireNotNull(options["state-dir"]) { "feedback-prepare requires --state-dir" }
+                val outputDirectory = requireNotNull(options["output-dir"]) { "feedback-prepare requires --output-dir" }
+                prepareFeedbackInspections(qodanaYaml(options), stateDirectory, Path.of(outputDirectory))
+            }
+
             "help", "--help", "-h" -> println(
                 """
                 Edict managed skills (standalone Kotlin/JVM). Run every command in the project directory.
@@ -98,6 +109,9 @@ fun main(args: Array<String>) {
                     Checks out edict.stateBranch (default $DEFAULT_EDICT_STATE_BRANCH) as a worktree at edict.statePath, from origin when it has the branch.
                   edict state-push [--qodana-yaml <path>] [--message <message>]
                     Commits the state on edict.stateBranch and pushes it to origin; fails while a server owns the state.
+                  edict feedback-prepare --state-dir <path> --output-dir <path> [--qodana-yaml <path>]
+                    For a GitHub Actions run of a pull request of the repository itself: checks edict.stateBranch out at
+                    --state-dir and copies the inspections to run for feedback into --output-dir, outside the project and missing or empty.
                   edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
                     edict.calculatePrice=true enables the manager-only price-report MCP tool and private run report.
@@ -126,6 +140,24 @@ private fun install(qodanaYaml: Path?, deniedPaths: List<Path>) {
     val stateBranch = StateBranch(layout, configuration.stateBranch)
     val checkout = stateBranch.checkOut()
     logger.info { stateBranch.describe(checkout) }
+}
+
+/** Copies the inspections the workflow's pull request runs for feedback into [outputDirectory]. */
+private fun prepareFeedbackInspections(qodanaYaml: Path?, stateDirectory: String, outputDirectory: Path) {
+    logOutsideTheProject()
+    val configuration = EdictYamlConfiguration.load(qodanaYaml)
+    val event = actionsPullRequest(actionsEventPath())
+    prepareFeedback(EdictLayout.get(stateDirectory), configuration.stateBranch, event, outputDirectory)
+}
+
+/**
+ * Moves the log files of a command that runs in a CI checkout of the project, which Qodana analyses and its quick fixes may
+ * commit, to a temporary directory; only before the first logger, which fixes the folder Logback writes to.
+ */
+private fun logOutsideTheProject() {
+    if (System.getProperty(EdictLayout.LOG_DIRECTORY_PROPERTY) == null) {
+        System.setProperty(EdictLayout.LOG_DIRECTORY_PROPERTY, Files.createTempDirectory("edict-log-").toString())
+    }
 }
 
 private fun pushState(qodanaYaml: Path?, message: String) {

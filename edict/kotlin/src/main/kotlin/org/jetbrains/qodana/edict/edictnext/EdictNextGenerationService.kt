@@ -446,10 +446,7 @@ internal class EdictNextGenerationService(
     }
     val evaluation = repository.loadEvaluation(cluster)
     if (
-      evaluation == null ||
-      evaluation.action != selection.action ||
-      evaluation.inspectionHash != sha256Hex(selection.code) ||
-      evaluation.exampleSetDigest != exampleSetDigest(cluster)
+      evaluation == null || !cluster.isCurrentEvaluation(evaluation, sha256Hex(selection.code)) || evaluation.action != selection.action
     ) {
       return rejectedFinalisation(
         generated,

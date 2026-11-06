@@ -548,3 +548,35 @@ func TestEdictStatePushBeforeInstallLeavesTheStateDirectoryToInstall(t *testing.
 		t.Fatalf("install after a failed state push did not start the state branch:\n%s", output)
 	}
 }
+
+func TestEdictFeedbackPrepareForNoPullRequestCopiesNothingAndLogsOutsideTheProject(t *testing.T) {
+	t.Chdir(t.TempDir())
+	project := realWorkingDirectory(t)
+	initGitRepository(t, project)
+	event := filepath.Join(t.TempDir(), "event.json")
+	if err := os.WriteFile(event, []byte(`{"ref": "refs/heads/main"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GITHUB_EVENT_PATH", event)
+	prepare := newEdictFeedbackCommand()
+	output := filepath.Join(t.TempDir(), "inspections")
+	prepare.SetArgs([]string{"prepare", "--state-dir", t.TempDir(), "--output-dir", output})
+	prepare.SetIn(strings.NewReader(""))
+	var stdout, stderr bytes.Buffer
+	prepare.SetOut(&stdout)
+	prepare.SetErr(&stderr)
+
+	if err := prepare.ExecuteContext(context.Background()); err != nil {
+		t.Fatalf("feedback prepare: %v\n%s", err, stderr.String())
+	}
+
+	if !strings.Contains(stdout.String(), "The workflow runs for no pull request") {
+		t.Fatalf("feedback prepare logged:\n%s\n%s", stdout.String(), stderr.String())
+	}
+	if _, err := os.Stat(output); !os.IsNotExist(err) {
+		t.Fatalf("feedback prepare made the output directory: %v", err)
+	}
+	if entries, err := os.ReadDir(project); err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
+		t.Fatalf("feedback prepare left files in the project: %v %v", entries, err)
+	}
+}
