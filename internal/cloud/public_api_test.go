@@ -60,6 +60,8 @@ func TestRequestProjectToken(t *testing.T) {
 		{name: "bad request", status: http.StatusBadRequest, body: `{"name":"validation_failed","details":"x"}`, declined: true},
 		{name: "unauthorized", status: http.StatusUnauthorized, body: `{"name":"invalid_token","details":"x"}`, declined: true},
 		{name: "forbidden", status: http.StatusForbidden, body: `{"name":"no_permission","details":"x"}`, declined: true},
+		// an outage of Qodana Cloud is a failed exchange, not a declined token
+		{name: "unavailable", status: http.StatusServiceUnavailable, body: `<html>down</html>`},
 		{name: "empty token", status: http.StatusOK, body: `{"projectToken":""}`},
 		{name: "malformed response", status: http.StatusOK, body: projectToken},
 	} {

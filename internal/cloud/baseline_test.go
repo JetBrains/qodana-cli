@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -232,28 +233,32 @@ func TestWriteBaselineSarifUnexpectedResponse(t *testing.T) {
 	}
 }
 
-// requestBaseline serves the given handler and writes the baseline it responds with to a file, the
-// way an analysis does. It returns the status of the request and the contents of the file.
+// requestBaseline serves the given handler and writes the baseline of QDJVM it responds with to a file,
+// the way an analysis does. It returns the status of the request and the contents of the file.
 func requestBaseline(t *testing.T, handler http.HandlerFunc) (BaselineStatus, string, error) {
 	t.Helper()
-	return requestBaselineOf(t, "QDJVM", handler)
+	return requestBaselineOf(t, "QDJVM", filepath.Join(t.TempDir(), "baseline.sarif.json"), handler)
 }
 
-func requestBaselineOf(t *testing.T, toolName string, handler http.HandlerFunc) (BaselineStatus, string, error) {
+// requestBaselineOf is requestBaseline of the given tool, written to the file at path.
+func requestBaselineOf(
+	t *testing.T,
+	toolName string,
+	path string,
+	handler http.HandlerFunc,
+) (BaselineStatus, string, error) {
 	t.Helper()
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
 
-	path := filepath.Join(t.TempDir(), "baseline.sarif.json")
-	file, err := os.Create(path)
-	require.NoError(t, err)
-
 	endpoints := QdApiEndpoints{RootEndpoint: &QdRootEndpoint{Url: server.URL}, LintersApiUrl: server.URL}
-	status, requestErr := endpoints.NewLintersApiClient("token").WriteBaseline(toolName, file)
-	require.NoError(t, file.Close())
+	status, requestErr := endpoints.NewBaselineClient("token").WriteBaseline(toolName, path)
 
+	// a request which got no response creates no file
 	report, err := os.ReadFile(path)
-	require.NoError(t, err)
+	if !errors.Is(err, os.ErrNotExist) {
+		require.NoError(t, err)
+	}
 	return status, string(report), requestErr
 }
 
@@ -282,7 +287,7 @@ func TestWriteBaseline(t *testing.T) {
 func TestWriteBaselineOfAllTools(t *testing.T) {
 	var requestUri string
 	status, report, err := requestBaselineOf(
-		t, "", func(w http.ResponseWriter, r *http.Request) {
+		t, "", filepath.Join(t.TempDir(), "baseline.sarif.json"), func(w http.ResponseWriter, r *http.Request) {
 			requestUri = r.URL.RequestURI()
 			_, _ = w.Write([]byte(baselineBody))
 		},
@@ -408,6 +413,50 @@ func TestWriteBaselineStalledBody(t *testing.T) {
 	assert.Error(t, err, "a stalled body should fail the download")
 	assert.NotEqual(t, BaselineWritten, status)
 	assert.Empty(t, report)
+}
+
+// TestWriteBaselineRetriedOverFailedAttempt verifies that a request retried after the connection broke
+// writes the report of the answer which succeeds alone, over what the failed attempt has written.
+func TestWriteBaselineRetriedOverFailedAttempt(t *testing.T) {
+	t.Setenv(qdenv.QodanaCloudRequestRetriesEnv, "2")
+	t.Setenv(qdenv.QodanaCloudRequestCooldownEnv, "0")
+	path := filepath.Join(t.TempDir(), "baseline.sarif.json")
+	attempts := 0
+
+	status, report, err := requestBaselineOf(
+		t, "QDJVM", path, func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts > 1 {
+				if info, statErr := os.Stat(path); statErr != nil || info.Size() == 0 {
+					t.Errorf("the failed attempt should have written problems to the file: %v", statErr)
+				}
+				_, _ = io.WriteString(w, baselineBody)
+				return
+			}
+			// more problems than the buffer of the report holds, so that some reach the file
+			_, _ = io.WriteString(w, `{"baseline":[`)
+			for i := 0; i < 200; i++ {
+				if i > 0 {
+					_, _ = io.WriteString(w, ",")
+				}
+				_, _ = fmt.Fprintf(w, `{"ruleId":"Stale%d","message":{"text":"left by the failed attempt"}}`, i)
+			}
+			w.(http.Flusher).Flush()
+			connection, _, hijackErr := w.(http.Hijacker).Hijack()
+			if hijackErr != nil {
+				t.Errorf("failed to break the connection: %v", hijackErr)
+				return
+			}
+			_ = connection.Close()
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, BaselineWritten, status)
+	_, expected, expectedErr := writeBaselineToString(t, "QDJVM", baselineBody)
+	require.NoError(t, expectedErr)
+	assert.Equal(t, 2, attempts)
+	assert.Equal(t, expected, report)
 }
 
 // TestWriteBaselineWithoutTimeout verifies that a turned-off request timeout leaves a slow download

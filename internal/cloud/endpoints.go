@@ -112,16 +112,6 @@ func getRequestTimeout() time.Duration {
 	return time.Duration(GetEnvWithDefaultInt(qdenv.QodanaCloudRequestTimeoutEnv, defaultRequestTimeout)) * time.Second
 }
 
-func (endpoints *QdApiEndpoints) NewLintersApiClient(token string) *QdClient {
-	return &QdClient{
-		httpClient: &http.Client{
-			Timeout: getRequestTimeout(),
-		},
-		apiUrl: endpoints.LintersApiUrl,
-		token:  token,
-	}
-}
-
 type APIError struct {
 	StatusCode int
 	Message    string

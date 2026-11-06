@@ -25,10 +25,12 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 //goland:noinspection ALL
@@ -288,7 +290,7 @@ func TestWrongVersion(t *testing.T) {
 	}
 }
 
-func TestNewLintersApiClient(t *testing.T) {
+func TestNewBaselineClient(t *testing.T) {
 	endpoints := &QdApiEndpoints{
 		RootEndpoint:  &QdRootEndpoint{Url: "https://qodana.cloud"},
 		LintersApiUrl: "https://linters.api.url/v1",
@@ -296,17 +298,25 @@ func TestNewLintersApiClient(t *testing.T) {
 	}
 
 	t.Run("creates client with token", func(t *testing.T) {
-		client := endpoints.NewLintersApiClient("test-token")
-		assert.NotNil(t, client)
+		client := endpoints.NewBaselineClient("test-token")
 		assert.Equal(t, "https://linters.api.url/v1", client.apiUrl)
 		assert.Equal(t, "test-token", client.token)
-		assert.NotNil(t, client.httpClient)
 	})
 
 	t.Run("creates client without token", func(t *testing.T) {
-		client := endpoints.NewLintersApiClient("")
-		assert.NotNil(t, client)
+		client := endpoints.NewBaselineClient("")
 		assert.Equal(t, "", client.token)
+	})
+
+	// a big baseline outlasts any overall deadline: a request which stops making progress fails instead
+	t.Run("streams without an overall deadline", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaCloudRequestTimeoutEnv, "7")
+		client := endpoints.NewBaselineClient("test-token")
+		assert.Zero(t, client.httpClient.Timeout)
+		guard, isGuarded := client.httpClient.Transport.(stallGuard)
+		require.True(t, isGuarded, "the body of a response should be guarded against stalls")
+		assert.Equal(t, 7*time.Second, guard.timeout)
+		assert.Equal(t, 7*time.Second, guard.transport.(*http.Transport).ResponseHeaderTimeout)
 	})
 }
 

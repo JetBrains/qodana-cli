@@ -61,42 +61,38 @@ const (
 	BaselineUnsupported
 )
 
-// WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF
-// report. An empty tool name asks for the baseline of every tool of the project. The status tells
-// whether there was a baseline to write, and if there wasn't, why.
+// NewBaselineClient returns the client of the linters API to download baselines with. A request gets
+// no overall deadline, because reading the baseline of a big project takes as long as it takes, and a
+// request which stops making progress is failed instead: by the timeout of the response header, and
+// by the stall guard of the body.
+func (endpoints *QdApiEndpoints) NewBaselineClient(token string) *QdClient {
+	timeout := getRequestTimeout()
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ResponseHeaderTimeout = timeout
+	return &QdClient{
+		httpClient: &http.Client{Transport: stallGuard{transport: transport, timeout: timeout}},
+		apiUrl:     endpoints.LintersApiUrl,
+		token:      token,
+	}
+}
+
+// WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to the file at path as a
+// SARIF report. An empty tool name asks for the baseline of every tool of the project. The status
+// tells whether there was a baseline to write, and if there wasn't, why: the file holds the report
+// only for BaselineWritten, and is left empty or partly written otherwise. The client must come from
+// NewBaselineClient.
 //
 // Qodana Cloud streams the baseline problem by problem, so it is converted the same way: neither the
 // response nor the report is ever held in memory as a whole.
-func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineStatus, error) {
+func (client *QdClient) WriteBaseline(toolName string, path string) (BaselineStatus, error) {
 	request := NewCloudRequest(qodanaBaselineUri + baselineQuery(toolName))
-
 	status := BaselineUnknown
-	request.ReadResponse = func(statusCode int, body io.Reader) error {
-		// a retried request writes the report anew, over what a failed attempt has left
-		if err := file.Truncate(0); err != nil {
-			return err
-		}
-		if _, err := file.Seek(0, io.SeekStart); err != nil {
-			return err
-		}
-		if statusCode == http.StatusNoContent {
-			status = BaselineDisabled
-			return nil
-		}
-		out := bufio.NewWriter(file)
-		written, err := writeBaselineSarif(toolName, body, out)
-		if err != nil {
-			return err
-		}
-		if !written {
-			status = BaselineEmpty
-			return nil
-		}
-		status = BaselineWritten
-		return out.Flush()
+	request.ReadResponse = func(statusCode int, body io.Reader) (err error) {
+		status, err = writeBaselineFile(toolName, statusCode, body, path)
+		return err
 	}
 
-	if _, err := client.streaming().doRequest(&request); err != nil {
+	if _, err := client.doRequest(&request); err != nil {
 		var apiError *APIError
 		if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
 			// a Qodana Cloud which doesn't serve baselines at all
@@ -108,18 +104,31 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineS
 	return status, nil
 }
 
-// streaming returns the client to download the baseline with. The download gets no overall
-// deadline, because reading the baseline of a big project takes as long as it takes, and a request
-// which stops making progress is failed instead: by the timeout of the response header, and by the
-// stall guard of the body.
-func (client *QdClient) streaming() *QdClient {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.ResponseHeaderTimeout = getRequestTimeout()
-	return &QdClient{
-		httpClient: &http.Client{Transport: stallGuard{transport: transport, timeout: getRequestTimeout()}},
-		apiUrl:     client.apiUrl,
-		token:      client.token,
+// writeBaselineFile writes a successful response of Qodana Cloud to the baseline file. The file is
+// created by each attempt of the request, over what a failed attempt has left.
+func writeBaselineFile(toolName string, statusCode int, body io.Reader, path string) (status BaselineStatus, err error) {
+	file, err := os.Create(path)
+	if err != nil {
+		return BaselineUnknown, err
 	}
+	defer func() {
+		if closeErr := file.Close(); err == nil {
+			err = closeErr
+		}
+	}()
+
+	if statusCode == http.StatusNoContent {
+		return BaselineDisabled, nil
+	}
+	out := bufio.NewWriter(file)
+	written, err := writeBaselineSarif(toolName, body, out)
+	if err != nil {
+		return BaselineUnknown, err
+	}
+	if !written {
+		return BaselineEmpty, nil
+	}
+	return BaselineWritten, out.Flush()
 }
 
 // stallGuard fails a response whose body stops arriving. Without it a server which sends the

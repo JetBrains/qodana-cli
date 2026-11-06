@@ -21,7 +21,9 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,4 +52,40 @@ func TestBaselineForLinter(t *testing.T) {
 
 		assert.Equal(t, downloaded, baselineForLinter(downloaded, context))
 	})
+}
+
+// TestWithBaselineForLinter verifies that the linter is told the source of the baseline this CLI has
+// resolved, and compares its results with the cloud baseline the CLI hands it.
+func TestWithBaselineForLinter(t *testing.T) {
+	baselineFile := filepath.Join(t.TempDir(), "qodana.sarif.json")
+	for _, tc := range []struct {
+		name string
+		// launcherSource is the baseline source of the CLI which launched this one, empty for none
+		launcherSource string
+		givenBaseline  string
+		source         string
+	}{
+		{"cloud baseline of the launching CLI", qdenv.BaselineSourceCloud, baselineFile, qdenv.BaselineSourceCloud},
+		{"local baseline", "", baselineFile, qdenv.BaselineSourceLocal},
+		{"no baseline", "", "", qdenv.BaselineSourceNone},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			container := ""
+			if tc.launcherSource != "" {
+				container = "true"
+			}
+			t.Setenv(qdenv.QodanaDockerEnv, container)
+			t.Setenv(qdenv.QodanaBaselineSource, tc.launcherSource)
+			context := corescan.ContextBuilder{
+				Analyser: &product.NativeAnalyzer{Linter: product.JvmLinter},
+				Baseline: tc.givenBaseline,
+			}.Build()
+			baseline := platform.ResolveBaseline(tc.givenBaseline, "", product.QDJVM, t.TempDir())
+
+			linterContext := withBaselineForLinter(baseline, context)
+
+			assert.Equal(t, tc.givenBaseline, linterContext.Baseline())
+			assert.Equal(t, tc.source, qdenv.GetEnv(linterContext, qdenv.QodanaBaselineSource))
+		})
+	}
 }

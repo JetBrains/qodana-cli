@@ -38,10 +38,12 @@ func ExecWithTimeout(
 	arg0 string,
 	argv ...string,
 ) (int, error) {
-	return execWithEnv(cwd, nil, stdout, stderr, timeout, timeoutExitCode, arg0, argv...)
+	return ExecWithTimeoutAndEnv(cwd, nil, stdout, stderr, timeout, timeoutExitCode, arg0, argv...)
 }
 
-func execWithEnv(
+// ExecWithTimeoutAndEnv is ExecWithTimeout with the given environment of the subprocess, or the one of
+// this process if env is nil. Pass os.Environ() plus any extra variables.
+func ExecWithTimeoutAndEnv(
 	cwd string,
 	env []string,
 	stdout io.Writer,
@@ -86,7 +88,7 @@ func ExecRedirectOutput(cwd string, arg0 string, argv ...string) (string, string
 // subprocess environment. Pass os.Environ() plus any extra variables.
 func ExecRedirectOutputWithEnv(cwd string, env []string, arg0 string, argv ...string) (string, string, int, error) {
 	var stdout, stderr bytes.Buffer
-	res, err := execWithEnv(cwd, env, &stdout, &stderr, time.Duration(math.MaxInt64), 1, arg0, argv...)
+	res, err := ExecWithTimeoutAndEnv(cwd, env, &stdout, &stderr, time.Duration(math.MaxInt64), 1, arg0, argv...)
 	return stdout.String(), stderr.String(), res, err
 }
 

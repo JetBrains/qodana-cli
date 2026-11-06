@@ -4,9 +4,11 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mocklinter"
@@ -99,6 +101,37 @@ func TestInstallPlugins_PathWithSpaces(t *testing.T) {
 func TestRunQodanaLocal(t *testing.T) {
 	exePath := mocklinter.Native(t, mockIdeHandler)
 
+	exitCode, err := runQodanaLocal(nativeRunContext(t, exePath))
+	assert.NoError(t, err)
+	assert.Equal(t, 0, exitCode)
+}
+
+// TestRunQodanaLocalBaselineSource verifies that the IDE gets the baseline source of the context it
+// runs with, not the one left in the environment of the CLI: the first stage of a scoped run has no
+// baseline, whatever the run has resolved.
+func TestRunQodanaLocalBaselineSource(t *testing.T) {
+	t.Setenv(qdenv.QodanaBaselineSource, qdenv.BaselineSourceCloud)
+	sources := make(chan string, 1)
+	exePath := mocklinter.Native(t, func(ctx *mockexe.CallContext) int {
+		sources <- ctx.Env[qdenv.QodanaBaselineSource]
+		return mockIdeHandler(ctx)
+	})
+	stage := nativeRunContext(t, exePath).WithResolvedBaselineSource(qdenv.BaselineSourceNone)
+
+	exitCode, err := runQodanaLocal(stage)
+
+	require.NoError(t, err)
+	assert.Equal(t, 0, exitCode)
+	select {
+	case source := <-sources:
+		assert.Equal(t, qdenv.BaselineSourceNone, source)
+	case <-time.After(time.Second):
+		t.Fatal("the IDE was not launched")
+	}
+}
+
+// nativeRunContext returns the context of a native run of the mock IDE at exePath in fresh directories.
+func nativeRunContext(t *testing.T, exePath string) corescan.Context {
 	tmpDir := t.TempDir()
 	projectDir := filepath.Join(tmpDir, "project")
 	resultsDir := filepath.Join(tmpDir, "results")
@@ -109,7 +142,7 @@ func TestRunQodanaLocal(t *testing.T) {
 		assert.NoError(t, os.MkdirAll(dir, 0o755))
 	}
 
-	ctx := corescan.ContextBuilder{
+	return corescan.ContextBuilder{
 		Analyser: mocklinter.Linter().NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      exePath,
@@ -124,10 +157,6 @@ func TestRunQodanaLocal(t *testing.T) {
 		CacheDir:   cacheDir,
 		LogDir:     filepath.Join(tmpDir, "log"),
 	}.Build()
-
-	exitCode, err := runQodanaLocal(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, 0, exitCode)
 }
 
 func TestRunQodanaLocal_PathWithSpaces(t *testing.T) {

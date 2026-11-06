@@ -83,8 +83,11 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 func runQodanaLocal(c corescan.Context) (int, error) {
 	writeProperties(c)
 	args := getIdeRunCommand(c)
-	ideProcess, err := exec.ExecWithTimeout(
+	// the IDE gets the baseline source of the context, as a linter in a container does
+	ideEnv := append(os.Environ(), qdenv.QodanaBaselineSource+"="+qdenv.GetEnv(c, qdenv.QodanaBaselineSource))
+	ideProcess, err := exec.ExecWithTimeoutAndEnv(
 		".",
+		ideEnv,
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
 		exitcodes.QodanaTimeoutExitCodePlaceholder,

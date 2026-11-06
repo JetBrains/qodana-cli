@@ -120,27 +120,16 @@ But you can always override qodana.yaml options with the following command-line 
 
 			baseline := platform.ResolveBaseline(
 				scanContext.Baseline(),
-				platform.LauncherBaselineSource(),
 				scanContext.QodanaUploadToken(),
 				scanContext.Analyser().GetLinter().ProductCode,
 				scanContext.CacheDir(),
 			)
-			if baseline.IsFromCloud() {
-				scanContext = scanContext.WithCloudBaseline(baselineForLinter(baseline.BaselinePath(), scanContext))
-			} else {
-				scanContext = scanContext.WithResolvedBaselineSource(baseline.Source())
-			}
-			// set over a source of the environment, which qdenv.SetEnv would keep
-			if err := os.Setenv(qdenv.QodanaBaselineSource, baseline.Source()); err != nil {
-				log.Warnf("Failed to set %s: %v", qdenv.QodanaBaselineSource, err)
-			}
+			scanContext = withBaselineForLinter(baseline, scanContext)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			// not deferred: the exit code checks below leave the process with os.Exit
 			baseline.Cleanup()
-			if baseline.ReportsUsed(scanContext.Analyser().IsContainer()) {
-				fmt.Println(baseline.UsedMessage())
-			}
+			platform.ReportUsedBaseline(baseline, scanContext.Analyser().IsContainer())
 			if qdenv.IsContainer() {
 				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
 				if err != nil {
@@ -227,6 +216,14 @@ func checkExitCode(exitCode int, c corescan.Context) {
 		}
 		os.Exit(exitCode)
 	}
+}
+
+// withBaselineForLinter tells the linter which baseline this CLI has resolved for it.
+func withBaselineForLinter(baseline platform.Baseline, c corescan.Context) corescan.Context {
+	if cloudBaseline, ok := baseline.(platform.CloudBaseline); ok {
+		return c.WithCloudBaseline(baselineForLinter(cloudBaseline.BaselinePath(), c))
+	}
+	return c.WithResolvedBaselineSource(baseline.Source())
 }
 
 // baselineForLinter returns the path the linter reads the downloaded baseline from. A linter in a
