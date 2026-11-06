@@ -140,14 +140,13 @@ func TestWriteBaselineSarifQuotesToolName(t *testing.T) {
 	assert.Len(t, report.Runs[0].Results, 2, "the name must not add problems of its own")
 }
 
+// TestWriteBaselineSarifWithoutProblems verifies that a baseline without problems, which Qodana
+// Cloud answers with an empty list, writes no report.
 func TestWriteBaselineSarifWithoutProblems(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		body string
 	}{
-		{"empty body", ""},
-		{"blank body", "  \n"},
-		{"empty object", "{}"},
 		{"empty baseline", `{"baseline": []}`},
 		{"empty baseline with other fields", `{"total": 0, "baseline": []}`},
 	} {
@@ -227,6 +226,31 @@ func TestWriteBaselineSarifUnexpectedResponse(t *testing.T) {
 				written, _, err := writeBaselineToString(t, "QDJVM", tc.body)
 				assert.Error(t, err)
 				assert.False(t, written)
+			},
+		)
+	}
+}
+
+// TestWriteBaselineSarifWithoutBaseline verifies that a response without the list of problems is an
+// error rather than an empty baseline: Qodana Cloud always sends the list, so such a response can
+// only have been cut short.
+func TestWriteBaselineSarifWithoutBaseline(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		body  string
+		cause string
+	}{
+		{"empty body", "", "the response is empty"},
+		{"blank body", "  \n", "the response is empty"},
+		{"empty object", "{}", "no baseline in the response"},
+		{"object without a baseline", `{"total": 0}`, "no baseline in the response"},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				written, result, err := writeBaselineToString(t, "QDJVM", tc.body)
+				assert.ErrorContains(t, err, "unexpected baseline response: "+tc.cause)
+				assert.False(t, written)
+				assert.Empty(t, result)
 			},
 		)
 	}
@@ -444,30 +468,33 @@ func TestWriteBaselineDisabled(t *testing.T) {
 }
 
 // TestWriteBaselineEmpty verifies that a cloud baseline which is turned on but has no problems yet,
-// which Qodana Cloud answers with an empty body, is reported as empty.
+// which Qodana Cloud answers with an empty list, is reported as empty.
 func TestWriteBaselineEmpty(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		body string
-	}{
-		{"empty body", ""},
-		{"empty object", "{}"},
-		{"empty baseline", `{"baseline": []}`},
-	} {
-		t.Run(
-			tc.name, func(t *testing.T) {
-				status, report, err := requestBaseline(
-					t, func(w http.ResponseWriter, r *http.Request) {
-						_, _ = io.WriteString(w, tc.body)
-					},
-				)
+	status, report, err := requestBaseline(
+		t, func(w http.ResponseWriter, r *http.Request) {
+			_, _ = io.WriteString(w, `{"baseline":[]}`)
+		},
+	)
 
-				require.NoError(t, err)
-				assert.Equal(t, BaselineEmpty, status)
-				assert.Empty(t, report)
-			},
-		)
-	}
+	require.NoError(t, err)
+	assert.Equal(t, BaselineEmpty, status)
+	assert.Empty(t, report)
+}
+
+// TestWriteBaselineEmptyBody verifies that a body cut off before it began fails the download
+// instead of passing for an empty baseline.
+func TestWriteBaselineEmptyBody(t *testing.T) {
+	t.Setenv(qdenv.QodanaCloudRequestRetriesEnv, "1")
+
+	status, report, err := requestBaseline(
+		t, func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+		},
+	)
+
+	assert.ErrorContains(t, err, "baseline request failed")
+	assert.Equal(t, BaselineUnknown, status)
+	assert.Empty(t, report)
 }
 
 // TestWriteBaselineWithoutEndpoint verifies that a Qodana Cloud which doesn't serve baselines

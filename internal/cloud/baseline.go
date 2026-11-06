@@ -176,12 +176,8 @@ func baselineQuery(toolName string) string {
 // copying one problem at a time. It reports whether the response had any problem to write.
 func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, error) {
 	decoder := json.NewDecoder(in)
-	hasBaseline, err := openBaselineArray(decoder)
-	if err != nil {
+	if err := openBaselineArray(decoder); err != nil {
 		return false, fmt.Errorf("unexpected baseline response: %w", err)
-	}
-	if !hasBaseline {
-		return false, nil
 	}
 	encoder := json.NewEncoder(out)
 	problems := 0
@@ -217,50 +213,51 @@ func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, err
 	if problems == 0 {
 		return false, nil
 	}
-	_, err = io.WriteString(out, baselineSarifFooter)
+	_, err := io.WriteString(out, baselineSarifFooter)
 	return err == nil, err
 }
 
 // openBaselineArray reads the response up to the first problem of the baseline, skipping any other
-// field of the response. It reports whether the response has a baseline at all: the body of an
-// enabled but empty baseline is empty.
-func openBaselineArray(decoder *json.Decoder) (bool, error) {
+// field of the response. Qodana Cloud always answers with a list of problems, an empty one for a
+// baseline without problems, so a response without it is an error: it can only be cut short, and
+// mistaking it for an empty baseline would hide that.
+func openBaselineArray(decoder *json.Decoder) error {
 	token, err := decoder.Token()
 	if errors.Is(err, io.EOF) {
-		return false, nil
+		return errors.New("the response is empty")
 	}
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !isDelimiter(token, '{') {
-		return false, fmt.Errorf("expected an object, got '%v'", token)
+		return fmt.Errorf("expected an object, got '%v'", token)
 	}
 
 	for decoder.More() {
 		field, err := decoder.Token()
 		if err != nil {
-			return false, err
+			return err
 		}
 		if field != "baseline" {
 			var skipped json.RawMessage
 			if err := decoder.Decode(&skipped); err != nil {
-				return false, err
+				return err
 			}
 			continue
 		}
 		if token, err = decoder.Token(); err != nil {
-			return false, err
+			return err
 		}
 		if !isDelimiter(token, '[') {
-			return false, fmt.Errorf("expected a list of problems, got '%v'", token)
+			return fmt.Errorf("expected a list of problems, got '%v'", token)
 		}
-		return true, nil
+		return nil
 	}
-	// the object must be closed by the server, otherwise the baseline may have been cut off it
+	// an object which isn't closed was cut off before the baseline
 	if _, err := decoder.Token(); err != nil {
-		return false, err
+		return err
 	}
-	return false, nil
+	return errors.New("no baseline in the response")
 }
 
 func isDelimiter(token json.Token, delimiter rune) bool {
