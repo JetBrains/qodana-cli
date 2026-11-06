@@ -307,3 +307,7 @@ internal fun exampleSetDigest(cluster: EdictNextStoredCluster): String {
   }
   return sha256Hex(content)
 }
+
+/** Whether [evaluation] scored the inspection whose SHA-256 hex is [inspectionDigest] on this cluster's current examples. */
+internal fun EdictNextStoredCluster.isCurrentEvaluation(evaluation: EdictNextEvaluation, inspectionDigest: String): Boolean =
+  evaluation.inspectionHash == inspectionDigest && evaluation.exampleSetDigest == exampleSetDigest(this)
