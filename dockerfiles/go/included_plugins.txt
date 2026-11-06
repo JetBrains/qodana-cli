@@ -18,6 +18,7 @@ com.intellij.plugins.dependencyAnalysis
 org.jetbrains.security.package-checker
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.intellij.css
 com.jetbrains.restClient

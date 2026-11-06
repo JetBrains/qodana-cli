@@ -43,6 +43,7 @@ Git4Idea
 intellij.webpack
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 com.intellij.tailwindcss
 com.intellij.database
 com.intellij.react

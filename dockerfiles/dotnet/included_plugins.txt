@@ -39,6 +39,7 @@ intellij.webpack
 NodeJS
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.jetbrains.plugins.jade
 com.intellij.plugins.webcomponents

@@ -24,6 +24,7 @@ org.jetbrains.security.package-checker
 NodeJS
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.intellij.plugins.webcomponents
 Karma

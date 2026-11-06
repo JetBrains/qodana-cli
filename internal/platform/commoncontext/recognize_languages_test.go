@@ -24,7 +24,7 @@ import (
 func TestDirLanguagesExcluded(t *testing.T) {
 	expected := []string{"C", "Dockerfile", "Go", "Shell"}
 
-	actual, err := recognizeDirLanguages("testdata/TestDirLanguagesExcluded")
+	actual, _, err := recognizeDirLanguages("testdata/TestDirLanguagesExcluded")
 	if err != nil {
 		return
 	}

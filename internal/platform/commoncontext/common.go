@@ -186,11 +186,12 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 // SelectAnalyzerForPath gets linter for the given path
 func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 	var linters []product.Linter
+	var dominantLanguage string
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			languages := readIdeaDir(path)
 			if len(languages) == 0 {
-				languages, _ = recognizeDirLanguages(path)
+				languages, dominantLanguage, _ = recognizeDirLanguages(path)
 			}
 			if len(languages) == 0 {
 				msg.WarningMessage("No technologies detected (no source code files?)\n")
@@ -236,7 +237,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 
 	interactive := msg.IsInteractive()
 	linters = filterByLicensePlan(linters, token)
-	analyzer := selectAnalyzer(path, linters, interactive, selector)
+	analyzer := selectAnalyzer(path, linters, interactive, dominantLanguage == "Dart", selector)
 	if analyzer == nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
@@ -288,6 +289,7 @@ func selectAnalyzer(
 	path string,
 	linters []product.Linter,
 	interactive bool,
+	preferNative bool,
 	selectFunc func([]string) string,
 ) product.Analyzer {
 	var distribution product.Analyzer
@@ -300,6 +302,10 @@ func selectAnalyzer(
 
 	if len(choices) == 1 || !interactive {
 		distribution = selection[choices[0]]
+		selectedLinter := distribution.GetLinter()
+		if !interactive && preferNative && selectedLinter.SupportNative {
+			distribution = selectedLinter.NativeAnalyzer()
+		}
 	} else {
 		choice := selectFunc(choices)
 		if choice == "" {
