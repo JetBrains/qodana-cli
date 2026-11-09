@@ -24,30 +24,36 @@ internal const val MIN_FEEDBACK_PRECISION = 0.7
 /** Inspections one run analyses for feedback at most; each adds to the analysis time. */
 internal const val MAX_FEEDBACK_INSPECTIONS = 50
 
+/** The inspections whose findings may become review comments on a pull request, and how many comments it has [remaining]. */
+internal data class FeedbackSelection(val inspections: List<EvaluatedInspection>, val remaining: Int)
+
 /**
- * The inspections whose findings may become review comments on [pullRequest]: none once it got its
- * [MAX_FEEDBACK_PER_PULL_REQUEST] records, else the generated, not yet promoted ones whose current evaluation exceeds
- * [MIN_FEEDBACK_PRECISION] and that await fewer than [MAX_ACTIVE_FEEDBACK_PER_INSPECTION] answers. The most precise come
- * first, up to [MAX_FEEDBACK_INSPECTIONS].
+ * What [pullRequest] may still get: nothing once it got its [MAX_FEEDBACK_PER_PULL_REQUEST] records, else the rest of them, from
+ * the generated, not yet promoted inspections that have no record on it, whose current evaluation exceeds
+ * [MIN_FEEDBACK_PRECISION] and that await fewer than [MAX_ACTIVE_FEEDBACK_PER_INSPECTION] answers. The most precise come first,
+ * up to [MAX_FEEDBACK_INSPECTIONS].
  */
 internal fun selectFeedbackInspections(
     repository: EdictRepository,
     records: FeedbackRecords,
     pullRequest: ReviewReference,
-): List<EvaluatedInspection> {
+): FeedbackSelection {
     val active = records.active()
     // Answered records leave active: without the history, a pull request whose comments got answers would get new ones.
-    if ((active + records.history()).count { it.pullRequest == pullRequest } >= MAX_FEEDBACK_PER_PULL_REQUEST) return emptyList()
+    val commented = (active + records.history()).filter { it.pullRequest == pullRequest }
+    if (commented.size >= MAX_FEEDBACK_PER_PULL_REQUEST) return FeedbackSelection(emptyList(), 0)
+    val commentedClusters = commented.map(FeedbackRecord::clusterId).toSet()
     val activeByCluster = active.groupingBy(FeedbackRecord::clusterId).eachCount()
-    return repository.loadClusters()
+    val inspections = repository.loadClusters()
         .asSequence()
-        .filter { it.manifest.status == EdictNextClusterStatus.Generated }
+        .filter { it.manifest.status == EdictNextClusterStatus.Generated && it.id !in commentedClusters }
         .filter { activeByCluster.getOrDefault(it.id, 0) < MAX_ACTIVE_FEEDBACK_PER_INSPECTION }
         .mapNotNull { repository.feedbackInspection(it) }
         .filter { it.evaluation.precision > MIN_FEEDBACK_PRECISION }
         .sortedWith(compareByDescending<EvaluatedInspection> { it.evaluation.precision }.thenBy(EvaluatedInspection::clusterId))
         .take(MAX_FEEDBACK_INSPECTIONS)
         .toList()
+    return FeedbackSelection(inspections, MAX_FEEDBACK_PER_PULL_REQUEST - commented.size)
 }
 
 /**

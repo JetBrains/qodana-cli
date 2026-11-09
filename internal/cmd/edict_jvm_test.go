@@ -580,3 +580,34 @@ func TestEdictFeedbackPrepareForNoPullRequestCopiesNothingAndLogsOutsideTheProje
 		t.Fatalf("feedback prepare left files in the project: %v %v", entries, err)
 	}
 }
+
+func TestEdictFeedbackPostForNoPullRequestPostsNothingAndLogsOutsideTheProject(t *testing.T) {
+	t.Chdir(t.TempDir())
+	project := realWorkingDirectory(t)
+	initGitRepository(t, project)
+	event := filepath.Join(t.TempDir(), "event.json")
+	if err := os.WriteFile(event, []byte(`{"ref": "refs/heads/main"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GITHUB_EVENT_PATH", event)
+	// Nothing reaches the API: the run is for no pull request.
+	t.Setenv("GITHUB_API_URL", "https://api.github.invalid")
+	t.Setenv("GITHUB_TOKEN", "unused")
+	post := newEdictFeedbackCommand()
+	post.SetArgs([]string{"post", "--state-dir", t.TempDir(), "--sarif", filepath.Join(t.TempDir(), "qodana.sarif.json")})
+	post.SetIn(strings.NewReader(""))
+	var stdout, stderr bytes.Buffer
+	post.SetOut(&stdout)
+	post.SetErr(&stderr)
+
+	if err := post.ExecuteContext(context.Background()); err != nil {
+		t.Fatalf("feedback post: %v\n%s", err, stderr.String())
+	}
+
+	if !strings.Contains(stdout.String(), "The workflow runs for no pull request") {
+		t.Fatalf("feedback post logged:\n%s\n%s", stdout.String(), stderr.String())
+	}
+	if entries, err := os.ReadDir(project); err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
+		t.Fatalf("feedback post left files in the project: %v %v", entries, err)
+	}
+}

@@ -226,9 +226,81 @@ class StateBranchTest {
     )
   }
 
+  @Test
+  fun `reset takes the branch as origin has it, without the commits of the checkout`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    second.resolve(".edict/local.json").writeText("2")
+    git(second.resolve(".edict"), "add", "--all")
+    git(second.resolve(".edict"), "commit", "--quiet", "-m", "Local")
+    origin.publishState("third", mapOf("third.json" to "3"))
+
+    val base = state(second).worktree().resetToOrigin()
+
+    assertEquals(git(origin.path, "rev-parse", BRANCH).trim(), base)
+    assertEquals("$base\n", git(second.resolve(".edict"), "rev-parse", "HEAD"))
+  }
+
+  @Test
+  fun `reset refuses a checkout with uncommitted changes, which it would lose`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    second.resolve(".edict/local.json").writeText("2")
+
+    val failure = assertFailsWith<IllegalStateException> { state(second).worktree().resetToOrigin() }
+
+    assertEquals("${second.resolve(".edict")} has uncommitted changes", failure.message)
+  }
+
+  @Test
+  fun `publish pushes the changes onto the branch as reset took it`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    val worktree = state(second).worktree()
+    val base = worktree.resetToOrigin()
+    second.resolve(".edict/second.json").writeText("2")
+
+    val published = worktree.publish("Run 2", base)
+
+    assertEquals(true, published)
+    assertEquals("Run 2\nRun 1\n", git(origin.path, "log", "-2", "--format=%s", BRANCH))
+  }
+
+  @Test
+  fun `publish reports a push that lost to another run's, leaving origin as that run made it`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    val worktree = state(second).worktree()
+    val base = worktree.resetToOrigin()
+    origin.raceNextStatePush("other", mapOf("other.json" to "o"))
+    second.resolve(".edict/second.json").writeText("2")
+
+    val published = worktree.publish("Run 2", base)
+
+    assertEquals(false, published)
+    assertEquals("first.json\nother.json\n", git(origin.path, "ls-tree", "--name-only", BRANCH))
+  }
+
+  @Test
+  fun `publish fails when origin refuses the push for another reason`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    val worktree = state(second).worktree()
+    val base = worktree.resetToOrigin()
+    failingHook(origin.path, "pre-receive")
+    second.resolve(".edict/second.json").writeText("2")
+
+    assertFailsWith<IllegalStateException> { worktree.publish("Run 2", base) }
+  }
+
   private fun state(project: Path) = StateBranch(EdictLayout(project, project.resolve(".edict")), BRANCH)
 
-  /** A [name] hook of [project] that refuses whatever it is run for. */
+  /** A [name] hook of the repository [project] that refuses whatever it is run for. */
   private fun failingHook(project: Path, name: String) {
     val hooks = Path.of(git(project, "rev-parse", "--path-format=absolute", "--git-path", "hooks").trim()).createDirectories()
     hooks.resolve(name).apply { writeText("#!/bin/sh\nexit 1\n") }.toFile().setExecutable(true)
