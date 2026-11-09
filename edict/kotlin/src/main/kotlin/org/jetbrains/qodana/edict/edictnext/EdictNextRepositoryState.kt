@@ -582,7 +582,8 @@ internal class EdictNextRepositoryState(
       "edict-git-history-signal-enrichment",
       "edict-retrospective-signal-analysis",
     )
-    private val SIGNAL_PUBLISHERS = COMMIT_SIGNAL_PUBLISHERS + setOf("edict-pr-signal-analysis", "edict-check-weak-signal-promotion")
+    private val SIGNAL_PUBLISHERS =
+      COMMIT_SIGNAL_PUBLISHERS + setOf("edict-pr-signal-analysis", "edict-check-weak-signal-promotion", "edict-feedback-signal-analysis")
     /** Statuses a worker may finish its own task with. */
     private val TERMINAL_STATUSES = setOf("completed", "failed")
 

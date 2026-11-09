@@ -397,6 +397,7 @@ class EdictNextMcpToolsetTest {
         EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, project.root)),
         EdictSourceFileService(project.root, null),
         promotion = PromotionService(repository, EdictConfiguration(), null, NoRedaction),
+        feedback = null,
       ).createServer().createSession(transport)
       closed.await()
       val responses = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)

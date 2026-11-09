@@ -60,6 +60,7 @@ internal fun edictNextToolset(
     EdictSourceFileService(layout.root, null),
     configuration,
     promotion ?: PromotionService(repository, configuration, null, NoRedaction),
+    feedback = null,
   )
 }
 

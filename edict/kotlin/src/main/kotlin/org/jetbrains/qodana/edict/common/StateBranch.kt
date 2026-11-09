@@ -74,21 +74,23 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
   inner class Worktree internal constructor() {
     /**
      * Commits every change with [message], rebases the commit onto the branch that another run may have pushed to
-     * origin meanwhile, and pushes the branch to origin, setting it as upstream.
+     * origin meanwhile, and pushes the branch to origin, setting it as upstream. Rebases again when another run pushes
+     * between the rebase and the push, at most [MAX_PUSH_ATTEMPTS] times.
      */
     fun push(message: String) {
       commit(message)
-      if (fetchFromOrigin(stateDirectory)) {
+      var base = originRevision()
+      repeat(MAX_PUSH_ATTEMPTS) {
+        if (base != null) rebaseOnto("origin/$branch")
         try {
-          git(stateDirectory, *EDICT_IDENTITY, "rebase", "--quiet", "--no-verify", "origin/$branch")
+          git(stateDirectory, "push", "--quiet", "--no-verify", "--set-upstream", "origin", "HEAD:refs/heads/$branch")
+          return
         }
         catch (e: IllegalStateException) {
-          // A server must not find the state in the middle of a rebase.
-          runCatching { git(stateDirectory, "rebase", "--abort") }.exceptionOrNull()?.let(e::addSuppressed)
-          throw e
+          base = originMovedFrom(base, e) ?: throw e
         }
       }
-      git(stateDirectory, "push", "--quiet", "--no-verify", "--set-upstream", "origin", "HEAD:refs/heads/$branch")
+      error("Other runs kept pushing $branch to origin; $MAX_PUSH_ATTEMPTS pushes of the Edict state were refused")
     }
 
     /**
@@ -113,19 +115,37 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
         return true
       }
       catch (e: IllegalStateException) {
-        // Git exits alike for a push refused as not fast-forward and for one that failed: only after the first is origin
-        // elsewhere than the commit this one starts from.
-        val moved = try {
-          fetchFromOrigin(stateDirectory) && revision("origin/$branch") != base
-        }
-        catch (fetch: IllegalStateException) {
-          e.addSuppressed(fetch)
-          false
-        }
-        if (moved) return false
+        if (originMovedFrom(base, e) != null) return false
         throw e
       }
     }
+
+    private fun rebaseOnto(upstream: String) {
+      try {
+        git(stateDirectory, *EDICT_IDENTITY, "rebase", "--quiet", "--no-verify", upstream)
+      }
+      catch (e: IllegalStateException) {
+        // A server must not find the state in the middle of a rebase.
+        runCatching { git(stateDirectory, "rebase", "--abort") }.exceptionOrNull()?.let(e::addSuppressed)
+        throw e
+      }
+    }
+
+    /**
+     * The commit origin's branch moved to from [base] after a push [failed]; null when it did not move. Git exits alike for a
+     * push refused as not fast-forward and for one that failed otherwise, and only after the first did origin move. A failed
+     * fetch adds to [failed].
+     */
+    private fun originMovedFrom(base: String?, failed: IllegalStateException): String? = try {
+      originRevision()?.takeIf { it != base }
+    }
+    catch (fetch: IllegalStateException) {
+      failed.addSuppressed(fetch)
+      null
+    }
+
+    /** The commit origin's branch is on, fetched now; null when origin has no such branch. */
+    private fun originRevision(): String? = if (fetchFromOrigin(stateDirectory)) revision("origin/$branch") else null
 
     /** Commits every change with [message], if there is any; Edict's own commits, which the project's hooks are not for. */
     private fun commit(message: String) {
@@ -186,6 +206,9 @@ internal sealed interface StateCheckout {
 }
 
 internal const val DEFAULT_EDICT_STATE_BRANCH = "edict/state"
+
+/** Pushes of the state that [StateBranch.Worktree.push] tries while other runs keep pushing the branch meanwhile. */
+private const val MAX_PUSH_ATTEMPTS = 5
 
 /** Edict commits as itself, so it doesn't fail where no git identity is configured, as on a fresh CI runner. */
 private val EDICT_IDENTITY = arrayOf("-c", "user.name=Qodana Edict", "-c", "user.email=qodana-support@jetbrains.com")
