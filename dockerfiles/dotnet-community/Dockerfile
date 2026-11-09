@@ -120,8 +120,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt-get autoremove --purge -y
 EOF
 
-ARG QD_RELEASE="2026.3"
-ENV QD_VERSION="2026.3" QD_IMAGE="dotnet-community"
+ARG QD_RELEASE="2026.1"
+ENV QD_VERSION="2026.1" QD_IMAGE="dotnet-community"
 ARG QD_BUILD="QDNETC-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

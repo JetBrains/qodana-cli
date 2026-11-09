@@ -50,14 +50,14 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 ENV SKIP_YARN_COREPACK_CHECK=0
 
 ARG QD_RELEASE=""
-ARG QD_VERSION="2026.3"
+ARG QD_VERSION="2026.1"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="js"
 ARG QD_CODE="QDJS"
-ARG QD_BUILD="263.7900"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDJS-263.7900.26.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDJS-263.7900.26-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDJS-263.7900.26.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDJS-263.7900.26-aarch64.tar.gz.sha256"
+ARG QD_BUILD="261.25882"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJS-261.25882.140.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJS-261.25882.140-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJS-261.25882.140.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJS-261.25882.140-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
