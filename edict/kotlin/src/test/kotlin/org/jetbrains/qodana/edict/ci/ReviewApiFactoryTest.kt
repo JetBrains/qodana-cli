@@ -41,21 +41,21 @@ internal class ReviewApiFactoryTest {
   @SetEnvironmentVariable(key = "GITHUB_TOKEN", value = "github-token")
   @SetEnvironmentVariable(key = "GH_TOKEN", value = "gh-token")
   fun `GITHUB_TOKEN is preferred to GH_TOKEN`() {
-    assertEquals("github-token", gitHubToken())
+    assertEquals("github-token", gitHubToken().getOrThrow())
   }
 
   @Test
   @SetEnvironmentVariable(key = "GITHUB_TOKEN", value = " ")
   @SetEnvironmentVariable(key = "GH_TOKEN", value = "gh-token")
   fun `GH_TOKEN is taken when GITHUB_TOKEN is blank`() {
-    assertEquals("gh-token", gitHubToken())
+    assertEquals("gh-token", gitHubToken().getOrThrow())
   }
 
   @Test
   fun `a GitHub client without a token is refused`() {
     val error = assertFailsWith<IllegalArgumentException> { gitHubReviewApi(KOTLIN, emptySet()) }
 
-    assertEquals("github:github.com/JetBrains/kotlin requires GITHUB_TOKEN or GH_TOKEN in the server environment", error.message)
+    assertEquals("github:github.com/JetBrains/kotlin requires a token in the server environment: Neither GITHUB_TOKEN nor GH_TOKEN holds a GitHub token", error.message)
   }
 
   @Test

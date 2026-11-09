@@ -42,6 +42,12 @@ func newEdictFeedbackCommand() *cobra.Command {
 		Use:   "feedback",
 		Short: "Show findings of not yet promoted Edict inspections on pull requests",
 	}
+	command.AddCommand(newEdictFeedbackPrepareCommand(), newEdictFeedbackPostCommand())
+	return command
+}
+
+// newEdictFeedbackPrepareCommand returns the command that runs before the scan.
+func newEdictFeedbackPrepareCommand() *cobra.Command {
 	var stateDir, outputDir, configFile string
 	prepare := &cobra.Command{
 		Use:   "prepare",
@@ -69,8 +75,39 @@ request already got all its comments, or no inspection qualifies.`,
 	prepare.Flags().StringVar(&outputDir, "output-dir", "", "Missing or empty directory outside the project to copy the inspections to run into")
 	_ = prepare.MarkFlagRequired("output-dir")
 	prepare.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
-	command.AddCommand(prepare)
-	return command
+	return prepare
+}
+
+// newEdictFeedbackPostCommand returns the command that runs after the scan.
+func newEdictFeedbackPostCommand() *cobra.Command {
+	var stateDir, sarifFile, configFile string
+	post := &cobra.Command{
+		Use:   "post",
+		Short: "Comment on a pull request with findings of the inspections 'prepare' selected",
+		Long: `After 'qodana scan' ran the inspections of 'feedback prepare', reserve their findings in the SARIF
+report on lines the pull request adds, within the comment limits of the pull request and of each inspection,
+by pushing them to the Edict state branch from --state-dir, the checkout of 'prepare'. Then post them as review
+comments, at the commit the report names as analysed, that ask for a reaction.
+
+Reads the pull request from GITHUB_EVENT_PATH and the API from GITHUB_API_URL, and comments with GITHUB_TOKEN
+(or GH_TOKEN), which needs to write pull requests; pushing the state needs the checkout's credentials to write
+contents.`,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
+		RunE: func(command *cobra.Command, _ []string) error {
+			args := append(
+				[]string{"feedback-post", "--state-dir", stateDir, "--sarif", sarifFile},
+				edictQodanaYamlArguments(".", configFile)...,
+			)
+			return runEdictJVM(command, args...)
+		},
+	}
+	post.Flags().StringVar(&stateDir, "state-dir", "", "Directory where 'feedback prepare' checked the Edict state out")
+	_ = post.MarkFlagRequired("state-dir")
+	post.Flags().StringVar(&sarifFile, "sarif", "", "SARIF report of the scan, qodana.sarif.json in its results directory")
+	_ = post.MarkFlagRequired("sarif")
+	post.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
+	return post
 }
 
 // newEdictStateCommand returns the commands for the Edict state branch that install checks out.

@@ -77,11 +77,7 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
      * origin meanwhile, and pushes the branch to origin, setting it as upstream.
      */
     fun push(message: String) {
-      // Edict's own commits: the project's hooks are not for them.
-      git(stateDirectory, "add", "--all")
-      if (git(stateDirectory, "status", "--porcelain").isNotBlank()) {
-        git(stateDirectory, *EDICT_IDENTITY, "commit", "--quiet", "--no-verify", "-m", message)
-      }
+      commit(message)
       if (fetchFromOrigin(stateDirectory)) {
         try {
           git(stateDirectory, *EDICT_IDENTITY, "rebase", "--quiet", "--no-verify", "origin/$branch")
@@ -94,6 +90,52 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
       }
       git(stateDirectory, "push", "--quiet", "--no-verify", "--set-upstream", "origin", "HEAD:refs/heads/$branch")
     }
+
+    /**
+     * Moves the checkout to the branch as origin has it now, dropping its local commits, and returns that commit's full SHA;
+     * fails on uncommitted changes, which it would lose, and when origin has no such branch.
+     */
+    fun resetToOrigin(): String {
+      check(git(stateDirectory, "status", "--porcelain").isBlank()) { "$stateDirectory has uncommitted changes" }
+      check(fetchFromOrigin(stateDirectory)) { "origin has no $branch" }
+      git(stateDirectory, "reset", "--quiet", "--hard", "origin/$branch")
+      return revision("HEAD")
+    }
+
+    /**
+     * Commits every change with [message] onto [base], the commit [resetToOrigin] returned, and pushes it to origin. False when origin
+     * got other commits since, which the push refuses to overwrite.
+     */
+    fun publish(message: String, base: String): Boolean {
+      commit(message)
+      try {
+        git(stateDirectory, "push", "--quiet", "--no-verify", "origin", "HEAD:refs/heads/$branch")
+        return true
+      }
+      catch (e: IllegalStateException) {
+        // Git exits alike for a push refused as not fast-forward and for one that failed: only after the first is origin
+        // elsewhere than the commit this one starts from.
+        val moved = try {
+          fetchFromOrigin(stateDirectory) && revision("origin/$branch") != base
+        }
+        catch (fetch: IllegalStateException) {
+          e.addSuppressed(fetch)
+          false
+        }
+        if (moved) return false
+        throw e
+      }
+    }
+
+    /** Commits every change with [message], if there is any; Edict's own commits, which the project's hooks are not for. */
+    private fun commit(message: String) {
+      git(stateDirectory, "add", "--all")
+      if (git(stateDirectory, "status", "--porcelain").isNotBlank()) {
+        git(stateDirectory, *EDICT_IDENTITY, "commit", "--quiet", "--no-verify", "-m", message)
+      }
+    }
+
+    private fun revision(name: String): String = git(stateDirectory, "rev-parse", "--verify", name).trim()
   }
 
   /** Fetches [branch] from origin into `origin/<branch>`; false when there is no origin or it has no such branch. */

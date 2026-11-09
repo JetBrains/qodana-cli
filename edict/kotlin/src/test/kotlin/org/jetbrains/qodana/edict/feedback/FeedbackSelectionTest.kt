@@ -34,7 +34,7 @@ class FeedbackSelectionTest {
     repository.store(cluster("c", precision = 0.9))
     repository.store(cluster("b", precision = 0.9))
 
-    assertEquals(listOf(inspection("b"), inspection("c"), inspection("a")), select())
+    assertEquals(selection(inspection("b"), inspection("c"), inspection("a")), select())
   }
 
   @Test
@@ -42,7 +42,7 @@ class FeedbackSelectionTest {
     repository.store(cluster("generated"))
     repository.store(cluster("pending").copy(status = EdictNextClusterStatus.Pending))
 
-    assertEquals(listOf(inspection("generated")), select())
+    assertEquals(selection(inspection("generated")), select())
   }
 
   @Test
@@ -50,7 +50,7 @@ class FeedbackSelectionTest {
     repository.store(cluster("present"))
     repository.store(cluster("missing").copy(inspection = null))
 
-    assertEquals(listOf(inspection("present")), select())
+    assertEquals(selection(inspection("present")), select())
   }
 
   @Test
@@ -63,7 +63,7 @@ class FeedbackSelectionTest {
     val earlierBytes = inspectionPromotion(PromotionPrState.CLOSED, clusterId = "regenerated", inspectionDigest = "0".repeat(64))
     repository.store(cluster("regenerated").copy(promotions = listOf(earlierBytes)))
 
-    assertEquals(listOf(inspection("regenerated")), select())
+    assertEquals(selection(inspection("regenerated")), select())
   }
 
   @Test
@@ -71,7 +71,7 @@ class FeedbackSelectionTest {
     repository.store(cluster("evaluated"))
     repository.store(cluster("unevaluated").copy(evaluation = null))
 
-    assertEquals(listOf(inspection("evaluated")), select())
+    assertEquals(selection(inspection("evaluated")), select())
   }
 
   @Test
@@ -79,7 +79,7 @@ class FeedbackSelectionTest {
     repository.store(cluster("current"))
     repository.store(cluster("outdated").copy(evaluation = EvaluationFixture(precision = 0.9, inspectionDigest = "0".repeat(64))))
 
-    assertEquals(listOf(inspection("current")), select())
+    assertEquals(selection(inspection("current")), select())
   }
 
   @Test
@@ -87,7 +87,16 @@ class FeedbackSelectionTest {
     repository.store(cluster("at-threshold", precision = MIN_FEEDBACK_PRECISION))
     repository.store(cluster("above-threshold", precision = 0.71))
 
-    assertEquals(listOf(inspection("above-threshold")), select())
+    assertEquals(selection(inspection("above-threshold")), select())
+  }
+
+  @Test
+  fun `leaves out an inspection that already has a record on the pull request, answered ones included`() {
+    repository.store(cluster("commented"))
+    repository.store(cluster("free"))
+    repository.paths.storeHistory(feedbackRecord(0, clusterId = "commented"))
+
+    assertEquals(FeedbackSelection(listOf(inspection("free")), MAX_FEEDBACK_PER_PULL_REQUEST - 1), select())
   }
 
   @Test
@@ -98,7 +107,7 @@ class FeedbackSelectionTest {
     repository.paths.storeActive(*Array(MAX_ACTIVE_FEEDBACK_PER_INSPECTION) { feedbackRecord(it, "busy", pullRequest(100 + it)) })
     repository.paths.storeActive(*Array(MAX_ACTIVE_FEEDBACK_PER_INSPECTION - 1) { feedbackRecord(20 + it, "free", pullRequest(200 + it)) })
 
-    assertEquals(listOf(inspection("free")), select())
+    assertEquals(selection(inspection("free")), select())
   }
 
   @Test
@@ -107,16 +116,16 @@ class FeedbackSelectionTest {
     repository.paths.storeActive(feedbackRecord(0), feedbackRecord(1))
     repository.paths.storeHistory(feedbackRecord(2))
 
-    assertEquals(emptyList(), select())
+    assertEquals(FeedbackSelection(emptyList(), 0), select())
   }
 
   @Test
   fun `selects for a pull request below its comment limit`() {
     repository.store(cluster("rule"))
-    repository.paths.storeActive(feedbackRecord(0))
-    repository.paths.storeHistory(feedbackRecord(1))
+    repository.paths.storeActive(feedbackRecord(0, clusterId = "other"))
+    repository.paths.storeHistory(feedbackRecord(1, clusterId = "another"))
 
-    assertEquals(listOf(inspection("rule")), select())
+    assertEquals(FeedbackSelection(listOf(inspection("rule")), 1), select())
   }
 
   @Test
@@ -124,10 +133,13 @@ class FeedbackSelectionTest {
     val ids = List(MAX_FEEDBACK_INSPECTIONS + 1) { "rule-%02d".format(it) }
     ids.forEach { repository.store(cluster(it)) }
 
-    assertEquals(ids.take(MAX_FEEDBACK_INSPECTIONS).map { inspection(it) }, select())
+    assertEquals(FeedbackSelection(ids.take(MAX_FEEDBACK_INSPECTIONS).map { inspection(it) }, MAX_FEEDBACK_PER_PULL_REQUEST), select())
   }
 
-  private fun select(): List<EvaluatedInspection> = selectFeedbackInspections(repository, FeedbackRecords(repository.paths), PULL_REQUEST)
+  private fun select(): FeedbackSelection = selectFeedbackInspections(repository, FeedbackRecords(repository.paths), PULL_REQUEST)
+
+  /** What a pull request without records may get: [inspections], and all its comments. */
+  private fun selection(vararg inspections: EvaluatedInspection) = FeedbackSelection(inspections.toList(), MAX_FEEDBACK_PER_PULL_REQUEST)
 
   /** The stored inspection of cluster [id] with its stored evaluation, as a selection returns it. */
   private fun inspection(id: String): EvaluatedInspection {

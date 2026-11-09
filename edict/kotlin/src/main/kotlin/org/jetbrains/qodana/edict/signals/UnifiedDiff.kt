@@ -25,6 +25,12 @@ object UnifiedDiff {
 
     fun parse(diff: String): Changes = parseDiff(diff).changes
 
+    /** The lines that [hunks], the hunks of one file without its file headers, as GitHub shows a patch, add on its new side. */
+    fun addedLines(hunks: String): List<Int> = parseDiff("--- a/$HUNKS_PATH\n+++ b/$HUNKS_PATH\n$hunks").changes.after[HUNKS_PATH].orEmpty()
+
+    /** The path [addedLines] gives the hunks it parses, which name none. */
+    private const val HUNKS_PATH = "file"
+
     /**
      * The Git-format diff of one file from [before] to [after], with [context] lines around each change, or an empty
      * string when nothing changed. A null side is an absent file; paths are repository-relative and appear as `a/` and

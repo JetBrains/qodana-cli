@@ -34,24 +34,12 @@ internal fun prepareFeedback(
     require(!inspectionsDirectory.exists() || inspectionsDirectory.listDirectoryEntries().isEmpty()) {
         "The directory for the feedback inspections is not empty: $inspectionsDirectory"
     }
-    val pullRequest = when (event) {
-        ActionsPullRequest.None -> {
-            logger.info { "The workflow runs for no pull request; no Edict feedback" }
-            return
-        }
-
-        is ActionsPullRequest.FromFork -> {
-            logger.warn { "Edict promotion comments are unavailable: ${event.reference.url} comes from a fork" }
-            return
-        }
-
-        is ActionsPullRequest.Own -> event.reference
-    }
+    val pullRequest = event.feedbackPullRequest() ?: return
     val branch = StateBranch(layout, stateBranch)
     val checkout = branch.checkOut()
     logger.info { branch.describe(checkout) }
     val paths = EdictRepositoryDirectory(layout.stateDirectory)
-    val inspections = selectFeedbackInspections(EdictRepository(paths), FeedbackRecords(paths), pullRequest)
+    val inspections = selectFeedbackInspections(EdictRepository(paths), FeedbackRecords(paths), pullRequest).inspections
     if (inspections.isEmpty()) {
         logger.info { "No Edict inspection runs for feedback on ${pullRequest.url}" }
         return

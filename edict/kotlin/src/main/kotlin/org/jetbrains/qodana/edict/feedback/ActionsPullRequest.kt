@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.ci.CiProviderId
@@ -12,6 +13,11 @@ import org.jetbrains.qodana.edict.common.wireJson
 import java.nio.file.Path
 import kotlin.io.path.readText
 
+private val logger = KotlinLogging.logger {}
+
+/** How a warning of a feedback run that cannot comment starts, the same for every reason, so that a workflow can find it. */
+internal const val FEEDBACK_UNAVAILABLE = "Edict promotion comments are unavailable"
+
 /** The pull request a GitHub Actions workflow runs for. */
 internal sealed interface ActionsPullRequest {
     /** The workflow runs for something else, such as a push. */
@@ -22,6 +28,21 @@ internal sealed interface ActionsPullRequest {
 
     /** A pull request between branches of the repository itself. */
     data class Own(val reference: ReviewReference) : ActionsPullRequest
+}
+
+/** The pull request that gets feedback, which only one of the repository itself does; logs why another run gets none. */
+internal fun ActionsPullRequest.feedbackPullRequest(): ReviewReference? = when (this) {
+    ActionsPullRequest.None -> {
+        logger.info { "The workflow runs for no pull request; no Edict feedback" }
+        null
+    }
+
+    is ActionsPullRequest.FromFork -> {
+        logger.warn { "$FEEDBACK_UNAVAILABLE: ${reference.url} comes from a fork" }
+        null
+    }
+
+    is ActionsPullRequest.Own -> reference
 }
 
 /** The file holding the event of the workflow run, which GitHub Actions names in `GITHUB_EVENT_PATH` for every run. */
