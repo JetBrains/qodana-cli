@@ -7,21 +7,23 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import java.nio.file.Path
+import java.time.Instant
+import java.time.YearMonth
+import java.time.ZoneOffset
 import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteExisting
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
-/**
- * A finding of a not yet promoted inspection, reserved for a review comment on [pullRequest]; the comment's answer becomes a
- * Signal of the cluster [clusterId].
- */
+/** A finding of a not yet promoted inspection, reserved for a review comment on [pullRequest]. */
 @Serializable
 internal data class FeedbackRecord(
     /** Names the record's file; the review comment carries it. */
     val id: String,
+    /** The cluster whose inspection reported the finding. */
     val clusterId: String,
     val pullRequest: ReviewReference,
     /** The full SHA of the commit the inspection reported the finding on. */
@@ -50,6 +52,13 @@ internal class FeedbackRecords(private val paths: EdictRepositoryDirectory) {
     /** Stores [record] as awaiting an answer. */
     fun addActive(record: FeedbackRecord) {
         paths.activeFeedbackDirectory.createDirectories().resolve(record.fileName).writeText(record.fileText())
+    }
+
+    /** Moves the active [record] to the history of the month it was reserved in. */
+    fun moveToHistory(record: FeedbackRecord) {
+        val month = YearMonth.from(Instant.parse(record.createdAt).atZone(ZoneOffset.UTC))
+        paths.feedbackHistoryDirectory.resolve(month.toString()).createDirectories().resolve(record.fileName).writeText(record.fileText())
+        paths.activeFeedbackDirectory.resolve(record.fileName).deleteExisting()
     }
 }
 

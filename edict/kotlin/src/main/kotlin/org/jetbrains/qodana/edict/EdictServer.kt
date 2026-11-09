@@ -22,6 +22,10 @@ import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.EdictSourceFileService
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.feedback.FeedbackSignals
+import org.jetbrains.qodana.edict.feedback.FeedbackMcpToolset
+import org.jetbrains.qodana.edict.feedback.FeedbackRecords
+import org.jetbrains.qodana.edict.feedback.GitHubFeedbackApi
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
@@ -62,13 +66,15 @@ internal class EdictServer private constructor(
       configuration: EdictConfiguration,
       ciReviews: ReviewApi?,
       promotionReviews: ReviewApi?,
+      feedbackApi: GitHubFeedbackApi?,
     ): EdictServer {
       val store = EdictNextRepositoryState.open(layout.stateDirectory)
       try {
         // PR extraction records the Signals of one correction; distribution in the same run offers them together.
         val signalPairs = EdictNextSignalPairs()
         // The lock above created the state directory, so the repository can be opened now.
-        val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
+        val paths = EdictRepositoryDirectory(layout.stateDirectory)
+        val repository = EdictRepository(paths)
         // TODO: a changed edict.promotion.url leaves active promotions in the earlier repository, which the promotion
         //  client cannot read: inspections on review, closed ones of generated clusters that checkReviews still reads, and
         //  weak-signal reviews in promotions/active.json. Their checks fail on every run; decide how to handle the change.
@@ -100,6 +106,7 @@ internal class EdictServer private constructor(
           PromotionService(repository, configuration, promotionReviews, store, executionBranch = {
             GitRepository(layout.root).currentBranch()
           }),
+          feedbackApi?.let { FeedbackMcpToolset(management, FeedbackSignals(FeedbackRecords(paths), it, store)) },
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
           mcpStreamableHttp { toolset.createServer() }

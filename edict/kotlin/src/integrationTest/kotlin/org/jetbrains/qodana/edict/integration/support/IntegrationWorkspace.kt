@@ -118,6 +118,7 @@ internal class IntegrationWorkspace private constructor(
                 configuration = configuration,
                 ciReviews = ciReviews,
                 promotionReviews = promotionReviews,
+                feedbackApi = null,
             ).use { server ->
                 val store = server.store
                 val runtime = CodexRunner(

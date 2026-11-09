@@ -6,6 +6,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.*
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.feedback.FeedbackMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.promotion.PromotionReviewDecision
 import org.jetbrains.qodana.edict.promotion.PromotionService
@@ -24,6 +25,8 @@ internal class EdictNextMcpToolset(
   private val sourceFiles: EdictSourceFileService,
   private val configuration: EdictConfiguration = EdictConfiguration(),
   private val promotion: PromotionService,
+  /** The feedback tools, where `edict.ci` is on GitHub. */
+  private val feedback: FeedbackMcpToolset?,
 ) {
   fun createServer(): Server = Server(
     serverInfo = Implementation(
@@ -41,6 +44,7 @@ internal class EdictNextMcpToolset(
   private fun registerTools(server: Server) {
     management.registerTools(server, configuration.calculatePrice)
     enrichment.registerTools(server)
+    feedback?.registerTools(server)
     registerPromotionTools(server)
 
     server.addTool(

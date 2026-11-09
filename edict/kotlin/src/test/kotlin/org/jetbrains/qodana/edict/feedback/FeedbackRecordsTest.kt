@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -15,6 +16,20 @@ import kotlin.test.assertFailsWith
 class FeedbackRecordsTest {
   @TempDir
   lateinit var directory: Path
+
+  @Test
+  fun `a record moves to the history of the month it was reserved in`() {
+    val paths = EdictRepositoryDirectory(directory)
+    val record = feedbackRecord(1)
+    val records = FeedbackRecords(paths)
+    records.addActive(record)
+
+    records.moveToHistory(record)
+
+    assertEquals(emptyList(), records.active())
+    // The record was reserved on 2026-11-05.
+    assertEquals(record.fileText(), paths.feedbackHistoryDirectory.resolve("2026-11/f-01.json").readText())
+  }
 
   @Test
   fun `refuses a record stored under another record's name`() {

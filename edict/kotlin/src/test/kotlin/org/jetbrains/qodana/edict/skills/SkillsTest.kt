@@ -14,7 +14,7 @@ class SkillsTest {
     @Test
     fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
-        assertEquals(19, installed.size)
+        assertEquals(20, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
             val name = policy.name
@@ -196,7 +196,7 @@ class SkillsTest {
         val defaultStages = Regex("(?m)^\\d+\\. `([^`]+)`").findAll(manager.substringAfter("# Default repository pipeline"))
             .map { it.groupValues[1] }.toList()
         assertEquals(
-            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
+            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-feedback-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
             defaultStages,
         )
         assertFalse("edict-next-generation" in manager)

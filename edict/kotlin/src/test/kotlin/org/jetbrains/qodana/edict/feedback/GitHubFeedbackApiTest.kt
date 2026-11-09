@@ -8,8 +8,17 @@ import org.jetbrains.qodana.edict.ci.support.answer
 import org.jetbrains.qodana.edict.ci.support.answeredWith
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
+import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_COMMENTS
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_FILES
+import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_READ
+import org.jetbrains.qodana.edict.feedback.support.commentUrl
+import org.jetbrains.qodana.edict.feedback.support.edictComment
+import org.jetbrains.qodana.edict.feedback.support.pullRequestIn
+import org.jetbrains.qodana.edict.feedback.support.reply
+import org.jetbrains.qodana.edict.feedback.support.reviewComments
+import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -32,6 +41,37 @@ class GitHubFeedbackApiTest {
 
     // GitHub shows no patch of a binary file.
     assertEquals(mapOf("src/Main.kt" to setOf(3, 4), "src/New.kt" to setOf(1, 2)), added)
+  }
+
+  @Test
+  fun `a pull request answers the comments of Edict with their thumbs and replies, apart from other review comments`() {
+    val recording = feedbackScripted(
+      PULL_REQUEST_READ answeredWith pullRequestIn("open"),
+      PULL_REQUEST_COMMENTS answeredWith reviewComments(
+        edictComment(11, feedbackRecord(1), thumbsUp = 2),
+        """{"id": 12, "body": "Rename this", "html_url": "${commentUrl(12)}", "user": {"login": "bob"}, "reactions": {"+1": 1, "-1": 0}}""",
+        reply(13, to = 11, "alice", "It really blocks"),
+        edictComment(14, feedbackRecord(2)),
+        reply(15, to = 12, "carol", "Agreed"),
+      ),
+    )
+
+    val read = recording.replay { threads(PULL_REQUEST) }
+
+    val expectedThreads = mapOf(
+      "f-01" to FeedbackThread(commentUrl(11), EdictNextSignalLabel.POSITIVE, listOf(FeedbackReply("alice", "It really blocks"))),
+      "f-02" to FeedbackThread(commentUrl(14), null, emptyList()),
+    )
+    assertEquals(PullRequestThreads(open = true, expectedThreads), read)
+  }
+
+  @Test
+  fun `a pull request in a state GitHub never gives fails the read rather than counting as closed`() {
+    val recording = feedbackScripted(PULL_REQUEST_READ answeredWith answer(200, """{"number": 7}"""))
+
+    val failure = assertFailsWith<IllegalArgumentException> { recording.replay { threads(PULL_REQUEST) } }
+
+    assertEquals("GitHub read ${PULL_REQUEST.url} in the unknown state ''", failure.message)
   }
 
   @Test
