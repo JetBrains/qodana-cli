@@ -10,6 +10,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -163,6 +164,32 @@ class StateBranchTest {
 
     assertEquals("Run 2\nRun 1\nRun 1\nStart the Edict state\n", git(origin.path, "log", "--format=%s", BRANCH))
     assertEquals("first.json\nsecond.json\nthird.json\n", git(origin.path, "ls-tree", "--name-only", BRANCH))
+  }
+
+  @Test
+  fun `push rebases again when another run pushes between its rebase and its push`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    origin.raceNextStatePush("other", mapOf("other.json" to "o"))
+    second.resolve(".edict/second.json").writeText("2")
+
+    state(second).worktree().push("Run 2")
+
+    assertEquals("Run 2\nRun of other\nRun 1\nStart the Edict state\n", git(origin.path, "log", "--format=%s", BRANCH))
+  }
+
+  @Test
+  fun `push fails when origin refuses it for another reason than another run's push`() {
+    origin.publishState("first", mapOf("first.json" to "1"))
+    val second = origin.clone("second")
+    state(second).checkOut()
+    failingHook(origin.path, "pre-receive")
+    second.resolve(".edict/second.json").writeText("2")
+
+    val failure = assertFailsWith<IllegalStateException> { state(second).worktree().push("Run 2") }
+
+    assertContains(failure.message.orEmpty(), "pre-receive hook declined")
   }
 
   @Test

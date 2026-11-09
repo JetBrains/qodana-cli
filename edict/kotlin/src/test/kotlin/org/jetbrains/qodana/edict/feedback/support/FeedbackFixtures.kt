@@ -15,6 +15,12 @@ import org.jetbrains.qodana.edict.feedback.GitHubFeedbackApi
 import org.jetbrains.qodana.edict.ci.support.Exchange
 import org.jetbrains.qodana.edict.ci.support.ProviderRequest
 import org.jetbrains.qodana.edict.ci.support.Recording
+import org.jetbrains.qodana.edict.ci.support.answer
+import org.jetbrains.qodana.edict.ci.CiHttpResponse
+import org.jetbrains.qodana.edict.feedback.feedbackComment
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.qodana.edict.promotion.support.ClusterFixture
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
@@ -82,6 +88,43 @@ private val PULL_REQUEST_ENDPOINT = "/repos/${PROJECT.owner}/${PROJECT.repositor
 
 /** The first page of the files of [PULL_REQUEST]. */
 internal val PULL_REQUEST_FILES = ProviderRequest("GET", "$PULL_REQUEST_ENDPOINT/files", mapOf("per_page" to "100", "page" to "1"))
+
+/** The read of [PULL_REQUEST] itself, which says its state. */
+internal val PULL_REQUEST_READ = ProviderRequest("GET", PULL_REQUEST_ENDPOINT)
+
+/** The first page of the review comments of [PULL_REQUEST]. */
+internal val PULL_REQUEST_COMMENTS = ProviderRequest("GET", "$PULL_REQUEST_ENDPOINT/comments", mapOf("per_page" to "100", "page" to "1"))
+
+/** The web page of the review comment [id] of [PULL_REQUEST]. */
+internal fun commentUrl(id: Int): String = "${PULL_REQUEST.url}#discussion_r$id"
+
+/** The review comment [id] of Edict on [PULL_REQUEST] for [record], with [thumbsUp] 👍 and [thumbsDown] 👎. */
+internal fun edictComment(id: Int, record: FeedbackRecord, thumbsUp: Int = 0, thumbsDown: Int = 0): String = buildJsonObject {
+  put("id", id)
+  put("body", feedbackComment(record))
+  put("html_url", commentUrl(id))
+  putJsonObject("user") { put("login", "github-actions[bot]") }
+  putJsonObject("reactions") {
+    put("total_count", thumbsUp + thumbsDown)
+    put("+1", thumbsUp)
+    put("-1", thumbsDown)
+  }
+}.toString()
+
+/** The reply [id] of the user [login] to the review comment [to] of [PULL_REQUEST]. */
+internal fun reply(id: Int, to: Int, login: String, body: String): String = buildJsonObject {
+  put("id", id)
+  put("in_reply_to_id", to)
+  put("body", body)
+  put("html_url", commentUrl(id))
+  putJsonObject("user") { put("login", login) }
+}.toString()
+
+/** [PULL_REQUEST] as GitHub reads it in [state], `open` or `closed`. */
+internal fun pullRequestIn(state: String): CiHttpResponse = answer(200, """{"number": 7, "state": "$state"}""")
+
+/** The answer that lists [comments] as the review comments of [PULL_REQUEST]. */
+internal fun reviewComments(vararg comments: String): CiHttpResponse = answer(200, comments.joinToString(",\n", "[", "]"))
 
 /** A call of the feedback client that sends exactly [exchanges], answered as a script has them: no real pull request yet. */
 internal fun feedbackScripted(vararg exchanges: Exchange): Recording<GitHubFeedbackApi> =

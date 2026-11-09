@@ -16,6 +16,7 @@ import org.jetbrains.qodana.edict.feedback.actionsFeedbackApi
 import org.jetbrains.qodana.edict.feedback.actionsPullRequest
 import org.jetbrains.qodana.edict.feedback.postFeedback
 import org.jetbrains.qodana.edict.feedback.prepareFeedback
+import org.jetbrains.qodana.edict.feedback.serverFeedbackApi
 import org.jetbrains.qodana.edict.setup.CodexSetup
 import org.jetbrains.qodana.edict.setup.EdictConfig
 import java.nio.file.Files
@@ -64,6 +65,7 @@ fun main(args: Array<String>) {
                 val configuration = EdictYamlConfiguration.load(qodanaYaml(options))
                 val ciReviews = configuration.ci?.let { getReviewAPI(it, configuration.bots) }
                 val promotionReviews = configuration.promotionRepository?.let { getReviewAPI(it, configuration.bots) }
+                val feedbackApi = configuration.ci?.let(::serverFeedbackApi)
                 val layout = EdictLayout.get(configuration.statePath)
                 val portConfig = EdictConfig(configuration.mcpPort).also { CodexSetup.requireInstalled(layout, it) }
                 val port = portConfig.mcpPort
@@ -82,7 +84,7 @@ fun main(args: Array<String>) {
                     layout.intellijMcpResultsDirectory,
                     projectAnalysisTimeoutMinutes = configuration.projectAnalysisTimeoutMinutes,
                 )
-                EdictServer.start(layout, port, inspectionServer, configuration, ciReviews, promotionReviews).use { server ->
+                EdictServer.start(layout, port, inspectionServer, configuration, ciReviews, promotionReviews, feedbackApi).use { server ->
                     Runtime.getRuntime().addShutdownHook(Thread(server::close))
                     // A launcher killed with SIGKILL cannot stop this server, and stdin may stay open (HTTP mode never
                     // reads it). Exit with the launcher instead; the shutdown hook then stops the server.

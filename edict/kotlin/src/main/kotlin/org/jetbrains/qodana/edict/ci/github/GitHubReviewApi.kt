@@ -45,8 +45,13 @@ import java.util.Base64
 internal fun gitHubReviewApi(repository: ReviewRepository, bots: Set<String>): GitHubReviewApi {
   // Pull requests link to github.com, so reviews under another host would never be owned.
   require(repository.host != "www.github.com") { "Name the repository as https://github.com/<owner>/<repository>, without www" }
+  return GitHubReviewApi(repository, gitHubTransport(repository), bots)
+}
+
+/** The transport to the API of [repository]'s GitHub host, with the token of the server environment. */
+internal fun gitHubTransport(repository: ReviewRepository): CiHttpTransport {
   val token = gitHubToken().getOrElse { throw IllegalArgumentException("${repository.label()} requires a token in the server environment: ${it.message}", it) }
-  return GitHubReviewApi(repository, DefaultCiHttpTransport(CiProviderId.GITHUB, gitHubApiUrl(repository.host), token), bots)
+  return DefaultCiHttpTransport(CiProviderId.GITHUB, gitHubApiUrl(repository.host), token)
 }
 
 /**
@@ -417,11 +422,6 @@ internal class GitHubReviewApi(
     expectObject(http.send("GET", "$root/git/ref/heads/${urlPart(branch)}"), "GitHub target branch lookup", 200)
       .obj("object").text("sha")
 
-  private fun expectObject(response: CiHttpResponse, operation: String, vararg expected: Int): JsonObject {
-    expectStatus(response, operation, *expected)
-    return response.body as? JsonObject ?: error("$operation did not return an object")
-  }
-
 }
 
 private const val PAGE_SIZE = 100
@@ -438,6 +438,12 @@ internal fun CiHttpTransport.gitHubPages(endpoint: String): List<JsonObject> {
     if (items.size < PAGE_SIZE) return all
   }
   error("GitHub pagination exceeded $MAX_PAGES pages; refusing incomplete evidence")
+}
+
+/** The object that [response] of [operation] holds; fails when its status is none of [expected] or it holds no object. */
+internal fun expectObject(response: CiHttpResponse, operation: String, vararg expected: Int): JsonObject {
+  expectStatus(response, operation, *expected)
+  return response.body as? JsonObject ?: error("$operation did not return an object")
 }
 
 private fun expectStatus(response: CiHttpResponse, operation: String, vararg expected: Int) {
