@@ -8,6 +8,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
@@ -196,7 +197,7 @@ internal object UltimateScripts {
   }
 
   /** The exchanges of [recording] after its first, a read that found no request branch, without creating the branch. */
-  private fun withoutBranchCreation(recording: Recording): Array<Exchange> =
+  private fun withoutBranchCreation(recording: Recording<ReviewApi>): Array<Exchange> =
     recording.exchanges.drop(1).filterNot { it.request.endpoint.endsWith("/head") }.toTypedArray()
 }
 
@@ -220,7 +221,7 @@ private fun gitBlob(content: String): String {
 }
 
 /** The exchanges of this recording before [request], which it must send. */
-private fun Recording.until(request: ProviderRequest): Array<Exchange> {
+private fun Recording<*>.until(request: ProviderRequest): Array<Exchange> {
   val index = exchanges.indexOfFirst { it.request == request }
   require(index >= 0) { "The recording sends no $request" }
   return exchanges.take(index).toTypedArray()

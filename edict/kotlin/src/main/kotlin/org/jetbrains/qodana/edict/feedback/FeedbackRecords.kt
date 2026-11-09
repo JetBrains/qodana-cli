@@ -7,10 +7,12 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.nameWithoutExtension
 import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 /**
  * A finding of a not yet promoted inspection, reserved for a review comment on [pullRequest]; the comment's answer becomes a
@@ -27,6 +29,9 @@ internal data class FeedbackRecord(
     /** The repository-relative path of the file the finding is in. */
     val path: String,
     val lines: EdictNextLineRange,
+    /** The line the review comment is on: the first of [lines] that the pull request adds. */
+    val commentLine: Int,
+    val inspectionName: String,
     val inspectionDescription: String,
     /** The problem the inspection reported, as its message says. */
     val message: String,
@@ -41,7 +46,18 @@ internal class FeedbackRecords(private val paths: EdictRepositoryDirectory) {
 
     /** The records that left [active], of every month. */
     fun history(): List<FeedbackRecord> = directories(paths.feedbackHistoryDirectory).flatMap(::load)
+
+    /** Stores [record] as awaiting an answer. */
+    fun addActive(record: FeedbackRecord) {
+        paths.activeFeedbackDirectory.createDirectories().resolve(record.fileName).writeText(record.fileText())
+    }
 }
+
+/** The name of the file that stores the record, in the directory of its state. */
+internal val FeedbackRecord.fileName: String get() = "$id.json"
+
+/** The record as its file stores it. */
+internal fun FeedbackRecord.fileText(): String = EdictNextJson.encodeToString(FeedbackRecord.serializer(), this)
 
 private fun directories(directory: Path): List<Path> =
     if (directory.isDirectory()) directory.listDirectoryEntries().filter(Path::isDirectory).sorted() else emptyList()

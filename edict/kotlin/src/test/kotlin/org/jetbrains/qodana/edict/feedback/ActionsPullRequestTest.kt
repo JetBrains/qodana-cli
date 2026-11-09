@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
+import org.jetbrains.qodana.edict.feedback.support.OWN_PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -17,7 +18,7 @@ class ActionsPullRequestTest {
 
   @Test
   fun `a pull request between branches of the repository is its own`() {
-    assertEquals(ActionsPullRequest.Own(PULL_REQUEST), read(pullRequestEvent(headRepository = """{"full_name": "owner/project"}""")))
+    assertEquals(OWN_PULL_REQUEST, read(pullRequestEvent(headRepository = """{"full_name": "owner/project"}""")))
   }
 
   @Test

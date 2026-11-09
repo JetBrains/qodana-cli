@@ -45,13 +45,18 @@ import java.util.Base64
 internal fun gitHubReviewApi(repository: ReviewRepository, bots: Set<String>): GitHubReviewApi {
   // Pull requests link to github.com, so reviews under another host would never be owned.
   require(repository.host != "www.github.com") { "Name the repository as https://github.com/<owner>/<repository>, without www" }
-  val token = gitHubToken()
-  require(!token.isNullOrBlank()) { "${repository.label()} requires GITHUB_TOKEN or GH_TOKEN in the server environment" }
+  val token = gitHubToken().getOrElse { throw IllegalArgumentException("${repository.label()} requires a token in the server environment: ${it.message}", it) }
   return GitHubReviewApi(repository, DefaultCiHttpTransport(CiProviderId.GITHUB, gitHubApiUrl(repository.host), token), bots)
 }
 
-/** The token in GITHUB_TOKEN, or in GH_TOKEN when GITHUB_TOKEN is unset or blank, as the GitHub CLI reads them. */
-internal fun gitHubToken(): String? = System.getenv("GITHUB_TOKEN")?.takeIf(String::isNotBlank) ?: System.getenv("GH_TOKEN")
+/**
+ * The token in GITHUB_TOKEN, or in GH_TOKEN when GITHUB_TOKEN is unset or blank, as the GitHub CLI reads them; a failure that
+ * names both when neither holds one.
+ */
+internal fun gitHubToken(): Result<String> =
+  (System.getenv("GITHUB_TOKEN")?.takeIf(String::isNotBlank) ?: System.getenv("GH_TOKEN")?.takeIf(String::isNotBlank))
+    ?.let { Result.success(it) }
+    ?: Result.failure(IllegalStateException("Neither GITHUB_TOKEN nor GH_TOKEN holds a GitHub token"))
 
 /** The API of github.com, of GitHub Enterprise Cloud (`<sub>.ghe.com`) or, on any other host, of GitHub Enterprise Server. */
 internal fun gitHubApiUrl(host: String): String = when {
@@ -152,8 +157,8 @@ internal class GitHubReviewApi(
       value.obj("head").text("sha"),
       merged,
     )
-    val comments = pages("$endpoint/comments")
-    val reviews = pages("$endpoint/reviews")
+    val comments = http.gitHubPages("$endpoint/comments")
+    val reviews = http.gitHubPages("$endpoint/reviews")
     val byId = comments.associateBy { it.number("id") }
     require(byId.size == comments.size && byId.keys.all { it > 0 }) { "Invalid or duplicate comment IDs" }
     val threads = comments.groupBy { it.number("in_reply_to_id").takeIf { id -> id > 0 } ?: it.number("id") }
@@ -375,7 +380,7 @@ internal class GitHubReviewApi(
       "Invalid merged-change evidence"
     }
     val messages = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews",
-      "$root/pulls/${urlPart(reference.id)}/comments").flatMap(::pages)
+      "$root/pulls/${urlPart(reference.id)}/comments").flatMap(http::gitHubPages)
       .filterNot { it.isBot() }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
     return MergedReview(pull.text("title"), messages, before, merged, changes)
@@ -393,7 +398,7 @@ internal class GitHubReviewApi(
     val endpoints = listOf(
       "$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews", "$root/pulls/${urlPart(reference.id)}/comments",
     )
-    val messages = endpoints.flatMap(::pages)
+    val messages = endpoints.flatMap(http::gitHubPages)
       .filterNot { it.isBot() }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
     return ReviewStatus(state, messages.joinToString("\n\n"))
@@ -402,17 +407,6 @@ internal class GitHubReviewApi(
   /** Whether a bot wrote this comment or review: an app, which GitHub marks as `Bot`, or one of [bots]. */
   private fun JsonObject.isBot(): Boolean = obj("user").let { user ->
     user.text("type") == "Bot" || bots.any { it.equals(user.text("login"), ignoreCase = true) }
-  }
-
-  private fun pages(endpoint: String): List<JsonObject> {
-    val all = mutableListOf<JsonObject>()
-    for (page in 1..MAX_PAGES) {
-      val response = get(endpoint, mapOf("per_page" to "$PAGE_SIZE", "page" to "$page"))
-      val items = response.body.jsonArray.map { it.jsonObject }
-      all += items
-      if (items.size < PAGE_SIZE) return all
-    }
-    error("GitHub pagination exceeded $MAX_PAGES pages; refusing incomplete evidence")
   }
 
   private fun get(endpoint: String, query: Map<String, String> = emptyMap()): CiHttpResponse =
@@ -428,16 +422,28 @@ internal class GitHubReviewApi(
     return response.body as? JsonObject ?: error("$operation did not return an object")
   }
 
-  private fun expectStatus(response: CiHttpResponse, operation: String, vararg expected: Int) {
-    require(response.status in expected.toSet()) {
-      val detail = response.message().take(1000).takeIf(String::isNotBlank)?.let { ": $it" }.orEmpty()
-      "$operation returned HTTP ${response.status}$detail"
-    }
-  }
+}
 
-  private companion object {
-    const val PAGE_SIZE = 100
-    const val MAX_PAGES = 1000
+private const val PAGE_SIZE = 100
+private const val MAX_PAGES = 1000
+
+/** Every item of the GitHub list at [endpoint], read page by page. */
+internal fun CiHttpTransport.gitHubPages(endpoint: String): List<JsonObject> {
+  val all = mutableListOf<JsonObject>()
+  for (page in 1..MAX_PAGES) {
+    val response = send("GET", endpoint, mapOf("per_page" to "$PAGE_SIZE", "page" to "$page"))
+    expectStatus(response, "GitHub read of $endpoint", 200)
+    val items = response.body.jsonArray.map { it.jsonObject }
+    all += items
+    if (items.size < PAGE_SIZE) return all
+  }
+  error("GitHub pagination exceeded $MAX_PAGES pages; refusing incomplete evidence")
+}
+
+private fun expectStatus(response: CiHttpResponse, operation: String, vararg expected: Int) {
+  require(response.status in expected.toSet()) {
+    val detail = response.message().take(1000).takeIf(String::isNotBlank)?.let { ": $it" }.orEmpty()
+    "$operation returned HTTP ${response.status}$detail"
   }
 }
 

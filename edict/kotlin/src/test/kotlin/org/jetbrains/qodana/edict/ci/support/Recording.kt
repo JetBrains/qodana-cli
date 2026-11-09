@@ -23,34 +23,34 @@ import kotlin.test.fail
  * A call of the GitHub client on [KOTLIN], stored as `reviews/github/kotlin/<name>.json` in the test resources, replayed
  * on a client that leaves out [bots].
  */
-internal fun kotlinRecording(name: String, bots: Set<String> = KOTLIN_BOTS): Recording =
+internal fun kotlinRecording(name: String, bots: Set<String> = KOTLIN_BOTS): Recording<ReviewApi> =
   stored("github/kotlin/$name") { GitHubReviewApi(KOTLIN, it, bots) }
 
 /**
  * A call of the Space client on [ULTIMATE], stored as `reviews/space/ultimate/<name>.json` in the test resources,
  * replayed on a client that leaves out [bots].
  */
-internal fun ultimateRecording(name: String, bots: Set<String> = emptySet()): Recording =
+internal fun ultimateRecording(name: String, bots: Set<String> = emptySet()): Recording<ReviewApi> =
   stored("space/ultimate/$name") { SpaceReviewApi(ULTIMATE, it, bots) }
 
 /** A call of the GitHub client on [KOTLIN] that sends exactly [exchanges] and has no recorded result. */
-internal fun kotlinScripted(vararg exchanges: Exchange): Recording =
+internal fun kotlinScripted(vararg exchanges: Exchange): Recording<ReviewApi> =
   Recording(exchanges.toList(), JsonNull, { GitHubReviewApi(KOTLIN, it, KOTLIN_BOTS) }, scripted = true)
 
 /** A call of the Space client on [ULTIMATE] that sends exactly [exchanges] and has no recorded result. */
-internal fun ultimateScripted(vararg exchanges: Exchange): Recording =
+internal fun ultimateScripted(vararg exchanges: Exchange): Recording<ReviewApi> =
   Recording(exchanges.toList(), JsonNull, { SpaceReviewApi(ULTIMATE, it, emptySet()) }, scripted = true)
 
 /**
- * One call of a provider client: the requests it sends, in order, the provider's answers, and the [result] the client
+ * One call of a provider client [C]: the requests it sends, in order, the provider's answers, and the [result] the client
  * returned. Recordings come from the real repositories, with writes answered by script. A [scripted] one holds answers
  * no real provider gave: it stands for a repository state the real repositories don't have, from its first scripted
  * answer on.
  */
-internal class Recording(
+internal class Recording<C>(
   val exchanges: List<Exchange>,
   val result: JsonElement,
-  private val client: (CiHttpTransport) -> ReviewApi,
+  private val client: (CiHttpTransport) -> C,
   private val scripted: Boolean = false,
 ) {
   inline fun <reified T> result(): T = wireJson.decodeFromJsonElement(result)
@@ -60,7 +60,7 @@ internal class Recording(
    * one and gets its recorded answer. With a real [provider], reads go to it instead, and must be the recorded reads.
    * Afterwards every recorded request must have been sent, whether [call] returned or failed.
    */
-  fun <T> replay(provider: CiHttpTransport? = null, call: ReviewApi.() -> T): T {
+  fun <T> replay(provider: CiHttpTransport? = null, call: C.() -> T): T {
     // A real provider answers as the real repository is, not as the script has it.
     require(provider == null || !scripted) { "A recording with scripted answers replays only from the recording" }
     val unsent = ArrayDeque(exchanges.filter { provider == null || it.request.method != "GET" })
@@ -88,7 +88,7 @@ internal class Recording(
    * This call with the provider answering its first [method] request whose endpoint ends with [endpointEnd] with
    * [answer], after which the client sends nothing more.
    */
-  fun failingAt(method: String, endpointEnd: String, answer: CiHttpResponse): Recording {
+  fun failingAt(method: String, endpointEnd: String, answer: CiHttpResponse): Recording<C> {
     val index = indexOf(method, endpointEnd)
     return Recording(exchanges.take(index) + Exchange(exchanges[index].request, answer), JsonNull, client, scripted = true)
   }
@@ -103,7 +103,7 @@ internal class Recording(
     endpointEnd: String,
     query: Map<String, String> = emptyMap(),
     answers: (Exchange) -> List<Exchange>,
-  ): Recording {
+  ): Recording<C> {
     val index = indexOf(method, endpointEnd, query)
     return Recording(exchanges.take(index) + answers(exchanges[index]) + exchanges.drop(index + 1), JsonNull, client, scripted = true)
   }
@@ -141,7 +141,7 @@ internal fun answer(status: Int, body: String): CiHttpResponse = CiHttpResponse(
 /** The text of a provider recording, by its path under the `reviews` test resources. */
 internal fun recording(path: String): String = resourceText("reviews/$path")
 
-private fun stored(path: String, client: (CiHttpTransport) -> ReviewApi): Recording {
+private fun stored(path: String, client: (CiHttpTransport) -> ReviewApi): Recording<ReviewApi> {
   val stored = wireJson.decodeFromString<StoredRecording>(recording("$path.json"))
   return Recording(
     stored.exchanges.map { Exchange(it.request, it.response.answer()) }, stored.result, client, scripted = stored.exchanges.any(StoredExchange::scripted),

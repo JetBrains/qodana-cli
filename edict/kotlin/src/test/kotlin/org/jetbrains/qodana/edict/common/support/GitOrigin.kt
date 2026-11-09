@@ -35,6 +35,30 @@ internal class GitOrigin(private val directory: Path) {
     state.worktree().push("Run 1")
   }
 
+  /**
+   * Makes the next push to the state lose a race to a run in a fresh clone [name] that writes [files]: just before origin
+   * takes the push, that run's commit on the state as it is now lands, and origin refuses the push. Later pushes go through.
+   */
+  fun raceNextStatePush(name: String, files: Map<String, String>) {
+    val project = clone(name)
+    StateBranch(EdictLayout(project, project.resolve(".edict")), DEFAULT_EDICT_STATE_BRANCH).checkOut()
+    val state = project.resolve(".edict")
+    files.forEach { (file, content) -> state.resolve(file).apply { parent.createDirectories() }.writeText(content) }
+    git(state, "add", "--all")
+    git(state, "commit", "--quiet", "-m", "Run of $name")
+    git(state, "push", "--quiet", "origin", "HEAD:$RACE_REF")
+    // Receiving keeps new objects in quarantine, out of reach of ref updates, until the hook accepts them.
+    val hook = """
+      |#!/bin/sh
+      |[ -e raced ] && exit 0
+      |touch raced
+      |env -u GIT_QUARANTINE_PATH -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES \
+      |  git update-ref refs/heads/$DEFAULT_EDICT_STATE_BRANCH $RACE_REF
+      |exit 1
+      |""".trimMargin()
+    path.resolve("hooks").createDirectories().resolve("pre-receive").apply { writeText(hook) }.toFile().setExecutable(true)
+  }
+
   private fun seed() {
     git(directory, "init", "--quiet", "--bare", "--initial-branch=master", path.toString())
     val seed = plainClone("seed")
@@ -53,5 +77,8 @@ internal class GitOrigin(private val directory: Path) {
     return clone
   }
 }
+
+/** Where [GitOrigin.raceNextStatePush] keeps the commit of the run that wins the race. */
+private const val RACE_REF = "refs/race/state"
 
 private fun git(directory: Path, vararg arguments: String): String = runProcess(directory, listOf("git", *arguments))
