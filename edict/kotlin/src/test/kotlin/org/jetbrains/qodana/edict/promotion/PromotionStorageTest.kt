@@ -1,9 +1,9 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.promotion
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
-import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
+import org.jetbrains.qodana.edict.core.EdictClusterManifest
+import org.jetbrains.qodana.edict.core.EdictJson
+import org.jetbrains.qodana.edict.core.WeakSignalPromotion
 import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ACCEPTED
 import org.jetbrains.qodana.edict.promotion.support.activeReviewsText
 import org.jetbrains.qodana.edict.promotion.support.expectedText
@@ -27,8 +27,8 @@ internal class PromotionStorageTest {
   fun `a weak-signal promotion is stored as its review and state`() {
     // Only the pull request (GitHub, JetBrains/qodana-cli #1) and the ACCEPTED state, no other fields.
     assertEquals(
-      EdictNextJson.parseToJsonElement(expectedText("weak-signal-promotion.json")),
-      EdictNextJson.encodeToJsonElement(WeakSignalPromotion.serializer(), SOURCE_FIX_ACCEPTED),
+      EdictJson.parseToJsonElement(expectedText("weak-signal-promotion.json")),
+      EdictJson.encodeToJsonElement(WeakSignalPromotion.serializer(), SOURCE_FIX_ACCEPTED),
     )
   }
 
@@ -50,8 +50,8 @@ internal class PromotionStorageTest {
     repository.loadActiveWeakSignalPromotions()
 
     assertEquals(
-      EdictNextJson.encodeToJsonElement(EdictNextClusterManifest.serializer(), cluster.manifest),
-      EdictNextJson.parseToJsonElement(cluster.directory.manifestPath.readText()),
+      EdictJson.encodeToJsonElement(EdictClusterManifest.serializer(), cluster.manifest),
+      EdictJson.parseToJsonElement(cluster.directory.manifestPath.readText()),
     )
   }
 }

@@ -4,10 +4,10 @@ package org.jetbrains.qodana.edict.promotion
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.PromotionPrState
+import org.jetbrains.qodana.edict.core.sha256Hex
 import org.jetbrains.qodana.edict.promotion.support.EvaluationFixture
 import org.jetbrains.qodana.edict.promotion.support.HISTORY
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
@@ -99,7 +99,7 @@ internal class PromotionServiceTest {
 
   @Test
   fun `a cluster that is not generated is skipped without a request`() {
-    repository.store(referencedCluster().copy(status = EdictNextClusterStatus.Pending))
+    repository.store(referencedCluster().copy(status = EdictClusterStatus.Pending))
 
     assertEquals(PromotionPromoteResponse(), service.promote(RULE))
     assertEquals(emptyList(), reviews.requests)
@@ -107,7 +107,7 @@ internal class PromotionServiceTest {
 
   @Test
   fun `a cluster with fewer than five referenced source files fails without a request`() {
-    val cluster = repository.store(clusterWithSource(EdictNextSignalSource.Generated()))
+    val cluster = repository.store(clusterWithSource(EdictSignalSource.Generated()))
 
     val result = service.promote(RULE)
 
@@ -412,7 +412,7 @@ internal class PromotionServiceTest {
   @Test
   fun `a closed promotion of a cluster no longer generated is not checked`() {
     val closed = referencedCluster(promotions = listOf(inspectionPromotion(PromotionPrState.CLOSED)))
-    repository.store(closed.copy(status = EdictNextClusterStatus.Discontinued))
+    repository.store(closed.copy(status = EdictClusterStatus.Discontinued))
 
     assertEquals(PromotionCheckReviewsResponse(), service.checkReviews())
     assertEquals(emptyList(), reviews.statusReads)
@@ -490,7 +490,7 @@ internal class PromotionServiceTest {
     val closed = inspectionPromotion(PromotionPrState.CLOSED).copy(updatedAt = NOW)
     assertEquals(PromotionDecideReviewsResponse(updated = listOf(closed)), result)
     assertEquals(
-      cluster.manifest.copy(status = EdictNextClusterStatus.Discontinued, promotions = listOf(closed)),
+      cluster.manifest.copy(status = EdictClusterStatus.Discontinued, promotions = listOf(closed)),
       repository.loadCluster("rule").manifest,
     )
   }
@@ -527,7 +527,7 @@ internal class PromotionServiceTest {
 
     val closed = inspectionPromotion(PromotionPrState.CLOSED).copy(updatedAt = NOW)
     assertEquals(
-      cluster.manifest.copy(status = EdictNextClusterStatus.Pending, predecessorId = "rule", promotions = listOf(closed)),
+      cluster.manifest.copy(status = EdictClusterStatus.Pending, predecessorId = "rule", promotions = listOf(closed)),
       repository.loadCluster("rule").manifest,
     )
     assertTrue(repository.paths.inspectionPath("rule").exists())

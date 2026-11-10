@@ -1,0 +1,75 @@
+---
+name: edict-code-example
+description: Managed subagent that reduces each assigned Edict Signal and its exact source revision to a validated code example.
+---
+
+# Edict Code Example
+
+Run only as a delegated managed subagent. Follow [the managed task protocol](../edict_manager/references/task-protocol.md) before
+domain work and use its assigned task lifecycle.
+
+Load only this skill.
+
+The prompt identifies either persisted Signals with `Cluster id` and one or more `Signal id`s, or a transient Signal
+with `Cluster id` and an absolute private-scratch `Signal path`. Use the `stateDirectory` and `projectDirectory` of your
+run context to resolve all managed state and the inspected IntelliJ project. Do not request or repeat the state
+path in a prompt. Read each persisted Signal from
+`<stateDirectory>/clusters/<cluster id>/signals/<signal id>.json`; do not read the cluster's other Signals. Handle the
+Signals one at a time, completing each example as described below before the next; when one cannot be completed, report
+it with its reason and continue with the next.
+
+For a persisted cluster Signal, use `edict_save_code_example(token, clusterId, exampleId, metadataJson,
+sourceCode)` to create or repair the example, then `edict_assign_code_example(token, clusterId, signalId,
+exampleId)` after validation, with your own task token. A transient Signal in private scratch remains an ordinary
+scratch file and is updated there after the stored example validates.
+
+Your operation is `reduce(Signal, exact source revision) -> one self-contained code example`. A Signal is exact local
+evidence; its example is a semantic program slice, not a rule hypothesis. Do not read cluster metadata, a candidate
+inspection, or review feedback. The prompt may give a line `Rejected example <signal id>: <defect>`: an earlier example
+for that Signal was deleted because it lost fidelity to the source. Confirm the defect against the exact source and
+make sure the new example does not repeat it. Neither the reduction nor its label may depend on a general rule or Inspection KTS limits.
+
+Read the identified Signal. If it already has `syntheticExampleId`, return that ID. Otherwise resolve the Git root from
+the inspected project and retrieve the exact `fileRevision` with read-only Git
+(`git show <revision>:<repository-relative-path>`), treating those complete historical bytes as the authority. If the
+Git object is unavailable, read it with `edict_file_at_ref` anchored at the expected range, with radius 20, then 5 and
+0, until every requested expected-range line is visible. Do not create or change an example before that. Identify the construct covered by
+`fileRevision.expectedRanges`, its diagnostic role, and the properties and relationships that make the Signal positive
+or negative. The Signal description explains why the evidence was selected, but does not justify adding absent facts.
+
+Delete irrelevant statements and declarations while preserving the diagnostic target and every PSI/semantic relation needed for
+its exact positive or negative meaning. For a Signal about variable V in method M, retain V's declaration, relevant reads, writes,
+aliases, and conditions/control flow affecting V; retain the types and members needed to resolve those operations and relevant
+enclosing method/class modifiers, annotations, generics, hierarchy, and overload contracts. Apply the same dependency reasoning
+to other targets. The facts that decide the label are not always inside the expected range: they may be elsewhere in the
+source file, or in declarations in other files that the target depends on. Find and read them, at the Signal's revision
+when it is available (read-only Git or `edict_file_at_ref`), and keep them in the example, in a same-file stub when
+they come from another file. Replace external dependencies with minimal same-file declarations, interfaces, or stubs
+only when they preserve the compile-time/PSI contracts and label-determining semantics. Do not generalize the Signal, weaken types, move the semantic
+target, or invent facts to explain its classification. When unsure whether a detail matters, preserve it.
+
+A positive example must contain exactly one reportable problem. Its sole expected range must identify the same semantic target
+as the original source range; supporting declarations, usages, and control flow may appear elsewhere in the example. A negative
+example must contain exactly one focused allowed case corresponding to the original source range, no reportable problems, and
+an empty expected-range list. Do not create a trivial negative by removing the construct being evaluated.
+
+For an unassigned Signal, create its example through `edict_save_code_example` with the equivalent persisted layout:
+
+```plaintext
+<synthetic-examples-directory>/<example-id>/metadata.json
+<synthetic-examples-directory>/<example-id>/project/<file-name>.kt|java
+```
+
+Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. The example runs in the module of the Signal's file;
+when that file no longer exists in the inspected project, add `contextPath` with the path of the file that now holds its
+code, or of another file in the same module. Derive the expected ranges from the finished reduced source;
+do not retain source line numbers after moving the target. Never copy the complete production source file.
+
+Saving checks the example structurally and refuses it with its issues; repair them and save again. Assigning also runs
+the example in its module and refuses it when a reference does not resolve there: declare what it names in the example,
+or set `contextPath` to a file whose module provides it, then save and assign again. The MCP does not establish
+semantics: independently confirm that the example demonstrates the Signal and that its label and ranges are correct.
+
+Only after both checks succeed, call `edict_assign_code_example` for a persisted Signal, or set
+`syntheticExampleId` in a transient private-scratch Signal. Return each Signal id with its assigned example ID, or with
+the reason it has none.

@@ -1,7 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
-import org.jetbrains.qodana.edict.edictnext.*
+import org.jetbrains.qodana.edict.core.*
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.WeakSignalPromotionFixture as Fixture
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun

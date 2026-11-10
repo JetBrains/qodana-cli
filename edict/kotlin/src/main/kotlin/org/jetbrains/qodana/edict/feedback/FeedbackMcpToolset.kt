@@ -2,12 +2,12 @@
 package org.jetbrains.qodana.edict.feedback
 
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import org.jetbrains.qodana.edict.edictnext.EdictManagementService
-import org.jetbrains.qodana.edict.edictnext.property
-import org.jetbrains.qodana.edict.edictnext.requireString
-import org.jetbrains.qodana.edict.edictnext.stringArguments
-import org.jetbrains.qodana.edict.edictnext.toToolResult
-import org.jetbrains.qodana.edict.edictnext.toolSchema
+import org.jetbrains.qodana.edict.core.EdictManagementService
+import org.jetbrains.qodana.edict.core.property
+import org.jetbrains.qodana.edict.core.requireString
+import org.jetbrains.qodana.edict.core.stringArguments
+import org.jetbrains.qodana.edict.core.toToolResult
+import org.jetbrains.qodana.edict.core.toolSchema
 
 /** The managed skill that turns the answers to review comments of Edict into Signals. */
 internal const val FEEDBACK_SIGNAL_SKILL = "edict-feedback-signal-analysis"

@@ -9,7 +9,7 @@ import org.jetbrains.qodana.edict.ci.SourceFixChanges
 import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.ReviewFileChange
 import org.jetbrains.qodana.edict.common.EdictConfiguration
-import org.jetbrains.qodana.edict.edictnext.*
+import org.jetbrains.qodana.edict.core.*
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.signals.validRevision
@@ -27,7 +27,7 @@ internal data class WeakSignalPromotionCandidate(
   val inspectionDigest: String,
   val projectRevision: String,
   val inspectionDescription: String,
-  val findings: List<EdictNextProjectFinding>,
+  val findings: List<EdictProjectFinding>,
 )
 
 @Serializable
@@ -122,8 +122,8 @@ internal class WeakSignalPromotionService(
       .takeIf { it.isRegularFile() }?.let { sha256Hex(it.readBytes()) }
     val merged = mergedReview(checked.promotion.pullRequest)
     val diffs = merged.changes.filter { change ->
-      EdictNextLanguage.fromPathOrNull(change.beforePath) == cluster.manifest.language ||
-        EdictNextLanguage.fromPathOrNull(change.afterPath) == cluster.manifest.language
+      EdictLanguage.fromPathOrNull(change.beforePath) == cluster.manifest.language ||
+        EdictLanguage.fromPathOrNull(change.afterPath) == cluster.manifest.language
     }.map { change ->
       reviews().diff(merged.beforeRevision, merged.mergedRevision, change.beforePath, change.afterPath)
     }
@@ -161,7 +161,7 @@ internal class WeakSignalPromotionService(
   }
 
   /** The cluster's source-fix candidate; null when it isn't eligible, already has an active review, or has nothing to fix. */
-  private fun preparedCandidate(cluster: EdictNextStoredCluster, hasActiveReview: Boolean): WeakSignalPromotionCandidate? {
+  private fun preparedCandidate(cluster: EdictStoredCluster, hasActiveReview: Boolean): WeakSignalPromotionCandidate? {
     if (!eligible(cluster)) return null
     // Built even while a review is active, so a broken evaluation is still reported.
     val candidate = candidate(cluster)
@@ -232,8 +232,8 @@ internal class WeakSignalPromotionService(
     clusterId: String,
     pullRequest: ReviewReference,
     inspectionDigest: String,
-    signals: List<EdictNextSignal>,
-  ): List<EdictNextSignal> {
+    signals: List<EdictSignal>,
+  ): List<EdictSignal> {
     val promotion = requireNotNull(repository.loadActiveWeakSignalPromotions()[clusterId].orEmpty().firstOrNull { it.pullRequest == pullRequest }) {
       "Review does not belong to source cluster '$clusterId'"
     }
@@ -243,15 +243,15 @@ internal class WeakSignalPromotionService(
     val canonical = mutableMapOf<ReviewFileChange, String>()
     val workItem = "weak-promotion:${pullRequest.provider}:${pullRequest.owner}/${pullRequest.repository}:${pullRequest.id}:${merged.mergedRevision}"
     signals.forEach { draft ->
-      SignalValidation.validate("clusters/$clusterId/signals/${draft.id}.json", EdictNextJson.encodeToString(EdictNextSignal.serializer(), draft))
-      val pr = requireNotNull(draft.source as? EdictNextSignalSource.FromPR) { "Expected regular FromPR signal" }
-      require(draft.strength == EdictNextSignalStrength.STRONG && pr.prNumber.toString() == pullRequest.id && pr.url == pullRequest.url &&
+      SignalValidation.validate("clusters/$clusterId/signals/${draft.id}.json", EdictJson.encodeToString(EdictSignal.serializer(), draft))
+      val pr = requireNotNull(draft.source as? EdictSignalSource.FromPR) { "Expected regular FromPR signal" }
+      require(draft.strength == EdictSignalStrength.STRONG && pr.prNumber.toString() == pullRequest.id && pr.url == pullRequest.url &&
         pr.title == merged.title && pr.discussionMessages ==
         merged.discussionMessages.ifEmpty { listOf("Source-fix review merged: ${pullRequest.url}") }) { "Signal must preserve actual merged review metadata" }
-      val revision = if (draft.label == EdictNextSignalLabel.POSITIVE) merged.beforeRevision else merged.mergedRevision
+      val revision = if (draft.label == EdictSignalLabel.POSITIVE) merged.beforeRevision else merged.mergedRevision
       require(draft.fileRevision.revision == revision) { "Signal must use the actual merged before/after revision" }
       val change = merged.changes.singleOrNull {
-        (if (draft.label == EdictNextSignalLabel.POSITIVE) it.beforePath else it.afterPath) == draft.fileRevision.path
+        (if (draft.label == EdictSignalLabel.POSITIVE) it.beforePath else it.afterPath) == draft.fileRevision.path
       } ?: error("Signal path is absent from the actual merged change")
       UnifiedDiff.validateExcerpt(pr.diffPositiveToNegative, canonical.getOrPut(change) {
         reviews().diff(merged.beforeRevision, merged.mergedRevision, change.beforePath, change.afterPath)
@@ -283,11 +283,11 @@ internal class WeakSignalPromotionService(
     return merged.copy(title = redactor.redact(merged.title), discussionMessages = merged.discussionMessages.map(redactor::redact))
   }
 
-  private fun eligible(cluster: EdictNextStoredCluster): Boolean =
+  private fun eligible(cluster: EdictStoredCluster): Boolean =
     cluster.promotionEligibility(configuration.ci, repository.loadEvaluation(cluster))
       .let { it.generated && it.referencedSourceFiles < MIN_PROMOTION_SOURCE_FILES }
 
-  private fun candidate(cluster: EdictNextStoredCluster): WeakSignalPromotionCandidate {
+  private fun candidate(cluster: EdictStoredCluster): WeakSignalPromotionCandidate {
     val digest = sha256Hex(repository.paths.inspectionPath(cluster.id).readBytes())
     val evaluation = requireNotNull(repository.loadEvaluation(cluster)) { "No persisted evaluation; regenerate the inspection to review project findings" }
     require(evaluation.inspectionHash == digest) { "Evaluation does not match the generated inspection" }
@@ -304,7 +304,7 @@ internal class WeakSignalPromotionService(
   }
 }
 
-private fun EdictNextProjectFinding.line(): Int = fileRevision.expectedRanges?.firstOrNull()?.start ?: 0
+private fun EdictProjectFinding.line(): Int = fileRevision.expectedRanges?.firstOrNull()?.start ?: 0
 
 /** What preparing one cluster produced. */
 private sealed interface PreparationOutcome {

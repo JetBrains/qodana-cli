@@ -32,12 +32,11 @@ class SkillsTest {
         }
         assertTrue(Files.exists(directory.resolve("edict_manager/references/protocol.md")))
         assertTrue(Files.exists(directory.resolve("edict_manager/references/task-protocol.md")))
-        assertTrue(Files.exists(directory.resolve("edict-next-cluster-generation/SKILL.md")))
-        assertFalse(Files.exists(directory.resolve("edict-next-generation/SKILL.md")))
+        assertTrue(Files.exists(directory.resolve("edict-cluster-generation/SKILL.md")))
+        assertFalse(Files.exists(directory.resolve("edict-generation/SKILL.md")))
         assertTrue(Files.exists(directory.resolve("edict-git-history-signal-enrichment/SKILL.md")))
         assertTrue(Files.exists(directory.resolve("edict-git-history-signal-enrichment/agents/openai.yaml")))
         assertFalse(Files.exists(directory.resolve("edict-git-history-signal-analysis/SKILL.md")))
-        assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertFalse(Files.exists(directory.resolve("generation")))
         assertFalse(Files.exists(directory.resolve("signals-extraction")))
         assertFalse(Files.exists(directory.resolve("edict-run/SKILL.md")))
@@ -49,8 +48,8 @@ class SkillsTest {
 
     @Test
     fun `registry contains only installed skills and valid delegation edges`() {
-        assertTrue("edict-next-distribution" in Registry["edict_manager"].delegates)
-        assertTrue("edict-next-cluster-generation" in Registry["edict_manager"].delegates)
+        assertTrue("edict-distribution" in Registry["edict_manager"].delegates)
+        assertTrue("edict-cluster-generation" in Registry["edict_manager"].delegates)
         assertTrue("edict-git-history-signal-enrichment" in Registry["edict_manager"].delegates)
         assertTrue("edict-retrospective-signal-analysis" in Registry["edict_manager"].delegates)
         assertTrue("edict-promote" in Registry["edict_manager"].delegates)
@@ -71,46 +70,40 @@ class SkillsTest {
             Registry["edict-retrospective-signal-analysis"].delegates,
         )
         assertEquals(
-            listOf("edict-next-code-example-overseer", "edict-next-generation-round"),
-            Registry["edict-next-cluster-generation"].delegates,
+            listOf("edict-code-example-overseer", "edict-generation-round"),
+            Registry["edict-cluster-generation"].delegates,
         )
         assertEquals(
             listOf(
-                "edict-next-inspection-shallow-review",
-                "edict-next-weak-signal-review",
-                "edict-next-inspection-code-review",
+                "edict-inspection-shallow-review",
+                "edict-weak-signal-review",
+                "edict-inspection-code-review",
             ),
-            Registry["edict-next-generation-round"].delegates,
+            Registry["edict-generation-round"].delegates,
         )
         // Evidence reviews write their examples themselves.
-        assertEquals(emptyList(), Registry["edict-next-weak-signal-review"].delegates)
-        assertEquals(emptyList(), Registry["edict-next-inspection-code-review"].delegates)
+        assertEquals(emptyList(), Registry["edict-weak-signal-review"].delegates)
+        assertEquals(emptyList(), Registry["edict-inspection-code-review"].delegates)
         Registry.policies.forEach { policy ->
             policy.delegates.forEach { Registry[it] }
         }
         listOf(
             "edict-run",
-            "edict-next-generation",
+            "edict-generation",
             "edict-git-history-signal-analysis",
             "edict-prepare",
-            "edict-distribution",
-            "edict-generation",
-            "edict-cluster-generation",
-            "edict-code-example",
-            "edict-inspection-code-review",
             "edict-inspection-value-review",
-            "edict-weak-signal-review",
         ).forEach { name -> assertFailsWith<IllegalStateException> { Registry[name] } }
     }
 
     @Test
     fun `grouped resources install as flat discoverable skills`() {
         val generation = directory.resolve("generation-only")
-        assertEquals(listOf("edict-next-cluster-generation"), Skills.install(generation, "edict-next-cluster-generation"))
-        assertTrue(Files.exists(generation.resolve("edict-next-cluster-generation/SKILL.md")))
+        assertEquals(listOf("edict-cluster-generation"), Skills.install(generation, "edict-cluster-generation"))
+        assertTrue(Files.exists(generation.resolve("edict-cluster-generation/SKILL.md")))
         assertFalse(Files.exists(generation.resolve("generation")))
-        assertContains(Skills.read("edict-next-cluster-generation"), "name: edict-next-cluster-generation\n")
-        assertFailsWith<IllegalArgumentException> { Skills.install(generation, "edict-next-generation") }
+        assertContains(Skills.read("edict-cluster-generation"), "name: edict-cluster-generation\n")
+        assertFailsWith<IllegalArgumentException> { Skills.install(generation, "edict-generation") }
 
         val extraction = directory.resolve("extraction-only")
         assertEquals(
@@ -125,14 +118,14 @@ class SkillsTest {
 
     @Test
     fun `shallow review gates and evidence reviews only add weak examples before the final evaluation`() {
-        val compactGeneration = Skills.read("edict-next-cluster-generation").replace(Regex("\\s+"), " ")
-        val round = Skills.read("edict-next-generation-round").replace(Regex("\\s+"), " ")
-        val shallow = Skills.read("edict-next-inspection-shallow-review")
+        val compactGeneration = Skills.read("edict-cluster-generation").replace(Regex("\\s+"), " ")
+        val round = Skills.read("edict-generation-round").replace(Regex("\\s+"), " ")
+        val shallow = Skills.read("edict-inspection-shallow-review")
         val compactShallow = shallow.replace(Regex("\\s+"), " ")
-        val weak = Skills.read("edict-next-weak-signal-review").replace(Regex("\\s+"), " ")
-        val review = Skills.read("edict-next-inspection-code-review").replace(Regex("\\s+"), " ")
+        val weak = Skills.read("edict-weak-signal-review").replace(Regex("\\s+"), " ")
+        val review = Skills.read("edict-inspection-code-review").replace(Regex("\\s+"), " ")
 
-        val validation = round.indexOf("Submit the complete candidate with `edict_next_save_candidate_inspection`")
+        val validation = round.indexOf("Submit the complete candidate with `edict_save_candidate_inspection`")
         val shallowReview = round.indexOf("Launch a fresh shallow review worker")
         assertTrue(validation in 0..<shallowReview)
         assertContains(round, "Strong and weak failures never block a cycle or the Generated transition")
@@ -140,7 +133,7 @@ class SkillsTest {
         assertContains(compactGeneration, "even when it fails every strong or weak example")
         assertFalse("finalise `Pending` with" in compactGeneration)
         assertContains(round, "its `remainingProjectAnalyses` says how many remain")
-        assertContains(compactGeneration, "call `edict_next_record_evaluation(token, clusterId)` as the last step")
+        assertContains(compactGeneration, "call `edict_record_evaluation(token, clusterId)` as the last step")
         assertContains(shallow, "Do not edit the candidate, inspected project, or repository")
         assertContains(compactShallow, "Read only the candidate")
         assertContains(compactShallow, "It does not decide whether the inspection is correct")
@@ -184,8 +177,8 @@ class SkillsTest {
         assertContains(compact, "Zero-Signal days do not count toward the target but still advance coverage")
         assertContains(compact, "result may exceed the target")
         assertContains(compact, "`edict-pr-signal-analysis`")
-        assertContains(compact, "`edict-next-distribution`")
-        assertContains(compact, "`edict-next-cluster-generation`")
+        assertContains(compact, "`edict-distribution`")
+        assertContains(compact, "`edict-cluster-generation`")
         assertContains(compact, "`edict-promote`")
         assertContains(compact, "never invent Signals")
         assertContains(compact, "a user-provided generation count plus relevant completed-stage results into downstream task instructions")
@@ -196,10 +189,10 @@ class SkillsTest {
         val defaultStages = Regex("(?m)^\\d+\\. `([^`]+)`").findAll(manager.substringAfter("# Default repository pipeline"))
             .map { it.groupValues[1] }.toList()
         assertEquals(
-            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-feedback-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
+            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-feedback-signal-analysis", "edict-distribution", "edict-git-history-signal-enrichment", "edict-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
             defaultStages,
         )
-        assertFalse("edict-next-generation" in manager)
+        assertFalse("edict-generation" in manager)
         val prAnalysis = Skills.read("edict-pr-signal-analysis").replace(Regex("\\s+"), " ")
         assertContains(prAnalysis, "partitions them into chunks of at most eight")
         assertContains(prAnalysis, "retain only its `batchId` and `availableChunkCount`")

@@ -6,23 +6,23 @@ import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.support.FakeReviewApi
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
-import org.jetbrains.qodana.edict.edictnext.EdictNextExampleEvaluation
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
-import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
-import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
+import org.jetbrains.qodana.edict.core.EdictClusterManifest
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictFileRevision
+import org.jetbrains.qodana.edict.core.EdictExampleEvaluation
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictEvaluation
+import org.jetbrains.qodana.edict.core.EdictInspectionAction
+import org.jetbrains.qodana.edict.core.exampleSetDigest
+import org.jetbrains.qodana.edict.core.sha256Hex
+import org.jetbrains.qodana.edict.core.EdictJson
+import org.jetbrains.qodana.edict.core.EdictLanguage
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.core.PromotionPrState
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.junit.jupiter.api.Test
@@ -73,30 +73,30 @@ class PromotionIntegrationTest : IntegrationTest() {
   private fun createGeneratedCluster(repository: EdictRepository) {
     val cluster = repository.paths.clustersDirectory.resolve("integration-rule").createDirectories()
     cluster.resolve("signals").createDirectories()
-    cluster.resolve("cluster.json").writeText(EdictNextJson.encodeToString(
-      EdictNextClusterManifest("integration-rule", EdictNextLanguage.Kotlin, EdictNextClusterStatus.Generated),
+    cluster.resolve("cluster.json").writeText(EdictJson.encodeToString(
+      EdictClusterManifest("integration-rule", EdictLanguage.Kotlin, EdictClusterStatus.Generated),
     ))
     cluster.resolve("history.md").writeText("Created.\n")
     repeat(6) { index ->
-      val signal = EdictNextSignal(
+      val signal = EdictSignal(
         "s-$index",
-        fileRevision = EdictNextFileRevision("Example$index.kt", "a".repeat(40), listOf(EdictNextLineRange(1, 1))),
-        source = EdictNextSignalSource.FromPR(
+        fileRevision = EdictFileRevision("Example$index.kt", "a".repeat(40), listOf(EdictLineRange(1, 1))),
+        source = EdictSignalSource.FromPR(
           index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.com/source/project/pull/${index + 1}",
         ),
-        label = EdictNextSignalLabel.POSITIVE,
+        label = EdictSignalLabel.POSITIVE,
         description = "positive $index",
         syntheticExampleId = "example-$index",
       )
-      cluster.resolve("signals/s-$index.json").writeText(EdictNextJson.encodeToString(signal))
+      cluster.resolve("signals/s-$index.json").writeText(EdictJson.encodeToString(signal))
       val duplicate = signal.copy(id = "z-duplicate-$index", fileRevision = signal.fileRevision.copy(revision = "another-revision"))
-      cluster.resolve("signals/${duplicate.id}.json").writeText(EdictNextJson.encodeToString(duplicate))
+      cluster.resolve("signals/${duplicate.id}.json").writeText(EdictJson.encodeToString(duplicate))
     }
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
-    repository.loadCluster("integration-rule").directory.evaluationPath.writeText(EdictNextJson.encodeToString(EdictNextEvaluation(
+    repository.loadCluster("integration-rule").directory.evaluationPath.writeText(EdictJson.encodeToString(EdictEvaluation(
       sha256Hex("inspection"), exampleSetDigest(repository.loadCluster("integration-rule")),
-      EdictNextInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, (0..5).associate { "example-$it" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1) }, null, "Integration rule", "Detects integration problems.",
+      EdictInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, (0..5).associate { "example-$it" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, true, true, 0, 1) }, null, "Integration rule", "Detects integration problems.",
     )))
   }
 }

@@ -1,14 +1,14 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.signals.support
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.support.resourceText
 
 /** The unified diff `diffs/<name>.diff` of the test resources, for diffs whose exact text is the case. */
 internal fun diff(name: String): String = resourceText("diffs/$name.diff")
 
 /** The ranges of a Signal on the one line [line]. */
-internal fun onLine(line: Int): List<EdictNextLineRange> = listOf(EdictNextLineRange(line, line))
+internal fun onLine(line: Int): List<EdictLineRange> = listOf(EdictLineRange(line, line))
 
 /** A unified diff of `old.kt` to `new.kt`: its two path headers, then [lines] (hunk headers and hunk lines). */
 internal fun oldToNew(vararg lines: String): String = (listOf("--- a/old.kt", "+++ b/new.kt") + lines).joinToString("") { "$it\n" }

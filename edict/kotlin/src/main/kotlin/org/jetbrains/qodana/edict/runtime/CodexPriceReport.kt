@@ -9,8 +9,8 @@ import org.jetbrains.qodana.edict.common.number
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Task
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Task
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest

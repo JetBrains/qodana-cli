@@ -3,8 +3,8 @@ package org.jetbrains.qodana.edict.git
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.json
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictSignalSource
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
@@ -25,7 +25,7 @@ class CommitSignalExtractorTest {
     val revision = repository.resolve("HEAD")
 
     signals.forEach { signal ->
-      assertEquals(EdictNextSignalSource.FromCommit(revision), signal.source)
+      assertEquals(EdictSignalSource.FromCommit(revision), signal.source)
       val content = json.encodeToString(signal)
       val sourceKeys = json.parseToJsonElement(content).jsonObject.getValue("source").jsonObject.keys
       assertEquals(setOf("type", "commitRevision"), sourceKeys)
@@ -34,7 +34,7 @@ class CommitSignalExtractorTest {
     }
 
     val invalid = signals.first().copy(
-      fileRevision = signals.first().fileRevision.copy(expectedRanges = listOf(EdictNextLineRange(1, 1))),
+      fileRevision = signals.first().fileRevision.copy(expectedRanges = listOf(EdictLineRange(1, 1))),
     )
     assertFailsWith<IllegalArgumentException> { repository.validateEvidence(invalid) }
   }

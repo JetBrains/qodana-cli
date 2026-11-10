@@ -18,7 +18,7 @@ import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
 import org.junit.jupiter.api.Test
@@ -51,7 +51,7 @@ class CliTest : IntegrationTest() {
     }
 
     @Test
-    fun `installed application serves Edict Next over HTTP at the installed port and releases state lock on exit`() {
+    fun `installed application serves Edict over HTTP at the installed port and releases state lock on exit`() {
         val executable = System.getProperty("edict.executable")
         val stderr = directory.resolve("stderr")
         val state = workspace.state
@@ -96,15 +96,15 @@ class CliTest : IntegrationTest() {
                         .message().obj("result").array("tools").map { it.text("name") }.toSet()
                     assertTrue("edict_context" in tools)
                     assertTrue("edict_delegate" in tools)
-                    assertTrue("edict_next_calculate_neighbours_by_embeddings" in tools)
-                    assertTrue("edict_next_select_generation_clusters" in tools)
+                    assertTrue("edict_calculate_neighbours_by_embeddings" in tools)
+                    assertTrue("edict_select_generation_clusters" in tools)
                     assertTrue("edict_publish_signal_to_cluster" in tools)
                     assertTrue("generate_inspection_kts_api" in tools)
                 } finally {
                     process.destroy()
                     assertTrue(process.waitFor(30, TimeUnit.SECONDS), "CLI did not terminate")
                 }
-                EdictNextRepositoryState.open(state).use { assertNull(it.plan()) }
+                EdictRepositoryState.open(state).use { assertNull(it.plan()) }
             }
         } finally {
             Files.writeString(qodanaYaml, trackedQodanaYaml)

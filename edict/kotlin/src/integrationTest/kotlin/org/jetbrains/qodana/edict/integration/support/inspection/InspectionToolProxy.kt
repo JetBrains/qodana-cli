@@ -6,7 +6,7 @@ import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.edictnext.INSPECTION_KTS_UPSTREAM_TOOL_NAMES
+import org.jetbrains.qodana.edict.core.INSPECTION_KTS_UPSTREAM_TOOL_NAMES
 import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.nio.file.Path

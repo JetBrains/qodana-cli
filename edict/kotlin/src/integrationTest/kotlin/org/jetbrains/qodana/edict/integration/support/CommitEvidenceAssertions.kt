@@ -8,9 +8,9 @@ import kotlin.io.path.readText
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.jetbrains.qodana.edict.signals.SignalValidation
@@ -56,18 +56,18 @@ internal fun verifyCommitSignals(repository: GitRepository, files: List<Path>, e
     assertEquals(signals.size, signals.map { it.idempotencyKey }.distinct().size, "Evidence must not be duplicated")
     assertEquals(
         expected.map { it.revision }.toSet(),
-        signals.map { (it.source as EdictNextSignalSource.FromCommit).commitRevision }.toSet(),
+        signals.map { (it.source as EdictSignalSource.FromCommit).commitRevision }.toSet(),
         "Commit selection differs",
     )
     expected.forEach { commit ->
-        val pair = signals.filter { (it.source as EdictNextSignalSource.FromCommit).commitRevision == commit.revision }
+        val pair = signals.filter { (it.source as EdictSignalSource.FromCommit).commitRevision == commit.revision }
         assertEquals(2, pair.size, "Signal count for ${commit.revision}")
-        assertEquals(EdictNextSignalLabel.entries.toSet(), pair.map { it.label }.toSet(), "Evidence labels for ${commit.revision}")
+        assertEquals(EdictSignalLabel.entries.toSet(), pair.map { it.label }.toSet(), "Evidence labels for ${commit.revision}")
         pair.forEach { signal ->
-            val source = signal.source as EdictNextSignalSource.FromCommit
-            assertEquals(EdictNextSignalSource.FromCommit(commit.revision), source)
+            val source = signal.source as EdictSignalSource.FromCommit
+            assertEquals(EdictSignalSource.FromCommit(commit.revision), source)
             assertEquals(commit.path, signal.fileRevision.path)
-            val positive = signal.label == EdictNextSignalLabel.POSITIVE
+            val positive = signal.label == EdictSignalLabel.POSITIVE
             assertEquals(if (positive) commit.parent else commit.revision, signal.fileRevision.revision)
             val line = if (positive) commit.positiveLine else commit.negativeLine
             assertTrue(signal.fileRevision.expectedRanges.orEmpty().any { line in it.start..it.end }, "${signal.id} must cover corrected line $line")

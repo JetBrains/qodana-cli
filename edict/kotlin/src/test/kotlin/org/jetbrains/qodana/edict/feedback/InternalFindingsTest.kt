@@ -1,7 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.feedback.support.FINDING_MESSAGE
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.internalResult
@@ -27,8 +27,8 @@ class InternalFindingsTest {
 
     assertEquals(
       listOf(
-        InternalFinding("rule", "service/src/Main.kt", EdictNextLineRange(3, 4), FINDING_MESSAGE),
-        InternalFinding("other", "service/src/Other.kt", EdictNextLineRange(7, 7), FINDING_MESSAGE),
+        InternalFinding("rule", "service/src/Main.kt", EdictLineRange(3, 4), FINDING_MESSAGE),
+        InternalFinding("other", "service/src/Other.kt", EdictLineRange(7, 7), FINDING_MESSAGE),
       ),
       read(report).findings,
     )
@@ -43,7 +43,7 @@ class InternalFindingsTest {
   fun `leaves out a problem of a whole file, which has no line to comment on`() {
     val report = sarifReport(internalResult("rule", "src/Main.kt", startLine = null), internalResult("rule", "src/Main.kt", startLine = 3))
 
-    assertEquals(listOf(InternalFinding("rule", "src/Main.kt", EdictNextLineRange(3, 3), FINDING_MESSAGE)), read(report).findings)
+    assertEquals(listOf(InternalFinding("rule", "src/Main.kt", EdictLineRange(3, 3), FINDING_MESSAGE)), read(report).findings)
   }
 
   @Test
@@ -51,7 +51,7 @@ class InternalFindingsTest {
     // Git allows a colon in a file name; a Signal's path does not.
     val report = sarifReport(internalResult("rule", "src/a:b.kt", startLine = 3), internalResult("rule", "src/Main.kt", startLine = 3))
 
-    assertEquals(listOf(InternalFinding("rule", "src/Main.kt", EdictNextLineRange(3, 3), FINDING_MESSAGE)), read(report).findings)
+    assertEquals(listOf(InternalFinding("rule", "src/Main.kt", EdictLineRange(3, 3), FINDING_MESSAGE)), read(report).findings)
   }
 
   @Test

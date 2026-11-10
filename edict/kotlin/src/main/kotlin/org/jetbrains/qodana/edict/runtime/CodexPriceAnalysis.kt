@@ -5,7 +5,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.json
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant

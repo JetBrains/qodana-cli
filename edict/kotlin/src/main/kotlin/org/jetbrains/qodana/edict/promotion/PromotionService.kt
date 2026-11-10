@@ -6,18 +6,18 @@ import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
-import org.jetbrains.qodana.edict.edictnext.TokenRedactor
-import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
-import org.jetbrains.qodana.edict.edictnext.EvaluatedInspection
-import org.jetbrains.qodana.edict.edictnext.StoredInspection
-import org.jetbrains.qodana.edict.edictnext.storedInspection
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.InspectionPromotion
+import org.jetbrains.qodana.edict.core.PromotionPrState
+import org.jetbrains.qodana.edict.core.TokenRedactor
+import org.jetbrains.qodana.edict.core.WeakSignalPromotion
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictStoredCluster
+import org.jetbrains.qodana.edict.core.EvaluatedInspection
+import org.jetbrains.qodana.edict.core.StoredInspection
+import org.jetbrains.qodana.edict.core.storedInspection
+import org.jetbrains.qodana.edict.core.sha256Hex
 import java.time.Clock
 import java.time.Instant
 import kotlin.io.path.isRegularFile
@@ -48,8 +48,8 @@ internal class PromotionService(
     clusterId: String,
     pullRequest: ReviewReference,
     inspectionDigest: String,
-    signals: List<EdictNextSignal>,
-  ): List<EdictNextSignal> = weakSignals.recordSignals(clusterId, pullRequest, inspectionDigest, signals)
+    signals: List<EdictSignal>,
+  ): List<EdictSignal> = weakSignals.recordSignals(clusterId, pullRequest, inspectionDigest, signals)
 
   fun completeWeakSignalReview(clusterId: String, pullRequest: ReviewReference) =
     weakSignals.completeReview(clusterId, pullRequest)
@@ -64,7 +64,7 @@ internal class PromotionService(
     repository.loadClusters().sortedBy { it.id }.forEach { cluster ->
       if (count != null && candidates.size >= count) return@forEach
       // Only a generated inspection is promoted, so no other cluster's evaluation is read.
-      if (cluster.manifest.status != EdictNextClusterStatus.Generated) return@forEach
+      if (cluster.manifest.status != EdictClusterStatus.Generated) return@forEach
       val id = cluster.id
       try {
         val evaluation = repository.loadEvaluation(cluster)
@@ -109,7 +109,7 @@ internal class PromotionService(
     val clusters = repository.loadClusters().associateBy { it.id }
     val outcomes = clusterIds.map { clusterId ->
       val cluster = clusters[clusterId] ?: return@map ClusterPromotion.Failed(PromotionFailure(clusterId, "cluster does not exist"))
-      if (cluster.manifest.status != EdictNextClusterStatus.Generated) ClusterPromotion.Skipped
+      if (cluster.manifest.status != EdictClusterStatus.Generated) ClusterPromotion.Skipped
       else promote(cluster, reviews, promotionConfiguration, targetBranch)
     }
     return PromotionPromoteResponse(
@@ -119,7 +119,7 @@ internal class PromotionService(
   }
 
   private fun promote(
-    cluster: EdictNextStoredCluster,
+    cluster: EdictStoredCluster,
     reviews: ReviewApi,
     promotionConfiguration: PromotionConfiguration,
     resolvedTargetBranch: Lazy<String>,
@@ -178,7 +178,7 @@ internal class PromotionService(
     val outcomes = repository.loadClusters().flatMap { cluster ->
       cluster.manifest.promotions.filter {
         it.state == PromotionPrState.ON_REVIEW ||
-          it.state == PromotionPrState.CLOSED && cluster.manifest.status == EdictNextClusterStatus.Generated
+          it.state == PromotionPrState.CLOSED && cluster.manifest.status == EdictClusterStatus.Generated
       }.map { promotion -> checkReview(cluster, promotion) }
     }
     return PromotionCheckReviewsResponse(
@@ -201,7 +201,7 @@ internal class PromotionService(
   }
 
   /** A promotion on review is accepted once merged; a closed review, of a promotion on review or closed, awaits a decision. */
-  private fun checkReview(cluster: EdictNextStoredCluster, promotion: InspectionPromotion): ReviewOutcome = try {
+  private fun checkReview(cluster: EdictStoredCluster, promotion: InspectionPromotion): ReviewOutcome = try {
     val review = reviews().review(promotion.pullRequest)
     when {
       review.state == ReviewState.CLOSED_UNMERGED -> ReviewOutcome.Undecided(
@@ -224,7 +224,7 @@ internal class PromotionService(
     else ReviewOutcome.Failed(failure)
   }
 
-  private fun undecided(cluster: EdictNextStoredCluster, promotion: InspectionPromotion, evidence: String) =
+  private fun undecided(cluster: EdictStoredCluster, promotion: InspectionPromotion, evidence: String) =
     UndecidedPromotionReview(cluster.id, promotion.id, promotion.pullRequest.url, redactor.redact(evidence).take(MAX_EVIDENCE_CHARS))
 
   fun decideReviews(decisions: List<PromotionReviewDecision>): PromotionDecideReviewsResponse {
@@ -272,8 +272,8 @@ internal class PromotionService(
       updatedAt = Instant.now(clock).toString(),
       expectedInspectionDigest = promotion.inspectionDigest,
       targetStatus = when (decision.decision) {
-        ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING -> EdictNextClusterStatus.Pending
-        ClosedReviewDecision.DISCONTINUE_CLUSTER -> EdictNextClusterStatus.Discontinued
+        ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING -> EdictClusterStatus.Pending
+        ClosedReviewDecision.DISCONTINUE_CLUSTER -> EdictClusterStatus.Discontinued
       },
       rationale = decision.rationale,
     )

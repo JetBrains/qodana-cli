@@ -118,10 +118,10 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
 3. `edict-feedback-signal-analysis`: turn users' 👍/👎 answers to Edict's review comments into inbox Signals, only
    when your tools include `edict_collect_feedback_answers`, which the server offers where `edict.ci` is on GitHub. Run
    concurrently with steps 1 and 2; it needs no input. Report its failure without blocking independent stages.
-4. `edict-next-distribution`: assign the resulting inbox Signals to clusters. Each task assigns a bounded share of the
+4. `edict-distribution`: assign the resulting inbox Signals to clusters. Each task assigns a bounded share of the
    run's batch; while a completed task reports remaining Signals, delegate another distribution task, one at a time.
 5. Select clusters for signal enrichment and rule generation.
-   For suggestions, call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user supplies one.
+   For suggestions, call `edict_select_generation_clusters`, omitting `generationCount` unless the user supplies one.
    It ranks by distinct source files among unprocessed strong positive Signals and returns candidates and
    `maxConcurrentClusterTasks`, not a reservation or a required target set. Multiple Signals from the same source path
    count once regardless of revision. You may choose
@@ -136,7 +136,7 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    Enrich each target with strong historical evidence derived from all its gathered Signals. Wait for all enrichment
    tasks to complete before delegating generation. An empty target list creates no enrichment tasks.
    A failed or incomplete search blocks generation; still continue to promotion after settling upstream tasks.
-7. `edict-next-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
+7. `edict-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
    to the concurrency limit active. Use every original and enriched Signal.
    Valid analyzed inspections become Generated regardless of strong- or weak-example accuracy; retain failures in
    history and evaluation. Completed generation never chooses Pending. Failed or cancelled generation tasks and

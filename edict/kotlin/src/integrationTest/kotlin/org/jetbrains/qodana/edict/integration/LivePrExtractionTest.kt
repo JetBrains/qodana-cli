@@ -8,8 +8,8 @@ import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
@@ -68,7 +68,7 @@ class LivePrExtractionTest : IntegrationTest() {
         val diff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))
         val signals = files.map { file ->
             val signal = SignalValidation.validate("inbox/${file.fileName}", file.readText())
-            val signalSource = signal.source as EdictNextSignalSource.FromPR
+            val signalSource = signal.source as EdictSignalSource.FromPR
             assertEquals(7, signalSource.prNumber)
             assertEquals(fixture.title, signalSource.title)
             assertEquals(listOf(fixture.message), signalSource.discussionMessages)
@@ -77,7 +77,7 @@ class LivePrExtractionTest : IntegrationTest() {
             assertEquals(historyPath, signal.fileRevision.path)
             assertTrue(signal.provenance.workItemId.startsWith("pr-7-"))
             assertFalse(signal.provenance.analysisBatchId.isNullOrBlank())
-            val positive = signal.label == EdictNextSignalLabel.POSITIVE
+            val positive = signal.label == EdictSignalLabel.POSITIVE
             val revision = if (positive) historyBefore else historyCommit
             val line = if (positive) 5 else 10
             assertEquals(revision, signal.fileRevision.revision)
@@ -92,7 +92,7 @@ class LivePrExtractionTest : IntegrationTest() {
             )
             signal
         }
-        assertEquals(EdictNextSignalLabel.entries.toSet(), signals.map { it.label }.toSet())
+        assertEquals(EdictSignalLabel.entries.toSet(), signals.map { it.label }.toSet())
         assertEquals(1, signals.map { it.provenance.workItemId }.distinct().size)
         assertEquals(1, signals.map { it.provenance.analysisBatchId }.distinct().size)
         assertEquals(2, signals.map { it.idempotencyKey }.distinct().size)

@@ -6,12 +6,12 @@ import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictManagementService
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
-import org.jetbrains.qodana.edict.support.EdictNextTestTools
-import org.jetbrains.qodana.edict.support.edictNextToolset
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.core.EdictManagementService
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Delegation
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Step
+import org.jetbrains.qodana.edict.support.EdictTestTools
+import org.jetbrains.qodana.edict.support.edictToolset
 import org.jetbrains.qodana.edict.support.launch
 import org.jetbrains.qodana.edict.runtime.CodexPriceAnalysis
 import org.junit.jupiter.api.Test
@@ -27,7 +27,7 @@ class TaskLifecycleLoggingTest {
     @TempDir
     lateinit var directory: Path
 
-    private fun EdictNextRepositoryState.delegateChild(parent: String, skill: String, title: String): Delegation {
+    private fun EdictRepositoryState.delegateChild(parent: String, skill: String, title: String): Delegation {
         val task = addTask(parent, skill, title)
         return delegate(parent, task.id, "\$$skill\nRead /skills/$skill/SKILL.md").also { readTask(it.token) }
     }
@@ -40,14 +40,14 @@ class TaskLifecycleLoggingTest {
         put("token", worker.token); put("status", status); put("result", "Done")
     }
 
-    private fun EdictNextTestTools.ok(name: String, arguments: JsonObject) {
+    private fun EdictTestTools.ok(name: String, arguments: JsonObject) {
         assertEquals(false, call(name, arguments).flag("isError"))
     }
 
     @Test
     fun `price tool prints the report to the CI stream only after all tasks are terminal`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val created = store.createPlan("Generate", listOf(Step("edict-next-cluster-generation", "Generate rule")))
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
+            val created = store.createPlan("Generate", listOf(Step("edict-cluster-generation", "Generate rule")))
             val output = StringWriter()
             val layout = EdictLayout(directory, store.root)
             val rendered = "Price report:\n  - Generate rule: $14.3129 (24,115,170 tokens)\nTotal price: $14.3129 (24,115,170 tokens)"
@@ -60,7 +60,7 @@ class TaskLifecycleLoggingTest {
                 analyses++
                 CodexPriceAnalysis(report, rendered, 14.3128844, 24_115_170)
             })
-            edictNextToolset(layout, management, configuration = EdictConfiguration(calculatePrice = true)).createServer()
+            edictToolset(layout, management, configuration = EdictConfiguration(calculatePrice = true)).createServer()
             val arguments = buildJsonObject { put("token", created.token) }
 
             assertEquals(true, management.call("edict_calculate_price", arguments).flag("isError"))
@@ -68,7 +68,7 @@ class TaskLifecycleLoggingTest {
             assertEquals("", output.toString())
             assertEquals("", Files.readString(layout.tasksLogPath))
 
-            val worker = store.launch(created.token, created.plan.tasks.single().id, "edict-next-cluster-generation")
+            val worker = store.launch(created.token, created.plan.tasks.single().id, "edict-cluster-generation")
             assertEquals(true, management.call("edict_calculate_price", buildJsonObject { put("token", worker.token) }).flag("isError"))
             assertEquals(0, analyses)
             store.finishTask(worker.token, "completed", "Generated")
@@ -85,13 +85,13 @@ class TaskLifecycleLoggingTest {
 
     @Test
     fun `parallel task transitions have one ordered pair each and do not log rejected calls`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
             val created = store.createPlan("Generate", emptyList())
             val output = StringWriter()
             val layout = EdictLayout(directory, directory.resolve(".edict"))
-            val server = EdictNextTestTools(store, layout = layout, taskOutput = PrintWriter(output))
+            val server = EdictTestTools(store, layout = layout, taskOutput = PrintWriter(output))
             val workers = (1..15).map { index ->
-                store.delegateChild(created.token, "edict-next-cluster-generation", "Generate $index")
+                store.delegateChild(created.token, "edict-cluster-generation", "Generate $index")
             }
             Executors.newFixedThreadPool(15).use { executor ->
                 workers.mapIndexed { index, worker -> executor.submit {
@@ -122,20 +122,20 @@ class TaskLifecycleLoggingTest {
 
     @Test
     fun `nested review inherits cluster and cancellation ends all active descendants once`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val created = store.createPlan("Generate", listOf(Step("edict-next-cluster-generation", "Generate rule")))
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
+            val created = store.createPlan("Generate", listOf(Step("edict-cluster-generation", "Generate rule")))
             val output = StringWriter()
-            val server = EdictNextTestTools(store, taskOutput = PrintWriter(output))
+            val server = EdictTestTools(store, taskOutput = PrintWriter(output))
             val cluster = store.delegate(created.token, created.plan.tasks.single().id,
-                "\$edict-next-cluster-generation\nRead /skills/edict-next-cluster-generation/SKILL.md")
+                "\$edict-cluster-generation\nRead /skills/edict-cluster-generation/SKILL.md")
             store.readTask(cluster.token)
             server.ok("edict_task_get", start(cluster))
-            val finished = store.delegateChild(cluster.token, "edict-next-generation-round", "Generation round")
+            val finished = store.delegateChild(cluster.token, "edict-generation-round", "Generation round")
             server.ok("edict_task_get", start(finished))
             server.ok("edict_task_finish", finish(finished))
-            val review = store.delegateChild(cluster.token, "edict-next-code-example-overseer", "Reconcile\nexamples\tfor rule")
+            val review = store.delegateChild(cluster.token, "edict-code-example-overseer", "Reconcile\nexamples\tfor rule")
             server.ok("edict_task_get", start(review))
-            val example = store.delegateChild(review.token, "edict-next-code-example", "Check example")
+            val example = store.delegateChild(review.token, "edict-code-example", "Check example")
             server.ok("edict_task_get", start(example))
             server.ok("edict_task_cancel", buildJsonObject {
                 put("token", created.token); put("taskId", cluster.taskId); put("result", "Worker lost")
@@ -155,14 +155,14 @@ class TaskLifecycleLoggingTest {
 
     @Test
     fun `lifecycle messages stay separate from tool responses`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val created = store.createPlan("Generate", listOf(Step("edict-next-cluster-generation", "Generate")))
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
+            val created = store.createPlan("Generate", listOf(Step("edict-cluster-generation", "Generate")))
             val task = created.plan.tasks.single()
-            val worker = store.delegate(created.token, task.id, "\$edict-next-cluster-generation\nRead /skills/edict-next-cluster-generation/SKILL.md")
+            val worker = store.delegate(created.token, task.id, "\$edict-cluster-generation\nRead /skills/edict-cluster-generation/SKILL.md")
             store.readTask(worker.token)
             val messages = StringWriter()
             val protocol = StringWriter()
-            val server = EdictNextTestTools(store, taskOutput = PrintWriter(messages))
+            val server = EdictTestTools(store, taskOutput = PrintWriter(messages))
             val input = listOf("edict_task_get" to start(worker), "edict_task_finish" to finish(worker)).mapIndexed { index, (name, arguments) ->
                 wireJson.encodeToString(buildJsonObject {
                     put("jsonrpc", "2.0"); put("id", index); put("method", "tools/call")
