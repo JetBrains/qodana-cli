@@ -126,6 +126,10 @@
       "paths": ["dockerfiles/**"]
     }
   ],
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": {
+    "addLabels": ["security"]
+  },
   "commitMessagePrefix": "QD-8148 ",
   "schedule": ["* 0-3 1 * *"]
 }
