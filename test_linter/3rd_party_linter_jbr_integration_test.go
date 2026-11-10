@@ -314,7 +314,7 @@ func verifyBaselineFileUsedWithoutCloud(t *testing.T, scanOutput string, reqMap 
 		findRequest(reqMap, "GET", "/linters/v1/linters/baseline"),
 		"a scan with --baseline should not request the baseline of Qodana Cloud",
 	)
-	assert.NotContains(t, scanOutput, "Fetching baseline from Qodana Cloud")
+	assert.NotContains(t, scanOutput, "Checking for baseline from Qodana Cloud")
 	assert.Contains(t, scanOutput, "The analysis used the baseline file /workspace/results/qodana.sarif-baseline.json")
 	t.Log("✓ Baseline file usage verified")
 }
@@ -330,7 +330,7 @@ func verifyCloudBaseline(t *testing.T, scanOutput string, reqMap map[string]*Moc
 	assert.Equal(t, 200, baselineReq.ResponseStatus, "baseline request should return 200")
 	assert.Equal(t, "toolName=QDTEST", baselineReq.Query, "baseline should be requested for the linter product code")
 
-	assert.Contains(t, scanOutput, "Fetching baseline from Qodana Cloud")
+	assert.Contains(t, scanOutput, "Checking for baseline from Qodana Cloud")
 	assert.Contains(t, scanOutput, "The analysis used the baseline from Qodana Cloud")
 	// the cloud baseline of the test data holds another rule than the baseline file, so the grouping
 	// tells which of the two the analysis has used

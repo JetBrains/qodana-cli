@@ -54,6 +54,20 @@ done
 sudo rsync -av "${extracted}/etc/" /etc
 sudo rsync -av "${extracted}/usr/" /usr
 
+# The ubuntu-26.04 image ships a containers.conf.d drop-in that forces the iptables
+# firewall driver (actions/runner-images#14230), which netavark 2 no longer has.
+# Drop-ins load in lexical order, so this one overrides it whatever its name.
+# NETAVARK_FW can't do it: podman sets it from containers.conf, over the inherited one.
+if ! netavark_version=$("${extracted}/usr/local/lib/podman/netavark" --version); then
+  echo "::error::could not determine the bundled netavark version" >&2
+  exit 1
+fi
+if [[ "${netavark_version}" =~ ^netavark\ ([0-9]+)\. ]] && (( BASH_REMATCH[1] >= 2 )); then
+  sudo mkdir -p /etc/containers/containers.conf.d
+  printf '[network]\nfirewall_driver = "nftables"\n' |
+    sudo tee /etc/containers/containers.conf.d/99-zz-setup-podman.conf
+fi
+
 # podman resolves crun from /usr/bin/crun before the bundled /usr/local/bin/crun.
 sudo install -m 0755 "${extracted}/usr/local/bin/crun" /usr/bin/crun
 

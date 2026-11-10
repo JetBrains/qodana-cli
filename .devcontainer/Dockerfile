@@ -15,7 +15,7 @@
 #
 # This Dockerfile is for https://github.com/jetbrains/qodana-cli dev container.
 
-FROM dhi.io/golang:1.25-debian13-dev
+FROM dhi.io/golang:1.27.3-debian13-dev
 ARG TARGETARCH
 ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \

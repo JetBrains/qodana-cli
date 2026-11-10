@@ -231,10 +231,10 @@ var (
 		Name:            "qodana-poly",
 		ProductCode:     QDPOLY,
 		DockerImage:     "jetbrains/qodana-poly",
-		SupportNative:   false,
-		IsPaid:          false,
+		SupportNative:   true,
+    IsPaid:          true,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	// AllLinters Order is important for detection
@@ -306,6 +306,8 @@ var LangsToLinters = map[string][]Linter{
 	"C++":               {CppLinter, ClangLinter, DotNetLinter},
 	"Ruby":              {RubyLinter},
 	"Rust":              {RustLinter},
+	"Dart":              {PolyLinter},
+	"Lua":               {PolyLinter},
 }
 
 var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })
