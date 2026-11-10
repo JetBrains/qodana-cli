@@ -20,11 +20,31 @@ private const val MAX_RESERVATION_ATTEMPTS = 5
  * Comments on the workflow's [event] with the findings of the SARIF report at [sarif] that the inspections of `prepare` reported
  * on lines the pull request adds, at the commit the report names as analysed. First reserves the findings: records them in the
  * state directory of [layout], which `prepare` checked out, and pushes them to [stateBranch]; then posts them through [api]. A
- * comment GitHub refuses leaves its record, which the routine later finds unanswered.
+ * comment GitHub refuses leaves its record, which the routine later finds unanswered. Finally removes the checkout of the
+ * state, which the next run takes from origin again.
  */
 internal fun postFeedback(
     layout: EdictLayout,
     stateBranch: String,
+    event: ActionsPullRequest,
+    sarif: Path,
+    api: GitHubFeedbackApi,
+    clock: Clock,
+) {
+    val branch = StateBranch(layout, stateBranch)
+    try {
+        reserveAndComment(layout, branch, event, sarif, api, clock)
+    }
+    catch (e: Throwable) {
+        runCatching { branch.remove() }.exceptionOrNull()?.let(e::addSuppressed)
+        throw e
+    }
+    branch.remove()
+}
+
+private fun reserveAndComment(
+    layout: EdictLayout,
+    branch: StateBranch,
     event: ActionsPullRequest,
     sarif: Path,
     api: GitHubFeedbackApi,
@@ -42,7 +62,7 @@ internal fun postFeedback(
         logger.info { "No Edict feedback finding is on a line ${pullRequest.url} adds" }
         return
     }
-    val worktree = StateBranch(layout, stateBranch).worktree()
+    val worktree = branch.worktree()
     val reserved = reserve(worktree, EdictRepositoryDirectory(layout.stateDirectory), pullRequest, revision, candidates, clock)
     reserved.forEach { record ->
         val comment = api.comment(pullRequest, record.revision, record.path, record.commentLine, feedbackComment(record))

@@ -10,14 +10,17 @@ import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_COMMENTS
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_FILES
-import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_READ
 import org.jetbrains.qodana.edict.feedback.support.commentUrl
 import org.jetbrains.qodana.edict.feedback.support.edictComment
-import org.jetbrains.qodana.edict.feedback.support.pullRequestIn
+import org.jetbrains.qodana.edict.feedback.support.COLLECTED_AT
+import org.jetbrains.qodana.edict.feedback.support.PROJECT
+import org.jetbrains.qodana.edict.feedback.support.listAnswer
+import org.jetbrains.qodana.edict.feedback.support.listedPullRequest
+import org.jetbrains.qodana.edict.feedback.support.recentPullRequests
 import org.jetbrains.qodana.edict.feedback.support.reply
-import org.jetbrains.qodana.edict.feedback.support.reviewComments
 import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
+import org.jetbrains.qodana.edict.edictnext.EdictNextReply
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
@@ -46,8 +49,7 @@ class GitHubFeedbackApiTest {
   @Test
   fun `a pull request answers the comments of Edict with their thumbs and replies, apart from other review comments`() {
     val recording = feedbackScripted(
-      PULL_REQUEST_READ answeredWith pullRequestIn("open"),
-      PULL_REQUEST_COMMENTS answeredWith reviewComments(
+      PULL_REQUEST_COMMENTS answeredWith listAnswer(
         edictComment(11, feedbackRecord(1), thumbsUp = 2),
         """{"id": 12, "body": "Rename this", "html_url": "${commentUrl(12)}", "user": {"login": "bob"}, "reactions": {"+1": 1, "-1": 0}}""",
         reply(13, to = 11, "alice", "It really blocks"),
@@ -56,22 +58,52 @@ class GitHubFeedbackApiTest {
       ),
     )
 
-    val read = recording.replay { threads(PULL_REQUEST) }
+    val read = recording.replay { threads(PULL_REQUEST) }.getOrThrow()
 
     val expectedThreads = mapOf(
-      "f-01" to FeedbackThread(commentUrl(11), EdictNextSignalLabel.POSITIVE, listOf(FeedbackReply("alice", "It really blocks"))),
+      "f-01" to FeedbackThread(commentUrl(11), EdictNextSignalLabel.POSITIVE, listOf(EdictNextReply("alice", "It really blocks"))),
       "f-02" to FeedbackThread(commentUrl(14), null, emptyList()),
     )
-    assertEquals(PullRequestThreads(open = true, expectedThreads), read)
+    assertEquals(expectedThreads, read)
   }
 
   @Test
-  fun `a pull request in a state GitHub never gives fails the read rather than counting as closed`() {
-    val recording = feedbackScripted(PULL_REQUEST_READ answeredWith answer(200, """{"number": 7}"""))
+  fun `the recent pull requests are those updated since the given time, open or closed`() {
+    val recording = feedbackScripted(
+      recentPullRequests() answeredWith listAnswer(
+        listedPullRequest(9, "open", updatedAt = "2026-11-09T08:00:00Z"),
+        listedPullRequest(8, "closed", updatedAt = "2026-11-08T08:00:00Z"),
+        listedPullRequest(7, "open", updatedAt = "2026-11-01T08:00:00Z"),
+      ),
+    )
 
-    val failure = assertFailsWith<IllegalArgumentException> { recording.replay { threads(PULL_REQUEST) } }
+    val recent = recording.replay { recentPullRequests(PROJECT, SINCE, limit = 200) }.getOrThrow()
 
-    assertEquals("GitHub read ${PULL_REQUEST.url} in the unknown state ''", failure.message)
+    assertEquals(mapOf("9" to true, "8" to false), recent)
+  }
+
+  @Test
+  fun `the recent pull requests are at most the limit, the most recently updated`() {
+    val recording = feedbackScripted(
+      recentPullRequests() answeredWith listAnswer(listedPullRequest(9, "open"), listedPullRequest(8, "closed")),
+    )
+
+    val recent = recording.replay { recentPullRequests(PROJECT, SINCE, limit = 1) }.getOrThrow()
+
+    assertEquals(mapOf("9" to true), recent)
+  }
+
+  @Test
+  fun `a full page of recent pull requests reads the next one`() {
+    val full = (200 downTo 101).map { listedPullRequest(it, "open") }
+    val recording = feedbackScripted(
+      recentPullRequests(page = 1) answeredWith listAnswer(*full.toTypedArray()),
+      recentPullRequests(page = 2) answeredWith listAnswer(listedPullRequest(100, "closed")),
+    )
+
+    val recent = recording.replay { recentPullRequests(PROJECT, SINCE, limit = 200) }.getOrThrow()
+
+    assertEquals((200 downTo 101).associate { "$it" to true } + ("100" to false), recent)
   }
 
   @Test
@@ -95,6 +127,16 @@ class GitHubFeedbackApiTest {
   }
 
   @Test
+  fun `a comment GitHub refuses for its rate limit says why`() {
+    val limited = """{"message": "You have exceeded a secondary rate limit."}"""
+    val recording = feedbackScripted(comment("Is this a problem?") answeredWith answer(429, limited))
+
+    val comment = recording.replay { comment(PULL_REQUEST, HEAD_REVISION, "src/Main.kt", 3, "Is this a problem?") }
+
+    assertEquals(PostedComment.Refused(429, "You have exceeded a secondary rate limit."), comment)
+  }
+
+  @Test
   fun `a comment GitHub fails to take fails the run`() {
     val recording = feedbackScripted(comment("Is this a problem?") answeredWith answer(502, """{"message": "Server Error"}"""))
 
@@ -105,6 +147,9 @@ class GitHubFeedbackApiTest {
     assertEquals("GitHub answered a review comment on ${PULL_REQUEST.url} with HTTP 502: Server Error", failure.message)
   }
 }
+
+/** Since when the fixture routine waits for answers. */
+private val SINCE = COLLECTED_AT.minus(FEEDBACK_ANSWER_WINDOW)
 
 /** The request that comments [body] on line 3 of `src/Main.kt` of [PULL_REQUEST]. */
 private fun comment(body: String) = ProviderRequest(

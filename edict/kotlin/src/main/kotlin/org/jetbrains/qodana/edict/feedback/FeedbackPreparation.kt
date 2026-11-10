@@ -36,7 +36,12 @@ internal fun prepareFeedback(
     }
     val pullRequest = event.feedbackPullRequest() ?: return
     val branch = StateBranch(layout, stateBranch)
-    val checkout = branch.checkOut()
+    if (!branch.onOrigin()) {
+        logger.warn { "$FEEDBACK_UNAVAILABLE: origin has no $stateBranch, which holds the Edict state; the Edict routine publishes it" }
+        return
+    }
+    // Only the current state is read, and `post` commits onto the state origin has then.
+    val checkout = branch.checkOut(shallow = true)
     logger.info { branch.describe(checkout) }
     val paths = EdictRepositoryDirectory(layout.stateDirectory)
     val inspections = selectFeedbackInspections(EdictRepository(paths), FeedbackRecords(paths), pullRequest).inspections

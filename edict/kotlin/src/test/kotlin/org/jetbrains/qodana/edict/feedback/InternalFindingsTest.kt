@@ -47,6 +47,14 @@ class InternalFindingsTest {
   }
 
   @Test
+  fun `leaves out a problem in a file whose path a Signal cannot hold`() {
+    // Git allows a colon in a file name; a Signal's path does not.
+    val report = sarifReport(internalResult("rule", "src/a:b.kt", startLine = 3), internalResult("rule", "src/Main.kt", startLine = 3))
+
+    assertEquals(listOf(InternalFinding("rule", "src/Main.kt", EdictNextLineRange(3, 3), FINDING_MESSAGE)), read(report).findings)
+  }
+
+  @Test
   fun `a report whose inspections run for feedback found nothing has no findings`() {
     // Qodana leaves the property out when those inspections report nothing.
     assertEquals(FeedbackReport("", emptyList()), read("""{"runs": [{"results": [], "properties": {}}]}"""))

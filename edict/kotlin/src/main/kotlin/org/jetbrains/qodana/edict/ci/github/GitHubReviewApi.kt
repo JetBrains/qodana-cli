@@ -162,8 +162,8 @@ internal class GitHubReviewApi(
       value.obj("head").text("sha"),
       merged,
     )
-    val comments = http.gitHubPages("$endpoint/comments")
-    val reviews = http.gitHubPages("$endpoint/reviews")
+    val comments = http.gitHubPages("$endpoint/comments", emptyMap()).toList()
+    val reviews = http.gitHubPages("$endpoint/reviews", emptyMap()).toList()
     val byId = comments.associateBy { it.number("id") }
     require(byId.size == comments.size && byId.keys.all { it > 0 }) { "Invalid or duplicate comment IDs" }
     val threads = comments.groupBy { it.number("in_reply_to_id").takeIf { id -> id > 0 } ?: it.number("id") }
@@ -385,7 +385,7 @@ internal class GitHubReviewApi(
       "Invalid merged-change evidence"
     }
     val messages = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews",
-      "$root/pulls/${urlPart(reference.id)}/comments").flatMap(http::gitHubPages)
+      "$root/pulls/${urlPart(reference.id)}/comments").flatMap { http.gitHubPages(it, emptyMap()) }
       .filterNot { it.isBot() }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
     return MergedReview(pull.text("title"), messages, before, merged, changes)
@@ -403,7 +403,7 @@ internal class GitHubReviewApi(
     val endpoints = listOf(
       "$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews", "$root/pulls/${urlPart(reference.id)}/comments",
     )
-    val messages = endpoints.flatMap(http::gitHubPages)
+    val messages = endpoints.flatMap { http.gitHubPages(it, emptyMap()) }
       .filterNot { it.isBot() }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
     return ReviewStatus(state, messages.joinToString("\n\n"))
@@ -427,17 +427,20 @@ internal class GitHubReviewApi(
 private const val PAGE_SIZE = 100
 private const val MAX_PAGES = 1000
 
-/** Every item of the GitHub list at [endpoint], read page by page. */
-internal fun CiHttpTransport.gitHubPages(endpoint: String): List<JsonObject> {
-  val all = mutableListOf<JsonObject>()
+/** The items of the GitHub list at [endpoint] with [query], read page by page as far as they are taken. */
+internal fun CiHttpTransport.gitHubPages(endpoint: String, query: Map<String, String>): Sequence<JsonObject> = sequence {
   for (page in 1..MAX_PAGES) {
-    val response = send("GET", endpoint, mapOf("per_page" to "$PAGE_SIZE", "page" to "$page"))
-    expectStatus(response, "GitHub read of $endpoint", 200)
-    val items = response.body.jsonArray.map { it.jsonObject }
-    all += items
-    if (items.size < PAGE_SIZE) return all
+    val items = expectArray(send("GET", endpoint, query + mapOf("per_page" to "$PAGE_SIZE", "page" to "$page")), "GitHub read of $endpoint")
+    yieldAll(items)
+    if (items.size < PAGE_SIZE) return@sequence
   }
   error("GitHub pagination exceeded $MAX_PAGES pages; refusing incomplete evidence")
+}
+
+/** The objects of the list that [response] of [operation] holds; fails when its status is not 200 or it holds no list. */
+internal fun expectArray(response: CiHttpResponse, operation: String): List<JsonObject> {
+  expectStatus(response, operation, 200)
+  return (response.body as? JsonArray ?: error("$operation did not return a list")).map { it.jsonObject }
 }
 
 /** The object that [response] of [operation] holds; fails when its status is none of [expected] or it holds no object. */

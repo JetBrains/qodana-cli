@@ -2,10 +2,7 @@
 package org.jetbrains.qodana.edict.feedback
 
 import io.modelcontextprotocol.kotlin.sdk.server.Server
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.encodeToJsonElement
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.property
 import org.jetbrains.qodana.edict.edictnext.requireString
 import org.jetbrains.qodana.edict.edictnext.stringArguments
@@ -24,17 +21,18 @@ internal class FeedbackMcpToolset(
         server.addTool(
             name = "edict_collect_feedback_answers",
             description = "Return the active feedback records whose review comment got only 👍 (label POSITIVE: the finding " +
-                "is a real problem) or only 👎 (label NEGATIVE: it is not), with the comment's URL and replies, and move " +
-                "the other records of closed pull requests to history; the rest stay active until they get an answer.",
+                "is a real problem) or only 👎 (label NEGATIVE: it is not), with the comment's URL and replies, and the pull " +
+                "requests GitHub could not read, whose records stay active. Moves to history the other records of closed pull " +
+                "requests and of pull requests no longer recently updated; the rest stay active until they get an answer.",
             inputSchema = stringArguments("token" to "Your managed feedback-analysis task token"),
         ) { request ->
             management.requireSkill(request.requireString("token"), FEEDBACK_SIGNAL_SKILL)
-            buildJsonObject { put("answers", EdictNextJson.encodeToJsonElement(signals.collect())) }.toToolResult()
+            signals.collect().toToolResult()
         }
 
         server.addTool(
             name = "edict_publish_feedback_signal",
-            description = "Publish the STRONG SubmittedFeedback Signal of one answer that edict_collect_feedback_answers " +
+            description = "Publish the STRONG GitHubEvaluatedFinding Signal of one answer that edict_collect_feedback_answers " +
                 "returned to the inbox, and move its record to history. The server takes the label from the comment's " +
                 "thumbs, and the code, revision, inspection and replies, as written, from the record and the comment.",
             inputSchema = toolSchema(
