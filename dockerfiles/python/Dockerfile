@@ -83,7 +83,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo "conda activate base" >> ~/.bashrc && ln -s ${CONDA_DIR}/bin/python3 /usr/bin/python3 && \
     find ${CONDA_DIR}/ -follow -type f -name '*.a' -delete && find ${CONDA_DIR}/ -follow -type f -name '*.js.map' -delete && \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv \
-      "ca-certificates>=2026.10.19" "certifi>=2026.10.19" "pip>=26.2.2" "virtualenv>=21.15.6" && \
+      "ca-certificates>=2026.10.19" "certifi>=2026.10.19" "pip>=26.2.2" "virtualenv>=21.15.6" "python>=3.12.16,<3.13" \
+      "libmambapy<2" && \
     ${CONDA_DIR}/bin/conda clean -afy && \
     "$CONDA_DIR/bin/python" -I - <<"EOF" && \
     poetry config virtualenvs.create false && \
