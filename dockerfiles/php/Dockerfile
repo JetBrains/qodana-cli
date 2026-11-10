@@ -69,14 +69,14 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 COPY --from=composer_base /usr/bin/composer /usr/bin/composer
 
 ARG QD_RELEASE=""
-ARG QD_VERSION="2026.1"
+ARG QD_VERSION="2026.3"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="php"
 ARG QD_CODE="QDPHP"
-ARG QD_BUILD="261.25880"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138-aarch64.tar.gz.sha256"
+ARG QD_BUILD="263.7902"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
