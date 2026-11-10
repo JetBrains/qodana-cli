@@ -5,6 +5,7 @@ import com.jetbrains.qodana.sarif.SarifUtil
 import com.jetbrains.qodana.sarif.model.OriginalUriBaseIds
 import com.jetbrains.qodana.sarif.model.Result
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.signals.validSourcePath
 import java.nio.file.Path
 
 /** The prefix Qodana gives the ids of the inspections it runs for feedback, so that they never clash with the profile's. */
@@ -32,7 +33,7 @@ internal data class FeedbackReport(
 
 /**
  * The SARIF report at [sarif], with the problems that the inspections run for feedback reported on lines of files: a problem
- * of a whole file or project has no line to comment on. Read as the IDE's tests read the property, without the report's own
+ * of a whole file or project has no line to comment on, and one in a file whose path no Signal can hold is left out. Read as the IDE's tests read the property, without the report's own
  * results, which may be many.
  */
 internal fun feedbackReport(sarif: Path): FeedbackReport {
@@ -52,9 +53,10 @@ private fun internalFinding(result: Result, baseIds: OriginalUriBaseIds): Intern
     val uri = artifact.uri?.takeIf(String::isNotEmpty) ?: return null
     val start = region.startLine?.takeIf { it > 0 } ?: return null
     val end = (region.endLine ?: start).coerceAtLeast(start)
+    val path = (baseUri(baseIds, artifact.uriBaseId, emptySet()) + uri).takeIf(::validSourcePath) ?: return null
     return InternalFinding(
         result.ruleId.orEmpty().removePrefix(INTERNAL_INSPECTION_ID_PREFIX),
-        baseUri(baseIds, artifact.uriBaseId, emptySet()) + uri,
+        path,
         EdictNextLineRange(start, end),
         result.message?.text.orEmpty(),
     )

@@ -25,10 +25,11 @@ Registry ID: `edict-promote`.
    Publication requires an inspection file and a current evaluation matching the inspection and examples, and strong positive Signals with satisfied strong positive examples
    from at least five distinct source files. It does not reapply metric thresholds.
    The server builds fix links from the source evidence, using the source repository or configured repository.
-   Negative Signals, generated evidence, feedback, and weak Signals do not count toward the reference requirement. Never invent URLs to bypass this check. A repository-relative path counts once across
+   Negative Signals, generated evidence, `SubmittedFeedback`, and weak Signals do not count toward the reference
+   requirement; a `GitHubEvaluatedFinding` 👍 counts, linked to its review comment. Never invent URLs to bypass this check. A repository-relative path counts once across
    revisions and reviews. The server builds each PR description from up to five source files, with one representative
    positive Signal per file, inspection name and description, estimated precision/recall/F1, and fix links labeled with
-   PR numbers or short commit hashes. It includes the last project analysis counts when available, linking the findings
+   PR numbers or short commit hashes, and confirmation links to review comments. It includes the last project analysis counts when available, linking the findings
    count to that evaluation's uploaded Qodana Cloud report when one exists. Never invent a report URL or a current count.
 
 Repository identity, target branch, reviewer, and target inspections directory come from the server's `qodana.yaml`

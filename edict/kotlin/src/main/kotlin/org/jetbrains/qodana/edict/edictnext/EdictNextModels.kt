@@ -68,6 +68,8 @@ sealed interface EdictNextSignalSource {
     val url: String? = null,
   ) : EdictNextSignalSource
 
+  /** Feedback supplied with the project, in the checked-in format; Edict's own feedback is [GitHubEvaluatedFinding]. */
+  @Deprecated("Edict records the answers to its own review comments as GitHubEvaluatedFinding")
   @Serializable
   @SerialName("SubmittedFeedback")
   @Suppress("unused")
@@ -82,10 +84,30 @@ sealed interface EdictNextSignalSource {
     val url: String? = null,
   ) : EdictNextSignalSource
 
+  /**
+   * A finding of a not yet promoted inspection that users rated on a GitHub pull request: the thumbs on its review comment
+   * give the Signal's label, and [replies] are the comment's replies as their authors wrote them.
+   */
+  @Serializable
+  @SerialName("GitHubEvaluatedFinding")
+  data class GitHubEvaluatedFinding(
+    val inspectionName: String,
+    val inspectionDescription: String,
+    /** The problem the inspection reported, as its message says. */
+    val problemMessage: String,
+    /** The web page of the review comment. */
+    val url: String,
+    val replies: List<EdictNextReply>,
+  ) : EdictNextSignalSource
+
   @Serializable
   @SerialName("Generated")
   data class Generated(val resultMessage: String? = null) : EdictNextSignalSource
 }
+
+/** A reply to a review comment: what the user with the login [author] wrote. */
+@Serializable
+data class EdictNextReply(val author: String, val body: String)
 
 @Serializable
 data class EdictNextLineRange(

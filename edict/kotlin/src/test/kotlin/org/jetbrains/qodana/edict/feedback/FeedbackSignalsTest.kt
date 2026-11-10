@@ -1,9 +1,11 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
+import org.jetbrains.qodana.edict.ci.support.answer
 import org.jetbrains.qodana.edict.ci.support.answeredWith
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextReply
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
@@ -12,15 +14,19 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.stableSignalId
+import org.jetbrains.qodana.edict.feedback.support.COLLECTED_AT
+import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_COMMENTS
-import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_READ
 import org.jetbrains.qodana.edict.feedback.support.commentUrl
+import org.jetbrains.qodana.edict.feedback.support.commentsOf
 import org.jetbrains.qodana.edict.feedback.support.edictComment
 import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
-import org.jetbrains.qodana.edict.feedback.support.pullRequestIn
+import org.jetbrains.qodana.edict.feedback.support.listAnswer
+import org.jetbrains.qodana.edict.feedback.support.listedPullRequest
+import org.jetbrains.qodana.edict.feedback.support.pullRequest
+import org.jetbrains.qodana.edict.feedback.support.recentPullRequests
 import org.jetbrains.qodana.edict.feedback.support.reply
-import org.jetbrains.qodana.edict.feedback.support.reviewComments
 import org.jetbrains.qodana.edict.feedback.support.storeActive
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
@@ -28,6 +34,8 @@ import org.jetbrains.qodana.edict.support.launch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
+import java.time.Clock
+import java.time.ZoneOffset
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -45,8 +53,8 @@ class FeedbackSignalsTest {
       paths.storeActive(*records.toTypedArray())
       // f-03 got both thumbs, f-04 none, and the comment of f-05 is gone.
       val recording = feedbackScripted(
-        PULL_REQUEST_READ answeredWith pullRequestIn("open"),
-        PULL_REQUEST_COMMENTS answeredWith reviewComments(
+        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "open")),
+        PULL_REQUEST_COMMENTS answeredWith listAnswer(
           edictComment(11, records[0], thumbsUp = 1),
           edictComment(12, records[1], thumbsDown = 2),
           edictComment(13, records[2], thumbsUp = 1, thumbsDown = 1),
@@ -54,13 +62,13 @@ class FeedbackSignalsTest {
         ),
       )
 
-      val answered = recording.replay { FeedbackSignals(FeedbackRecords(paths), this, store).collect() }
+      val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
 
-      val expected = listOf(
+      val answers = listOf(
         FeedbackAnswer(records[0], EdictNextSignalLabel.POSITIVE, commentUrl(11), emptyList()),
         FeedbackAnswer(records[1], EdictNextSignalLabel.NEGATIVE, commentUrl(12), emptyList()),
       )
-      assertEquals(expected, answered)
+      assertEquals(FeedbackCollection(answers, emptyList()), collection)
       assertEquals(records, FeedbackRecords(paths).active())
     }
   }
@@ -71,18 +79,83 @@ class FeedbackSignalsTest {
       val paths = EdictRepositoryDirectory(store.root)
       paths.storeActive(records[0], records[2], records[4])
       val recording = feedbackScripted(
-        PULL_REQUEST_READ answeredWith pullRequestIn("closed"),
-        PULL_REQUEST_COMMENTS answeredWith reviewComments(
+        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "closed")),
+        PULL_REQUEST_COMMENTS answeredWith listAnswer(
           edictComment(11, records[0], thumbsUp = 1),
           edictComment(13, records[2], thumbsUp = 1, thumbsDown = 1),
         ),
       )
 
-      val answered = recording.replay { FeedbackSignals(FeedbackRecords(paths), this, store).collect() }
+      val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
 
-      assertEquals(listOf(records[0]), answered.map(FeedbackAnswer::record))
+      val answer = FeedbackAnswer(records[0], EdictNextSignalLabel.POSITIVE, commentUrl(11), emptyList())
+      assertEquals(FeedbackCollection(listOf(answer), emptyList()), collection)
       assertEquals(listOf(records[0]), FeedbackRecords(paths).active())
       assertEquals(listOf(records[2], records[4]), FeedbackRecords(paths).history())
+    }
+  }
+
+  @Test
+  fun `the records of a pull request not updated for a week move to history unread, freeing their inspection's slots`() {
+    EdictNextRepositoryState.open(directory).use { store ->
+      val paths = EdictRepositoryDirectory(store.root)
+      paths.storeActive(records[0], records[1])
+      // Pull request 7 was last updated eight days before the collection; GitHub lists the most recently updated first.
+      val recording = feedbackScripted(
+        recentPullRequests() answeredWith listAnswer(
+          listedPullRequest(9, "open", updatedAt = "2026-11-09T08:00:00Z"),
+          listedPullRequest(7, "open", updatedAt = "2026-11-02T12:00:00Z"),
+        ),
+      )
+
+      val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
+
+      assertEquals(FeedbackCollection(emptyList(), emptyList()), collection)
+      assertEquals(emptyList(), FeedbackRecords(paths).active())
+      assertEquals(listOf(records[0], records[1]), FeedbackRecords(paths).history())
+    }
+  }
+
+  @Test
+  fun `a pull request GitHub cannot read keeps its records active and leaves the answers of the others`() {
+    EdictNextRepositoryState.open(directory).use { store ->
+      val paths = EdictRepositoryDirectory(store.root)
+      val other = feedbackRecord(6, pullRequest = pullRequest(8))
+      paths.storeActive(records[0], other)
+      val recording = feedbackScripted(
+        recentPullRequests() answeredWith listAnswer(listedPullRequest(8, "open"), listedPullRequest(7, "closed")),
+        PULL_REQUEST_COMMENTS answeredWith answer(502, """{"message": "Server Error"}"""),
+        commentsOf(pullRequest(8)) answeredWith listAnswer(edictComment(21, other, thumbsUp = 1)),
+      )
+
+      val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
+
+      val unread = UnreadPullRequest(
+        PULL_REQUEST.url,
+        "GitHub read of /repos/owner/project/pulls/7/comments returned HTTP 502: Server Error",
+      )
+      // Pull request 7 is closed, yet its record stays active: its answer may still be read.
+      val answer = FeedbackAnswer(other, EdictNextSignalLabel.POSITIVE, commentUrl(21, pullRequest(8)), emptyList())
+      assertEquals(FeedbackCollection(listOf(answer), listOf(unread)), collection)
+      assertEquals(listOf(records[0], other), FeedbackRecords(paths).active())
+    }
+  }
+
+  @Test
+  fun `a repository whose pull requests GitHub cannot list keeps every record active`() {
+    EdictNextRepositoryState.open(directory).use { store ->
+      val paths = EdictRepositoryDirectory(store.root)
+      paths.storeActive(records[0])
+      val recording = feedbackScripted(recentPullRequests() answeredWith answer(404, """{"message": "Not Found"}"""))
+
+      val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
+
+      val unread = UnreadPullRequest(
+        PULL_REQUEST.url,
+        "GitHub read of /repos/owner/project/pulls returned HTTP 404: Not Found",
+      )
+      assertEquals(FeedbackCollection(emptyList(), listOf(unread)), collection)
+      assertEquals(listOf(records[0]), FeedbackRecords(paths).active())
     }
   }
 
@@ -93,15 +166,15 @@ class FeedbackSignalsTest {
       paths.storeActive(records[0])
       val token = feedbackAnalysisToken(store)
       val recording = feedbackScripted(
-        PULL_REQUEST_READ answeredWith pullRequestIn("open"),
-        PULL_REQUEST_COMMENTS answeredWith reviewComments(
+        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "open")),
+        PULL_REQUEST_COMMENTS answeredWith listAnswer(
           edictComment(11, records[0], thumbsUp = 1),
           reply(12, to = 11, "alice", "It really blocks"),
         ),
       )
 
       val publication = recording.replay {
-        FeedbackSignals(FeedbackRecords(paths), this, store).run {
+        feedbackSignals(paths, this, store).run {
           collect()
           publish(token, "f-01", "Sleeps on the worker thread")
         }
@@ -111,12 +184,12 @@ class FeedbackSignalsTest {
         id = stableSignalId("edict-feedback:f-01"),
         idempotencyKey = "edict-feedback:f-01",
         fileRevision = EdictNextFileRevision("src/Main.kt", "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00", listOf(EdictNextLineRange(3, 3))),
-        source = EdictNextSignalSource.SubmittedFeedback(
+        source = EdictNextSignalSource.GitHubEvaluatedFinding(
           inspectionName = INSPECTION_NAME,
           inspectionDescription = INSPECTION_SUMMARY,
           problemMessage = "Blocking call on the worker thread",
-          message = "alice: It really blocks",
           url = commentUrl(11),
+          replies = listOf(EdictNextReply("alice", "It really blocks")),
         ),
         label = EdictNextSignalLabel.POSITIVE,
         description = "Sleeps on the worker thread",
@@ -136,13 +209,13 @@ class FeedbackSignalsTest {
       paths.storeActive(records[2])
       val token = feedbackAnalysisToken(store)
       val recording = feedbackScripted(
-        PULL_REQUEST_READ answeredWith pullRequestIn("open"),
-        PULL_REQUEST_COMMENTS answeredWith reviewComments(edictComment(13, records[2], thumbsUp = 1, thumbsDown = 1)),
+        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "open")),
+        PULL_REQUEST_COMMENTS answeredWith listAnswer(edictComment(13, records[2], thumbsUp = 1, thumbsDown = 1)),
       )
 
       val failure = assertFailsWith<IllegalArgumentException> {
         recording.replay {
-          FeedbackSignals(FeedbackRecords(paths), this, store).run {
+          feedbackSignals(paths, this, store).run {
             collect()
             publish(token, "f-03", "Sleeps")
           }
@@ -153,6 +226,9 @@ class FeedbackSignalsTest {
       assertEquals(listOf(records[2]), FeedbackRecords(paths).active())
     }
   }
+
+  private fun feedbackSignals(paths: EdictRepositoryDirectory, api: GitHubFeedbackApi, store: EdictNextRepositoryState) =
+    FeedbackSignals(FeedbackRecords(paths), api, store, Clock.fixed(COLLECTED_AT, ZoneOffset.UTC))
 
   private fun feedbackAnalysisToken(store: EdictNextRepositoryState): String {
     val plan = store.createPlan("Turn feedback answers into Signals", listOf(Step(FEEDBACK_SIGNAL_SKILL, "Answers")))

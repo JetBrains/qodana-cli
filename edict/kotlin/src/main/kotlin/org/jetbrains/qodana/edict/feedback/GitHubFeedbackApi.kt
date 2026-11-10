@@ -1,7 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
-import kotlinx.serialization.Serializable
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -10,7 +10,6 @@ import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.DefaultCiHttpTransport
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
-import org.jetbrains.qodana.edict.ci.github.expectObject
 import org.jetbrains.qodana.edict.ci.github.gitHubPages
 import org.jetbrains.qodana.edict.ci.github.gitHubToken
 import org.jetbrains.qodana.edict.ci.github.gitHubTransport
@@ -18,8 +17,13 @@ import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.common.number
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
+import org.jetbrains.qodana.edict.edictnext.EdictNextReply
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
+import java.time.DateTimeException
+import java.time.Instant
+
+private val logger = KotlinLogging.logger {}
 
 /** What GitHub did with a review comment. */
 internal sealed interface PostedComment {
@@ -27,8 +31,8 @@ internal sealed interface PostedComment {
     data class Posted(val url: String) : PostedComment
 
     /**
-     * GitHub refused the comment, saying [message]: with [status] 403 the token may not comment, with 422 the line is no
-     * longer in the diff.
+     * GitHub refused the comment, saying [message]: with [status] 403 the token may not comment or GitHub limits its rate,
+     * with 422 the line is no longer in the diff, with 429 GitHub limits its rate.
      */
     data class Refused(val status: Int, val message: String) : PostedComment
 }
@@ -39,18 +43,7 @@ internal data class FeedbackThread(
     val url: String,
     /** The label its thumbs give: POSITIVE for 👍 only, NEGATIVE for 👎 only, none for both or neither. */
     val label: EdictNextSignalLabel?,
-    val replies: List<FeedbackReply>,
-)
-
-/** A reply to a review comment of Edict: what the user with the login [author] wrote. */
-@Serializable
-internal data class FeedbackReply(val author: String, val body: String)
-
-/** Whether a pull request is open, and the review comments of Edict on it with their answers. */
-internal data class PullRequestThreads(
-    val open: Boolean,
-    /** The review comments of Edict, by the record id their marker names. */
-    val byRecordId: Map<String, FeedbackThread>,
+    val replies: List<EdictNextReply>,
 )
 
 /** The GitHub client of the workflow run, with the API URL and the token GitHub Actions gives it. */
@@ -74,7 +67,7 @@ internal class GitHubFeedbackApi(private val http: CiHttpTransport) {
      * large one, adds none, and GitHub lists at most the first 3000 files.
      */
     fun addedLines(pullRequest: ReviewReference): Map<String, Set<Int>> =
-        http.gitHubPages("${pullRequestEndpoint(pullRequest)}/files")
+        http.gitHubPages("${pullRequestEndpoint(pullRequest)}/files", emptyMap())
             .filter { it.text("patch").isNotEmpty() }
             .associate { file -> file.text("filename") to UnifiedDiff.addedLines(file.text("patch")).toSet() }
 
@@ -91,23 +84,37 @@ internal class GitHubFeedbackApi(private val http: CiHttpTransport) {
         val answer = response.body as? JsonObject ?: JsonObject(emptyMap())
         return when (response.status) {
             201 -> PostedComment.Posted(answer.text("html_url"))
-            403, 422 -> PostedComment.Refused(response.status, answer.text("message"))
+            403, 422, 429 -> PostedComment.Refused(response.status, answer.text("message"))
             else -> error("GitHub answered a review comment on ${pullRequest.url} with HTTP ${response.status}: ${answer.text("message")}")
         }
     }
 
-    /** Whether [pullRequest] is open, and the review comments of Edict on it with their answers. */
-    fun threads(pullRequest: ReviewReference): PullRequestThreads {
-        val endpoint = pullRequestEndpoint(pullRequest)
-        val state = expectObject(http.send("GET", endpoint), "GitHub pull-request read", 200).text("state")
-        require(state == "open" || state == "closed") { "GitHub read ${pullRequest.url} in the unknown state '$state'" }
+    /**
+     * The pull requests of [repository] updated at [since] or later, by number, true for an open one: the [limit] most
+     * recently updated at most. Pages are read only as far as the pull requests are recent enough.
+     */
+    fun recentPullRequests(repository: ReviewRepository, since: Instant, limit: Int): Result<Map<String, Boolean>> = gitHubRead {
+        val endpoint = "/repos/${urlPart(repository.owner)}/${urlPart(repository.repository)}/pulls"
+        http.gitHubPages(endpoint, mapOf("state" to "all", "sort" to "updated", "direction" to "desc"))
+            .takeWhile { Instant.parse(it.text("updated_at")) >= since }
+            .take(limit)
+            .associate { pullRequest ->
+                val state = pullRequest.text("state")
+                // GitHub documents only these two states; another one must not count as closed.
+                require(state == "open" || state == "closed") { "GitHub listed ${pullRequest.text("html_url")} in the unknown state '$state'" }
+                pullRequest.number("number").toString() to (state == "open")
+            }
+    }
+
+    /** The review comments of Edict on [pullRequest] with their answers, by the record id their marker names. */
+    fun threads(pullRequest: ReviewReference): Result<Map<String, FeedbackThread>> = gitHubRead {
         // Every reply names the comment that starts its thread.
-        val (replies, comments) = http.gitHubPages("$endpoint/comments").partition { it.number("in_reply_to_id") != 0L }
+        val (replies, comments) = http.gitHubPages("${pullRequestEndpoint(pullRequest)}/comments", emptyMap())
+            .partition { it.number("in_reply_to_id") != 0L }
         val repliesByComment = replies.groupBy { it.number("in_reply_to_id") }
-        val threads = comments.mapNotNull { comment ->
+        comments.mapNotNull { comment ->
             feedbackRecordId(comment.text("body"))?.let { it to feedbackThread(comment, repliesByComment[comment.number("id")].orEmpty()) }
-        }
-        return PullRequestThreads(state == "open", threads.toMap())
+        }.toMap()
     }
 
     private fun pullRequestEndpoint(pullRequest: ReviewReference): String =
@@ -123,5 +130,26 @@ private fun feedbackThread(comment: JsonObject, replies: List<JsonObject>): Feed
         thumbsDown > 0 && thumbsUp == 0L -> EdictNextSignalLabel.NEGATIVE
         else -> null
     }
-    return FeedbackThread(comment.text("html_url"), label, replies.map { FeedbackReply(it.obj("user").text("login"), it.text("body")) })
+    return FeedbackThread(comment.text("html_url"), label, replies.map { EdictNextReply(it.obj("user").text("login"), it.text("body")) })
+}
+
+/**
+ * What [read] returned from GitHub, or how it failed: GitHub answered otherwise than a read expects, with a status, a body or
+ * a date it doesn't, or did not answer at all. The failure is logged with its cause.
+ */
+private fun <T> gitHubRead(read: () -> T): Result<T> {
+    val failure = try {
+        return Result.success(read())
+    }
+    catch (e: IllegalArgumentException) {
+        e
+    }
+    catch (e: IllegalStateException) {
+        e
+    }
+    catch (e: DateTimeException) {
+        e
+    }
+    logger.warn(failure) { "GitHub could not give the Edict feedback answers: ${failure.message}" }
+    return Result.failure(failure)
 }
