@@ -1,7 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.ci.support
 
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.core.sha256Hex
 
 /** A generated inspection, which the tests of both providers open for review. */
 internal val INSPECTION_CONTENT = recording("avoid-thread-sleep.inspection.kts")

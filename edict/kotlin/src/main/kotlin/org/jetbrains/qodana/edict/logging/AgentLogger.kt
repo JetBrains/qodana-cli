@@ -9,7 +9,7 @@ import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption.APPEND
 import java.nio.file.StandardOpenOption.CREATE
@@ -17,7 +17,7 @@ import java.nio.file.attribute.PosixFilePermissions
 import java.time.Instant
 
 /** Human-readable assistant output and attributed MCP activity; private runtime events are excluded. */
-class AgentLogger internal constructor(private val store: EdictNextRepositoryState, private val layout: EdictLayout) {
+class AgentLogger internal constructor(private val store: EdictRepositoryState, private val layout: EdictLayout) {
     data class Message(
         val time: Instant, val agentId: String, val agentPath: String = "", val root: Boolean = false,
         val phase: String = "message", val text: String,

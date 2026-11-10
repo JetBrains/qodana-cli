@@ -12,22 +12,22 @@ import kotlinx.coroutines.runBlocking
 import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.edictnext.EdictManagementService
-import org.jetbrains.qodana.edict.edictnext.EdictNextDistributionService
-import org.jetbrains.qodana.edict.edictnext.EdictNextGenerationService
-import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalPairs
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
-import org.jetbrains.qodana.edict.edictnext.EdictSourceFileService
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.core.EdictManagementService
+import org.jetbrains.qodana.edict.core.EdictDistributionService
+import org.jetbrains.qodana.edict.core.EdictGenerationService
+import org.jetbrains.qodana.edict.core.EdictMcpToolset
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.core.EdictSignalPairs
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.core.EdictSourceFileService
+import org.jetbrains.qodana.edict.core.IntellijMcpServerService
 import org.jetbrains.qodana.edict.feedback.FeedbackSignals
 import org.jetbrains.qodana.edict.feedback.FeedbackMcpToolset
 import org.jetbrains.qodana.edict.feedback.FeedbackRecords
 import org.jetbrains.qodana.edict.feedback.GitHubFeedbackApi
-import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
-import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
+import org.jetbrains.qodana.edict.history.enrichment.EdictEnrichmentMcpToolset
+import org.jetbrains.qodana.edict.history.enrichment.EdictEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import java.time.Clock
 import java.util.concurrent.atomic.AtomicBoolean
@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * life and owns everything it starts: [close] stops HTTP, then the IDE, then releases the state, once.
  */
 internal class EdictServer private constructor(
-  val store: EdictNextRepositoryState,
+  val store: EdictRepositoryState,
   val management: EdictManagementService,
   private val inspectionServer: IntellijMcpServerService,
   private val engine: EmbeddedServer<CIOApplicationEngine, CIOApplicationEngine.Configuration>,
@@ -69,10 +69,10 @@ internal class EdictServer private constructor(
       promotionReviews: ReviewApi?,
       feedbackApi: GitHubFeedbackApi?,
     ): EdictServer {
-      val store = EdictNextRepositoryState.open(layout.stateDirectory)
+      val store = EdictRepositoryState.open(layout.stateDirectory)
       try {
         // PR extraction records the Signals of one correction; distribution in the same run offers them together.
-        val signalPairs = EdictNextSignalPairs()
+        val signalPairs = EdictSignalPairs()
         // The lock above created the state directory, so the repository can be opened now.
         val paths = EdictRepositoryDirectory(layout.stateDirectory)
         val repository = EdictRepository(paths)
@@ -86,22 +86,22 @@ internal class EdictServer private constructor(
           defaultSignalCount = configuration.extraction.defaultSignalCount,
           signalPairs = signalPairs,
         )
-        val toolset = EdictNextMcpToolset(
+        val toolset = EdictMcpToolset(
           layout, inspectionServer, management,
-          EdictNextDistributionService(
+          EdictDistributionService(
             repository,
             layout.neighboursResponsePath,
             configuration.distribution.defaultSignalCount,
             pairs = signalPairs,
           ),
-          EdictNextGenerationService(
+          EdictGenerationService(
             repository,
             inspectionServer,
             layout.root,
             configuration.generation.maxProjectAnalyses,
             configuration.generation.defaultGenerationCount,
           ),
-          EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, layout.root)),
+          EdictEnrichmentMcpToolset(management, EdictEnrichmentService(repository, layout.root)),
           EdictSourceFileService(layout.root, ciReviews),
           configuration,
           PromotionService(repository, configuration, promotionReviews, store, executionBranch = {

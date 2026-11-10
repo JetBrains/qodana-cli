@@ -63,7 +63,7 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
         val devData = Path.of(System.getProperty("user.home"), "Library/Caches/JetBrains/MonorepoDevData")
         val daemon = Path.of(System.getProperty("user.home"), "Library/Application Support/kotlin/daemon")
         val writable = listOf(workspace.repository.root, ultimate, cache, diskCache, devData, daemon).filter(Files::exists)
-        workspace.withEdictNextCodex(
+        workspace.withEdictCodex(
             prompt = """
                 Use edict_manager and the managed protocol to perform one retrospective Signal analysis.
                 Create exactly one top-level edict-retrospective-signal-analysis task.

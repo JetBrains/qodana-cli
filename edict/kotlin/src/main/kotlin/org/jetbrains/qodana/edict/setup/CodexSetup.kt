@@ -9,7 +9,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.runProcess
-import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
+import org.jetbrains.qodana.edict.core.EdictMcpToolset
 import org.jetbrains.qodana.edict.skills.Skills
 import org.tomlj.Toml
 import org.tomlj.TomlArray
@@ -84,7 +84,7 @@ internal object CodexSetup {
       throw IllegalStateException("Edict install checks the project with Codex, but `$executable` cannot run: ${e.message}", e)
     }
     val servers = Json.parseToJsonElement(output).jsonArray.map { it.jsonObject["name"]?.jsonPrimitive?.content }
-    check(EdictNextMcpToolset.SERVER_NAME in servers) {
+    check(EdictMcpToolset.SERVER_NAME in servers) {
       "Codex does not load ${layout.codexConfigPath}: ${layout.root} is not trusted in ${codexHome.resolve("config.toml")}. " +
         "Trust it in Codex, or add:\n[projects.${quote(layout.root)}]\ntrust_level = \"trusted\""
     }
@@ -94,7 +94,7 @@ internal object CodexSetup {
     if (!layout.codexConfigPath.exists()) return null
     val config = Toml.parse(layout.codexConfigPath)
     require(!config.hasErrors()) { "Cannot parse ${layout.codexConfigPath}: ${config.errors().first()}" }
-    val url = config.getString(listOf("mcp_servers", EdictNextMcpToolset.SERVER_NAME, "url")) ?: return null
+    val url = config.getString(listOf("mcp_servers", EdictMcpToolset.SERVER_NAME, "url")) ?: return null
     return URI(url).port.takeIf { it != -1 } ?: error("${layout.codexConfigPath} has no port in $url")
   }
 }
@@ -143,7 +143,7 @@ private fun codexConfig(layout: EdictLayout, codexHome: Path, deniedPaths: List<
   |max_depth = 5
   |max_concurrent_threads_per_session = 50
   |
-  |[mcp_servers.${EdictNextMcpToolset.SERVER_NAME}]
+  |[mcp_servers.${EdictMcpToolset.SERVER_NAME}]
   |url = "http://127.0.0.1:$port/mcp"
   |required = true
   |default_tools_approval_mode = "approve"

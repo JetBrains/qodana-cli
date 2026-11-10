@@ -4,7 +4,7 @@ package org.jetbrains.qodana.edict.promotion
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
+import org.jetbrains.qodana.edict.core.PromotionPrState
 import org.jetbrains.qodana.edict.promotion.support.PROMOTION_REPOSITORY
 import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_ON_REVIEW
 import org.jetbrains.qodana.edict.promotion.support.SOURCE_FIX_REVIEW

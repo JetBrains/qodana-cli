@@ -3,7 +3,7 @@ package org.jetbrains.qodana.edict.integration
 
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
-import org.jetbrains.qodana.edict.edictnext.*
+import org.jetbrains.qodana.edict.core.*
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.WeakSignalPromotionFixture as Fixture
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
@@ -45,15 +45,15 @@ class WeakSignalPromotionReviewIntegrationTest : IntegrationTest() {
             assertEquals(original.manifest.status, cluster.manifest.status)
             val added = cluster.signals.filter { it.id !in original.signalIds }
             val signal = added.single() // The merged fix deletes the delay; no absent-code negative signal.
-            assertEquals(EdictNextSignalLabel.POSITIVE, signal.label)
+            assertEquals(EdictSignalLabel.POSITIVE, signal.label)
             assertEquals(Fixture.creationRevision, signal.fileRevision.revision)
             assertEquals(Fixture.sourcePath, signal.fileRevision.path)
-            assertEquals(listOf(EdictNextLineRange(8, 8)), signal.fileRevision.expectedRanges)
-            assertEquals(EdictNextSignalStrength.STRONG, signal.strength)
+            assertEquals(listOf(EdictLineRange(8, 8)), signal.fileRevision.expectedRanges)
+            assertEquals(EdictSignalStrength.STRONG, signal.strength)
             assertContains(cluster.manifest.processedSignalIds, signal.id)
             assertEquals(original.signals.single().syntheticExampleId, signal.syntheticExampleId)
             assertEquals(exampleSetDigest(original), exampleSetDigest(cluster), "Covered evidence must preserve the evaluated example set")
-            assertEquals(feedback, (signal.source as EdictNextSignalSource.FromPR).discussionMessages.single())
+            assertEquals(feedback, (signal.source as EdictSignalSource.FromPR).discussionMessages.single())
             assertFalse("reviewEvidence" in cluster.directory.manifestPath.readText())
             assertEquals(inspection, repository.paths.inspectionPath(Fixture.clusterId).readText())
             assertTrue(cluster.manifest.promotions.isEmpty())

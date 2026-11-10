@@ -8,8 +8,8 @@ import kotlinx.serialization.json.put
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.support.EdictNextTestTools
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.support.EdictTestTools
 import org.jetbrains.qodana.edict.support.batch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -22,9 +22,9 @@ class PlanGetTest {
 
   @Test
   fun `a coordinator reads one task instead of the whole plan`() {
-    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+    EdictRepositoryState.open(directory.resolve("state")).use { store ->
       val (_, batch) = store.batch()
-      val tools = EdictNextTestTools(store, layout = EdictLayout(directory, directory.resolve(".edict")))
+      val tools = EdictTestTools(store, layout = EdictLayout(directory, directory.resolve(".edict")))
       fun planGet(vararg arguments: Pair<String, String>): JsonObject =
         tools.call("edict_plan_get", buildJsonObject { arguments.forEach { (key, value) -> put(key, value) } })
 

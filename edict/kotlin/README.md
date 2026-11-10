@@ -83,7 +83,7 @@ plus 10 minutes; other IDE HTTP requests default to 60 minutes.
 
 Distribution uses `edict.distribution.defaultSignalCount` in `qodana.yaml`, defaulting to 300 Signals per run,
 independently of `edict.extraction.defaultSignalCount` (100 by default). The distribution limit can only be set in
-`qodana.yaml`; `edict_next_next_signal` takes no count argument.
+`qodana.yaml`; `edict_next_signal` takes no count argument.
 
 ```yaml
 edict:
@@ -203,17 +203,13 @@ The original Go implementation remains outside this project. The inspection-gene
 compiling/running inspection scripts requires separately supplied inspection
 tools. This project does not embed an IDE or implement an inspection compiler.
 
-Use a new state root when switching from the old `edict-next-*` registry: existing
-inbox, cluster, and inspection artifacts retain their layout, but old execution
-plans are not automatically migrated to the renamed registry.
-
 ## Source organization
 
 Production code lives under `src/main/kotlin/org/jetbrains/qodana/edict`:
 
 | Package | Responsibility |
 | --- | --- |
-| `edictnext` | Canonical signal model, execution state, distribution and generation lifecycle |
+| `core` | Canonical signal model, execution state, distribution and generation lifecycle |
 | `skills` | Managed skill registry, policies and classpath resources |
 | `store` | Persistent artifacts, capabilities, lifecycle and inbox receipts |
 | `signals` | Structural signal validation and unified-diff parsing |

@@ -20,8 +20,8 @@ import org.jetbrains.qodana.edict.feedback.support.recentPullRequests
 import org.jetbrains.qodana.edict.feedback.support.reply
 import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
-import org.jetbrains.qodana.edict.edictnext.EdictNextReply
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.core.EdictReply
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -61,7 +61,7 @@ class GitHubFeedbackApiTest {
     val read = recording.replay { threads(PULL_REQUEST) }.getOrThrow()
 
     val expectedThreads = mapOf(
-      "f-01" to FeedbackThread(commentUrl(11), EdictNextSignalLabel.POSITIVE, listOf(EdictNextReply("alice", "It really blocks"))),
+      "f-01" to FeedbackThread(commentUrl(11), EdictSignalLabel.POSITIVE, listOf(EdictReply("alice", "It really blocks"))),
       "f-02" to FeedbackThread(commentUrl(14), null, emptyList()),
     )
     assertEquals(expectedThreads, read)

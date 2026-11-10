@@ -1,10 +1,10 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EvaluatedInspection
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EvaluatedInspection
+import org.jetbrains.qodana.edict.core.PromotionPrState
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.pullRequest
@@ -40,7 +40,7 @@ class FeedbackSelectionTest {
   @Test
   fun `leaves out a cluster whose inspection is not generated`() {
     repository.store(cluster("generated"))
-    repository.store(cluster("pending").copy(status = EdictNextClusterStatus.Pending))
+    repository.store(cluster("pending").copy(status = EdictClusterStatus.Pending))
 
     assertEquals(selection(inspection("generated")), select())
   }

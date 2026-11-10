@@ -4,7 +4,7 @@ package org.jetbrains.qodana.edict.feedback
 import com.jetbrains.qodana.sarif.SarifUtil
 import com.jetbrains.qodana.sarif.model.OriginalUriBaseIds
 import com.jetbrains.qodana.sarif.model.Result
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.signals.validSourcePath
 import java.nio.file.Path
 
@@ -19,7 +19,7 @@ internal data class InternalFinding(
     val clusterId: String,
     /** The repository-relative path of the file the problem is in. */
     val path: String,
-    val lines: EdictNextLineRange,
+    val lines: EdictLineRange,
     /** The problem, as the inspection's message says it. */
     val message: String,
 )
@@ -57,7 +57,7 @@ private fun internalFinding(result: Result, baseIds: OriginalUriBaseIds): Intern
     return InternalFinding(
         result.ruleId.orEmpty().removePrefix(INTERNAL_INSPECTION_ID_PREFIX),
         path,
-        EdictNextLineRange(start, end),
+        EdictLineRange(start, end),
         result.message?.text.orEmpty(),
     )
 }

@@ -1,11 +1,11 @@
-package org.jetbrains.qodana.edict.edictnext
+package org.jetbrains.qodana.edict.core
 
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.support.batch
-import org.jetbrains.qodana.edict.support.EdictNextTestTools
+import org.jetbrains.qodana.edict.support.EdictTestTools
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -15,13 +15,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 
-class EdictNextRepositoryStateRedactionTest {
+class EdictRepositoryStateRedactionTest {
     @TempDir
     lateinit var directory: Path
 
     @Test
     fun `redaction finds embedded adjacent and revoked capabilities without hiding unrelated digests`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
             for (offset in 0..64) {
                 val prefix = "a".repeat(offset)
@@ -38,7 +38,7 @@ class EdictNextRepositoryStateRedactionTest {
 
     @Test
     fun `embedded capabilities cannot be saved in task titles or results`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
             val before = store.plan()
             assertFailsWith<IllegalArgumentException> {
@@ -57,10 +57,10 @@ class EdictNextRepositoryStateRedactionTest {
 
     @Test
     fun `rejected arguments do not leak embedded credentials into MCP or agent logs`() {
-        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+        EdictRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
             val layout = EdictLayout(directory, directory.resolve(".edict"))
-            val response = EdictNextTestTools(store, layout = layout).call("edict_task_add", buildJsonObject {
+            val response = EdictTestTools(store, layout = layout).call("edict_task_add", buildJsonObject {
                 put("token", batch.token)
                 put("skill", "edict-signal-analysis")
                 put("title", "Receipt: a${manager.token}f${batch.token}")

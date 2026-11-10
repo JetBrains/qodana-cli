@@ -64,7 +64,7 @@ qodana edict state push [--message <message>]
 - `qodana edict state push` commits the state on its branch and pushes it to origin, rebasing onto a branch another
   run pushed meanwhile. It fails while a server owns the state.
 - The request carries no paths or CI repository identity. Skills call `edict_context` with their task token for
-  `projectDirectory`, `stateDirectory` (read-only; the state repository Edict Next tools change in place), task-owned
+  `projectDirectory`, `stateDirectory` (read-only; the state repository Edict tools change in place), task-owned
   `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch/<task-id>`), and `reviewRepository`, read from
   `edict.ci.url`.
 - Provider tokens (`GITHUB_TOKEN`/`GH_TOKEN`, `SPACE_TOKEN`) come from the server environment, never from MCP arguments.
@@ -91,8 +91,8 @@ repository-wide validation.
     - after a server restart, calling it again with the exact persisted request and steps claims the unfinished plan
       with a fresh token; interrupted tasks return to pending, completed results are kept
   - plan steps from the request; the default repository pipeline is
-    parallel `edict-check-weak-signal-promotion` and `edict-pr-signal-analysis` -> `edict-next-distribution` -> one `edict-git-history-signal-enrichment` per cluster ->
-    parallel top-level `edict-next-cluster-generation` workers -> `edict-promote` -> `edict-promote-weak-signal`
+    parallel `edict-check-weak-signal-promotion` and `edict-pr-signal-analysis` -> `edict-distribution` -> one `edict-git-history-signal-enrichment` per cluster ->
+    parallel top-level `edict-cluster-generation` workers -> `edict-promote` -> `edict-promote-weak-signal`
     (`LivePipelineTest`)
   - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
@@ -119,13 +119,13 @@ Call graph (`skills/managed/Registry.kt`):
 edict_manager
 ├── edict-batch-signal-analysis ── edict-signal-analysis
 ├── edict-pr-signal-analysis ───── edict-signal-analysis
-├── edict-next-distribution
+├── edict-distribution
 ├── edict-git-history-signal-enrichment (one cluster, no children)
-└── edict-next-cluster-generation
-    ├── edict-next-code-example-overseer ── edict-next-code-example
-    ├── edict-next-inspection-shallow-review
-    ├── edict-next-weak-signal-review
-    └── edict-next-inspection-code-review
+└── edict-cluster-generation
+    ├── edict-code-example-overseer ── edict-code-example
+    ├── edict-inspection-shallow-review
+    ├── edict-weak-signal-review
+    └── edict-inspection-code-review
 ```
 
 ## Signal extraction (optional first stage)
@@ -155,25 +155,25 @@ edict_manager
 
 ## Distribution and generation
 
-- `$edict-next-distribution`
-  - call `edict_next_calculate_neighbours_by_embeddings` once
+- `$edict-distribution`
+  - call `edict_calculate_neighbours_by_embeddings` once
     - replace each re-published inbox Signal already owned by exactly one cluster, append a history record, and move the
       cluster to Pending; ambiguous ownership remains a validation failure
     - validate the state repository
-    - build 10 nearest same-language neighbours per JVM inbox Signal with in-JVM GTE embeddings (`EdictNextNeighbourFinder`);
+    - build 10 nearest same-language neighbours per JVM inbox Signal with in-JVM GTE embeddings (`EdictNeighbourFinder`);
       vectors are cached in `<state>/embeddings/gte-large-<revision>/`, the model in `<user cache>/JetBrains/Qodana/edict/models/`
-  - repeatedly call `edict_next_next_signal`; it returns the complete Signal and neighbouring clusters/inbox Signals
+  - repeatedly call `edict_next_signal`; it returns the complete Signal and neighbouring clusters/inbox Signals
     - the first call selects the run's batch: alphabetical JVM inbox Signals with calculated neighbours, capped by
       `edict.distribution.defaultSignalCount` in `qodana.yaml` (300 by default); the tool takes no count argument
-  - for every plausible cluster, call `edict_next_get_distribution_context(kind: "cluster", id)` and compare every
+  - for every plausible cluster, call `edict_get_distribution_context(kind: "cluster", id)` and compare every
     member, including negatives; optionally read a neighbouring Signal (`kind: "signal"`) or its exact revision
-  - call `edict_next_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context
+  - call `edict_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context
     receipt) or a new provisional kebab-case id; retry the same Signal when `added` is false; never split clusters
   - stop on `STOP_DISTRIBUTION`
 - standalone enrichment (`Enrich cluster <id> with historical evidence`)
   - schedule one `$edict-git-history-signal-enrichment` per requested cluster, each receiving exactly one `clusterId`;
     do not select generation targets or start inspections
-  - `edict_next_get_history_context(token, clusterId)` returns frozen HEAD, a UTC cutoff and exact eligible commit SHAs
+  - `edict_get_history_context(token, clusterId)` returns frozen HEAD, a UTC cutoff and exact eligible commit SHAs
   - the server intersects the latest 100 commits with the last 90 days; the smaller window bounds every search
   - get all member Signals separately through the common `edict_get_cluster_signals(clusterId)` read tool
   - skip originating and already represented commits; filter only the returned SHAs
@@ -181,7 +181,7 @@ edict_manager
   - publish accepted strong evidence directly with `edict_publish_signal_to_cluster`
   - verify publication by re-reading cluster Signals; no analyzed-commit coverage or cursor is stored
 - root manager for generation, after distribution and before historical enrichment
-  - call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user specifies a generation count
+  - call `edict_select_generation_clusters`, omitting `generationCount` unless the user specifies a generation count
   - selection is read-only and recomputes suggestions each call; it creates no reservations or membership state
   - choose suggested or other Pending cluster IDs; explicitly requested targets need no selection call
   - delegate one `$edict-git-history-signal-enrichment` task per chosen cluster, passing exactly one `clusterId` to each;
@@ -193,23 +193,23 @@ edict_manager
     - suggestions rank by distinct source files among unprocessed strong positive Signals, counting a source path once
       across revisions, and omit Pending clusters without strong positive evidence and clusters beyond the requested count;
       the manager may still choose them, and structural generation checks still apply
-  - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
+  - run one `$edict-cluster-generation` worker per cluster, keeping up to that many active
   - Pending is an input state, not a completed generation outcome; Invalid and Discontinued require concrete causes,
     not poor evidence coverage; the coordinator never repairs worker output
-  - each `$edict-next-cluster-generation` worker:
-    1. launches one `$edict-next-code-example-overseer`
+  - each `$edict-cluster-generation` worker:
+    1. launches one `$edict-code-example-overseer`
        - read every Signal at its exact revision (`git show`, then `edict_file_at_ref` with radius 20/5/0)
        - infer the common rule only to guide reductions; never persist it
-       - keep faithful examples; for each missing or incorrect one, launch an `$edict-next-code-example` worker that
+       - keep faithful examples; for each missing or incorrect one, launch an `$edict-code-example` worker that
          reduces the Signal to one self-contained file, saves it (saving validates it structurally), then sets
          `syntheticExampleId`
        - positive examples contain exactly one reportable occurrence and one range; negatives contain one allowed
          occurrence and no ranges
        - delete an unreferenced weak example that contradicts a strong Signal, keep every other one, and repeat
-         `edict_next_validate_cluster_examples` until it succeeds
+         `edict_validate_cluster_examples` until it succeeds
        - an exact semantic contradiction finalises the cluster Discontinued; repair incomplete reconciliation, or
          finalise Invalid when concrete broken input or tooling prevents reconciliation
-    2. calls `edict_next_get_inspection_action(clusterId)` to select predecessor reuse or generation
+    2. calls `edict_get_inspection_action(clusterId)` to select predecessor reuse or generation
        - `CONFLICT`: Signals with the same file revision have different labels; finalise Invalid with their ids
        - `SKIP`: the predecessor passes every strong example; record the evaluation, then finalise Generated, whatever
          weak examples fail
@@ -219,53 +219,53 @@ edict_manager
          from the inspection server first; `compile_inspection_kts` and single-file `run_inspection_kts` serve quick
          checks. Examples and whole-project runs are not forwarded to agents
        - exactly one `localInspection`; the KTS owns the kebab-case id, name, and `htmlDescription`
-       - the KTS id is the cluster id; a better id renames the cluster with `edict_next_rename_cluster`, which also
+       - the KTS id is the cluster id; a better id renames the cluster with `edict_rename_cluster`, which also
          renames the candidate and its `id = "<clusterId>"` and keeps validation and analysis progress; not after `SKIP`
        - current-file PSI traversal and direct resolution only; no project enumeration, non-local `LocalSearchScope`,
          or data-flow analysis
     4. repeats a cheap generation cycle as often as needed, regenerating as soon as a step fails
-       1. `edict_next_save_candidate_inspection`: always stores `inspections/<clusterId>.candidate.kts` as the latest
+       1. `edict_save_candidate_inspection`: always stores `inspections/<clusterId>.candidate.kts` as the latest
           attempt, then compiles it, checks metadata, and measures examples
           - requires valid compilation, metadata and execution before project analysis; strong- and weak-example
             accuracy is advisory, including when every example fails
           - weak examples target recall: satisfy those that still fit the rule; they never block. One that only a
             prohibited technique could satisfy is a known limitation recorded in history
-       2. launch a fresh `$edict-next-inspection-shallow-review` (output `<scratch>/shallow-review-<n>.json`)
+       2. launch a fresh `$edict-inspection-shallow-review` (output `<scratch>/shallow-review-<n>.json`)
           - reads only the candidate: no cluster, Signals, examples, project source, or tools
           - checks hard-coded evidence, scope/cost, implementation practices, and metadata, not correctness
           - `REJECT` for any BLOCKER
-    5. runs an evidence round: `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` [up to 40m]
+    5. runs an evidence round: `edict_get_new_inspection_results(clusterId, privateScratchDirectory)` [up to 40m]
        analyzes the candidate over the project, then two reviews add weak examples
        - each cluster gets `edict.generation.maxProjectAnalyses` (3) calls per run; the response reports
          `remainingProjectAnalyses`, and a call beyond the limit fails
        - the response returns `findingsUnchanged: true` when the findings equal the cluster's previous analysis; the
          worker then skips the weak-signal review for that round
-       - `$edict-next-weak-signal-review` classifies the sampled findings against `inspectionDescription` without
+       - `$edict-weak-signal-review` classifies the sampled findings against `inspectionDescription` without
          reading the implementation, groups them by shape, and writes examples itself (no workers) only for new
          evidence: one NEGATIVE per distinct FP cause, a POSITIVE only for an uncovered TP shape; strong evidence
          always wins. It records each finding's classification and representing example with
-         `edict_next_record_weak_review`, which accepts only an example the analyzed inspection reports, running it on examples written
+         `edict_record_weak_review`, which accepts only an example the analyzed inspection reports, running it on examples written
          since the analysis. Its config
          lists each example's status and the examples that no longer reproduce findings assigned to them, which it
          splits or replaces (a strong example is only split) before classifying new findings
-       - `$edict-next-inspection-code-review` then reads the implementation and writes at most five important
+       - `$edict-inspection-code-review` then reads the implementation and writes at most five important
          corner-case examples: common forms that differ in what the rule decides rather than in syntax, and that an
          inspection within the implementation constraints can decide. It writes them all in the first round; later
          rounds look only at decision points the regeneration added or changed
        - the worker saves the analyzed candidate again unchanged to measure it against the new examples; when one
          fails and analyses remain, it runs another generation cycle and evidence round, otherwise it submits the last
          analyzed candidate unchanged
-       - `edict_next_record_evaluation(token, clusterId)` is the last step before finalising Generated: it scores the
+       - `edict_record_evaluation(token, clusterId)` is the last step before finalising Generated: it scores the
          published inspection on every strong and weak example and writes `clusters/<id>/evaluation.json`
          (`inspectionHash`, `exampleSetDigest`, per-example results, `tp`, `fp`, `fn`, `precision`, `recall`, and
          `projectReview`), including failed strong and weak examples. Recording requires valid compilation, metadata
          and execution, not minimum accuracy. Each example weighs the project
-         findings the weak-signal review assigned to it over every round (`edict_next_record_weak_review`), at least 1;
+         findings the weak-signal review assigned to it over every round (`edict_record_weak_review`), at least 1;
          `projectReview` counts the published inspection's project findings and the reviewed ones, and persists the
          inspection description and exact true-positive findings for later weak-signal promotion. A finding the
          published inspection still reports while not reporting its example counts directly by its classification
-    6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
-       `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
+    6. records operational evidence with `edict_append_cluster_history` and ends with one successful
+       `edict_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
        status only when its contract holds, otherwise it rejects and changes nothing; the worker may then keep repairing
        within its remaining analyses; Pending is never an allowed outcome
        - Generated (produced/reused): requires valid compilation, metadata and execution, project analysis of the exact candidate bytes
@@ -317,7 +317,7 @@ responses), and `tasks/<task-id>.log`.
 
 - `edict-retrospective-signal-analysis` still publishes through
   `edict_state_write`, which the server no longer registers; the tool is `edict_publish_signal`.
-- `EdictNextTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
+- `EdictTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
 
 ## TODO (outside the setup/run separation)
 

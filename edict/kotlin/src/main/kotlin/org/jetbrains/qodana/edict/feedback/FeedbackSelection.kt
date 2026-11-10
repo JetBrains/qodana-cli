@@ -3,12 +3,12 @@ package org.jetbrains.qodana.edict.feedback
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.qodana.edict.ci.ReviewReference
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EvaluatedInspection
-import org.jetbrains.qodana.edict.edictnext.StoredInspection
-import org.jetbrains.qodana.edict.edictnext.storedInspection
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictStoredCluster
+import org.jetbrains.qodana.edict.core.EvaluatedInspection
+import org.jetbrains.qodana.edict.core.StoredInspection
+import org.jetbrains.qodana.edict.core.storedInspection
 
 private val logger = KotlinLogging.logger {}
 
@@ -46,7 +46,7 @@ internal fun selectFeedbackInspections(
     val activeByCluster = active.groupingBy(FeedbackRecord::clusterId).eachCount()
     val inspections = repository.loadClusters()
         .asSequence()
-        .filter { it.manifest.status == EdictNextClusterStatus.Generated && it.id !in commentedClusters }
+        .filter { it.manifest.status == EdictClusterStatus.Generated && it.id !in commentedClusters }
         .filter { activeByCluster.getOrDefault(it.id, 0) < MAX_ACTIVE_FEEDBACK_PER_INSPECTION }
         .mapNotNull { repository.feedbackInspection(it) }
         .filter { it.evaluation.precision > MIN_FEEDBACK_PRECISION }
@@ -60,7 +60,7 @@ internal fun selectFeedbackInspections(
  * The cluster's generated inspection, unless no evaluation of its current bytes and examples ranks it or a promotion proposed
  * these bytes. A cluster without its inspection only loses its feedback, not that of the others.
  */
-private fun EdictRepository.feedbackInspection(cluster: EdictNextStoredCluster): EvaluatedInspection? =
+private fun EdictRepository.feedbackInspection(cluster: EdictStoredCluster): EvaluatedInspection? =
     when (val inspection = storedInspection(cluster, loadEvaluation(cluster))) {
         StoredInspection.Missing -> {
             logger.warn { "Edict feedback leaves out ${cluster.id}: its generated inspection is missing" }
@@ -75,4 +75,4 @@ private fun EdictRepository.feedbackInspection(cluster: EdictNextStoredCluster):
  * or was closed and awaits its decision. Only deciding a closed one regenerates the inspection, so the promotions of earlier
  * bytes are decided ones, and the new bytes may get feedback.
  */
-private fun EdictNextStoredCluster.isPromoted(digest: String): Boolean = manifest.promotions.any { it.inspectionDigest == digest }
+private fun EdictStoredCluster.isPromoted(digest: String): Boolean = manifest.promotions.any { it.inspectionDigest == digest }

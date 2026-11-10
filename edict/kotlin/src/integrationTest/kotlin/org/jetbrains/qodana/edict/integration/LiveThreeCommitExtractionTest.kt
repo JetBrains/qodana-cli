@@ -13,7 +13,7 @@ class LiveThreeCommitExtractionTest : IntegrationTest() {
 
     @Test
     fun `managed skills extract one evidence pair from each of three Distillery commits`() {
-        workspace.withEdictNextCodex("Extract signals from last 3 commits",
+        workspace.withEdictCodex("Extract signals from last 3 commits",
         ) { store, runtime, _ ->
             val expected = threeCommitExpectations()
             val plan = assertNotNull(store.plan())

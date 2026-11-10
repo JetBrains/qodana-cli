@@ -2,9 +2,9 @@
 package org.jetbrains.qodana.edict.common
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
@@ -79,13 +79,13 @@ class GitRepository(directory: Path) {
     }
 
     /** Validate that commit Signal evidence still matches the source repository exactly. */
-    fun validateEvidence(signal: EdictNextSignal) {
+    fun validateEvidence(signal: EdictSignal) {
         val signalSource = signal.source
-        require(signalSource is EdictNextSignalSource.FromCommit) { "Expected commit signal" }
+        require(signalSource is EdictSignalSource.FromCommit) { "Expected commit signal" }
         val commit = commit(signalSource.commitRevision)
         val expectedRevision = when (signal.label) {
-            EdictNextSignalLabel.POSITIVE -> commit.parentRevision
-            EdictNextSignalLabel.NEGATIVE -> commit.commitRevision
+            EdictSignalLabel.POSITIVE -> commit.parentRevision
+            EdictSignalLabel.NEGATIVE -> commit.commitRevision
         }
         require(signal.fileRevision.revision == expectedRevision) {
             "Signal revision does not match its ${signal.label} commit side"

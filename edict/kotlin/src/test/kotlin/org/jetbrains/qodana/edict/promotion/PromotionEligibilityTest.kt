@@ -1,10 +1,10 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.promotion
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictStoredCluster
 import org.jetbrains.qodana.edict.promotion.support.COMMIT_REVISION
 import org.jetbrains.qodana.edict.promotion.support.EvaluationFixture
 import org.jetbrains.qodana.edict.promotion.support.PROMOTION_REPOSITORY
@@ -42,7 +42,7 @@ internal class PromotionEligibilityTest {
 
   @Test
   fun `a cluster that is not generated is not eligible`() {
-    val cluster = repository.store(referencedCluster().copy(status = EdictNextClusterStatus.Pending))
+    val cluster = repository.store(referencedCluster().copy(status = EdictClusterStatus.Pending))
 
     assertEquals(
       PromotionEligibility(generated = false, strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
@@ -82,7 +82,7 @@ internal class PromotionEligibilityTest {
 
   @Test
   fun `a commit signal without a URL is referenced in the CI repository`() {
-    val cluster = repository.store(clusterWithSource(EdictNextSignalSource.FromCommit(COMMIT_REVISION)))
+    val cluster = repository.store(clusterWithSource(EdictSignalSource.FromCommit(COMMIT_REVISION)))
 
     assertEquals(
       PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
@@ -132,8 +132,8 @@ internal class PromotionEligibilityTest {
   }
 
   /** Eligibility under the cluster's stored evaluation, with commit Signals linked in [PROMOTION_REPOSITORY]. */
-  private fun EdictNextStoredCluster.eligibility(): PromotionEligibility =
+  private fun EdictStoredCluster.eligibility(): PromotionEligibility =
     promotionEligibility(PROMOTION_REPOSITORY, repository.loadEvaluation(this))
 }
 
-private fun EdictNextSignal.withoutLines(): EdictNextSignal = copy(fileRevision = fileRevision.copy(expectedRanges = null))
+private fun EdictSignal.withoutLines(): EdictSignal = copy(fileRevision = fileRevision.copy(expectedRanges = null))

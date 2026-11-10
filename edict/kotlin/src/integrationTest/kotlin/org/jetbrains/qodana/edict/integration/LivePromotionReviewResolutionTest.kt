@@ -3,7 +3,7 @@ package org.jetbrains.qodana.edict.integration
 
 import org.jetbrains.qodana.edict.ci.*
 import org.jetbrains.qodana.edict.common.EdictConfiguration
-import org.jetbrains.qodana.edict.edictnext.*
+import org.jetbrains.qodana.edict.core.*
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.jetbrains.qodana.edict.support.FakeReviewApi
@@ -55,19 +55,19 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
             assertTrue(result.isNotBlank())
 
             val acceptedCluster = repository.loadCluster("merged-rule")
-            assertEquals(EdictNextClusterStatus.Generated, acceptedCluster.manifest.status)
+            assertEquals(EdictClusterStatus.Generated, acceptedCluster.manifest.status)
             assertEquals(PromotionPrState.ACCEPTED, acceptedCluster.manifest.promotions.single().state)
             assertContains(acceptedCluster.historyPath.readText(), merged.pullRequest.url)
 
             val revisedCluster = repository.loadCluster("revise-rule")
-            assertEquals(EdictNextClusterStatus.Pending, revisedCluster.manifest.status)
+            assertEquals(EdictClusterStatus.Pending, revisedCluster.manifest.status)
             assertEquals("revise-rule", revisedCluster.manifest.predecessorId)
             assertEquals(PromotionPrState.CLOSED, revisedCluster.manifest.promotions.single().state)
             assertTrue(repository.paths.inspectionPath("revise-rule").exists())
             assertContains(revisedCluster.historyPath.readText(), "moved cluster to Pending")
 
             val discontinuedCluster = repository.loadCluster("discontinue-rule")
-            assertEquals(EdictNextClusterStatus.Discontinued, discontinuedCluster.manifest.status)
+            assertEquals(EdictClusterStatus.Discontinued, discontinuedCluster.manifest.status)
             assertEquals(PromotionPrState.CLOSED, discontinuedCluster.manifest.promotions.single().state)
             assertFalse(repository.paths.inspectionPath("discontinue-rule").exists())
             assertContains(discontinuedCluster.historyPath.readText(), "moved cluster to Discontinued")
@@ -108,11 +108,11 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
         val cluster = repository.paths.clustersDirectory.resolve(clusterId).createDirectories()
         cluster.resolve("signals").createDirectories()
         cluster.resolve("cluster.json").writeText(
-            EdictNextJson.encodeToString(
-                EdictNextClusterManifest(
+            EdictJson.encodeToString(
+                EdictClusterManifest(
                     clusterId,
-                    EdictNextLanguage.Kotlin,
-                    EdictNextClusterStatus.Generated,
+                    EdictLanguage.Kotlin,
+                    EdictClusterStatus.Generated,
                     promotions = listOf(promotion),
                 ),
             )

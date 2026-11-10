@@ -1,0 +1,634 @@
+package org.jetbrains.qodana.edict.core
+
+import kotlinx.serialization.Serializable
+import org.jetbrains.qodana.edict.common.ignoreFileAddition
+import org.jetbrains.qodana.edict.common.randomId
+import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageState
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
+import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
+import org.jetbrains.qodana.edict.signals.SignalValidation
+import org.jetbrains.qodana.edict.skills.managed.Registry
+import java.nio.ByteBuffer
+import java.nio.channels.FileChannel
+import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption.APPEND
+import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.StandardOpenOption.WRITE
+import java.nio.file.attribute.PosixFilePermissions
+import java.time.LocalDate
+
+/** Hides the task tokens this server issued in text that agents will read. */
+internal fun interface TokenRedactor {
+  fun redact(text: String): String
+}
+
+/** Repository snapshot plus the in-memory execution state associated with an Edict server lifetime. */
+internal class EdictRepositoryState(
+  val root: Path,
+  val clusters: List<EdictStoredCluster>,
+  val inboxSignals: List<EdictSignal>,
+  val filesByRelativePath: Map<String, ByteArray>,
+) : AutoCloseable, TokenRedactor {
+  @Serializable
+  data class Step(val skill: String, val title: String)
+
+  @Serializable
+  data class Task(
+    val id: String = randomId(),
+    val parentId: String = "",
+    val skill: String,
+    val title: String,
+    val prompt: String = "",
+    val status: String = "pending",
+    val agentId: String = "",
+    val result: String = "",
+  )
+
+  @Serializable
+  data class Plan(
+    val id: String = randomId(),
+    val request: String,
+    val revision: Int = 0,
+    val tasks: List<Task>,
+  )
+
+  @Serializable
+  data class PlanCreation(val plan: Plan, val token: String)
+
+  @Serializable
+  data class Delegation(
+    val token: String,
+    val taskId: String,
+    val skill: String,
+    val skillPath: String,
+    val prompt: String,
+  )
+
+  @Serializable
+  data class TaskAssignment(
+    val taskId: String,
+    val skill: String,
+    val skillPath: String,
+    val prompt: String,
+    val scratchDirectory: String = "",
+  )
+
+  @Serializable
+  data class TaskLifecycleAck(val taskId: String, val status: String, val planRevision: Int)
+
+  @Serializable
+  data class SignalPublication(val signal: EdictSignal, val created: Boolean)
+
+  private data class Capability(
+    val skill: String,
+    val taskId: String = "",
+    val parent: String = "",
+    var taskRead: Boolean = false,
+  )
+
+  val clustersById: Map<String, EdictStoredCluster> = clusters.associateBy(EdictStoredCluster::id)
+  val inboxSignalsById: Map<String, EdictSignal> = inboxSignals.associateBy(EdictSignal::id)
+  val inboxSignalIds: Set<String> = inboxSignals.mapTo(LinkedHashSet(), EdictSignal::id)
+  val jvmInboxSignalIds: Set<String> = inboxSignals.filter(EdictSignal::isJvmLanguage)
+    .mapTo(LinkedHashSet(), EdictSignal::id)
+  val signalsById: Map<String, EdictSignal> = (clusters.flatMap(EdictStoredCluster::signals) + inboxSignals)
+    .associateBy(EdictSignal::id)
+
+  private var lockChannel: FileChannel? = null
+  private val grants = mutableMapOf<String, Capability>()
+  private val issuedTokens = mutableSetOf<String>()
+  private var currentPlan: Plan? = null
+  private var managerClaimed = false
+  private var closed = false
+
+  fun relativePath(path: Path): String = root.relativize(path).toString()
+
+  fun inspectionCode(clusterId: String): String? = filesByRelativePath[
+    "inspections/$clusterId$EDICT_INSPECTION_SUFFIX"
+  ]?.decodeToString()
+
+  @Synchronized
+  fun plan(): Plan? {
+    ensureManagementState()
+    return currentPlan
+  }
+
+  @Synchronized
+  fun createPlan(request: String, steps: List<Step>): PlanCreation {
+    ensureManagementState()
+    check(!managerClaimed) { "edict_plan_create has already succeeded for this server" }
+    require(request.isNotBlank() && steps.size <= 1000) { "A request and at most 1000 initial steps are required" }
+    require(steps.count { it.skill == PR_ANALYSIS_SKILL } <= 1) {
+      "A plan can contain only one PR-analysis coordinator"
+    }
+    val manager = Capability(skill = "edict_manager")
+    steps.forEach { allowedChild(manager, it.skill, it.title) }
+    save(Plan(request = request, tasks = steps.map { Task(skill = it.skill, title = it.title) }))
+    val token = issue(manager)
+    managerClaimed = true
+    return PlanCreation(checkNotNull(plan()), token)
+  }
+
+  @Synchronized
+  fun addTask(token: String, skill: String, title: String): Task {
+    val capability = authorize(token)
+    allowedChild(capability, skill, title)
+    val plan = checkNotNull(currentPlan)
+    require(skill != PR_ANALYSIS_SKILL || plan.tasks.none { it.skill == PR_ANALYSIS_SKILL }) {
+      "A plan can contain only one PR-analysis coordinator"
+    }
+    require(plan.tasks.size < 10_000) { "Task limit reached" }
+    return Task(parentId = capability.taskId, skill = skill, title = title).also { task ->
+      save(plan.copy(tasks = plan.tasks + task))
+    }
+  }
+
+  /** A rejected prompt adds no task. */
+  @Synchronized
+  fun addDelegatedTask(token: String, skill: String, title: String, prompt: String): Delegation {
+    requireDelegationPrompt(skill, prompt)
+    return delegate(token, addTask(token, skill, title).id, prompt)
+  }
+
+  @Synchronized
+  fun delegate(token: String, taskId: String, prompt: String): Delegation {
+    val parent = authorize(token)
+    val task = task(taskId)
+    require(task.parentId == parent.taskId) { "Task is not a direct child of this capability" }
+    allowedChild(parent, task.skill, task.title)
+    require(task.status in listOf("pending", "failed", CANCELLED)) { "Task is already delegated or completed" }
+    requireDelegationPrompt(task.skill, prompt)
+    update(task.copy(status = "delegated", agentId = "", result = "", prompt = prompt))
+    val secret = issue(Capability(task.skill, taskId, sha256(token)))
+    return Delegation(
+      secret,
+      taskId,
+      task.skill,
+      Registry.skillPath(task.skill),
+      "\$${task.skill}\nBefore loading any skill, call edict_task_get with this token and your actual native subagent ID:\n" +
+        "{\"token\":\"$secret\",\"agentId\":\"<your subagent ID>\"}\n" +
+        "The token selects your assigned task. taskId is returned by this call; it is not an input argument. " +
+        "It starts your task and returns your assignment, your skill's SKILL.md, the protocols it follows and the " +
+        "run context: follow them using the managed lifecycle, without reading those files again. " +
+        "Use only the assigned worker skill; edict_manager is for the root manager.",
+    )
+  }
+
+  @Synchronized
+  fun readTask(token: String): TaskAssignment {
+    val capability = lookup(token)
+    val task = task(capability.taskId)
+    require(task.status in listOf("delegated", "running") && task.prompt.isNotEmpty()) {
+      "Only delegated workers can read their assignment"
+    }
+    capability.taskRead = true
+    return TaskAssignment(task.id, task.skill, Registry.skillPath(task.skill), task.prompt)
+  }
+
+  /** Starts the task; the same worker calling again gets its assignment back. */
+  @Synchronized
+  fun claimTask(token: String, agentId: String): TaskAssignment {
+    val assignment = readTask(token)
+    val task = task(assignment.taskId)
+    if (task.status != "running" || task.agentId != agentId) startTask(token, agentId, assignment.skill)
+    return assignment
+  }
+
+  @Synchronized
+  fun startTask(token: String, agentId: String, skill: String): TaskLifecycleAck {
+    val capability = lookup(token)
+    val task = task(capability.taskId)
+    require(task.status == "delegated") { "Only a delegated worker can start its task" }
+    require(capability.taskRead) { "Read your assignment with edict_task_get before starting" }
+    require(skill == capability.skill) { "Task skill mismatch: expected ${capability.skill}" }
+    require(agentId.isNotBlank() && checkNotNull(currentPlan).tasks.none { it.agentId == agentId }) {
+      "Each task requires a fresh subagent ID"
+    }
+    requireNoTokens(agentId)
+    update(task.copy(status = "running", agentId = agentId))
+    return lifecycleAck(task.id, "running")
+  }
+
+  @Synchronized
+  fun finishTask(
+    token: String,
+    status: String,
+    result: String,
+    tolerateFailedChildren: Boolean = false,
+  ): TaskLifecycleAck {
+    val capability = authorize(token)
+    require(capability.taskId.isNotEmpty()) { "Manager must finish tasks through their workers" }
+    require(status in TERMINAL_STATUSES && result.isNotBlank()) { "Requires completed or failed status and a result" }
+    requireNoTokens(result)
+    val plan = checkNotNull(currentPlan)
+    val tasks = plan.tasks.map { task ->
+      when {
+        task.id == capability.taskId -> task.copy(status = status, result = result)
+        descendant(task.id, capability.taskId) -> {
+          // Cancelled lost work does not block. A coordinator may also tolerate a failed direct analysis child when
+          // its domain-specific completion check has already accepted the aggregate failure threshold.
+          val toleratedFailure = tolerateFailedChildren && task.parentId == capability.taskId &&
+            task.skill == "edict-signal-analysis" && task.status == "failed"
+          require(status != "completed" || task.status in DONE_STATUSES || toleratedFailure) {
+            "Complete or cancel all subtasks before completing their parent"
+          }
+          if (task.status in DONE_STATUSES) task else task.copy(status = "failed", result = "Parent task failed: $result")
+        }
+        else -> task
+      }
+    }
+    save(plan.copy(tasks = tasks))
+    revoke(capability.taskId)
+    return lifecycleAck(capability.taskId, status)
+  }
+
+  @Synchronized
+  fun cancelTask(token: String, taskId: String, result: String): TaskLifecycleAck {
+    val capability = authorize(token)
+    val task = task(taskId)
+    require(task.parentId == capability.taskId) { "Only direct coordinator can cancel a task" }
+    require(task.status !in CLOSED_STATUSES && result.isNotBlank()) {
+      "Cancellation requires an unfinished task and a reason"
+    }
+    requireNoTokens(result)
+    val plan = checkNotNull(currentPlan)
+    save(plan.copy(tasks = plan.tasks.map { candidate ->
+      if (candidate.id == taskId || descendant(candidate.id, taskId) && candidate.status !in CLOSED_STATUSES) {
+        candidate.copy(status = CANCELLED, result = result)
+      }
+      else candidate
+    }))
+    revoke(taskId)
+    return lifecycleAck(taskId, CANCELLED)
+  }
+
+  /** Publish a validated model without exposing state paths or serialized bytes to workers. */
+  @Synchronized
+  fun publishSignal(
+    token: String,
+    signal: EdictSignal,
+    validateEvidence: (EdictSignal) -> Unit = {},
+  ): SignalPublication {
+    val capability = authorize(token)
+    require(capability.skill in SIGNAL_PUBLISHERS) { "${capability.skill} cannot publish inbox Signals" }
+    SignalValidation.validate(signal)
+    val path = "inbox/${signal.id}.json"
+    val content = EdictJson.encodeToString(signal)
+    require(content.toByteArray(Charsets.UTF_8).size <= MAX_STATE_FILE_BYTES) { "Signal exceeds 8 MiB" }
+    requireNoTokens(content)
+    require(capability.skill !in COMMIT_SIGNAL_PUBLISHERS || signal.source is EdictSignalSource.FromCommit) {
+      "Commit extraction can publish only FromCommit Signals"
+    }
+    require(capability.skill != "edict-pr-signal-analysis" || signal.source is EdictSignalSource.FromPR) {
+      "PR extraction can publish only FromPR Signals"
+    }
+    require(capability.skill != "edict-check-weak-signal-promotion" || signal.source is EdictSignalSource.FromPR) {
+      "Weak-promotion checking can publish only FromPR Signals"
+    }
+    validateEvidence(signal)
+
+    val target = safePath(path)
+    val existing = if (Files.exists(target, NOFOLLOW_LINKS)) Files.readString(target) else null
+    if (existing != null) {
+      val existingSignal = EdictJson.decodeFromString<EdictSignal>(existing)
+      if (existingSignal == signal) return SignalPublication(existingSignal, created = false)
+      atomicWrite(path, content)
+      return SignalPublication(signal, created = false)
+    }
+    atomicWrite(path, content)
+    return SignalPublication(signal, created = true)
+  }
+
+  @Synchronized
+  override fun redact(text: String): String {
+    if (issuedTokens.isEmpty()) return text
+    return buildString {
+      var copiedUntil = 0
+      POSSIBLE_TOKEN.findAll(text).forEach { match ->
+        if (sha256(match.groupValues[1]) in issuedTokens) {
+          val start = match.range.first
+          if (start >= copiedUntil) append(text, copiedUntil, start).append("[REDACTED]")
+          copiedUntil = maxOf(copiedUntil, start + 64)
+        }
+      }
+      append(text, copiedUntil, text.length)
+    }
+  }
+
+  @Synchronized
+  fun caller(token: String): String = grants[sha256(token)]?.let {
+    "${it.skill}/${it.taskId.ifEmpty { "manager" }}"
+  } ?: "anonymous"
+
+  @Synchronized
+  fun requireSkill(token: String, allowedSkills: Set<String>): String {
+    val capability = authorize(token)
+    require(capability.skill in allowedSkills) {
+      "${capability.skill} is not allowed to perform this managed mutation"
+    }
+    return capability.skill
+  }
+
+  @Synchronized
+  internal fun requireDirectSignalPublisher(token: String) {
+    requireSkill(token, COMMIT_SIGNAL_PUBLISHERS + "edict-check-weak-signal-promotion")
+  }
+
+  @Synchronized
+  fun requireTokenFree(content: String) {
+    requireNoTokens(content)
+  }
+
+  @Synchronized
+  internal fun scratchOwnerId(token: String): String = lookup(token).taskId.ifEmpty { "manager" }
+
+  @Synchronized
+  internal fun requireTaskScratchCleanup(token: String, taskId: String) {
+    val capability = authorize(token)
+    val target = task(taskId)
+    require(target.parentId == capability.taskId) { "Only a direct coordinator can clean task scratch" }
+    require(target.status in CLOSED_STATUSES) { "Task scratch can be cleaned only after the task is terminal" }
+  }
+
+  @Synchronized
+  internal fun requirePrAnalysisCaller(token: String, coordinator: Boolean) {
+    val capability = authorize(token)
+    if (capability.skill == PR_ANALYSIS_SKILL) return
+    if (!coordinator && capability.skill == "edict-signal-analysis") {
+      val parent = task(task(capability.taskId).parentId)
+      if (parent.skill == PR_ANALYSIS_SKILL) return
+    }
+    error("PR analysis requires a running PR-analysis task${if (coordinator) "" else " or its signal-analysis worker"}")
+  }
+
+  @Synchronized
+  internal fun isPrAnalysisCoordinator(token: String): Boolean =
+    authorize(token).skill == PR_ANALYSIS_SKILL
+
+  @Synchronized
+  internal fun getPrAnalysisCoverage(token: String, repository: ReviewRepository): RepositoryPrAnalysisCoverage {
+    requirePrAnalysisCaller(token, coordinator = true)
+    return loadPrAnalysisCoverage().repositories.singleOrNull { it.repository == repository }
+      ?: RepositoryPrAnalysisCoverage(repository)
+  }
+
+  @Synchronized
+  internal fun recordPrAnalysisCoverage(
+    token: String,
+    coverage: RepositoryPrAnalysisCoverage,
+  ): RepositoryPrAnalysisCoverage {
+    requirePrAnalysisCaller(token, coordinator = true)
+    require(coverage.analyzedDateRanges.isNotEmpty() || coverage.analyzedPrNumbers.isNotEmpty()) {
+      "PR-analysis coverage record must contain a date range or PR number"
+    }
+    val incoming = coverage.normalized()
+    val state = loadPrAnalysisCoverage()
+    val existing = state.repositories.singleOrNull { it.repository == incoming.repository }
+    val merged = RepositoryPrAnalysisCoverage(
+      repository = incoming.repository,
+      analyzedDateRanges = existing.orEmptyRanges() + incoming.analyzedDateRanges,
+      analyzedPrNumbers = existing.orEmptyPrNumbers() + incoming.analyzedPrNumbers,
+    ).normalized()
+    val repositories = (state.repositories.filterNot { it.repository == merged.repository } + merged)
+      .sortedWith(compareBy({ it.repository.provider }, { it.repository.owner }, { it.repository.repository }))
+    atomicWrite(
+      PR_ANALYSIS_COVERAGE_FILE,
+      EdictJson.encodeToString(PrAnalysisCoverageState(repositories = repositories)) + "\n",
+    )
+    return merged
+  }
+
+  @Synchronized
+  internal fun inboxSignal(id: String): EdictSignal? {
+    require(id.matches(Regex("s-[0-9a-f]{10}"))) { "Invalid Signal ID" }
+    val path = safePath("inbox/$id.json")
+    return if (Files.exists(path, NOFOLLOW_LINKS)) {
+      EdictJson.decodeFromString<EdictSignal>(Files.readString(path))
+    }
+    else {
+      null
+    }
+  }
+
+  @Synchronized
+  override fun close() {
+    if (closed) return
+    closed = true
+    grants.clear()
+    currentPlan = null
+    lockChannel?.close()
+    lockChannel = null
+  }
+
+  private fun ensureManagementState() {
+    check(!closed) { "Repository state is closed" }
+    if (lockChannel != null) return
+    Files.createDirectories(root)
+    require(!Files.isSymbolicLink(root)) { "State root must not be a symlink" }
+    val channel = FileChannel.open(safePath(LOCK_FILE), CREATE, WRITE, NOFOLLOW_LINKS)
+    try {
+      check(channel.tryLock() != null) { "State is already owned by another Edict management service" }
+      lockChannel = channel
+      ensureManagementFilesIgnored()
+    }
+    catch (e: Exception) {
+      lockChannel = null
+      channel.close()
+      throw e
+    }
+  }
+
+  private fun ensureManagementFilesIgnored() {
+    val path = safePath(GITIGNORE_FILE)
+    val content = if (Files.exists(path, NOFOLLOW_LINKS)) readText(GITIGNORE_FILE) else ""
+    val entries = content.lineSequence().map { it.removeSuffix("\r") }.toSet()
+    val missing = MANAGEMENT_GITIGNORE_ENTRIES.filterNot { it in entries || "/$it" in entries }
+    if (missing.isEmpty()) return
+    Files.writeString(path, ignoreFileAddition(content, missing), CREATE, APPEND)
+  }
+
+  private fun authorize(token: String): Capability = lookup(token).also { capability ->
+    require(capability.taskId.isEmpty() || task(capability.taskId).status == "running") {
+      "Worker must start its delegated task first"
+    }
+  }
+
+  private fun lookup(token: String): Capability {
+    ensureManagementState()
+    val capability = grants[sha256(token)] ?: error("Invalid or revoked capability")
+    check(capability.parent.isEmpty() || capability.parent in grants) { "Parent capability is revoked" }
+    return capability
+  }
+
+  private fun task(id: String): Task = currentPlan?.tasks?.firstOrNull { it.id == id } ?: error("Unknown task")
+
+  private fun issue(capability: Capability): String = randomId().also { token ->
+    val digest = sha256(token)
+    issuedTokens += digest
+    grants[digest] = capability
+  }
+
+  private fun requireNoTokens(text: String) {
+    require(redact(text) == text) { "Persisted content must not contain capability tokens" }
+  }
+
+  private fun requireDelegationPrompt(skill: String, prompt: String) {
+    require(prompt.substringBefore('\n') == "\$$skill" && prompt.substringAfter('\n', "").isNotBlank()) {
+      "Subagent prompt must start with the exact line \$$skill followed by its skill path and bounded task instructions"
+    }
+    requireNoTokens(prompt)
+  }
+
+  private fun allowedChild(capability: Capability, skill: String, title: String) {
+    require(title.isNotBlank()) { "Task title is required" }
+    require(skill in Registry[capability.skill].delegates) {
+      "${capability.skill} cannot call managed skill $skill"
+    }
+    requireNoTokens(title)
+  }
+
+  private fun descendant(id: String, ancestor: String): Boolean {
+    var task = currentPlan?.tasks?.firstOrNull { it.id == id }
+    while (task != null && task.parentId.isNotEmpty()) {
+      if (task.parentId == ancestor) return true
+      task = task(task.parentId)
+    }
+    return false
+  }
+
+  private fun revoke(id: String) {
+    grants.entries.removeIf { it.value.taskId == id || descendant(it.value.taskId, id) }
+  }
+
+  private fun update(task: Task) {
+    val plan = checkNotNull(currentPlan)
+    save(plan.copy(tasks = plan.tasks.map { if (it.id == task.id) task else it }))
+  }
+
+  private fun lifecycleAck(taskId: String, status: String): TaskLifecycleAck =
+    TaskLifecycleAck(taskId, status, checkNotNull(currentPlan).revision)
+
+  private fun save(plan: Plan) {
+    ensureManagementState()
+    currentPlan = plan.copy(revision = plan.revision + 1)
+  }
+
+  private fun readText(relative: String): String {
+    val bytes = Files.newInputStream(safePath(relative), NOFOLLOW_LINKS).use { it.readNBytes(MAX_STATE_FILE_BYTES + 1) }
+    require(bytes.size <= MAX_STATE_FILE_BYTES) { "State file exceeds 8 MiB" }
+    return bytes.toString(Charsets.UTF_8)
+  }
+
+  private fun loadPrAnalysisCoverage(): PrAnalysisCoverageState {
+    val path = safePath(PR_ANALYSIS_COVERAGE_FILE)
+    if (!Files.exists(path, NOFOLLOW_LINKS)) return PrAnalysisCoverageState()
+    val content = Files.readString(path)
+    require(content.toByteArray(Charsets.UTF_8).size <= MAX_STATE_FILE_BYTES) { "PR-analysis coverage exceeds 8 MiB" }
+    val state = EdictJson.decodeFromString<PrAnalysisCoverageState>(content)
+    require(state.schemaVersion == 1) { "Unsupported PR-analysis coverage schema ${state.schemaVersion}" }
+    require(state.repositories.distinctBy(RepositoryPrAnalysisCoverage::repository).size == state.repositories.size) {
+      "Duplicate repositories in PR-analysis coverage"
+    }
+    return state.copy(repositories = state.repositories.map(RepositoryPrAnalysisCoverage::normalized))
+  }
+
+  private fun safePath(relative: String): Path {
+    check(!closed) { "Repository state is closed" }
+    require(relative.isNotBlank() && !Path.of(relative).isAbsolute) { "Invalid state path" }
+    var path = root
+    relative.split('/').forEach { part ->
+      require(part.isNotBlank() && part != "." && part != "..") { "Invalid state path" }
+      path = path.resolve(part)
+      require(!Files.isSymbolicLink(path)) { "Symlinks are forbidden: $relative" }
+    }
+    return path.normalize().also { require(it.startsWith(root)) { "State path escapes its root" } }
+  }
+
+  private fun atomicWrite(relative: String, content: String) {
+    val target = safePath(relative)
+    Files.createDirectories(target.parent)
+    val attributes = if (Files.getFileStore(root).supportsFileAttributeView("posix")) {
+      arrayOf(PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-------")))
+    }
+    else emptyArray()
+    val temporary = Files.createTempFile(target.parent, ".edict-tmp-", "", *attributes)
+    try {
+      FileChannel.open(temporary, WRITE).use { channel ->
+        val buffer = ByteBuffer.wrap(content.toByteArray(Charsets.UTF_8))
+        while (buffer.hasRemaining()) channel.write(buffer)
+        channel.force(true)
+      }
+      Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+    }
+    finally {
+      Files.deleteIfExists(temporary)
+    }
+  }
+
+  companion object {
+    private const val MAX_STATE_FILE_BYTES = 8 * 1024 * 1024
+    private const val PR_ANALYSIS_SKILL = "edict-pr-signal-analysis"
+    private const val LOCK_FILE = ".edict-mcp.lock"
+    private const val GITIGNORE_FILE = ".gitignore"
+    private val MANAGEMENT_GITIGNORE_ENTRIES = listOf(LOCK_FILE)
+    private const val PR_ANALYSIS_COVERAGE_FILE = "extraction/pr-analysis-coverage.json"
+    private val COMMIT_SIGNAL_PUBLISHERS = setOf(
+      "edict-batch-signal-analysis",
+      "edict-git-history-signal-enrichment",
+      "edict-retrospective-signal-analysis",
+    )
+    private val SIGNAL_PUBLISHERS =
+      COMMIT_SIGNAL_PUBLISHERS + setOf("edict-pr-signal-analysis", "edict-check-weak-signal-promotion", "edict-feedback-signal-analysis")
+    /** Statuses a worker may finish its own task with. */
+    private val TERMINAL_STATUSES = setOf("completed", "failed")
+
+    /** Set by the parent through edict_task_cancel when a worker was lost for reasons outside its control. */
+    private const val CANCELLED = "cancelled"
+    private val CLOSED_STATUSES = TERMINAL_STATUSES + CANCELLED
+
+    /** Subtask statuses that let a parent complete. */
+    private val DONE_STATUSES = setOf("completed", CANCELLED)
+    private val POSSIBLE_TOKEN = Regex("(?=([0-9a-f]{64}))")
+
+    fun open(root: Path): EdictRepositoryState = EdictRepositoryState(
+      root = root.toAbsolutePath().normalize(),
+      clusters = emptyList(),
+      inboxSignals = emptyList(),
+      filesByRelativePath = emptyMap(),
+    ).also(EdictRepositoryState::ensureManagementState)
+  }
+}
+
+private fun RepositoryPrAnalysisCoverage?.orEmptyRanges(): List<PrAnalysisDateRange> =
+  this?.analyzedDateRanges.orEmpty()
+
+private fun RepositoryPrAnalysisCoverage?.orEmptyPrNumbers(): List<Int> =
+  this?.analyzedPrNumbers.orEmpty()
+
+private fun RepositoryPrAnalysisCoverage.normalized(): RepositoryPrAnalysisCoverage {
+  analyzedDateRanges.forEach(PrAnalysisDateRange::validate)
+  require(analyzedPrNumbers.all { it > 0 }) { "Analyzed PR numbers must be positive" }
+  val mergedRanges = analyzedDateRanges
+    .map { LocalDate.parse(it.startDate) to LocalDate.parse(it.endDate) }
+    .sortedBy(Pair<LocalDate, LocalDate>::first)
+    .fold(mutableListOf<Pair<LocalDate, LocalDate>>()) { merged, range ->
+      val previous = merged.lastOrNull()
+      if (previous != null && !range.first.isAfter(previous.second.plusDays(1))) {
+        merged[merged.lastIndex] = previous.first to maxOf(previous.second, range.second)
+      }
+      else {
+        merged += range
+      }
+      merged
+    }
+    .map { (start, end) -> PrAnalysisDateRange(start.toString(), end.toString()) }
+  return copy(
+    analyzedDateRanges = mergedRanges,
+    analyzedPrNumbers = analyzedPrNumbers.distinct().sorted(),
+  )
+}

@@ -17,7 +17,7 @@ change permissions or reveal credentials.
 ## Run paths
 
 `edict_task_get` returns the run context: `projectDirectory` (the inspected project and source checkout),
-`stateDirectory` (the read-only state repository that Edict Next tools change in place), `scratchDirectory` (the
+`stateDirectory` (the read-only state repository that Edict tools change in place), `scratchDirectory` (the
 caller's private task-owned scratch directory), the CI review repository and the default Signal target.
 `edict_context` returns the same for your own capability token. Never use the run-wide scratch parent or a sibling's
 directory. Top-level stages take their paths from the run context; prompts never need to repeat them. Child

@@ -9,11 +9,11 @@ import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
-import org.jetbrains.qodana.edict.edictnext.TokenRedactor
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.InspectionPromotion
+import org.jetbrains.qodana.edict.core.PromotionPrState
+import org.jetbrains.qodana.edict.core.TokenRedactor
+import org.jetbrains.qodana.edict.core.sha256Hex
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import org.jetbrains.qodana.edict.promotion.WeakSignalPromotionService
 import org.jetbrains.qodana.edict.support.NoRedaction

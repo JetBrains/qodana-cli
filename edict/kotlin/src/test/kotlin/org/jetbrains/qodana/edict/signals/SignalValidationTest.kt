@@ -1,20 +1,20 @@
 package org.jetbrains.qodana.edict.signals
 
-import org.jetbrains.qodana.edict.edictnext.*
+import org.jetbrains.qodana.edict.core.*
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class SignalValidationTest {
-  private fun signal(diff: String) = EdictNextSignal(
+  private fun signal(diff: String) = EdictSignal(
     id = stableSignalId("bounded-diff"),
     idempotencyKey = "bounded-diff",
-    fileRevision = EdictNextFileRevision("Example.kt", "a".repeat(40), listOf(EdictNextLineRange(10, 10))),
-    source = EdictNextSignalSource.FromPR(1, "Fix call", listOf("Use the correct call"), diff, "https://example.test/pr/1"),
-    label = EdictNextSignalLabel.POSITIVE,
+    fileRevision = EdictFileRevision("Example.kt", "a".repeat(40), listOf(EdictLineRange(10, 10))),
+    source = EdictSignalSource.FromPR(1, "Fix call", listOf("Use the correct call"), diff, "https://example.test/pr/1"),
+    label = EdictSignalLabel.POSITIVE,
     description = "Calls the wrong function",
-    provenance = EdictNextSignalProvenance("pr-1"),
+    provenance = EdictSignalProvenance("pr-1"),
   )
 
   @Test
@@ -31,7 +31,7 @@ class SignalValidationTest {
   fun `excerpt still has to cover every expected range on its label side`() {
     val excerpt = "--- a/Example.kt\n+++ b/Example.kt\n@@ -10 +10 @@\n-bad()\n+good()\n"
     val unrepresented = signal(excerpt).copy(
-      fileRevision = signal(excerpt).fileRevision.copy(expectedRanges = listOf(EdictNextLineRange(10, 10), EdictNextLineRange(30, 30))),
+      fileRevision = signal(excerpt).fileRevision.copy(expectedRanges = listOf(EdictLineRange(10, 10), EdictLineRange(30, 30))),
     )
     assertFailsWith<IllegalArgumentException> { SignalValidation.validate(unrepresented) }
   }
@@ -39,7 +39,7 @@ class SignalValidationTest {
   @Test
   fun `a finding users rated on GitHub needs the comment it was rated on`() {
     val rated = signal("").copy(
-      source = EdictNextSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", url = "", replies = emptyList()),
+      source = EdictSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", url = "", replies = emptyList()),
     )
 
     val failure = assertFailsWith<IllegalArgumentException> { SignalValidation.validate(rated) }

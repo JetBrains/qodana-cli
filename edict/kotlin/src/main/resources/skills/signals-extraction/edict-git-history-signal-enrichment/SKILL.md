@@ -14,7 +14,7 @@ Do not generate rules, clusters, examples, or inspections.
 Start the task. Take the source checkout (`projectDirectory`) and private task scratch
 (`scratchDirectory`) from your run context. Require exactly one `clusterId` as domain input.
 Reject a missing, empty, or multiple-cluster assignment before any history query or write; the manager must create
-separate enrichment tasks for separate clusters. Call `edict_next_get_history_context(token, clusterId)` once for its
+separate enrichment tasks for separate clusters. Call `edict_get_history_context(token, clusterId)` once for its
 server-computed `range`, and `edict_get_cluster_signals(clusterId)` for the member list. Read a member's full
 evidence (correcting diff, discussion) from `<signalsDirectory>/<id>.json` when you derive queries from it.
 The server limits the range by both commit depth and days backwards, returning frozen `headRevision`, the UTC

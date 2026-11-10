@@ -1,8 +1,8 @@
 package org.jetbrains.qodana.edict.promotion
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
-import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
+import org.jetbrains.qodana.edict.core.InspectionPromotion
+import org.jetbrains.qodana.edict.core.EdictEvaluation
 
 @Serializable
 internal data class PromotionFailure(val clusterId: String, val message: String)
@@ -19,7 +19,7 @@ internal data class PromotionCandidate(
   val inspectionPath: String,
   val inspectionDigest: String,
   val strongPositiveSourceFiles: Int,
-  val evaluation: EdictNextEvaluation,
+  val evaluation: EdictEvaluation,
   val f1: Double,
 )
 

@@ -2,8 +2,8 @@
 package org.jetbrains.qodana.edict.logging
 
 import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
 import java.io.PrintWriter
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption.APPEND
@@ -11,7 +11,7 @@ import java.nio.file.StandardOpenOption.CREATE
 
 /** MCP task transitions and the final price report, streamed by CI while the coordinating agent waits. */
 internal class TaskLifecycleLogger(
-    private val store: EdictNextRepositoryState,
+    private val store: EdictRepositoryState,
     layout: EdictLayout,
     private val output: PrintWriter,
 ) {

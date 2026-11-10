@@ -3,9 +3,9 @@ package org.jetbrains.qodana.edict.feedback
 
 import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.ci.ReviewReference
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.core.EdictJson
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import java.nio.file.Path
 import java.time.Instant
 import java.time.YearMonth
@@ -30,7 +30,7 @@ internal data class FeedbackRecord(
     val revision: String,
     /** The repository-relative path of the file the finding is in. */
     val path: String,
-    val lines: EdictNextLineRange,
+    val lines: EdictLineRange,
     /** The line the review comment is on: the first of [lines] that the pull request adds. */
     val commentLine: Int,
     val inspectionName: String,
@@ -66,7 +66,7 @@ internal class FeedbackRecords(private val paths: EdictRepositoryDirectory) {
 internal val FeedbackRecord.fileName: String get() = "$id.json"
 
 /** The record as its file stores it. */
-internal fun FeedbackRecord.fileText(): String = EdictNextJson.encodeToString(FeedbackRecord.serializer(), this)
+internal fun FeedbackRecord.fileText(): String = EdictJson.encodeToString(FeedbackRecord.serializer(), this)
 
 private fun directories(directory: Path): List<Path> =
     if (directory.isDirectory()) directory.listDirectoryEntries().filter(Path::isDirectory).sorted() else emptyList()
@@ -74,7 +74,7 @@ private fun directories(directory: Path): List<Path> =
 private fun load(directory: Path): List<FeedbackRecord> =
     if (!directory.isDirectory()) emptyList()
     else directory.listDirectoryEntries("*.json").sorted().map { file ->
-        EdictNextJson.decodeFromString(FeedbackRecord.serializer(), file.readText()).also {
+        EdictJson.decodeFromString(FeedbackRecord.serializer(), file.readText()).also {
             require(it.id == file.nameWithoutExtension) { "Feedback record $file holds record ${it.id}" }
         }
     }

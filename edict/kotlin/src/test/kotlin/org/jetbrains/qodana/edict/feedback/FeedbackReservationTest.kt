@@ -1,9 +1,9 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictRepository
 import org.jetbrains.qodana.edict.feedback.support.FINDING_MESSAGE
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
@@ -44,7 +44,7 @@ class FeedbackReservationTest {
   @Test
   fun `reserves nothing for a finding of an inspection the state no longer selects`() {
     // The routine discontinued the cluster while the scan ran.
-    repository.store(cluster("rule").copy(status = EdictNextClusterStatus.Discontinued))
+    repository.store(cluster("rule").copy(status = EdictClusterStatus.Discontinued))
 
     assertEquals(emptyList(), reserve(listOf(candidate("rule", "src/Main.kt", 3))))
   }
@@ -62,7 +62,7 @@ class FeedbackReservationTest {
   @Test
   fun `the record of a finding over several lines keeps them and its id by the first, and comments on the candidate's line`() {
     repository.store(cluster("a"))
-    val declaration = InternalFinding("a", "src/Main.kt", EdictNextLineRange(1, 5), FINDING_MESSAGE)
+    val declaration = InternalFinding("a", "src/Main.kt", EdictLineRange(1, 5), FINDING_MESSAGE)
 
     val reserved = reserve(listOf(FeedbackCandidate(declaration, 3)))
 
@@ -72,9 +72,9 @@ class FeedbackReservationTest {
   @Test
   fun `keeps the findings that have a line the pull request adds, to comment on the first of them`() {
     val added = finding("a", "src/Main.kt", 3)
-    val endingOnAddedLine = InternalFinding("a", "src/Main.kt", EdictNextLineRange(5, 6), FINDING_MESSAGE)
-    val aroundAddedLines = InternalFinding("a", "src/Main.kt", EdictNextLineRange(8, 12), FINDING_MESSAGE)
-    val beforeAddedLine = InternalFinding("a", "src/Main.kt", EdictNextLineRange(13, 14), FINDING_MESSAGE)
+    val endingOnAddedLine = InternalFinding("a", "src/Main.kt", EdictLineRange(5, 6), FINDING_MESSAGE)
+    val aroundAddedLines = InternalFinding("a", "src/Main.kt", EdictLineRange(8, 12), FINDING_MESSAGE)
+    val beforeAddedLine = InternalFinding("a", "src/Main.kt", EdictLineRange(13, 14), FINDING_MESSAGE)
     val inAnotherFile = finding("a", "src/Other.kt", 3)
     val findings = listOf(added, endingOnAddedLine, aroundAddedLines, beforeAddedLine, inAnotherFile)
 
@@ -95,7 +95,7 @@ private fun cluster(id: String, precision: Double = 0.9) =
 
 /** A finding of the inspection of cluster [clusterId] on line [line] of [path]. */
 private fun finding(clusterId: String, path: String, line: Int) =
-  InternalFinding(clusterId, path, EdictNextLineRange(line, line), FINDING_MESSAGE)
+  InternalFinding(clusterId, path, EdictLineRange(line, line), FINDING_MESSAGE)
 
 /** The [finding] on line [line] of [path], which the pull request adds. */
 private fun candidate(clusterId: String, path: String, line: Int) = FeedbackCandidate(finding(clusterId, path, line), line)
@@ -107,7 +107,7 @@ private fun record(id: String, clusterId: String, path: String, line: Int) = Fee
   pullRequest = PULL_REQUEST,
   revision = HEAD_REVISION,
   path = path,
-  lines = EdictNextLineRange(line, line),
+  lines = EdictLineRange(line, line),
   commentLine = line,
   inspectionName = INSPECTION_NAME,
   inspectionDescription = INSPECTION_SUMMARY,

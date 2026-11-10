@@ -33,7 +33,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 		ctx, &mcp.CallToolParams{
 			Name: "edict_plan_create", Arguments: map[string]any{
 				"request": "Check project history", "steps": []map[string]string{
-					{"skill": "edict-next-run", "title": "Process existing signals"},
+					{"skill": "edict-distribution", "title": "Process existing signals"},
 				},
 			},
 		},
@@ -63,7 +63,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 		ctx, &mcp.CallToolParams{
 			Name: "edict_delegate", Arguments: map[string]any{
 				"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
-				"prompt": "$edict-next-run\nRead /skills/edict-next-run/SKILL.md. Process existing signals.",
+				"prompt": "$edict-distribution\nRead /skills/edict-distribution/SKILL.md. Process existing signals.",
 			},
 		},
 	)
@@ -75,7 +75,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 			Name: "edict_plan_create",
 			Arguments: map[string]any{
 				"request": "Second manager",
-				"steps":   []map[string]string{{"skill": "edict-next-run", "title": "Duplicate"}},
+				"steps":   []map[string]string{{"skill": "edict-distribution", "title": "Duplicate"}},
 			},
 		},
 	)

@@ -2,9 +2,9 @@ package org.jetbrains.qodana.edict.integration
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.qodana.edict.edictnext.HttpInspectionKtsClient
+import org.jetbrains.qodana.edict.core.HttpInspectionKtsClient
 import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.core.IntellijMcpServerService
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.junit.jupiter.api.Test
