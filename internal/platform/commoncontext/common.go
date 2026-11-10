@@ -186,11 +186,12 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 // SelectAnalyzerForPath gets linter for the given path
 func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 	var linters []product.Linter
+	var dominantLanguage string
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			languages := readIdeaDir(path)
 			if len(languages) == 0 {
-				languages, _ = recognizeDirLanguages(path)
+				languages, dominantLanguage, _ = recognizeDirLanguages(path)
 			}
 			if len(languages) == 0 {
 				msg.WarningMessage("No technologies detected (no source code files?)\n")
@@ -236,7 +237,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 
 	interactive := msg.IsInteractive()
 	linters = filterByLicensePlan(linters, token)
-	analyzer := selectAnalyzer(path, linters, interactive, selector)
+	analyzer := selectAnalyzer(path, linters, interactive, dominantLanguage == "Dart", selector)
 	if analyzer == nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
@@ -288,6 +289,7 @@ func selectAnalyzer(
 	path string,
 	linters []product.Linter,
 	interactive bool,
+	preferNative bool,
 	selectFunc func([]string) string,
 ) product.Analyzer {
 	var distribution product.Analyzer
@@ -300,6 +302,10 @@ func selectAnalyzer(
 
 	if len(choices) == 1 || !interactive {
 		distribution = selection[choices[0]]
+		selectedLinter := distribution.GetLinter()
+		if !interactive && preferNative && selectedLinter.SupportNative {
+			distribution = selectedLinter.NativeAnalyzer()
+		}
 	} else {
 		choice := selectFunc(choices)
 		if choice == "" {
@@ -369,7 +375,7 @@ func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) 
 				}
 				openReport("", reportDir, port)
 			},
-			fmt.Sprintf("Showing Qodana report from %s", fmt.Sprintf("http://localhost:%d/", port)),
+			fmt.Sprintf("Showing Qodana report from http://localhost:%d/", port),
 			"",
 		)
 	}
@@ -422,32 +428,43 @@ func unpackWebUI(cacheDir string, reportDir string) {
 // openReport serves the report on the given port and opens the browser.
 func openReport(cloudUrl string, path string, port int) {
 	if cloudUrl != "" {
-		resp, err := http.Get(cloudUrl)
-		if err == nil && resp.StatusCode == 200 {
-			err = utils.OpenBrowser(cloudUrl)
-			if err != nil {
-				return
-			}
-		}
+		openBrowserWhenAvailable(cloudUrl)
 		return
 	}
 	url := fmt.Sprintf("http://localhost:%d", port)
-	go func() {
-		resp, err := http.Get(url)
-		if err == nil && resp.StatusCode == 200 {
-			err := utils.OpenBrowser(url)
-			if err != nil {
-				return
-			}
-		}
-	}()
-	http.Handle("/", noCache(http.FileServer(http.Dir(path))))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	go openBrowserWhenAvailable(url)
+	server := createReportServer(path, port)
+	defer func() { _ = server.Close() }()
+	err := server.ListenAndServe()
 	if err != nil {
 		msg.WarningMessage("Problem serving report, %s\n", err.Error())
 		return
 	}
 	_, _ = fmt.Scan()
+}
+
+func openBrowserWhenAvailable(url string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+	_ = utils.OpenBrowser(url)
+}
+
+func createReportServer(path string, port int) *http.Server {
+	addr := fmt.Sprintf("localhost:%d", port)
+	if qdenv.IsContainer() {
+		addr = fmt.Sprintf(":%d", port)
+	}
+	return &http.Server{
+		Addr:    addr,
+		Handler: noCache(http.FileServer(http.Dir(path))),
+	}
 }
 
 // noCache handles serving the static files with no cache headers.

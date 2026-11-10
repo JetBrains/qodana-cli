@@ -32,8 +32,8 @@ type Linter struct {
 }
 
 const (
-	ReleaseVersion = "2026.2"
-	ShortVersion   = "262"
+	ReleaseVersion = "2026.3"
+	ShortVersion   = "263"
 	IsReleased     = false
 
 	EapSuffix  = "-EAP"
@@ -231,10 +231,10 @@ var (
 		Name:            "qodana-poly",
 		ProductCode:     QDPOLY,
 		DockerImage:     "jetbrains/qodana-poly",
-		SupportNative:   false,
-		IsPaid:          false,
+		SupportNative:   true,
+    IsPaid:          true,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	// AllLinters Order is important for detection
@@ -306,6 +306,8 @@ var LangsToLinters = map[string][]Linter{
 	"C++":               {CppLinter, ClangLinter, DotNetLinter},
 	"Ruby":              {RubyLinter},
 	"Rust":              {RustLinter},
+	"Dart":              {PolyLinter},
+	"Lua":               {PolyLinter},
 }
 
 var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })
@@ -385,4 +387,16 @@ func FindLinterByName(name string) Linter {
 		}
 	}
 	return UnknownLinter
+}
+
+// CloudBaselineToolName returns the name the baseline of a linter of the given product code is
+// stored under in Qodana Cloud. The JVM linters report themselves as QDJVM whichever edition they
+// are, a community or an android one, so all of them share one baseline.
+func CloudBaselineToolName(productCode string) string {
+	switch strings.TrimSuffix(productCode, EapSuffix) {
+	case QDJVMC, QDAND, QDANDC:
+		return QDJVM
+	default:
+		return productCode
+	}
 }

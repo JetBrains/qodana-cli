@@ -2,7 +2,7 @@
 # Uses debian12 node: its portable upstream-tarball build runs on bookworm, whereas the
 # trixie-native debian13 node binary won't load there (glibc).
 ARG BASE_TAG="bookworm"
-ARG NODE_TAG="22-debian12-dev@sha256:c22523c46225082884240de60f0750fa1996e898a9a26632e90ab8f3bda4e9c7"
+ARG NODE_TAG="22-debian12-dev@sha256:36d8292daa06aef862ace71c082e3825aaa2eac11c3ef546c0806bffd246af7b"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM cpp-community
 

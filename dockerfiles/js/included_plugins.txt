@@ -17,6 +17,7 @@ cucumber-javascript
 com.jetbrains.lang.ejs
 com.jetbrains.plugins.jade
 JavaScript
+intellij.javascript.eslint
 JavaScriptDebugger
 com.dmarcotte.handlebars
 JSIntentionPowerPack

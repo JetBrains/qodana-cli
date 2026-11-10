@@ -27,6 +27,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -426,5 +427,41 @@ func TestPrepareDirectories(t *testing.T) {
 		if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 			t.Errorf("prepareDirectories failed to create directory: %s", dir)
 		}
+	}
+}
+
+func TestPrepareQodanaTokenForNative(t *testing.T) {
+	for _, testData := range []struct {
+		name     string
+		unset    bool
+		env      string
+		token    string
+		expected string
+	}{
+		{name: "unset env gets the token", unset: true, token: "token", expected: "token"},
+		{name: "empty env gets the token", token: "token", expected: "token"},
+		{name: "set env is kept", env: "user-token", token: "token", expected: "user-token"},
+		{name: "empty token is not set", unset: true, token: ""},
+	} {
+		t.Run(
+			testData.name, func(t *testing.T) {
+				t.Setenv(qdenv.QodanaToken, testData.env)
+				if testData.unset {
+					if err := os.Unsetenv(qdenv.QodanaToken); err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				prepareQodanaTokenForNative(testData.token)
+
+				value, isSet := os.LookupEnv(qdenv.QodanaToken)
+				if value != testData.expected {
+					t.Errorf("expected QODANA_TOKEN '%s', got '%s'", testData.expected, value)
+				}
+				if testData.unset && testData.token == "" && isSet {
+					t.Errorf("QODANA_TOKEN must stay unset for an empty token")
+				}
+			},
+		)
 	}
 }

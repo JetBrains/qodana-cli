@@ -75,6 +75,7 @@ func CreateContext(
 		Property:                  cliOptions.Property,
 		Script:                    cliOptions.Script,
 		FailThreshold:             cliOptions.FailThreshold,
+		ReportCoverageProblems:    cliOptions.ReportCoverageProblems,
 		Commit:                    commit,
 		DiffStart:                 cliOptions.DiffStart,
 		DiffEnd:                   cliOptions.DiffEnd,

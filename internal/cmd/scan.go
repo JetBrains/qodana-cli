@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
@@ -31,8 +32,10 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
@@ -51,7 +54,9 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			qdenv.InitializeQodanaGlobalEnv(cliOptions)
+			tokenloader.InitializeQodanaGlobalEnv(cliOptions)
+			// QODANA_ORG_TOKEN is resolved: drop it so it never reaches the scan context and its debug output
+			cliOptions.Env_ = qdenv.WithoutEnv(cliOptions.Env_, qdenv.QodanaOrgToken)
 
 			ctx := cmd.Context()
 
@@ -113,7 +118,29 @@ But you can always override qodana.yaml options with the following command-line 
 				effectiveConfigFiles.ConfigDir,
 			)
 
+			baseline := platform.ResolveBaseline(
+				scanContext.Baseline(),
+				platform.LauncherBaselineSource(),
+				scanContext.QodanaUploadToken(),
+				scanContext.Analyser().GetLinter().ProductCode,
+				scanContext.CacheDir(),
+			)
+			if baseline.IsFromCloud() {
+				scanContext = scanContext.WithCloudBaseline(baselineForLinter(baseline.BaselinePath(), scanContext))
+			} else {
+				scanContext = scanContext.WithResolvedBaselineSource(baseline.Source())
+			}
+			// set over a source of the environment, which qdenv.SetEnv would keep
+			if err := os.Setenv(qdenv.QodanaBaselineSource, baseline.Source()); err != nil {
+				log.Warnf("Failed to set %s: %v", qdenv.QodanaBaselineSource, err)
+			}
+
 			exitCode := core.RunAnalysis(ctx, scanContext)
+			// not deferred: the exit code checks below leave the process with os.Exit
+			baseline.Cleanup()
+			if baseline.ReportsUsed(scanContext.Analyser().IsContainer()) {
+				fmt.Println(baseline.UsedMessage())
+			}
 			if qdenv.IsContainer() {
 				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
 				if err != nil {
@@ -200,4 +227,17 @@ func checkExitCode(exitCode int, c corescan.Context) {
 		}
 		os.Exit(exitCode)
 	}
+}
+
+// baselineForLinter returns the path the linter reads the downloaded baseline from. A linter in a
+// container reads it from the cache dir mounted into the container.
+func baselineForLinter(baselinePath string, c corescan.Context) string {
+	if !c.Analyser().IsContainer() {
+		return baselinePath
+	}
+	relative, err := filepath.Rel(c.CacheDir(), baselinePath)
+	if err != nil {
+		log.Fatalf("Baseline %s is not in the cache dir %s: %v", baselinePath, c.CacheDir(), err)
+	}
+	return path.Join(qdcontainer.DataCacheDir, filepath.ToSlash(relative))
 }

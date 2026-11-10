@@ -8,7 +8,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 
 Prerequisites:
 
-- [Go 1.25+](https://golang.org/doc/install)
+- [Go 1.27.3+](https://golang.org/doc/install)
 - [Docker](https://docs.docker.com/get-docker/)
 
 Other things you might need to develop:
@@ -73,9 +73,9 @@ Test your code with coverage:
 go test -v ./...
 ```
 
-Test your code with a human-readable report (requires `go install github.com/mfridman/tparse@latest`):
+Test your code with a human-readable report:
 ```sh
-go test -timeout 0 -json -v ./... > test.json 2>&1; tparse -all -file=test.json
+go test -timeout 0 -json -v ./... > test.json 2>&1; go tool tparse -all -file=test.json
 ```
 
 To skip third-party linter tests (if you don't have cdnet/clang dependencies):

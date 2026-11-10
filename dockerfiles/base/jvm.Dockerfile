@@ -1,10 +1,12 @@
 ARG BASE_TAG="trixie-debian13-dev"
-ARG NODE_TAG="22-debian13-dev@sha256:6193eadf230e43b9df82c4340e1f98223d2ef41ec83bde0ba32ccc3dbf11b0b1"
+ARG NODE_TAG="22-debian13-dev@sha256:50e98c244814769b94e2d2594edd2dcee91742ec943570ead23be7a411632301"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM jvm-community
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.31.0"
+# renovate: datasource=npm depName=pnpm
+ENV PNPM_VERSION="11.18.0"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
@@ -20,6 +22,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npx --version && \
     corepack --version && \
     yarn --version && \
-    npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
+    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
+    pnpm --version && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
     mkdir -p -m 777 "$HOME/.m2" "$HOME/.m2/repository"

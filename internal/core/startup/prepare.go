@@ -146,23 +146,24 @@ func SyncCache(commonCtx commoncontext.Context, prod product.Product) {
 	SyncConfigCache(prod, commonCtx.ConfDirPath(), commonCtx.CacheDir, true)
 }
 
+// prepareQodanaTokenForNative passes the resolved upload token to the locally launched linter, which inherits the CLI env.
+// The token may come from the keyring or QODANA_ORG_TOKEN exchange, not only from QODANA_TOKEN env.
+// An empty QODANA_TOKEN (e.g. a missing CI secret) is treated as unset.
 func prepareQodanaTokenForNative(token string) {
-	_, isSet := os.LookupEnv(qdenv.QodanaToken)
-	if !isSet {
-		err := os.Setenv(qdenv.QodanaToken, token)
-		if err != nil {
-			log.Fatal("Cannot set QODANA_TOKEN environment variable. The result may not be uploaded to the Qodana cloud.")
-		}
+	if token == "" || os.Getenv(qdenv.QodanaToken) != "" {
+		return
+	}
+	if err := os.Setenv(qdenv.QodanaToken, token); err != nil {
+		log.Fatal("Cannot set QODANA_TOKEN environment variable. The result may not be uploaded to the Qodana cloud.")
 	}
 }
 
 func prepareCustomPlugins(prod product.Product) {
 	if runtime.GOOS == "darwin" && !prod.Analyzer.IsContainer() {
 		if info := getIde(prod.Analyzer); info != nil {
-			err := downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
-			if err != nil {
-				log.Warning("Error while downloading custom plugins: " + err.Error())
-			}
+			// Failures are logged inside downloadCustomPlugins, including when a
+			// previous cache is kept after an unsuccessful update.
+			_ = downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
 		}
 	}
 }

@@ -14,6 +14,20 @@ update-alternatives --set javac "$JAVA_HOME"/bin/javac
 rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 EOF
 
+ARG PRIVILEGED="true"
+RUN if [ "$PRIVILEGED" = "true" ]; then \
+        apt-get update && \
+        apt-get install -y sudo && \
+        DEBIAN_FRONTEND=noninteractive pam-auth-update --force && \
+        useradd -m -u 1001 -U qodana && \
+        passwd -d qodana && \
+        echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+        chmod 777 /etc/passwd && \
+        rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
+    else \
+        echo "Skipping privileged commands because PRIVILEGED is not set to true."; \
+    fi
+
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Poly (https://jb.gg/qodana-poly)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

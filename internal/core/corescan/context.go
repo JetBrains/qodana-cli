@@ -90,6 +90,7 @@ type Context struct {
 	_property                 []string
 	script                    string
 	failThreshold             string
+	reportCoverageProblems    string
 	commit                    string
 	diffStart                 string
 	diffEnd                   string
@@ -123,7 +124,7 @@ type Context struct {
 type QodanaYamlConfig struct {
 	Bootstrap  string
 	Plugins    []qdyaml.Plugin
-	Properties map[string]string
+	Properties map[string]string // values are in -Dproperty.name -> value format
 	DotNet     qdyaml.DotNet
 }
 
@@ -131,7 +132,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 	return QodanaYamlConfig{
 		Bootstrap:  yaml.Bootstrap,
 		Plugins:    yaml.Plugins,
-		Properties: yaml.Properties,
+		Properties: normalizeYamlProperties(yaml.Properties),
 		DotNet:     yaml.DotNet,
 	}
 }
@@ -167,6 +168,7 @@ func (c Context) ShowReport() bool                   { return c.showReport }
 func (c Context) ShowReportPort() int                { return c.showReportPort }
 func (c Context) Script() string                     { return c.script }
 func (c Context) FailThreshold() string              { return c.failThreshold }
+func (c Context) ReportCoverageProblems() string     { return c.reportCoverageProblems }
 func (c Context) Commit() string                     { return c.commit }
 func (c Context) DiffStart() string                  { return c.diffStart }
 func (c Context) DiffEnd() string                    { return c.diffEnd }
@@ -227,6 +229,7 @@ type ContextBuilder struct {
 	Property                  []string
 	Script                    string
 	FailThreshold             string
+	ReportCoverageProblems    string
 	Commit                    string
 	DiffStart                 string
 	DiffEnd                   string
@@ -290,6 +293,7 @@ func (b ContextBuilder) Build() Context {
 		_property:                 b.Property,
 		script:                    b.Script,
 		failThreshold:             b.FailThreshold,
+		reportCoverageProblems:    b.ReportCoverageProblems,
 		commit:                    b.Commit,
 		diffStart:                 b.DiffStart,
 		diffEnd:                   b.DiffEnd,
@@ -370,7 +374,7 @@ func (c Context) PropertiesAndFlags() (map[string]string, []string) {
 	for _, arg := range c.Property() {
 		kv := strings.SplitN(arg, "=", 2)
 		if len(kv) == 2 {
-			props[kv[0]] = kv[1]
+			props[normalizePropertyKey(kv[0])] = kv[1]
 		} else {
 			flagsArr = append(flagsArr, arg)
 		}

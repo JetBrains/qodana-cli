@@ -29,6 +29,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -82,6 +83,7 @@ func TestSelectAnalyzer(t *testing.T) {
 		pathMaker        func(string) error
 		analyzers        []product.Linter
 		interactive      bool
+		preferNative     bool
 		selectFunc       func([]string) string
 		expectedAnalyzer product.Analyzer
 	}{
@@ -100,6 +102,36 @@ func TestSelectAnalyzer(t *testing.T) {
 			interactive:      false,
 			selectFunc:       nil,
 			expectedAnalyzer: product.AllLinters[0].DockerAnalyzer(),
+		},
+		{
+			name:             "Empty Analyzers Non-interactive Prefer Native",
+			pathMaker:        nonNativePathMaker,
+			analyzers:        []product.Linter{},
+			preferNative:     true,
+			expectedAnalyzer: nil,
+		},
+		{
+			name:             "Multiple Analyzers Non-interactive Prefer Native",
+			pathMaker:        nonNativePathMaker,
+			analyzers:        []product.Linter{product.JvmCommunityLinter, product.PolyLinter},
+			preferNative:     true,
+			expectedAnalyzer: product.JvmCommunityLinter.NativeAnalyzer(),
+		},
+		{
+			name:             "Docker-only Analyzer Non-interactive Prefer Native",
+			pathMaker:        nonNativePathMaker,
+			analyzers:        []product.Linter{product.AndroidLinter},
+			preferNative:     true,
+			expectedAnalyzer: product.AndroidLinter.DockerAnalyzer(),
+		},
+		{
+			name:             "Single Analyzer Interactive Prefer Native",
+			pathMaker:        nonNativePathMaker,
+			analyzers:        []product.Linter{product.PolyLinter},
+			interactive:      true,
+			preferNative:     true,
+			selectFunc:       func(choices []string) string { return choices[0] },
+			expectedAnalyzer: product.PolyLinter.DockerAnalyzer(),
 		},
 		{
 			name:             "Single .NET Analyzer Interactive Non Native",
@@ -157,11 +189,87 @@ func TestSelectAnalyzer(t *testing.T) {
 					}
 				}(dir)
 				_ = test.pathMaker(dir)
-				got := selectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
+				got := selectAnalyzer(dir, test.analyzers, test.interactive, test.preferNative, test.selectFunc)
 				assert.Equal(t, test.expectedAnalyzer, got)
 			},
 		)
 	}
+}
+
+func TestSelectAnalyzerForPathNonInteractiveUsesMostFrequentLanguage(t *testing.T) {
+	t.Setenv("NONINTERACTIVE", "1")
+	dir := t.TempDir()
+	files := map[string]string{
+		"main.go":   "package main\n",
+		"script.py": "print('hello')\n",
+		"utils.py":  "def helper():\n    pass\n",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	analyzer := SelectAnalyzerForPath(dir, "")
+	assert.Equal(t, product.PythonLinter.Name, analyzer.GetLinter().Name)
+}
+
+func TestSelectAnalyzerForPathNonInteractiveUsesNativeForDominantDart(t *testing.T) {
+	t.Setenv("NONINTERACTIVE", "1")
+	dir := t.TempDir()
+	files := map[string]string{
+		"main.dart":   "void main() {}\n",
+		"helper.dart": "int answer() => 42;\n",
+		"main.c":      "int main(void) { return 0; }\n",
+		"script.py":   "print('hello')\n",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	analyzer := SelectAnalyzerForPath(dir, "")
+	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
+	assert.IsType(t, &product.NativeAnalyzer{}, analyzer)
+}
+
+func TestSelectAnalyzerForPathNonInteractiveUsesDockerForDominantLua(t *testing.T) {
+	t.Setenv("NONINTERACTIVE", "1")
+	dir := t.TempDir()
+	files := map[string]string{
+		"main.lua":   "print('hello')\n",
+		"helper.lua": "return 42\n",
+		"main.dart":  "void main() {}\n",
+		"main.c":     "int main(void) { return 0; }\n",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	analyzer := SelectAnalyzerForPath(dir, "")
+	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
+	assert.IsType(t, &product.DockerAnalyzer{}, analyzer)
+}
+
+func TestSelectAnalyzerForPathNonInteractiveUsesDockerForTiedDartAndLua(t *testing.T) {
+	t.Setenv("NONINTERACTIVE", "1")
+	dir := t.TempDir()
+	files := map[string]string{
+		"main.dart": "void main() {}\n",
+		"main.lua":  "print('hello')\n",
+	}
+	for name, content := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	analyzer := SelectAnalyzerForPath(dir, "")
+	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
+	assert.IsType(t, &product.DockerAnalyzer{}, analyzer)
 }
 
 func TestReadIdeaDir(t *testing.T) {
@@ -475,6 +583,32 @@ func TestNoCache(t *testing.T) {
 
 		assert.Empty(t, req.Header.Get("If-None-Match"))
 		assert.Empty(t, req.Header.Get("If-Modified-Since"))
+	})
+}
+
+func TestCreateReportServer(t *testing.T) {
+	reportDir := t.TempDir()
+	err := os.WriteFile(filepath.Join(reportDir, "index.html"), []byte("Qodana report"), 0o644)
+	assert.NoError(t, err)
+
+	t.Run("native", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaDockerEnv, "")
+		server := createReportServer(reportDir, 18080)
+		assert.Equal(t, "localhost:18080", server.Addr)
+
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rr := httptest.NewRecorder()
+		server.Handler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, "Qodana report", rr.Body.String())
+		assert.Equal(t, "no-cache, private, max-age=0", rr.Header().Get("Cache-Control"))
+	})
+
+	t.Run("container", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaDockerEnv, "true")
+		server := createReportServer(reportDir, 18080)
+		assert.Equal(t, ":18080", server.Addr)
 	})
 }
 

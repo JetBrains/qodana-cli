@@ -314,6 +314,7 @@ func TestContext_PropertiesAndFlags(t *testing.T) {
 		Property: []string{
 			"key1=value1",
 			"key2=value2",
+			"-XX:MaxRAMPercentage=70",
 			"-flag1",
 			"-flag2",
 			"key3=value=with=equals",
@@ -322,9 +323,10 @@ func TestContext_PropertiesAndFlags(t *testing.T) {
 
 	props, flags := ctx.PropertiesAndFlags()
 
-	assert.Equal(t, "value1", props["key1"])
-	assert.Equal(t, "value2", props["key2"])
-	assert.Equal(t, "value=with=equals", props["key3"])
+	assert.Equal(t, "value1", props["-Dkey1"])
+	assert.Equal(t, "value2", props["-Dkey2"])
+	assert.Equal(t, "value=with=equals", props["-Dkey3"])
+	assert.Equal(t, "70", props["-XX:MaxRAMPercentage"])
 	assert.Contains(t, flags, "-flag1")
 	assert.Contains(t, flags, "-flag2")
 	assert.Len(t, flags, 2)
@@ -481,7 +483,7 @@ func TestYamlConfig(t *testing.T) {
 	assert.Equal(t, "echo test", config.Bootstrap)
 	assert.Len(t, config.Plugins, 2)
 	assert.Equal(t, "plugin1", config.Plugins[0].Id)
-	assert.Equal(t, "value1", config.Properties["key1"])
+	assert.Equal(t, "value1", config.Properties["-Dkey1"])
 	assert.Equal(t, "test.sln", config.DotNet.Solution)
 }
 

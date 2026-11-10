@@ -39,6 +39,7 @@ intellij.webpack
 NodeJS
 JavaScriptDebugger
 JavaScript
+intellij.javascript.eslint
 JSIntentionPowerPack
 com.jetbrains.plugins.jade
 com.intellij.plugins.webcomponents
@@ -78,3 +79,4 @@ com.jetbrains.gateway
 com.jetbrains.rider.frontend
 com.intellij.dfa.analysis
 intellij.opengrep
+org.jetbrains.security.package-checker
