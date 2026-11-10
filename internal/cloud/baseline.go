@@ -45,16 +45,33 @@ const (
 	baselineSarifFooter  = `]}]}`
 )
 
+// BaselineStatus tells how Qodana Cloud has answered the request of a baseline.
+type BaselineStatus int
+
+const (
+	// BaselineUnknown is no answer: the request failed or was never made.
+	BaselineUnknown BaselineStatus = iota
+	// BaselineWritten is a baseline with problems, written to the file.
+	BaselineWritten
+	// BaselineEmpty is a cloud baseline which is turned on but has no problems yet.
+	BaselineEmpty
+	// BaselineDisabled is a cloud baseline which is turned off for the project.
+	BaselineDisabled
+	// BaselineUnsupported is a Qodana Cloud which doesn't serve baselines at all.
+	BaselineUnsupported
+)
+
 // WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF
-// report. An empty tool name asks for the baseline of every tool of the project.
+// report. An empty tool name asks for the baseline of every tool of the project. The status tells
+// whether there was a baseline to write, and if there wasn't, why.
 //
 // Qodana Cloud streams the baseline problem by problem, so it is converted the same way: neither the
 // response nor the report is ever held in memory as a whole.
-func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, error) {
+func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineStatus, error) {
 	request := NewCloudRequest(qodanaBaselineUri + baselineQuery(toolName))
 
-	written := false
-	request.ReadResponse = func(body io.Reader) error {
+	status := BaselineUnknown
+	request.ReadResponse = func(statusCode int, body io.Reader) error {
 		// a retried request writes the report anew, over what a failed attempt has left
 		if err := file.Truncate(0); err != nil {
 			return err
@@ -62,11 +79,20 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, err
 		if _, err := file.Seek(0, io.SeekStart); err != nil {
 			return err
 		}
+		if statusCode == http.StatusNoContent {
+			status = BaselineDisabled
+			return nil
+		}
 		out := bufio.NewWriter(file)
-		var err error
-		if written, err = writeBaselineSarif(toolName, body, out); err != nil || !written {
+		written, err := writeBaselineSarif(toolName, body, out)
+		if err != nil {
 			return err
 		}
+		if !written {
+			status = BaselineEmpty
+			return nil
+		}
+		status = BaselineWritten
 		return out.Flush()
 	}
 
@@ -75,11 +101,11 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, err
 		if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
 			// a Qodana Cloud which doesn't serve baselines at all
 			log.Debugf("Qodana Cloud has no baseline endpoint: %v", err)
-			return false, nil
+			return BaselineUnsupported, nil
 		}
-		return false, fmt.Errorf("baseline request failed: %w", err)
+		return BaselineUnknown, fmt.Errorf("baseline request failed: %w", err)
 	}
-	return written, nil
+	return status, nil
 }
 
 // streaming returns the client to download the baseline with. The download gets no overall
@@ -150,12 +176,8 @@ func baselineQuery(toolName string) string {
 // copying one problem at a time. It reports whether the response had any problem to write.
 func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, error) {
 	decoder := json.NewDecoder(in)
-	hasBaseline, err := openBaselineArray(decoder)
-	if err != nil {
+	if err := openBaselineArray(decoder); err != nil {
 		return false, fmt.Errorf("unexpected baseline response: %w", err)
-	}
-	if !hasBaseline {
-		return false, nil
 	}
 	encoder := json.NewEncoder(out)
 	problems := 0
@@ -191,50 +213,51 @@ func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, err
 	if problems == 0 {
 		return false, nil
 	}
-	_, err = io.WriteString(out, baselineSarifFooter)
+	_, err := io.WriteString(out, baselineSarifFooter)
 	return err == nil, err
 }
 
 // openBaselineArray reads the response up to the first problem of the baseline, skipping any other
-// field of the response. It reports whether the response has a baseline at all: the body of an
-// enabled but empty baseline is empty.
-func openBaselineArray(decoder *json.Decoder) (bool, error) {
+// field of the response. Qodana Cloud always answers with a list of problems, an empty one for a
+// baseline without problems, so a response without it is an error: it can only be cut short, and
+// mistaking it for an empty baseline would hide that.
+func openBaselineArray(decoder *json.Decoder) error {
 	token, err := decoder.Token()
 	if errors.Is(err, io.EOF) {
-		return false, nil
+		return errors.New("the response is empty")
 	}
 	if err != nil {
-		return false, err
+		return err
 	}
 	if !isDelimiter(token, '{') {
-		return false, fmt.Errorf("expected an object, got '%v'", token)
+		return fmt.Errorf("expected an object, got '%v'", token)
 	}
 
 	for decoder.More() {
 		field, err := decoder.Token()
 		if err != nil {
-			return false, err
+			return err
 		}
 		if field != "baseline" {
 			var skipped json.RawMessage
 			if err := decoder.Decode(&skipped); err != nil {
-				return false, err
+				return err
 			}
 			continue
 		}
 		if token, err = decoder.Token(); err != nil {
-			return false, err
+			return err
 		}
 		if !isDelimiter(token, '[') {
-			return false, fmt.Errorf("expected a list of problems, got '%v'", token)
+			return fmt.Errorf("expected a list of problems, got '%v'", token)
 		}
-		return true, nil
+		return nil
 	}
-	// the object must be closed by the server, otherwise the baseline may have been cut off it
+	// an object which isn't closed was cut off before the baseline
 	if _, err := decoder.Token(); err != nil {
-		return false, err
+		return err
 	}
-	return false, nil
+	return errors.New("no baseline in the response")
 }
 
 func isDelimiter(token json.Token, delimiter rune) bool {
