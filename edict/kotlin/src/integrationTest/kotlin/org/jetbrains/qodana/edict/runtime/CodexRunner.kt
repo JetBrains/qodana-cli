@@ -4,8 +4,8 @@ package org.jetbrains.qodana.edict.runtime
 import kotlinx.serialization.json.JsonPrimitive
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.logging.AgentLogger
-import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictMcpToolset
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
 import org.jetbrains.qodana.edict.setup.CodexSetup
 import org.jetbrains.qodana.edict.setup.EdictConfig
 import org.tomlj.Toml
@@ -70,9 +70,9 @@ class CodexRunner internal constructor(
 
     /** Test-only additions to the installed local config. */
     internal fun configOverrides(): List<String> = buildList {
-        add("mcp_servers.${EdictNextMcpToolset.SERVER_NAME}.url=${quote(mcpUrl)}")
+        add("mcp_servers.${EdictMcpToolset.SERVER_NAME}.url=${quote(mcpUrl)}")
         enabledTools?.let { tools ->
-            add("mcp_servers.${EdictNextMcpToolset.SERVER_NAME}.enabled_tools=[${tools.joinToString(", ") { quote(it) }}]")
+            add("mcp_servers.${EdictMcpToolset.SERVER_NAME}.enabled_tools=[${tools.joinToString(", ") { quote(it) }}]")
         }
         val writable = additionalWritableRoots.map { it.toRealPath() }.flatMap { listOf(it, it.resolve(".git")) } +
             listOfNotNull(state.toRealPath().takeIf { stateWritable })

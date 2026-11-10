@@ -6,7 +6,7 @@ import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.EdictServer
 import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.common.*
-import org.jetbrains.qodana.edict.edictnext.*
+import org.jetbrains.qodana.edict.core.*
 import org.jetbrains.qodana.edict.extraction.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.extraction.git.SignalFinding
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
@@ -53,8 +53,8 @@ internal class IntegrationWorkspace private constructor(
     fun withCodex(
         prompt: String, provider: ReviewApi? = null, inspectionServer: InspectionServer? = null,
         timeoutMinutes: Long = 20, configuration: EdictConfiguration = EdictConfiguration(),
-        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(
+        verify: (EdictRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictCodex(
         prompt,
         timeoutMinutes,
         inspectionServer,
@@ -64,13 +64,13 @@ internal class IntegrationWorkspace private constructor(
         verify = verify
     )
 
-    /** Runs an existing managed-skill scenario through the SDK-based Edict Next MCP transport. */
-    fun withEdictNextCodex(
+    /** Runs an existing managed-skill scenario through the SDK-based Edict MCP transport. */
+    fun withEdictCodex(
         prompt: String,
         timeoutMinutes: Long = 20,
         additionalWritableRoots: List<Path> = emptyList(),
-        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(
+        verify: (EdictRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictCodex(
         prompt,
         timeoutMinutes,
         null,
@@ -86,8 +86,8 @@ internal class IntegrationWorkspace private constructor(
         configuration: EdictConfiguration,
         reviews: ReviewApi,
         timeoutMinutes: Long = 20,
-        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(
+        verify: (EdictRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictCodex(
         prompt = prompt,
         timeoutMinutes = timeoutMinutes,
         inspectionServer = null,
@@ -97,7 +97,7 @@ internal class IntegrationWorkspace private constructor(
         verify = verify,
     )
 
-    private fun withEdictNextCodex(
+    private fun withEdictCodex(
         prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
         ciReviews: ReviewApi?,
         promotionReviews: ReviewApi?,
@@ -105,7 +105,7 @@ internal class IntegrationWorkspace private constructor(
         configuration: EdictConfiguration = EdictConfiguration(
             ci = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "owner", "repo"),
         ),
-        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+        verify: (EdictRepositoryState, CodexRunner, String) -> Unit,
     ) {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
         try {
@@ -128,7 +128,7 @@ internal class IntegrationWorkspace private constructor(
                 )
                 runtime.prepare()
                 runtime.verifySandbox()
-                println("Edict Next managed run: ${runtime.model}; logs: $logs")
+                println("Edict managed run: ${runtime.model}; logs: $logs")
                 var result: String? = null
                 var runFailure: Throwable? = null
                 try {
@@ -152,21 +152,21 @@ internal class IntegrationWorkspace private constructor(
         }
     }
 
-    fun signals(): List<EdictNextSignal> = CommitSignalExtractor(repository) { commit, repo ->
+    fun signals(): List<EdictSignal> = CommitSignalExtractor(repository) { commit, repo ->
         check(commit.parentRevision == historyBefore && commit.commitRevision == historyCommit)
         check("Thread.sleep(1_000)" in repo.fileAt(historyBefore, historyPath))
         check("workerFinished.await(1, TimeUnit.SECONDS)" in repo.fileAt(historyCommit, historyPath))
         listOf(
             SignalFinding(
-                EdictNextSignalLabel.POSITIVE,
+                EdictSignalLabel.POSITIVE,
                 historyPath,
-                listOf(EdictNextLineRange(5, 5)),
+                listOf(EdictLineRange(5, 5)),
                 "Sleeping does not reliably coordinate worker completion"
             ),
             SignalFinding(
-                EdictNextSignalLabel.NEGATIVE,
+                EdictSignalLabel.NEGATIVE,
                 historyPath,
-                listOf(EdictNextLineRange(10, 10)),
+                listOf(EdictLineRange(10, 10)),
                 "Await a completion signal instead of sleeping to coordinate a worker"
             ),
         )

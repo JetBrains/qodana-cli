@@ -13,10 +13,10 @@ class LiveCodexManagementTest : IntegrationTest() {
 
     @Test
     fun `real manager delegates empty distribution to one managed worker`() {
-        workspace.withEdictNextCodex(
+        workspace.withEdictCodex(
             """
             Use the edict_manager skill and its managed protocol.
-            Create exactly one top-level edict-next-distribution task.
+            Create exactly one top-level edict-distribution task.
             Delegate it to a fresh native subagent and complete the managed lifecycle.
             Use edict_context for run paths. Verify that the configured state has no Signals to distribute.
             Do not create additional tasks or edit repository files.
@@ -25,7 +25,7 @@ class LiveCodexManagementTest : IntegrationTest() {
             val plan = assertNotNull(repositoryState.plan())
             assertEquals(1, plan.tasks.size, "The manager must create one bounded distribution task")
             val task = plan.tasks.single()
-            assertEquals("edict-next-distribution", task.skill)
+            assertEquals("edict-distribution", task.skill)
             assertEquals("completed", task.status)
             assertTrue(task.agentId.isNotBlank(), "Distribution must run in a native subagent")
             assertTrue(task.result.isNotBlank(), "The worker must persist its outcome")

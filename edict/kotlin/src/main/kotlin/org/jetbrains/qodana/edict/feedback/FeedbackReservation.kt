@@ -3,8 +3,8 @@ package org.jetbrains.qodana.edict.feedback
 
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.common.sha256
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EvaluatedInspection
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EvaluatedInspection
 import java.time.Instant
 
 /** A [finding] that a pull request touches, with [line], the first of its lines the pull request adds, to comment on. */

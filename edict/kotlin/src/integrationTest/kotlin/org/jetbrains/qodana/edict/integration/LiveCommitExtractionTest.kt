@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 class LiveCommitExtractionTest : IntegrationTest() {
     @Test
     fun `managed skills extract signals from one Distillery commit with real native workers`() {
-        workspace.withEdictNextCodex("Extract signal from last commit") { store, runtime, _ ->
+        workspace.withEdictCodex("Extract signal from last commit") { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
             assertEquals(2, plan.tasks.size, "One batch and one evidence worker required")
             val batch = plan.tasks.single { it.skill == "edict-batch-signal-analysis" }

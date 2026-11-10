@@ -17,8 +17,8 @@ import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.common.number
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
-import org.jetbrains.qodana.edict.edictnext.EdictNextReply
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.core.EdictReply
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import java.time.DateTimeException
 import java.time.Instant
@@ -42,8 +42,8 @@ internal data class FeedbackThread(
     /** The web page of the comment. */
     val url: String,
     /** The label its thumbs give: POSITIVE for 👍 only, NEGATIVE for 👎 only, none for both or neither. */
-    val label: EdictNextSignalLabel?,
-    val replies: List<EdictNextReply>,
+    val label: EdictSignalLabel?,
+    val replies: List<EdictReply>,
 )
 
 /** The GitHub client of the workflow run, with the API URL and the token GitHub Actions gives it. */
@@ -126,11 +126,11 @@ private fun feedbackThread(comment: JsonObject, replies: List<JsonObject>): Feed
     val thumbsUp = reactions.number("+1")
     val thumbsDown = reactions.number("-1")
     val label = when {
-        thumbsUp > 0 && thumbsDown == 0L -> EdictNextSignalLabel.POSITIVE
-        thumbsDown > 0 && thumbsUp == 0L -> EdictNextSignalLabel.NEGATIVE
+        thumbsUp > 0 && thumbsDown == 0L -> EdictSignalLabel.POSITIVE
+        thumbsDown > 0 && thumbsUp == 0L -> EdictSignalLabel.NEGATIVE
         else -> null
     }
-    return FeedbackThread(comment.text("html_url"), label, replies.map { EdictNextReply(it.obj("user").text("login"), it.text("body")) })
+    return FeedbackThread(comment.text("html_url"), label, replies.map { EdictReply(it.obj("user").text("login"), it.text("body")) })
 }
 
 /**

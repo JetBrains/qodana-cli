@@ -1,16 +1,16 @@
 package org.jetbrains.qodana.edict.promotion
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
-import org.jetbrains.qodana.edict.edictnext.isCurrentEvaluation
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictEvaluation
+import org.jetbrains.qodana.edict.core.isCurrentEvaluation
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.common.reviewRepository
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
-import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictSignalStrength
+import org.jetbrains.qodana.edict.core.EdictStoredCluster
 import org.jetbrains.qodana.edict.signals.validSourcePath
 import org.jetbrains.qodana.edict.signals.validRevision
 import java.net.URI
@@ -34,33 +34,33 @@ internal data class PromotionEligibility(
 )
 
 /** Eligibility under the [evaluation] of the cluster's inspection, with commit Signals without a URL linked in the [ci] repository. */
-internal fun EdictNextStoredCluster.promotionEligibility(ci: ReviewRepository?, evaluation: EdictNextEvaluation?): PromotionEligibility =
+internal fun EdictStoredCluster.promotionEligibility(ci: ReviewRepository?, evaluation: EdictEvaluation?): PromotionEligibility =
   PromotionEligibility(
-    generated = manifest.status == EdictNextClusterStatus.Generated,
-    strongPositiveSourceFiles = signals.filter(EdictNextSignal::isStrongPositive).distinctBy { it.fileRevision.path }.size,
+    generated = manifest.status == EdictClusterStatus.Generated,
+    strongPositiveSourceFiles = signals.filter(EdictSignal::isStrongPositive).distinctBy { it.fileRevision.path }.size,
     referencedSourceFiles = promotionEvidence(ci, evaluation).size,
   )
 
 /** One satisfied, referenced strong positive representative per source path, regardless of revision. */
-internal fun EdictNextStoredCluster.promotionEvidence(ci: ReviewRepository?, evaluation: EdictNextEvaluation?): List<EdictNextSignal> = signals
+internal fun EdictStoredCluster.promotionEvidence(ci: ReviewRepository?, evaluation: EdictEvaluation?): List<EdictSignal> = signals
   .filter {
     it.isStrongPositive() && it.referenceUrl(ci) != null &&
       evaluation?.examples?.get(it.syntheticExampleId)?.let { example ->
-        example.strong && example.label == EdictNextSignalLabel.POSITIVE && example.satisfied
+        example.strong && example.label == EdictSignalLabel.POSITIVE && example.satisfied
       } == true
   }
   .sortedBy { it.id }
   .distinctBy { it.fileRevision.path }
 
-private fun EdictNextSignal.isStrongPositive(): Boolean =
-  strength == EdictNextSignalStrength.STRONG && label == EdictNextSignalLabel.POSITIVE
+private fun EdictSignal.isStrongPositive(): Boolean =
+  strength == EdictSignalStrength.STRONG && label == EdictSignalLabel.POSITIVE
 
 /** Describes a cluster with [MIN_PROMOTION_SOURCE_FILES] referenced source files; only those can support a promotion PR. */
 internal fun promotionDescription(
-  cluster: EdictNextStoredCluster,
+  cluster: EdictStoredCluster,
   digest: String,
   ci: ReviewRepository?,
-  evaluation: EdictNextEvaluation?,
+  evaluation: EdictEvaluation?,
 ): String {
   require(evaluation != null && cluster.isCurrentEvaluation(evaluation, digest)) {
     "Promotion requires a current evaluation matching the inspection and examples"
@@ -90,7 +90,7 @@ internal fun promotionDescription(
     appendLine()
     evaluation.projectReview?.let { review ->
       val count = "${review.totalFindings} findings"
-      val findings = review.reportUrl?.takeIf { org.jetbrains.qodana.edict.edictnext.validReportUrl(it) }
+      val findings = review.reportUrl?.takeIf { org.jetbrains.qodana.edict.core.validReportUrl(it) }
         ?.let { "[$count]($it)" } ?: count
       appendLine("Last project analysis reported $findings; ${review.reviewedFindings} were reviewed.")
       appendLine()
@@ -99,7 +99,7 @@ internal fun promotionDescription(
     appendLine()
     selected.forEachIndexed { index, signal ->
       val citation = when (val source = signal.source) {
-        is EdictNextSignalSource.FromPR -> {
+        is EdictSignalSource.FromPR -> {
           val sourceUri = URI(source.url)
           val url = if (ci?.provider == CiProviderId.SPACE && sourceUri.host?.lowercase() == ci.host) {
             val project = Regex("/p/([^/]+)/").find(sourceUri.path)?.groupValues?.get(1) ?: ci.owner
@@ -108,7 +108,7 @@ internal fun promotionDescription(
           else source.url
           Citation("Fixed", "PR #${source.prNumber}", url)
         }
-        is EdictNextSignalSource.FromCommit -> {
+        is EdictSignalSource.FromCommit -> {
           val commitUrl = source.url?.takeIf { it.isNotBlank() } ?: run {
             val repository = checkNotNull(ci).webUrl()
             when (ci.provider) {
@@ -127,8 +127,8 @@ internal fun promotionDescription(
           else commitUrl
           Citation("Fixed", source.commitRevision.take(7), url)
         }
-        is EdictNextSignalSource.GitHubEvaluatedFinding -> Citation("Confirmed", "a review comment", source.url)
-        is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> error("Unsupported promotion evidence")
+        is EdictSignalSource.GitHubEvaluatedFinding -> Citation("Confirmed", "a review comment", source.url)
+        is EdictSignalSource.SubmittedFeedback, is EdictSignalSource.Generated -> error("Unsupported promotion evidence")
       }
       appendLine("${index + 1}. ${citation.verb}: \"${signal.description.markdownText()}\" in [${citation.linkText}](${citation.url}).")
       appendLine()
@@ -139,12 +139,12 @@ internal fun promotionDescription(
 /** How a promotion PR cites one Signal: what was done with the code ([verb]), and the [url] it links as [linkText]. */
 private data class Citation(val verb: String, val linkText: String, val url: String)
 
-internal fun EdictNextSignal.referenceUrl(ci: ReviewRepository?): String? {
+internal fun EdictSignal.referenceUrl(ci: ReviewRepository?): String? {
   val originUrl = when (val origin = source) {
-    is EdictNextSignalSource.FromPR -> origin.url
-    is EdictNextSignalSource.FromCommit -> origin.url?.takeIf { it.isNotBlank() } ?: ci?.webUrl()
-    is EdictNextSignalSource.GitHubEvaluatedFinding -> origin.url
-    is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> null
+    is EdictSignalSource.FromPR -> origin.url
+    is EdictSignalSource.FromCommit -> origin.url?.takeIf { it.isNotBlank() } ?: ci?.webUrl()
+    is EdictSignalSource.GitHubEvaluatedFinding -> origin.url
+    is EdictSignalSource.SubmittedFeedback, is EdictSignalSource.Generated -> null
   } ?: return null
   val originUri = runCatching { URI(originUrl) }.getOrNull() ?: return null
   if (originUri.scheme?.lowercase() !in setOf("http", "https") || originUri.host.isNullOrBlank() ||

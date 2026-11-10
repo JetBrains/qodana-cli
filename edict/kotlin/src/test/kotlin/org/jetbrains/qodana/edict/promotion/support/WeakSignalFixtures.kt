@@ -8,25 +8,25 @@ import org.jetbrains.qodana.edict.ci.ReviewFileChange
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.SourceFixChanges
-import org.jetbrains.qodana.edict.edictnext.EdictNextCodeExampleMetadata
-import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
-import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
-import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextProjectFinding
-import org.jetbrains.qodana.edict.edictnext.EdictNextProjectReview
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
-import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
-import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotionIndex
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
-import org.jetbrains.qodana.edict.edictnext.stableSignalId
+import org.jetbrains.qodana.edict.core.EdictCodeExampleMetadata
+import org.jetbrains.qodana.edict.core.EdictEvaluation
+import org.jetbrains.qodana.edict.core.EdictFileRevision
+import org.jetbrains.qodana.edict.core.EdictInspectionAction
+import org.jetbrains.qodana.edict.core.EdictJson
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictProjectFinding
+import org.jetbrains.qodana.edict.core.EdictProjectReview
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalProvenance
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictSignalStrength
+import org.jetbrains.qodana.edict.core.PromotionPrState
+import org.jetbrains.qodana.edict.core.WeakSignalPromotion
+import org.jetbrains.qodana.edict.core.WeakSignalPromotionIndex
+import org.jetbrains.qodana.edict.core.sha256Hex
+import org.jetbrains.qodana.edict.core.stableSignalId
 import org.jetbrains.qodana.edict.promotion.CheckedWeakSignalReview
 import org.jetbrains.qodana.edict.promotion.WeakSignalFix
 import org.jetbrains.qodana.edict.promotion.WeakSignalPromotionCandidate
@@ -45,41 +45,41 @@ internal const val MERGED_REVISION = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 internal const val INSPECTION_DESCRIPTION = "Avoid busy waiting"
 
 /** A true positive the project review found on [line] of [path] at [PROJECT_REVISION]. */
-internal fun finding(line: Int, path: String = "src/Worker.kt"): EdictNextProjectFinding =
-  EdictNextProjectFinding(EdictNextFileRevision(path, PROJECT_REVISION, listOf(EdictNextLineRange(line, line))), "Busy waiting")
+internal fun finding(line: Int, path: String = "src/Worker.kt"): EdictProjectFinding =
+  EdictProjectFinding(EdictFileRevision(path, PROJECT_REVISION, listOf(EdictLineRange(line, line))), "Busy waiting")
 
 /** The default project review's true positives: lines 1 and 2 of `src/Worker.kt` and line 3 of `src/Other.kt`. */
 internal val FINDINGS = listOf(finding(1), finding(2), finding(3, "src/Other.kt"))
 
 internal fun projectReview(
-  findings: List<EdictNextProjectFinding> = FINDINGS,
+  findings: List<EdictProjectFinding> = FINDINGS,
   /** The analyzed revision; a full SHA unless a test breaks it. */
   revision: String = PROJECT_REVISION,
   description: String = INSPECTION_DESCRIPTION,
-): EdictNextProjectReview = EdictNextProjectReview(revision, findings.size, findings.size, 0, 0, 0, description, findings)
+): EdictProjectReview = EdictProjectReview(revision, findings.size, findings.size, 0, 0, 0, description, findings)
 
 /**
  * The cluster with a positive and a negative example, and its evaluation with [review]; of the inspection
  * [inspectionDigest] when it names one other than the stored inspection.
  */
 internal fun ClusterFixture.withEvaluation(
-  review: EdictNextProjectReview?,
+  review: EdictProjectReview?,
   inspectionDigest: String? = null,
 ): ClusterFixture = copy(
   examples = listOf(
-    EdictNextCodeExampleMetadata("positive", "Example.kt", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))),
-    EdictNextCodeExampleMetadata("negative", "Example.kt", EdictNextSignalLabel.NEGATIVE),
+    EdictCodeExampleMetadata("positive", "Example.kt", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1))),
+    EdictCodeExampleMetadata("negative", "Example.kt", EdictSignalLabel.NEGATIVE),
   ),
   evaluation = (evaluation ?: EvaluationFixture()).copy(projectReview = review, inspectionDigest = inspectionDigest),
 )
 
 /** A weak-signal candidate: a generated cluster with one referenced source file and a project review of [findings]. */
-internal fun weakCluster(findings: List<EdictNextProjectFinding> = FINDINGS): ClusterFixture =
+internal fun weakCluster(findings: List<EdictProjectFinding> = FINDINGS): ClusterFixture =
   ClusterFixture(listOf(referencedSignal(0).copy(syntheticExampleId = "positive"))).withEvaluation(projectReview(findings))
 
 /** [weakCluster] with a strong negative Signal of the negative example too, so it takes merged corrections of both labels. */
 internal fun correctableCluster(): ClusterFixture = weakCluster().let {
-  it.copy(signals = it.signals + referencedSignal(1).copy(label = EdictNextSignalLabel.NEGATIVE, syntheticExampleId = "negative"))
+  it.copy(signals = it.signals + referencedSignal(1).copy(label = EdictSignalLabel.NEGATIVE, syntheticExampleId = "negative"))
 }
 
 /** [correctableCluster] once [CORRECTIONS] are recorded in it. */
@@ -172,12 +172,12 @@ internal fun EdictRepository.storeActiveReview(promotion: WeakSignalPromotion) {
 
 /** The active weak-signal review state holding only [promotion], as it is stored. */
 internal fun activeReviewsText(promotion: WeakSignalPromotion): String =
-  EdictNextJson.encodeToString(WeakSignalPromotionIndex(mapOf("rule" to listOf(promotion))))
+  EdictJson.encodeToString(WeakSignalPromotionIndex(mapOf("rule" to listOf(promotion))))
 
 /** Archives [promotion] as the only completed weak-signal review of cluster `rule`. */
 internal fun EdictRepository.storeArchivedReview(promotion: WeakSignalPromotion) {
   paths.weakSignalPromotionHistoryPath("rule").parent.createDirectories()
-  paths.weakSignalPromotionHistoryPath("rule").writeText(EdictNextJson.encodeToString(listOf(promotion)))
+  paths.weakSignalPromotionHistoryPath("rule").writeText(EdictJson.encodeToString(listOf(promotion)))
 }
 
 /** Makes the completed weak-signal reviews of cluster `rule` unreadable. */
@@ -200,24 +200,24 @@ internal fun EdictRepository.storeLegacyActiveReview() {
 private const val CORRECTION_WORK_ITEM = "weak-promotion:GITHUB:JetBrains/qodana-cli:1:$MERGED_REVISION"
 
 /** A merged correction of `src/Worker.kt` line 1 as the checker records it: the busy wait if [label] is positive, its fix otherwise. */
-private fun correction(label: EdictNextSignalLabel): EdictNextSignal {
-  val revision = if (label == EdictNextSignalLabel.POSITIVE) PROJECT_REVISION else MERGED_REVISION
+private fun correction(label: EdictSignalLabel): EdictSignal {
+  val revision = if (label == EdictSignalLabel.POSITIVE) PROJECT_REVISION else MERGED_REVISION
   val key = "$CORRECTION_WORK_ITEM:$label:src/Worker.kt:$revision:1-1"
-  return EdictNextSignal(
+  return EdictSignal(
     stableSignalId(key),
     key,
-    EdictNextFileRevision("src/Worker.kt", revision, listOf(EdictNextLineRange(1, 1))),
-    EdictNextSignalSource.FromPR(1, MERGED_SOURCE_FIX.title, MERGED_SOURCE_FIX.discussionMessages, MERGED_DIFF, SOURCE_FIX_REVIEW.url),
+    EdictFileRevision("src/Worker.kt", revision, listOf(EdictLineRange(1, 1))),
+    EdictSignalSource.FromPR(1, MERGED_SOURCE_FIX.title, MERGED_SOURCE_FIX.discussionMessages, MERGED_DIFF, SOURCE_FIX_REVIEW.url),
     label,
     "Use a blocking wait instead of spinning",
     syntheticExampleId = label.name.lowercase(),
-    provenance = EdictNextSignalProvenance(CORRECTION_WORK_ITEM),
+    provenance = EdictSignalProvenance(CORRECTION_WORK_ITEM),
   )
 }
 
-internal val POSITIVE_CORRECTION = correction(EdictNextSignalLabel.POSITIVE)
+internal val POSITIVE_CORRECTION = correction(EdictSignalLabel.POSITIVE)
 
-internal val NEGATIVE_CORRECTION = correction(EdictNextSignalLabel.NEGATIVE)
+internal val NEGATIVE_CORRECTION = correction(EdictSignalLabel.NEGATIVE)
 
 internal val CORRECTIONS = listOf(POSITIVE_CORRECTION, NEGATIVE_CORRECTION)
 
@@ -246,7 +246,7 @@ internal enum class UnpreparedCluster(val cluster: ClusterFixture, val message: 
 }
 
 /** Project-review true positives no source fix may select. */
-internal enum class UnselectableFinding(val finding: EdictNextProjectFinding) {
+internal enum class UnselectableFinding(val finding: EdictProjectFinding) {
   OTHER_REVISION(finding(4).let { it.copy(fileRevision = it.fileRevision.copy(revision = MERGED_REVISION)) }),
   NO_LINE(finding(4).let { it.copy(fileRevision = it.fileRevision.copy(expectedRanges = null)) }),
   PATH_OUTSIDE_REPOSITORY(finding(4, "../Worker.kt")),
@@ -276,7 +276,7 @@ internal enum class InvalidPublication(val fixes: List<WeakSignalFix>, val messa
 }
 
 /** Corrections of [MERGED_SOURCE_FIX] that misstate what merged, and why recording them fails. */
-internal enum class ForgedCorrection(val correction: EdictNextSignal, val message: String) {
+internal enum class ForgedCorrection(val correction: EdictSignal, val message: String) {
   UNMERGED_REVISION(
     POSITIVE_CORRECTION.copy(fileRevision = POSITIVE_CORRECTION.fileRevision.copy(revision = "c".repeat(40))),
     "Signal must use the actual merged before/after revision",
@@ -287,7 +287,7 @@ internal enum class ForgedCorrection(val correction: EdictNextSignal, val messag
       "must match a changed POSITIVE path: [src/Worker.kt]",
   ),
   UNCHANGED_LINE(
-    POSITIVE_CORRECTION.copy(fileRevision = POSITIVE_CORRECTION.fileRevision.copy(expectedRanges = listOf(EdictNextLineRange(2, 2)))),
+    POSITIVE_CORRECTION.copy(fileRevision = POSITIVE_CORRECTION.fileRevision.copy(expectedRanges = listOf(EdictLineRange(2, 2)))),
     "Invalid signal 'clusters/rule/signals/${POSITIVE_CORRECTION.id}.json': fileRevision.expectedRanges[0]: " +
       "must intersect a changed POSITIVE line in 'src/Worker.kt'",
   ),
@@ -296,12 +296,12 @@ internal enum class ForgedCorrection(val correction: EdictNextSignal, val messag
     "Diff excerpt must preserve canonical paths, source lines and line coordinates",
   ),
   INVENTED_TITLE(POSITIVE_CORRECTION.withSource { it.copy(title = "Invented review title") }, "Signal must preserve actual merged review metadata"),
-  WEAK(POSITIVE_CORRECTION.copy(strength = EdictNextSignalStrength.WEAK), "Signal must preserve actual merged review metadata"),
+  WEAK(POSITIVE_CORRECTION.copy(strength = EdictSignalStrength.WEAK), "Signal must preserve actual merged review metadata"),
   COMMIT_SOURCE(
-    POSITIVE_CORRECTION.copy(source = EdictNextSignalSource.FromCommit(MERGED_REVISION, "https://github.com/JetBrains/qodana-cli/commit/$MERGED_REVISION")),
+    POSITIVE_CORRECTION.copy(source = EdictSignalSource.FromCommit(MERGED_REVISION, "https://github.com/JetBrains/qodana-cli/commit/$MERGED_REVISION")),
     "Expected regular FromPR signal",
   ),
 }
 
-private fun EdictNextSignal.withSource(change: (EdictNextSignalSource.FromPR) -> EdictNextSignalSource.FromPR) =
-  copy(source = change(source as EdictNextSignalSource.FromPR))
+private fun EdictSignal.withSource(change: (EdictSignalSource.FromPR) -> EdictSignalSource.FromPR) =
+  copy(source = change(source as EdictSignalSource.FromPR))

@@ -3,16 +3,16 @@ package org.jetbrains.qodana.edict.feedback
 
 import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.ci.ReviewReference
-import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
-import org.jetbrains.qodana.edict.edictnext.EdictNextReply
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.SignalPublication
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
-import org.jetbrains.qodana.edict.edictnext.stableSignalId
+import org.jetbrains.qodana.edict.core.EdictFileRevision
+import org.jetbrains.qodana.edict.core.EdictReply
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.SignalPublication
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalProvenance
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictSignalStrength
+import org.jetbrains.qodana.edict.core.stableSignalId
 import java.time.Clock
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
@@ -27,9 +27,9 @@ internal const val MAX_ANSWERED_PULL_REQUESTS = 200
 @Serializable
 internal data class FeedbackAnswer(
     val record: FeedbackRecord,
-    val label: EdictNextSignalLabel,
+    val label: EdictSignalLabel,
     val url: String,
-    val replies: List<EdictNextReply>,
+    val replies: List<EdictReply>,
 )
 
 /** A pull request at [url] whose answers GitHub could not give, and the [failure] it gave instead. */
@@ -48,7 +48,7 @@ internal data class FeedbackCollection(val answers: List<FeedbackAnswer>, val un
 internal class FeedbackSignals(
     private val records: FeedbackRecords,
     private val api: GitHubFeedbackApi,
-    private val store: EdictNextRepositoryState,
+    private val store: EdictRepositoryState,
     private val clock: Clock,
 ) {
     /** The answers [collect] returned last, by record id: the only ones [publish] takes. */
@@ -112,14 +112,14 @@ internal class FeedbackSignals(
  * The STRONG Signal of [answer]: the record's lines at its revision, labelled by the thumbs, with the replies as their authors
  * wrote them. The agent supplies only what the record lacks: the one-line [description].
  */
-private fun feedbackSignal(answer: FeedbackAnswer, description: String): EdictNextSignal {
+private fun feedbackSignal(answer: FeedbackAnswer, description: String): EdictSignal {
     val record = answer.record
     val key = "edict-feedback:${record.id}"
-    return EdictNextSignal(
+    return EdictSignal(
         id = stableSignalId(key),
         idempotencyKey = key,
-        fileRevision = EdictNextFileRevision(record.path, record.revision, listOf(record.lines)),
-        source = EdictNextSignalSource.GitHubEvaluatedFinding(
+        fileRevision = EdictFileRevision(record.path, record.revision, listOf(record.lines)),
+        source = EdictSignalSource.GitHubEvaluatedFinding(
             inspectionName = record.inspectionName,
             inspectionDescription = record.inspectionDescription,
             problemMessage = record.message,
@@ -128,8 +128,8 @@ private fun feedbackSignal(answer: FeedbackAnswer, description: String): EdictNe
         ),
         label = answer.label,
         description = description,
-        strength = EdictNextSignalStrength.STRONG,
-        provenance = EdictNextSignalProvenance(record.id),
+        strength = EdictSignalStrength.STRONG,
+        provenance = EdictSignalProvenance(record.id),
     )
 }
 

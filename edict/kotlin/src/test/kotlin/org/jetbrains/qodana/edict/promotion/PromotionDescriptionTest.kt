@@ -3,11 +3,11 @@ package org.jetbrains.qodana.edict.promotion
 
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE
-import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextProjectReview
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
+import org.jetbrains.qodana.edict.core.EdictFileRevision
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictProjectReview
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictStoredCluster
 import org.jetbrains.qodana.edict.promotion.support.COMMIT_REVISION
 import org.jetbrains.qodana.edict.promotion.support.EvaluationFixture
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
@@ -84,7 +84,7 @@ internal class PromotionDescriptionTest {
     "'javascript:alert(1)', 'Last project analysis reported 73 findings; 20 were reviewed.'",
   )
   fun `the description links the last project analysis only by a web report URL`(reportUrl: String, analysis: String) {
-    val review = EdictNextProjectReview("a".repeat(40), 73, 20, 0, 0, 0, reportUrl = reportUrl)
+    val review = EdictProjectReview("a".repeat(40), 73, 20, 0, 0, 0, reportUrl = reportUrl)
     val cluster = repository.store(referencedCluster().copy(evaluation = EvaluationFixture(projectReview = review)))
 
     assertEquals(analysis, cluster.description().lines().single { it.startsWith("Last project analysis") })
@@ -92,7 +92,7 @@ internal class PromotionDescriptionTest {
 
   @Test
   fun `a commit signal without a URL links the commit in the GitHub CI repository`() {
-    val cluster = repository.store(referencedCluster().withSources(EdictNextSignalSource.FromCommit(COMMIT_REVISION)))
+    val cluster = repository.store(referencedCluster().withSources(EdictSignalSource.FromCommit(COMMIT_REVISION)))
 
     assertEquals(
       "1. Fixed: \"positive 0\" in [d0d0caf](https://github.com/JetBrains/qodana-cli/commit/$COMMIT_REVISION).",
@@ -103,7 +103,7 @@ internal class PromotionDescriptionTest {
   @Test
   fun `a finding users confirmed on GitHub is cited by its review comment`() {
     val comment = "https://github.com/JetBrains/qodana-cli/pull/7#discussion_r11"
-    val source = EdictNextSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", comment, emptyList())
+    val source = EdictSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", comment, emptyList())
     val cluster = repository.store(referencedCluster().withSources(source))
 
     assertEquals(
@@ -114,7 +114,7 @@ internal class PromotionDescriptionTest {
 
   @Test
   fun `a commit signal without a URL links the old lines of its commit in the Space CI repository`() {
-    val cluster = repository.store(referencedCluster().withSources(EdictNextSignalSource.FromCommit(COMMIT_REVISION)))
+    val cluster = repository.store(referencedCluster().withSources(EdictSignalSource.FromCommit(COMMIT_REVISION)))
 
     assertEquals(
       "1. Fixed: \"positive 0\" in [d0d0caf](https://jetbrains.team/p/ij/repositories/ultimate/revision/$COMMIT_REVISION" +
@@ -137,7 +137,7 @@ internal class PromotionDescriptionTest {
   fun `a Space discussion links the reviewed file at its revision and encoded path`() {
     val signal = referencedCluster().signals.first().copy(
       source = SPACE_REVIEW,
-      fileRevision = EdictNextFileRevision("src/My File#1.kt", COMMIT_REVISION, listOf(EdictNextLineRange(13, 15))),
+      fileRevision = EdictFileRevision("src/My File#1.kt", COMMIT_REVISION, listOf(EdictLineRange(13, 15))),
     )
 
     assertEquals(
@@ -181,14 +181,14 @@ internal class PromotionDescriptionTest {
   }
 
   /** The description of the stored inspection under the cluster's stored evaluation, in the CI repository [ci]. */
-  private fun promotionDescription(cluster: EdictNextStoredCluster, ci: ReviewRepository = PROMOTION_REPOSITORY) =
+  private fun promotionDescription(cluster: EdictStoredCluster, ci: ReviewRepository = PROMOTION_REPOSITORY) =
     promotionDescription(cluster, INSPECTION_DIGEST, ci, repository.loadEvaluation(cluster))
 
-  private fun EdictNextStoredCluster.description(): String = promotionDescription(this)
+  private fun EdictStoredCluster.description(): String = promotionDescription(this)
 }
 
 /** A Space review whose Signal links its discussion, as Space's chat does. */
-private val SPACE_REVIEW = EdictNextSignalSource.FromPR(
+private val SPACE_REVIEW = EdictSignalSource.FromPR(
   215081, "Reuse the run", listOf("Fix documentation"), "",
   "https://jetbrains.team/im/review/4RJJlz4NRWvS?message=F2A2J0W06tf&channel=42GEq23U7k8O",
 )

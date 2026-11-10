@@ -1,9 +1,9 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.signals
 
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel.NEGATIVE
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel.POSITIVE
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictSignalLabel.NEGATIVE
+import org.jetbrains.qodana.edict.core.EdictSignalLabel.POSITIVE
 import org.jetbrains.qodana.edict.signals.UnifiedDiff.Changes
 import org.jetbrains.qodana.edict.signals.support.ADDED_FILE
 import org.jetbrains.qodana.edict.signals.support.CANONICAL
@@ -214,7 +214,7 @@ internal class UnifiedDiffTest {
   fun `an excerpt whose lines are outside every hunk keeps every change`() {
     // Three hunks, for the change of line 100, the insertion at line 151 and the change of line 180, each with three
     // context lines.
-    assertEquals(diff("large-every-change"), UnifiedDiff.excerpt(LARGE, POSITIVE, listOf(EdictNextLineRange(500, 600)), 4000))
+    assertEquals(diff("large-every-change"), UnifiedDiff.excerpt(LARGE, POSITIVE, listOf(EdictLineRange(500, 600)), 4000))
   }
 
   @Test

@@ -327,7 +327,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 		t.Fatalf("edict_registry over HTTP failed: %v, %+v", err, result)
 	}
 	registry, err := json.Marshal(result.StructuredContent)
-	if err != nil || !bytes.Contains(registry, []byte(`"edict_manager"`)) || !bytes.Contains(registry, []byte(`"edict-next-run"`)) {
+	if err != nil || !bytes.Contains(registry, []byte(`"edict_manager"`)) || !bytes.Contains(registry, []byte(`"edict-distribution"`)) {
 		t.Fatalf("unexpected Kotlin HTTP registry: %s, %v", registry, err)
 	}
 	result, err = session.CallTool(ctx, &mcp.CallToolParams{Name: "edict_context", Arguments: map[string]any{}})

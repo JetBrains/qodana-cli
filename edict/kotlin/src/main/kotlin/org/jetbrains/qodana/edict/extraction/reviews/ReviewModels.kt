@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewThread
-import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
+import org.jetbrains.qodana.edict.core.EdictFileRevision
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalStrength
 import java.time.LocalDate
 
 @Serializable
@@ -27,17 +27,17 @@ data class PrSignalDiff(
   val after: String,
   val beforePath: String,
   val afterPath: String,
-  val relatedBeforeRanges: List<EdictNextLineRange> = emptyList(),
-  val relatedAfterRanges: List<EdictNextLineRange> = emptyList(),
+  val relatedBeforeRanges: List<EdictLineRange> = emptyList(),
+  val relatedAfterRanges: List<EdictLineRange> = emptyList(),
 )
 
 @Serializable
 data class PrSignalDraft(
   val workItemId: String,
-  val fileRevision: EdictNextFileRevision,
-  val label: EdictNextSignalLabel,
+  val fileRevision: EdictFileRevision,
+  val label: EdictSignalLabel,
   val description: String,
-  val strength: EdictNextSignalStrength = EdictNextSignalStrength.STRONG,
+  val strength: EdictSignalStrength = EdictSignalStrength.STRONG,
   val diff: PrSignalDiff,
   /** Shared by the POSITIVE and NEGATIVE drafts of one correction in a work item; not stored in the Signal. */
   val correction: Int? = null,

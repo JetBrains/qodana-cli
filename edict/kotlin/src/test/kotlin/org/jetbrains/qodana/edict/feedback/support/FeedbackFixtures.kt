@@ -4,8 +4,8 @@ package org.jetbrains.qodana.edict.feedback.support
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.feedback.ActionsPullRequest
 import org.jetbrains.qodana.edict.feedback.FeedbackRecord
 import org.jetbrains.qodana.edict.feedback.FeedbackRecords
@@ -59,7 +59,7 @@ internal fun feedbackRecord(index: Int, clusterId: String = "rule", pullRequest:
     pullRequest = pullRequest,
     revision = "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00",
     path = "src/Main.kt",
-    lines = EdictNextLineRange(3, 3),
+    lines = EdictLineRange(3, 3),
     commentLine = 3,
     inspectionName = INSPECTION_NAME,
     inspectionDescription = INSPECTION_SUMMARY,

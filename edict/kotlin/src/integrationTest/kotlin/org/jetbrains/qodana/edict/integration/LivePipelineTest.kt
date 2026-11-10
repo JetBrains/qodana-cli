@@ -19,12 +19,12 @@ import org.jetbrains.qodana.edict.common.ExtractionConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.EdictRepository
-import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.integration.support.*
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.integration.support.reviews.MergedReviewFixture
@@ -52,11 +52,11 @@ class LivePipelineTest : IntegrationTest() {
                     "edict-check-weak-signal-promotion",
                     "edict-signal-analysis",
                     "edict-pr-signal-analysis",
-                    "edict-next-distribution",
+                    "edict-distribution",
                     "edict-git-history-signal-enrichment",
-                    "edict-next-cluster-generation",
-                    "edict-next-code-example-overseer",
-                    "edict-next-inspection-shallow-review",
+                    "edict-cluster-generation",
+                    "edict-code-example-overseer",
+                    "edict-inspection-shallow-review",
                     "edict-promote",
                     "edict-promote-weak-signal",
                 )
@@ -77,7 +77,7 @@ class LivePipelineTest : IntegrationTest() {
     private fun verifyStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
+            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-distribution", "edict-git-history-signal-enrichment", "edict-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
@@ -109,16 +109,16 @@ class LivePipelineTest : IntegrationTest() {
         assertEquals(1, state.clusters.size, "The positive/negative pair must form exactly one cluster")
         val cluster = state.clusters.single()
         assertEquals("Java", cluster.manifest.language.name)
-        val reviewSignals = cluster.signals.filter { it.source is EdictNextSignalSource.FromPR }
+        val reviewSignals = cluster.signals.filter { it.source is EdictSignalSource.FromPR }
         assertEquals(2, reviewSignals.size, "The review correction must retain both evidence sides")
-        assertEquals(EdictNextSignalLabel.entries.toSet(), cluster.signals.map { it.label }.toSet())
+        assertEquals(EdictSignalLabel.entries.toSet(), cluster.signals.map { it.label }.toSet())
         val expectedDiff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))
         reviewSignals.forEach { signal ->
-            val source = signal.source as EdictNextSignalSource.FromPR
+            val source = signal.source as EdictSignalSource.FromPR
             assertEquals(7, source.prNumber)
             UnifiedDiff.validateExcerpt(source.diffPositiveToNegative, expectedDiff)
             assertEquals(historyPath, signal.fileRevision.path)
-            val positive = signal.label == EdictNextSignalLabel.POSITIVE
+            val positive = signal.label == EdictSignalLabel.POSITIVE
             assertEquals(if (positive) historyBefore else historyCommit, signal.fileRevision.revision)
             val expectedLine = if (positive) 5 else 10
             assertTrue(signal.fileRevision.expectedRanges.orEmpty().any { expectedLine in it.start..it.end })
@@ -128,7 +128,7 @@ class LivePipelineTest : IntegrationTest() {
         }
         assertTrue(cluster.historyPath.readText().isNotBlank())
 
-        if (cluster.manifest.status in setOf(EdictNextClusterStatus.Pending, EdictNextClusterStatus.Invalid)) {
+        if (cluster.manifest.status in setOf(EdictClusterStatus.Pending, EdictClusterStatus.Invalid)) {
             assertEquals(
                 listOf("inspections/${cluster.id}.candidate.kts"),
                 state.filesByRelativePath.keys.filter { it.startsWith("inspections/") }.sorted(),
@@ -139,22 +139,22 @@ class LivePipelineTest : IntegrationTest() {
                 "Pending or Invalid generation must preserve its candidate",
             )
             assertTrue(
-                plan.tasks.any { it.skill == "edict-next-inspection-shallow-review" && it.status == "completed" },
+                plan.tasks.any { it.skill == "edict-inspection-shallow-review" && it.status == "completed" },
                 "Pending or Invalid is acceptable only after an independent candidate review",
             )
-            if (cluster.manifest.status == EdictNextClusterStatus.Invalid) {
+            if (cluster.manifest.status == EdictClusterStatus.Invalid) {
                 assertContains(cluster.historyPath.readText(), "Invalid:")
             }
             return
         }
 
-        assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
+        assertEquals(EdictClusterStatus.Generated, cluster.manifest.status)
         assertTrue(
-            plan.tasks.any { it.skill == "edict-next-weak-signal-review" && it.status == "completed" },
+            plan.tasks.any { it.skill == "edict-weak-signal-review" && it.status == "completed" },
             "Generated transition requires weak-signal review",
         )
         assertTrue(
-            plan.tasks.any { it.skill == "edict-next-inspection-code-review" && it.status == "completed" },
+            plan.tasks.any { it.skill == "edict-inspection-code-review" && it.status == "completed" },
             "Generated transition requires inspection code review",
         )
 
@@ -176,13 +176,13 @@ class LivePipelineTest : IntegrationTest() {
             val example = cluster.examples.single { it.metadata.id == exampleId }
             val measured = inspection.run(code, contextPath, example.code)
             when (signal.label) {
-                EdictNextSignalLabel.POSITIVE -> {
+                EdictSignalLabel.POSITIVE -> {
                     val ranges = assertNotNull(example.metadata.expectedRanges)
                     assertEquals(1, ranges.size)
                     assertEquals(1, measured.problemLines.size, "Positive example must contain exactly one detected problem")
                     assertTrue(measured.problemLines.single() in ranges.single().start..ranges.single().end)
                 }
-                EdictNextSignalLabel.NEGATIVE -> {
+                EdictSignalLabel.NEGATIVE -> {
                     assertTrue(example.metadata.expectedRanges.isNullOrEmpty())
                     assertTrue(measured.problemLines.isEmpty(), "Negative example must not be reported")
                 }

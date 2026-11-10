@@ -7,10 +7,10 @@ import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.DEFAULT_EDICT_STATE_BRANCH
 import org.jetbrains.qodana.edict.common.EdictYamlConfiguration
 import org.jetbrains.qodana.edict.common.StateBranch
-import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
-import org.jetbrains.qodana.edict.edictnext.defaultQodanaExecutable
+import org.jetbrains.qodana.edict.core.EdictMcpToolset
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.core.IntellijMcpServerService
+import org.jetbrains.qodana.edict.core.defaultQodanaExecutable
 import org.jetbrains.qodana.edict.feedback.actionsEventPath
 import org.jetbrains.qodana.edict.feedback.actionsFeedbackApi
 import org.jetbrains.qodana.edict.feedback.actionsPullRequest
@@ -61,7 +61,7 @@ fun main(args: Array<String>) {
                         "parent-pid",
                         "qodana-yaml",
                     )
-                }) { "Unknown Edict Next option" }
+                }) { "Unknown Edict option" }
                 val configuration = EdictYamlConfiguration.load(qodanaYaml(options))
                 val ciReviews = configuration.ci?.let { getReviewAPI(it, configuration.bots) }
                 val promotionReviews = configuration.promotionRepository?.let { getReviewAPI(it, configuration.bots) }
@@ -94,7 +94,7 @@ fun main(args: Array<String>) {
                         parent.get().onExit().thenRun { exitProcess(0) }
                     }
                     logger.info { "Process log: ${layout.processLogDirectory}" }
-                    logger.info { "${EdictNextMcpToolset.SERVER_NAME} listening at ${server.url}" }
+                    logger.info { "${EdictMcpToolset.SERVER_NAME} listening at ${server.url}" }
                     server.await()
                 }
             }
@@ -189,7 +189,7 @@ private fun pushState(qodanaYaml: Path?, message: String) {
     // Before the lock, which creates files in the state directory that would keep install from checking it out.
     val worktree = StateBranch(layout, configuration.stateBranch).worktree()
     // Holding the state lock keeps a running server from writing while the state is committed.
-    EdictNextRepositoryState.open(layout.stateDirectory).use { worktree.push(message) }
+    EdictRepositoryState.open(layout.stateDirectory).use { worktree.push(message) }
     logger.info { "Pushed the Edict state in ${layout.stateDirectory} to ${configuration.stateBranch}" }
 }
 

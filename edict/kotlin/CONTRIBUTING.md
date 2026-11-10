@@ -57,7 +57,7 @@ Production code is under `src/main/kotlin/org/jetbrains/qodana/edict`:
 | Package | Responsibility |
 | --- | --- |
 | (root) | `Main.kt` (the `org.jetbrains.qodana.edict.MainKt` entry point) and `EdictServer.kt` (the shared HTTP MCP server) |
-| `edictnext` | Signal model, execution state, distribution, generation, embeddings, and the IDE/inspection MCP clients |
+| `core` | Signal model, execution state, distribution, generation, embeddings, and the IDE/inspection MCP clients |
 | `skills` | Managed skill registry, invocation policies, and classpath loading |
 | `signals` | Structural Signal and path validation, unified-diff parsing |
 | `extraction` | Commit Signal extraction (`git`) and prepared PR analysis (`reviews`) |
@@ -77,9 +77,6 @@ the project), and `edict.run.id` fixes the run id. Logging is configured in `src
 Edit the skill sources in `src/main/resources/skills` directly. Gradle packages them in the JAR and generates their
 resource index. The CLI and the test Codex runner both install them through the `Skills` classpath loader. Neither
 reads the parent project's skill directories.
-
-Switching from the old `edict-next-*` registry requires a new state root. Inbox, cluster, and inspection artifacts
-keep their layout, but old execution plans are not migrated.
 
 ## Boundaries and invariants
 

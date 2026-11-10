@@ -3,11 +3,11 @@ package org.jetbrains.qodana.edict.promotion
 
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.PromotionPrState
-import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
-import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.core.EdictClusterStatus
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.PromotionPrState
+import org.jetbrains.qodana.edict.core.WeakSignalPromotion
+import org.jetbrains.qodana.edict.core.sha256Hex
 import org.jetbrains.qodana.edict.promotion.support.CANDIDATE
 import org.jetbrains.qodana.edict.promotion.support.CHANGED_SOURCE_FIXES
 import org.jetbrains.qodana.edict.promotion.support.CHANGED_SOURCE_FIX_OPERATION_ID
@@ -111,7 +111,7 @@ internal class WeakSignalPromotionServiceTest {
 
   @Test
   fun `a cluster that is not generated is no candidate`() {
-    repository.store(weakCluster().copy(status = EdictNextClusterStatus.Pending))
+    repository.store(weakCluster().copy(status = EdictClusterStatus.Pending))
 
     assertEquals(WeakSignalPreparationResponse(emptyList(), emptyList()), service.prepare())
   }
@@ -525,7 +525,7 @@ internal class WeakSignalPromotionServiceTest {
     val recorded = repository.loadCluster("rule")
     assertEquals(CORRECTIONS, result)
     assertEquals((cluster.signals + CORRECTIONS).toSet(), recorded.signals.toSet())
-    assertEquals(cluster.manifest.copy(processedSignalIds = cluster.signalIds + CORRECTIONS.map(EdictNextSignal::id)), recorded.manifest)
+    assertEquals(cluster.manifest.copy(processedSignalIds = cluster.signalIds + CORRECTIONS.map(EdictSignal::id)), recorded.manifest)
     assertEquals(emptyList(), repository.loadInboxSignals())
   }
 

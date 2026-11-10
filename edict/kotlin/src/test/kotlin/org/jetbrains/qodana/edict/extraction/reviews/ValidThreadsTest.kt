@@ -2,8 +2,8 @@
 package org.jetbrains.qodana.edict.extraction.reviews
 
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
-import org.jetbrains.qodana.edict.edictnext.support.pullRequest
-import org.jetbrains.qodana.edict.edictnext.support.thread
+import org.jetbrains.qodana.edict.core.support.pullRequest
+import org.jetbrains.qodana.edict.core.support.thread
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

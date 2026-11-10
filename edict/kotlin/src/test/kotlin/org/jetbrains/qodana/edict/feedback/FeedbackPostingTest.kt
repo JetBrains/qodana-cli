@@ -12,8 +12,8 @@ import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.StateBranch
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.support.GitOrigin
-import org.jetbrains.qodana.edict.edictnext.EdictNextJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.core.EdictJson
+import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.feedback.support.FINDING_MESSAGE
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.OWN_PULL_REQUEST
@@ -154,7 +154,7 @@ class FeedbackPostingTest {
     val active = "$DEFAULT_EDICT_STATE_BRANCH:feedback/active"
     val files = git(origin.path, "ls-tree", "--name-only", active).lines().filter(String::isNotEmpty)
     return files.associate { file ->
-      val record = EdictNextJson.decodeFromString(FeedbackRecord.serializer(), git(origin.path, "show", "$active/$file"))
+      val record = EdictJson.decodeFromString(FeedbackRecord.serializer(), git(origin.path, "show", "$active/$file"))
       record.id to record
     }
   }
@@ -169,7 +169,7 @@ private val RECORD = FeedbackRecord(
   pullRequest = PULL_REQUEST,
   revision = HEAD_REVISION,
   path = "src/Main.kt",
-  lines = EdictNextLineRange(3, 3),
+  lines = EdictLineRange(3, 3),
   commentLine = 3,
   inspectionName = INSPECTION_NAME,
   inspectionDescription = INSPECTION_SUMMARY,

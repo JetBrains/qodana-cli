@@ -1,0 +1,828 @@
+package org.jetbrains.qodana.edict.core
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.ci.ReviewReference
+import org.jetbrains.qodana.edict.common.GitRepository
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
+import kotlin.io.path.*
+
+internal class EdictRepository(val paths: EdictRepositoryDirectory) {
+  suspend fun loadState(): EdictRepositoryState = EdictRepositoryState(
+    root = paths.root,
+    clusters = loadClusters(),
+    inboxSignals = loadInboxSignals(),
+    filesByRelativePath = loadRepositoryFiles(),
+  )
+
+  fun loadClusters(): List<EdictStoredCluster> =
+    paths.clustersDirectory
+      .takeIf { path -> path.isDirectory() }?.listDirectoryEntries().orEmpty()
+      .filter(Path::isDirectory)
+      .sortedBy(Path::name)
+      .map { clusterPath -> EdictClusterDirectory(clusterPath) }
+      .map { clusterDir -> loadCluster(clusterDir) }
+
+  fun loadCluster(clusterId: String): EdictStoredCluster {
+    require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    return loadCluster(EdictClusterDirectory(paths.clustersDirectory.resolve(clusterId)))
+  }
+
+  private fun loadCluster(clusterDirectory: EdictClusterDirectory): EdictStoredCluster {
+    require(clusterDirectory.root.parent == paths.clustersDirectory) {
+      "Cluster is outside the repository cluster directory: ${clusterDirectory.root}"
+    }
+    require(clusterDirectory.manifestPath.isRegularFile()) { "Cluster ${clusterDirectory.root.name} has no cluster.json" }
+    val manifest = EdictJson.decodeFromString<EdictClusterManifest>(clusterDirectory.manifestPath.readText())
+    require(manifest.id == clusterDirectory.root.name) {
+      "Cluster directory '${clusterDirectory.root.name}' does not match manifest id '${manifest.id}'"
+    }
+    require(manifest.promotions.distinctBy(InspectionPromotion::id).size == manifest.promotions.size) {
+      "Cluster '${manifest.id}' contains duplicate promotion ids"
+    }
+    manifest.promotions.forEach(::validatePromotion)
+    return EdictStoredCluster(
+      directory = clusterDirectory,
+      manifest = manifest,
+      signals = loadSignals(clusterDirectory.signalsDirectory),
+      examples = loadExamples(clusterDirectory),
+      candidateInspectionPath = paths.candidateInspectionPath(manifest.id),
+    )
+  }
+
+  fun loadInboxSignals(): List<EdictSignal> = loadSignals(paths.inboxDirectory)
+
+  /** Adds trusted historical evidence directly, without an intermediate inbox record. */
+  fun saveClusterSignal(clusterId: String, signal: EdictSignal) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    require(signal.language == cluster.manifest.language) { "Signal language does not match cluster '$clusterId'" }
+    require(signal.id !in cluster.signalIds) { "Signal '${signal.id}' already belongs to cluster '$clusterId'" }
+    writeAtomically(cluster.directory.signalPath(signal.id), signal, EdictSignal.serializer())
+  }
+
+  fun clusterSignalIds(clusterId: String): Set<String> {
+    require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    val clusterDirectory = EdictClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+    require(clusterDirectory.manifestPath.isRegularFile()) { "Cluster '$clusterId' does not exist" }
+    val manifest = EdictJson.decodeFromString<EdictClusterManifest>(clusterDirectory.manifestPath.readText())
+    require(manifest.id == clusterId) { "Cluster manifest id '${manifest.id}' does not match '$clusterId'" }
+    return loadSignals(clusterDirectory.signalsDirectory).mapTo(linkedSetOf(), EdictSignal::id)
+  }
+
+  fun saveCodeExample(
+    clusterId: String,
+    exampleId: String,
+    metadata: EdictCodeExampleMetadata,
+    sourceCode: String,
+  ) {
+    require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    require(EDICT_KEBAB_CASE.matches(exampleId)) { "Invalid example id '$exampleId'" }
+    require(metadata.id == exampleId) { "Example metadata id '${metadata.id}' does not match '$exampleId'" }
+    val clusterDirectory = EdictClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+    require(clusterDirectory.manifestPath.isRegularFile()) { "Cluster '$clusterId' does not exist" }
+    val manifest = EdictJson.decodeFromString<EdictClusterManifest>(clusterDirectory.manifestPath.readText())
+    require(manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val fileName = Path.of(metadata.fileName)
+    require(!fileName.isAbsolute && fileName.nameCount == 1 && metadata.fileName == fileName.fileName.toString()) {
+      "Example source file must be a single relative file name"
+    }
+    require(fileName.toString().substringAfterLast('.', "") == manifest.language.fileExtension) {
+      "Example source language does not match cluster '$clusterId'"
+    }
+    clusterDirectory.examplesDirectory.createDirectories()
+    val temporaryRoot = Files.createTempDirectory(clusterDirectory.root, ".edict-example-")
+    try {
+      val temporary = EdictExampleDirectory(temporaryRoot)
+      temporary.projectDirectory.createDirectories()
+      temporary.sourcePath(metadata.fileName).writeText(sourceCode)
+      write(temporary.metadataPath, metadata, EdictCodeExampleMetadata.serializer())
+      val target = clusterDirectory.examplesDirectory.resolve(exampleId)
+      if (target.exists()) target.toFile().deleteRecursively()
+      Files.move(temporaryRoot, target, StandardCopyOption.ATOMIC_MOVE)
+    } finally {
+      temporaryRoot.toFile().deleteRecursively()
+    }
+  }
+
+  /** Corrects only the expected location, preserving the source and every other stored metadata field. */
+  suspend fun updateCodeExampleExpectedRange(clusterId: String, exampleId: String, range: EdictLineRange) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
+      ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+    require(example.metadata.label == EdictSignalLabel.POSITIVE) {
+      "Only positive examples have an expected range to correct"
+    }
+    val metadata = example.metadata.copy(expectedRanges = listOf(range))
+    val validation = validateCodeExample(example.directory, metadata, example.sourcePath, example.code)
+    require(validation.success) { validation.summary + ": " + validation.issues.joinToString("; ") }
+    val document = EdictJson.parseToJsonElement(example.directory.metadataPath.readText()).jsonObject
+    writeAtomically(
+      example.directory.metadataPath,
+      JsonObject(document + ("expectedRanges" to EdictJson.encodeToJsonElement(listOf(range)))),
+      JsonObject.serializer(),
+    )
+  }
+
+  fun setCodeExampleContextPath(clusterId: String, exampleId: String, contextPath: String) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
+      ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+    val document = EdictJson.parseToJsonElement(example.directory.metadataPath.readText()).jsonObject
+    writeAtomically(
+      example.directory.metadataPath,
+      JsonObject(document + ("contextPath" to JsonPrimitive(contextPath))),
+      JsonObject.serializer(),
+    )
+  }
+
+  fun assignCodeExample(clusterId: String, signalId: String, exampleId: String) {
+    val cluster = loadCluster(clusterId)
+    val signal = cluster.signals.singleOrNull { it.id == signalId }
+      ?: error("Signal '$signalId' does not belong to cluster '$clusterId'")
+    val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
+      ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+    require(signal.label == example.metadata.label) {
+      "Signal '$signalId' and example '$exampleId' have different labels"
+    }
+    writeSyntheticExampleId(cluster.directory.signalPath(signalId), exampleId)
+  }
+
+  /** Deletes the example and clears `syntheticExampleId` on every Signal that references it. */
+  fun deleteCodeExample(clusterId: String, exampleId: String) {
+    require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    require(EDICT_KEBAB_CASE.matches(exampleId)) { "Invalid example id '$exampleId'" }
+    val clusterDirectory = EdictClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+    val exampleDirectory = clusterDirectory.examplesDirectory.resolve(exampleId)
+    require(exampleDirectory.isDirectory()) { "Code example '$exampleId' does not exist" }
+    // Unassign first: an interruption then leaves an unreferenced example rather than a dangling reference.
+    loadSignals(clusterDirectory.signalsDirectory).filter { it.syntheticExampleId == exampleId }.forEach { signal ->
+      writeSyntheticExampleId(clusterDirectory.signalPath(signal.id), null)
+    }
+    exampleDirectory.toFile().deleteRecursively()
+  }
+
+  fun saveCandidateInspection(clusterId: String, code: String) {
+    require(loadCluster(clusterId).manifest.status == EdictClusterStatus.Pending) {
+      "Cluster '$clusterId' is not Pending"
+    }
+    paths.candidateInspectionPath(clusterId).also { path ->
+      path.parent.createDirectories()
+      path.writeText(code)
+    }
+  }
+
+  fun appendHistory(clusterId: String, entry: String) {
+    require(entry.isNotBlank()) { "History entry must not be blank" }
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    Files.writeString(
+      cluster.historyPath,
+      entry.trimEnd() + "\n",
+      StandardOpenOption.CREATE,
+      StandardOpenOption.APPEND,
+    )
+  }
+
+  fun saveEvaluation(clusterId: String, evaluation: EdictEvaluation) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    write(cluster.directory.evaluationPath, evaluation, EdictEvaluation.serializer())
+  }
+
+  fun loadEvaluation(cluster: EdictStoredCluster): EdictEvaluation? =
+    cluster.directory.evaluationPath.takeIf(Path::isRegularFile)?.let {
+      EdictJson.decodeFromString(EdictEvaluation.serializer(), it.readText())
+    }
+
+  fun markGenerated(cluster: EdictStoredCluster, selectedInspection: Path) {
+    require(selectedInspection.isRegularFile()) { "Selected inspection does not exist: $selectedInspection" }
+    val finalInspection = paths.inspectionPath(cluster.id)
+    finalInspection.parent.createDirectories()
+    val previousFinalCode = if (selectedInspection != finalInspection && finalInspection.isRegularFile()) {
+      finalInspection.readBytes()
+    } else {
+      null
+    }
+    if (selectedInspection != finalInspection) {
+      Files.copy(selectedInspection, finalInspection, StandardCopyOption.REPLACE_EXISTING)
+    }
+    try {
+      write(
+        cluster.directory.manifestPath,
+        cluster.manifest.copy(
+          status = EdictClusterStatus.Generated,
+          predecessorId = null,
+          processedSignalIds = cluster.signalIds,
+        ),
+        EdictClusterManifest.serializer(),
+      )
+    } catch (e: Exception) {
+      if (selectedInspection != finalInspection) {
+        try {
+          if (previousFinalCode == null) {
+            finalInspection.deleteIfExists()
+          } else {
+            finalInspection.writeBytes(previousFinalCode)
+          }
+        } catch (rollbackError: Exception) {
+          e.addSuppressed(rollbackError)
+        }
+      }
+      throw e
+    }
+    if (cluster.candidateInspectionPath != finalInspection) {
+      cluster.candidateInspectionPath.deleteIfExists()
+    }
+    cluster.manifest.predecessorId?.let(paths::inspectionPath)?.takeIf { it != finalInspection }?.deleteIfExists()
+  }
+
+  @Synchronized
+  fun loadActiveWeakSignalPromotions(): Map<String, List<WeakSignalPromotion>> {
+    val path = paths.activeWeakSignalPromotionsPath
+    if (!path.isRegularFile()) migrateWeakSignalPromotions()
+    val active =
+      if (path.isRegularFile()) EdictJson.decodeFromString<WeakSignalPromotionIndex>(path.readText()).activePromotions else emptyMap()
+    active.forEach { (clusterId, promotions) ->
+      require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+      require(promotions.distinctBy { it.pullRequest }.size == promotions.size) { "Duplicate weak-signal reviews" }
+      promotions.forEach(::validateWeakSignalPromotion)
+    }
+    return active
+  }
+
+  /** One-time upgrade of the old cluster-embedded state; normal checks never scan cluster manifests. */
+  private fun migrateWeakSignalPromotions() {
+    val manifests = paths.clustersDirectory.takeIf { it.isDirectory() }?.listDirectoryEntries().orEmpty()
+      .filter { it.isDirectory() }.map { it.resolve("cluster.json") }.filter { it.isRegularFile() }
+      .mapNotNull { path ->
+        val document = EdictJson.parseToJsonElement(path.readText()).jsonObject
+        document["weakSignalPromotions"]?.let {
+          Triple(
+            path,
+            document,
+            EdictJson.decodeFromJsonElement<List<WeakSignalPromotion>>(it)
+          )
+        }
+      }
+    val active = manifests.associate { (path, _, promotions) -> path.parent.name to promotions }
+    active.values.flatten().forEach(::validateWeakSignalPromotion)
+    saveActiveWeakSignalPromotions(active)
+    manifests.forEach { (path, document, _) ->
+      writeAtomically(path, JsonObject(document - "weakSignalPromotions"), JsonObject.serializer())
+    }
+  }
+
+  fun loadWeakSignalPromotionHistory(clusterId: String): List<WeakSignalPromotion> =
+    paths.weakSignalPromotionHistoryPath(clusterId).takeIf { it.isRegularFile() }
+      ?.let { EdictJson.decodeFromString<List<WeakSignalPromotion>>(it.readText()) }.orEmpty()
+
+  private fun saveActiveWeakSignalPromotions(active: Map<String, List<WeakSignalPromotion>>) =
+    writeAtomically(
+      paths.activeWeakSignalPromotionsPath,
+      WeakSignalPromotionIndex(active.filterValues { it.isNotEmpty() }),
+      WeakSignalPromotionIndex.serializer()
+    )
+
+  @Synchronized
+  fun appendWeakSignalPromotion(
+    clusterId: String,
+    expectedInspectionDigest: String,
+    promotion: WeakSignalPromotion
+  ): WeakSignalPromotion {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Generated) { "Cluster '$clusterId' is not Generated" }
+    require(sha256Hex(paths.inspectionPath(clusterId).readBytes()) == expectedInspectionDigest) {
+      "Generated inspection for '$clusterId' changed while the source-fix PR was being created"
+    }
+    validateWeakSignalPromotion(promotion)
+    val active = loadActiveWeakSignalPromotions()
+    active[clusterId].orEmpty().firstOrNull { it.pullRequest == promotion.pullRequest }?.let { return it }
+    saveActiveWeakSignalPromotions(active + (clusterId to (active[clusterId].orEmpty() + promotion)))
+    return promotion
+  }
+
+  @Synchronized
+  fun recordWeakSignalReview(
+    clusterId: String,
+    pullRequest: ReviewReference,
+    state: PromotionPrState,
+  ): WeakSignalPromotion {
+    val active = loadActiveWeakSignalPromotions()
+    val promotions = active[clusterId].orEmpty()
+    val index = promotions.indexOfFirst { it.pullRequest == pullRequest }
+    require(index >= 0) { "Unknown weak-signal review '${pullRequest.id}' in cluster '$clusterId'" }
+    val updated = promotions[index].copy(state = state)
+    validateWeakSignalPromotion(updated)
+    saveActiveWeakSignalPromotions(active + (clusterId to promotions.toMutableList().also { it[index] = updated }))
+    if (state == PromotionPrState.CLOSED) completeWeakSignalPromotion(clusterId, pullRequest)
+    return updated
+  }
+
+  /** Retire only after all merged evidence has been published (including a deliberate no-op). */
+  @Synchronized
+  fun completeWeakSignalPromotion(clusterId: String, pullRequest: ReviewReference) {
+    val active = loadActiveWeakSignalPromotions()
+    val promotion = active[clusterId].orEmpty().singleOrNull { it.pullRequest == pullRequest }
+    if (promotion == null) {
+      require(loadWeakSignalPromotionHistory(clusterId).any { it.pullRequest == pullRequest }) { "Unknown weak-signal review" }
+      return // Idempotent after successful retirement.
+    }
+    require(promotion.state != PromotionPrState.ON_REVIEW) { "Review is still open" }
+    val history = loadWeakSignalPromotionHistory(clusterId).filterNot { it.pullRequest == pullRequest } + promotion
+    writeAtomically(
+      paths.weakSignalPromotionHistoryPath(clusterId),
+      history,
+      ListSerializer(WeakSignalPromotion.serializer())
+    )
+    saveActiveWeakSignalPromotions(
+      active + (clusterId to active.getValue(clusterId).filterNot { it.pullRequest == pullRequest })
+    )
+  }
+
+  /** Only evidence already covered by the inspection can bypass normal inbox distribution. */
+  @Synchronized
+  fun recordWeakSignalPromotionSignals(
+    clusterId: String,
+    pullRequest: ReviewReference,
+    inspectionDigest: String,
+    signals: List<EdictSignal>,
+  ) {
+    val cluster = loadCluster(clusterId)
+    require(
+      loadActiveWeakSignalPromotions()[clusterId].orEmpty()
+        .any { it.pullRequest == pullRequest && it.state == PromotionPrState.ACCEPTED }) {
+      "Review is not an accepted weak-signal promotion of '$clusterId'"
+    }
+    require(
+      sha256Hex(
+        paths.inspectionPath(cluster.manifest.predecessorId ?: clusterId).readBytes()
+      ) == inspectionDigest
+    ) {
+      "Inspection changed since review analysis"
+    }
+    require(signals.isNotEmpty() && signals.distinctBy { it.id }.size == signals.size) { "Supply distinct nonempty signals" }
+    val clusterDirectories = paths.clustersDirectory.listDirectoryEntries().filter { it.isDirectory() }
+    signals.forEach { signal ->
+      require(signal.language == cluster.manifest.language) { "Signal language does not match source cluster" }
+      val example = cluster.examples.singleOrNull { it.metadata.id == signal.syntheticExampleId }
+      require(signal.syntheticExampleId == null || example?.metadata?.label == signal.label) { "Signal must reference an existing matching example" }
+      require(example != null && cluster.signals.any { it.syntheticExampleId == example.metadata.id && it.strength == EdictSignalStrength.STRONG }) {
+        "Direct evidence must reuse an existing strong representative example; otherwise publish to inbox"
+      }
+      require(!paths.inboxDirectory.resolve("${signal.id}.json").exists()) { "Signal already exists in inbox" }
+      clusterDirectories.forEach directoryLoop@{ directory ->
+        val path = EdictClusterDirectory(directory).signalPath(signal.id)
+        if (!path.isRegularFile()) return@directoryLoop
+        val existing = EdictJson.decodeFromString<EdictSignal>(path.readText())
+        require(directory.name == clusterId && existing == signal) {
+          "Conflicting signal '${signal.id}'"
+        }
+      }
+    }
+    val processed =
+      (if (cluster.manifest.status == EdictClusterStatus.Generated) cluster.signalIds else cluster.manifest.processedSignalIds) + signals.map { it.id }
+    val added = signals.filterNot { it.id in cluster.signalIds }
+    try {
+      added.forEach { writeAtomically(cluster.directory.signalPath(it.id), it, EdictSignal.serializer()) }
+      writeAtomically(
+        cluster.directory.manifestPath,
+        cluster.manifest.copy(processedSignalIds = processed),
+        EdictClusterManifest.serializer()
+      )
+    } catch (e: Exception) {
+      added.forEach { cluster.directory.signalPath(it.id).deleteIfExists() }
+      throw e
+    }
+  }
+
+  @Synchronized
+  fun appendPromotion(
+    clusterId: String,
+    expectedInspectionDigest: String,
+    promotion: InspectionPromotion,
+  ): InspectionPromotion {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictClusterStatus.Generated) { "Cluster '$clusterId' is not Generated" }
+    val inspection = paths.inspectionPath(clusterId)
+    require(inspection.isRegularFile()) { "Generated inspection for '$clusterId' does not exist" }
+    require(sha256Hex(inspection.readBytes()) == expectedInspectionDigest) {
+      "Generated inspection for '$clusterId' changed while promotion was being created"
+    }
+    validatePromotion(promotion)
+    writeAtomically(
+      cluster.directory.manifestPath,
+      cluster.manifest.copy(promotions = cluster.manifest.promotions + promotion),
+      EdictClusterManifest.serializer(),
+    )
+    return promotion
+  }
+
+  @Synchronized
+  fun applyResolvedPromotion(
+    clusterId: String,
+    promotionId: String,
+    resolvedState: PromotionPrState,
+    updatedAt: String,
+    expectedInspectionDigest: String? = null,
+    targetStatus: EdictClusterStatus? = null,
+    rationale: String? = null,
+  ): InspectionPromotion {
+    val cluster = loadCluster(clusterId)
+    val index = cluster.manifest.promotions.indexOfFirst { it.id == promotionId }
+    require(index >= 0) { "Unknown promotion '$promotionId' in cluster '$clusterId'" }
+    val current = cluster.manifest.promotions[index]
+    val updated = current.copy(state = resolvedState, updatedAt = updatedAt)
+    val inspection = paths.inspectionPath(clusterId)
+    val updatedManifest: EdictClusterManifest
+    val historyEntry: String
+
+    when (resolvedState) {
+      PromotionPrState.ACCEPTED -> {
+        require(current.state == PromotionPrState.ON_REVIEW) {
+          "Illegal promotion transition ${current.state} -> $resolvedState"
+        }
+        require(expectedInspectionDigest == null && targetStatus == null && rationale == null) {
+          "Accepted promotions cannot change the cluster"
+        }
+        updatedManifest = cluster.manifest.copy(
+          promotions = cluster.manifest.promotions.toMutableList().also { it[index] = updated },
+        )
+        historyEntry = "Promotion `$promotionId` accepted after merged PR ${current.pullRequest.url}.\n"
+      }
+
+      PromotionPrState.CLOSED -> {
+        val resolvedTargetStatus = requireNotNull(targetStatus) { "Promotion decision target status is required" }
+        val resolvedRationale = requireNotNull(rationale) { "Promotion decision rationale is required" }
+        require(resolvedTargetStatus in setOf(EdictClusterStatus.Pending, EdictClusterStatus.Discontinued)) {
+          "Promotion decisions may move a cluster only to Pending or Discontinued"
+        }
+        require(resolvedRationale.isNotBlank()) { "Promotion decision rationale is required" }
+        require(cluster.manifest.status == EdictClusterStatus.Generated) { "Cluster '$clusterId' is not Generated" }
+        require(current.state in setOf(PromotionPrState.ON_REVIEW, PromotionPrState.CLOSED)) {
+          "Promotion '$promotionId' is not awaiting a closed-review decision"
+        }
+        require(current.inspectionDigest == expectedInspectionDigest) {
+          "Promotion does not identify the expected inspection version"
+        }
+        require(inspection.isRegularFile()) { "Generated inspection for '$clusterId' does not exist" }
+        require(sha256Hex(inspection.readBytes()) == expectedInspectionDigest) {
+          "Promotion is stale: the generated inspection has changed"
+        }
+        updatedManifest = cluster.manifest.copy(
+          status = resolvedTargetStatus,
+          predecessorId = cluster.id.takeIf { resolvedTargetStatus == EdictClusterStatus.Pending },
+          promotions = cluster.manifest.promotions.toMutableList().also { it[index] = updated },
+          processedSignalIds = cluster.signalIds,
+        )
+        historyEntry = "Promotion `$promotionId` moved cluster to $resolvedTargetStatus: ${resolvedRationale.trim()}\n"
+      }
+
+      PromotionPrState.ON_REVIEW, PromotionPrState.DECLINED -> {
+        error("Promotion resolution cannot set state to $resolvedState")
+      }
+    }
+    validatePromotion(updated)
+    val history = cluster.historyPath
+    val originalHistory = history.takeIf(Path::isRegularFile)?.readBytes()
+    val backup = if (resolvedState == PromotionPrState.CLOSED && targetStatus == EdictClusterStatus.Discontinued) {
+      Files.createTempFile(inspection.parent, ".edict-discontinued-", ".inspection.kts")
+    } else null
+    try {
+      backup?.let { Files.move(inspection, it, StandardCopyOption.REPLACE_EXISTING) }
+      try {
+        writeAtomically(
+          cluster.directory.manifestPath,
+          updatedManifest,
+          EdictClusterManifest.serializer(),
+        )
+        Files.writeString(
+          history,
+          historyEntry,
+          StandardOpenOption.CREATE,
+          StandardOpenOption.APPEND,
+        )
+      } catch (e: Exception) {
+        writeAtomically(cluster.directory.manifestPath, cluster.manifest, EdictClusterManifest.serializer())
+        if (originalHistory == null) history.deleteIfExists() else history.writeBytes(originalHistory)
+        backup?.takeIf(Path::exists)?.let { Files.move(it, inspection, StandardCopyOption.REPLACE_EXISTING) }
+        throw e
+      }
+      backup?.deleteIfExists()
+    } finally {
+      if (backup?.exists() == true && !inspection.exists()) {
+        Files.move(backup, inspection, StandardCopyOption.REPLACE_EXISTING)
+      } else {
+        backup?.deleteIfExists()
+      }
+    }
+    return updated
+  }
+
+  /**
+   * Moves a Pending cluster to [newId] with its Signals, examples, and history, and stores [candidateCode] as the candidate
+   * under the new id when one is given. The predecessor stays under its own id.
+   */
+  fun renameCluster(cluster: EdictStoredCluster, newId: String, candidateCode: String?) {
+    require(cluster.manifest.status == EdictClusterStatus.Pending) { "Cluster '${cluster.id}' is not Pending" }
+    require(EDICT_KEBAB_CASE.matches(newId)) { "Invalid cluster id '$newId'" }
+    val target = EdictClusterDirectory(paths.clustersDirectory.resolve(newId))
+    require(!target.root.exists()) { "Cluster '$newId' already exists" }
+    require(!paths.inspectionPath(newId).exists() && !paths.candidateInspectionPath(newId).exists()) {
+      "An inspection with id '$newId' already exists"
+    }
+    Files.move(cluster.directory.root, target.root, StandardCopyOption.ATOMIC_MOVE)
+    write(target.manifestPath, cluster.manifest.copy(id = newId), EdictClusterManifest.serializer())
+    if (candidateCode != null) {
+      paths.candidateInspectionPath(newId).writeText(candidateCode)
+      cluster.candidateInspectionPath.deleteIfExists()
+    }
+  }
+
+  /** A Discontinued cluster keeps no inspection: its candidate and predecessor go. */
+  fun markDiscontinued(cluster: EdictStoredCluster) {
+    write(
+      cluster.directory.manifestPath,
+      cluster.manifest.copy(status = EdictClusterStatus.Discontinued, predecessorId = null),
+      EdictClusterManifest.serializer(),
+    )
+    cluster.candidateInspectionPath.deleteIfExists()
+    cluster.manifest.predecessorId?.let(paths::inspectionPath)?.deleteIfExists()
+  }
+
+  /** An Invalid cluster keeps its candidate and predecessor, so a later run can continue from them. */
+  fun markInvalid(cluster: EdictStoredCluster) {
+    write(
+      cluster.directory.manifestPath,
+      cluster.manifest.copy(status = EdictClusterStatus.Invalid),
+      EdictClusterManifest.serializer(),
+    )
+  }
+
+  fun addSignalToCluster(signalId: String, clusterId: String) {
+    val signal =
+      loadInboxSignals().singleOrNull { it.id == signalId } ?: error("Inbox Signal '$signalId' does not exist")
+    val clusterDirectory = EdictClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+
+    if (!clusterDirectory.root.exists()) {
+      createCluster(clusterDirectory, signal)
+      return
+    }
+
+    val cluster = loadCluster(clusterId)
+    require(signal.language == cluster.manifest.language) { "Signal language does not match cluster '${cluster.id}'" }
+
+    cluster.directory.signalsDirectory.createDirectories()
+    Files.move(paths.inboxDirectory.resolve("$signalId.json"), cluster.directory.signalPath(signalId))
+
+    write(
+      cluster.directory.manifestPath,
+      pendingManifest(cluster),
+      EdictClusterManifest.serializer(),
+    )
+  }
+
+  /** Replaces a clustered Signal with its re-published inbox version and schedules the cluster for regeneration. */
+  @Synchronized
+  fun replaceClusterSignalFromInbox(signalId: String, clusterId: String) {
+    val inboxPath = paths.inboxDirectory.resolve("$signalId.json")
+    require(inboxPath.isRegularFile()) { "Inbox Signal '$signalId' does not exist" }
+    val replacement = loadSignals(paths.inboxDirectory).singleOrNull { it.id == signalId }
+      ?: error("Inbox Signal '$signalId' does not exist")
+    val cluster = loadCluster(clusterId)
+    require(cluster.signals.count { it.id == signalId } == 1) {
+      "Signal '$signalId' does not belong to cluster '$clusterId' exactly once"
+    }
+    require(replacement.language == cluster.manifest.language) {
+      "Signal language does not match cluster '${cluster.id}'"
+    }
+
+    val target = cluster.directory.signalPath(signalId)
+    val originalSignal = target.readBytes()
+    val replacementSignal = inboxPath.readBytes()
+    val originalHistory = cluster.historyPath.takeIf(Path::isRegularFile)?.readBytes()
+    try {
+      writeBytesAtomically(target, replacementSignal)
+      writeAtomically(
+        cluster.directory.manifestPath,
+        pendingManifest(cluster).let { it.copy(processedSignalIds = it.processedSignalIds - signalId) },
+        EdictClusterManifest.serializer(),
+      )
+      Files.writeString(
+        cluster.historyPath,
+        "Replaced Signal `$signalId` with its re-published inbox version; moved cluster to Pending.\n",
+        StandardOpenOption.CREATE,
+        StandardOpenOption.APPEND,
+      )
+      inboxPath.deleteIfExists()
+    } catch (e: Exception) {
+      try {
+        writeBytesAtomically(target, originalSignal)
+        writeAtomically(cluster.directory.manifestPath, cluster.manifest, EdictClusterManifest.serializer())
+        if (originalHistory == null) cluster.historyPath.deleteIfExists()
+        else writeBytesAtomically(cluster.historyPath, originalHistory)
+        writeBytesAtomically(inboxPath, replacementSignal)
+      } catch (rollbackError: Exception) {
+        e.addSuppressed(rollbackError)
+      }
+      throw e
+    }
+  }
+
+  private fun createCluster(cluster: EdictClusterDirectory, signal: EdictSignal) {
+    cluster.root.createDirectories()
+    cluster.signalsDirectory.createDirectories()
+    Files.move(paths.inboxDirectory.resolve("${signal.id}.json"), cluster.signalPath(signal.id))
+    write(
+      cluster.manifestPath,
+      EdictClusterManifest(cluster.root.name, signal.language, EdictClusterStatus.Pending),
+      EdictClusterManifest.serializer()
+    )
+    cluster.historyPath.writeText("Created for Signal `${signal.id}`.\n")
+  }
+
+  private fun pendingManifest(cluster: EdictStoredCluster): EdictClusterManifest {
+    val predecessorId = when (cluster.manifest.status) {
+      EdictClusterStatus.Generated -> cluster.id
+      EdictClusterStatus.Pending, EdictClusterStatus.Invalid -> cluster.manifest.predecessorId
+      EdictClusterStatus.Discontinued -> null
+    }
+    return cluster.manifest.copy(
+      status = EdictClusterStatus.Pending,
+      predecessorId = predecessorId,
+      // Also initializes the snapshot for Generated manifests written before processedSignalIds existed.
+      processedSignalIds = if (cluster.manifest.status == EdictClusterStatus.Generated) cluster.signalIds
+      else cluster.manifest.processedSignalIds,
+    )
+  }
+
+  /** Changes only `syntheticExampleId`, keeping every other field of the stored Signal as it is. */
+  private fun writeSyntheticExampleId(signalPath: Path, exampleId: String?) {
+    val document = EdictJson.parseToJsonElement(signalPath.readText()).jsonObject
+    val updated = if (exampleId == null) document - "syntheticExampleId"
+    else document + ("syntheticExampleId" to JsonPrimitive(exampleId))
+    signalPath.writeText(EdictJson.encodeToString(JsonObject.serializer(), JsonObject(updated)))
+  }
+
+  private fun loadExamples(clusterDirectory: EdictClusterDirectory): List<EdictStoredExample> {
+    if (!clusterDirectory.examplesDirectory.isDirectory()) return emptyList()
+    val issues = mutableListOf<String>()
+    val examples =
+      clusterDirectory.examplesDirectory.listDirectoryEntries().filter(Path::isDirectory).sortedBy(Path::name)
+        .mapNotNull { path ->
+          val directory = EdictExampleDirectory(path)
+          try {
+            require(directory.metadataPath.isRegularFile()) { "Code example ${directory.root.name} has no metadata.json" }
+            val metadata =
+              EdictJson.decodeFromString<EdictCodeExampleMetadata>(directory.metadataPath.readText())
+            require(metadata.id == directory.root.name) {
+              "Code example directory '${directory.root.name}' does not match metadata id '${metadata.id}'"
+            }
+            val sourcePath = directory.sourcePath(metadata.fileName)
+            require(sourcePath.isRegularFile()) { "Code example '${metadata.id}' has no source file ${metadata.fileName}" }
+            EdictStoredExample(directory, metadata, sourcePath, sourcePath.readText())
+          } catch (e: Exception) {
+            issues += "Cannot read code example '${directory.root}': ${e.message ?: e}"
+            null
+          }
+        }
+    if (issues.isNotEmpty()) throw EdictCodeExampleReadException(issues)
+    return examples
+  }
+
+  private fun loadSignals(directory: Path): List<EdictSignal> {
+    if (!directory.isDirectory()) return emptyList()
+    return directory.listDirectoryEntries("*.json")
+      .filter(Path::isRegularFile).sortedBy(Path::name)
+      .map { path ->
+        EdictJson.decodeFromString<EdictSignal>(path.readText()).also { signal ->
+          require(path.fileName.toString() == "${signal.id}.json") {
+            "Signal file '${path.fileName}' does not match Signal id '${signal.id}'"
+          }
+        }
+      }
+  }
+
+  private fun <T> write(path: Path, value: T, serializer: SerializationStrategy<T>) {
+    path.parent.createDirectories()
+    path.writeText(EdictJson.encodeToString(serializer, value))
+  }
+
+  private fun <T> writeAtomically(path: Path, value: T, serializer: SerializationStrategy<T>) {
+    writeBytesAtomically(path, EdictJson.encodeToString(serializer, value).toByteArray())
+  }
+
+  private fun writeBytesAtomically(path: Path, content: ByteArray) {
+    path.parent.createDirectories()
+    val temporary = Files.createTempFile(path.parent, ".${path.fileName}.", ".tmp")
+    try {
+      temporary.writeBytes(content)
+      try {
+        Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+      } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+        Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
+      }
+    } finally {
+      temporary.deleteIfExists()
+    }
+  }
+
+  private suspend fun loadRepositoryFiles(): Map<String, ByteArray> {
+    val gitIgnoredFiles = loadGitIgnoredFiles()
+    return withContext(Dispatchers.IO) {
+      Files.walk(paths.root).use { files ->
+        files.filter(Files::isRegularFile)
+          .filter { path ->
+            val relative = paths.root.relativize(path)
+            !relative.startsWith(GIT_PATH) &&
+                    !relative.startsWith(EMBEDDINGS_PATH) &&
+                    !relative.startsWith(PLANS_PATH) &&
+                    relative.fileName.toString() !in MANAGEMENT_FILES &&
+                    relative !in gitIgnoredFiles
+          }
+          .sorted()
+          .toList()
+          .associate { path -> paths.root.relativize(path).toString() to path.readBytes() }
+      }
+    }
+  }
+
+  private suspend fun loadGitIgnoredFiles(): Set<Path> {
+    return withContext(Dispatchers.IO) {
+      val repository = GitRepository(paths.root)
+      val edictRoot = paths.root.toAbsolutePath().normalize()
+      repository.git("ls-files", "-z", "--ignored", "--others", "--exclude-standard")
+        .splitToSequence('\u0000')
+        .filter(String::isNotEmpty)
+        .map { relative -> repository.root.resolve(relative).normalize() }
+        .filter { path -> path.startsWith(edictRoot) }
+        .map { path -> edictRoot.relativize(path) }
+        .toSet()
+    }
+  }
+
+  private companion object {
+    val GIT_PATH: Path = Path.of(".git")
+    val EMBEDDINGS_PATH: Path = Path.of("embeddings")
+    val PLANS_PATH: Path = Path.of("plans")
+    val MANAGEMENT_FILES: Set<String> = setOf(".edict-mcp.lock")
+  }
+}
+
+internal class EdictCodeExampleReadException(val issues: List<String>) : IllegalArgumentException()
+
+internal data class EdictStoredCluster(
+  val directory: EdictClusterDirectory,
+  val manifest: EdictClusterManifest,
+  val signals: List<EdictSignal>,
+  val examples: List<EdictStoredExample>,
+  val candidateInspectionPath: Path,
+) {
+  val id: String get() = manifest.id
+  val signalIds: Set<String> get() = signals.mapTo(LinkedHashSet(), EdictSignal::id)
+  val historyPath: Path get() = directory.historyPath
+}
+
+internal data class EdictStoredExample(
+  val directory: EdictExampleDirectory,
+  val metadata: EdictCodeExampleMetadata,
+  val sourcePath: Path,
+  val code: String,
+)
+
+/** What a cluster's stored generated inspection is worth for ranking; each caller decides what a [Missing] one means. */
+internal sealed interface StoredInspection {
+  /** The cluster has no generated inspection file. */
+  data object Missing : StoredInspection
+
+  /** No evaluation scored exactly the inspection's bytes on the cluster's current examples. */
+  data object NotEvaluated : StoredInspection
+}
+
+/**
+ * The generated inspection of cluster [clusterId] at [path], whose SHA-256 hex is [digest], and the [evaluation] of exactly its bytes
+ * on the current examples.
+ */
+internal data class EvaluatedInspection(
+  val path: Path,
+  val digest: String,
+  val evaluation: EdictEvaluation,
+  val clusterId: String,
+) : StoredInspection
+
+/** The generated inspection of [cluster], evaluated if [evaluation] is current for it. */
+internal fun EdictRepository.storedInspection(cluster: EdictStoredCluster, evaluation: EdictEvaluation?): StoredInspection {
+  val path = paths.inspectionPath(cluster.id)
+  if (!path.isRegularFile()) return StoredInspection.Missing
+  val digest = sha256Hex(path.readBytes())
+  if (evaluation == null || !cluster.isCurrentEvaluation(evaluation, digest)) return StoredInspection.NotEvaluated
+  return EvaluatedInspection(path, digest, evaluation, cluster.id)
+}

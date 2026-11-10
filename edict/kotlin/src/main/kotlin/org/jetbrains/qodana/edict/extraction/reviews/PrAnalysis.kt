@@ -12,15 +12,15 @@ import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalPairs
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.edictnext.numberedLines
-import org.jetbrains.qodana.edict.edictnext.stableSignalId
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalPairs
+import org.jetbrains.qodana.edict.core.EdictSignalProvenance
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.core.numberedLines
+import org.jetbrains.qodana.edict.core.stableSignalId
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.signals.validRevision
@@ -31,9 +31,9 @@ import java.time.temporal.ChronoUnit
 
 /** Prepared PR evidence and stored Signal batches scoped to one managed PR-analysis task. */
 internal class PrAnalysis(
-  private val store: EdictNextRepositoryState,
+  private val store: EdictRepositoryState,
   private val provider: ReviewApi?,
-  private val pairs: EdictNextSignalPairs = EdictNextSignalPairs(),
+  private val pairs: EdictSignalPairs = EdictSignalPairs(),
   private val today: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
 ) {
   private data class Batch(
@@ -50,7 +50,7 @@ internal class PrAnalysis(
   )
 
   private data class StoredChunk(
-    val signals: Map<String, EdictNextSignal>,
+    val signals: Map<String, EdictSignal>,
     val failures: List<PrSignalStoreFailure>,
     val problems: List<String>,
     val successfulWorkItemIds: Set<String>,
@@ -209,7 +209,7 @@ internal class PrAnalysis(
     chunkIndex: Int,
     inspected: List<String>,
     failedWorkItemIds: List<String>,
-    signals: List<EdictNextSignal>,
+    signals: List<EdictSignal>,
     problems: List<String>,
     drafts: List<PrSignalDraft> = emptyList(),
   ): PrReceipt = synchronized(store) {
@@ -226,7 +226,7 @@ internal class PrAnalysis(
     require(problems.isEmpty() == failedWorkItemIds.isEmpty()) {
       "Every failed work item requires a problem, and problems require failed work-item IDs"
     }
-    val stored = linkedMapOf<String, EdictNextSignal>()
+    val stored = linkedMapOf<String, EdictSignal>()
     val failures = mutableListOf<PrSignalStoreFailure>()
     val ordinals = mutableMapOf<String, Int>()
     val completed = drafts.mapIndexedNotNull { draftIndex, draft ->
@@ -246,14 +246,14 @@ internal class PrAnalysis(
         require(signal.id !in stored) { "Duplicate signal" }
         val source = signal.source
         require(
-          source is EdictNextSignalSource.FromPR && source.prNumber == item.pr.number &&
+          source is EdictSignalSource.FromPR && source.prNumber == item.pr.number &&
             source.title == item.pr.title && source.url == item.thread.reviewDiscussionUrl,
         ) { "Signal source must preserve prepared PR number, title and discussion URL" }
         require(source.discussionMessages == item.thread.messages.map(ReviewMessage::body)) {
           "Preserve all prepared discussion messages in order"
         }
         require(
-          if (signal.label == EdictNextSignalLabel.NEGATIVE) signal.fileRevision.revision == item.pr.headRevision
+          if (signal.label == EdictSignalLabel.NEGATIVE) signal.fileRevision.revision == item.pr.headRevision
           else signal.fileRevision.revision in listOf(item.pr.baseRevision, item.thread.originalCommitSha),
         ) { "Evidence revision does not match its PR side" }
         stored[signal.id] = signal
@@ -290,7 +290,7 @@ internal class PrAnalysis(
   private fun recordPairs(
     drafts: List<PrSignalDraft>,
     draftSignalIds: Map<Int, String>,
-    stored: Map<String, EdictNextSignal>,
+    stored: Map<String, EdictSignal>,
   ): List<String> = drafts.withIndex()
     .filter { it.value.correction != null }
     .groupBy { it.value.workItemId to it.value.correction }
@@ -298,7 +298,7 @@ internal class PrAnalysis(
       val ids = members.map { draftSignalIds[it.index]?.takeIf(stored::containsKey) }
       val reason = when {
         members.size != 2 -> "${members.size} draft(s) share it"
-        members.map { it.value.label }.toSet() != EdictNextSignalLabel.entries.toSet() ->
+        members.map { it.value.label }.toSet() != EdictSignalLabel.entries.toSet() ->
           "its drafts are not one POSITIVE and one NEGATIVE"
         members.map { with(it.value.diff) { listOf(before, after, beforePath, afterPath) } }.distinct().size != 1 ->
           "its drafts name different diffs"
@@ -325,14 +325,14 @@ internal class PrAnalysis(
    * Builds the draft's `FromPR` source from its prepared work item, with the canonical diff of its diff snapshots cut to
    * the excerpt around its lines, so the worker copies none of it.
    */
-  private fun complete(draft: PrSignalDraft, key: String, chunk: List<PrItem>, batchId: String): EdictNextSignal {
+  private fun complete(draft: PrSignalDraft, key: String, chunk: List<PrItem>, batchId: String): EdictSignal {
     val item = chunk.firstOrNull { it.workItemId == draft.workItemId } ?: error("Signal work item does not belong to this chunk")
     val diff = draft.diff
     require(diff.before in listOf(item.pr.baseRevision, item.thread.originalCommitSha) && diff.after == item.pr.headRevision) {
       "Diff must compare prepared base/comment revision to head"
     }
     val (evidenceRevision, evidencePath) =
-      if (draft.label == EdictNextSignalLabel.POSITIVE) diff.before to diff.beforePath else diff.after to diff.afterPath
+      if (draft.label == EdictSignalLabel.POSITIVE) diff.before to diff.beforePath else diff.after to diff.afterPath
     require(draft.fileRevision.path == evidencePath) { "Signal path must match its diff side" }
     require(draft.fileRevision.revision == evidenceRevision) { "Signal revision must match its diff side" }
     val canonical = reviews().diff(diff.before, diff.after, diff.beforePath, diff.afterPath)
@@ -341,11 +341,11 @@ internal class PrAnalysis(
       diff.relatedBeforeRanges, diff.relatedAfterRanges,
     )
       ?: error("The changes at the Signal's lines do not fit ${SignalValidation.MAX_DIFF_CHARS} characters; narrow its ranges")
-    return EdictNextSignal(
+    return EdictSignal(
       id = stableSignalId(key),
       idempotencyKey = key,
       fileRevision = draft.fileRevision,
-      source = EdictNextSignalSource.FromPR(
+      source = EdictSignalSource.FromPR(
         prNumber = item.pr.number,
         title = item.pr.title,
         discussionMessages = item.thread.messages.map(ReviewMessage::body),
@@ -355,7 +355,7 @@ internal class PrAnalysis(
       label = draft.label,
       description = draft.description,
       strength = draft.strength,
-      provenance = EdictNextSignalProvenance(draft.workItemId, batchId),
+      provenance = EdictSignalProvenance(draft.workItemId, batchId),
     )
   }
 
@@ -364,7 +364,7 @@ internal class PrAnalysis(
     val failedChunkIndexes = batch.chunks.indices.filterNot(batch.storedChunks::containsKey)
     val stored = batch.storedChunks.toSortedMap().values
     val validated = stored.flatMap { it.signals.values }
-    require(validated.distinctBy(EdictNextSignal::id).size == validated.size) {
+    require(validated.distinctBy(EdictSignal::id).size == validated.size) {
       "Duplicate Signal IDs across stored PR chunks"
     }
     val publications = validated.map { store.publishSignal(token, it) }
@@ -436,7 +436,7 @@ internal class PrAnalysis(
     val code = anchor?.let { lines ->
       runCatching {
         val content = reviews().file(thread.originalCommitSha, thread.filePath)
-        numberedLines(content, EdictNextLineRange(lines.first, lines.last), CODE_RADIUS)
+        numberedLines(content, EdictLineRange(lines.first, lines.last), CODE_RADIUS)
       }.onFailure { notes += "commented code unavailable: ${it.message}" }.getOrNull()
     }
     return PrItemEvidence(

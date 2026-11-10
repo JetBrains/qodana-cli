@@ -72,7 +72,7 @@ class NativeReportTest {
         assertEquals("NotClustered", generationOutcome(emptyList(), emptyMap()))
         assertEquals("PartiallyGenerated", generationOutcome(listOf("a", "b"), mapOf("a" to "Generated", "b" to "Pending")))
     }
-    @Test fun `cluster outcomes read Edict Next manifests and legacy descriptions`() {
+    @Test fun `cluster outcomes read Edict manifests and legacy descriptions`() {
         root.resolve("clusters/next").createDirectories().resolve("cluster.json").writeText("""{"status":"Generated"}""")
         root.resolve("clusters/legacy").createDirectories().resolve("description.json").writeText("""{"status":"Pending"}""")
         val clusters = mapOf("Rule" to listOf("next", "legacy"))

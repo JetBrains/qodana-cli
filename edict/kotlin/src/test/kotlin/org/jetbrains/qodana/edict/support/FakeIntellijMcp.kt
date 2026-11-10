@@ -2,12 +2,12 @@
 package org.jetbrains.qodana.edict.support
 
 import kotlinx.serialization.json.JsonObject
-import org.jetbrains.qodana.edict.edictnext.InspectionKtsBatchRunResult
-import org.jetbrains.qodana.edict.edictnext.InspectionKtsClient
-import org.jetbrains.qodana.edict.edictnext.InspectionKtsCompileResult
-import org.jetbrains.qodana.edict.edictnext.InspectionKtsExampleRequest
-import org.jetbrains.qodana.edict.edictnext.InspectionKtsProjectRunResult
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerLifecycle
+import org.jetbrains.qodana.edict.core.InspectionKtsBatchRunResult
+import org.jetbrains.qodana.edict.core.InspectionKtsClient
+import org.jetbrains.qodana.edict.core.InspectionKtsCompileResult
+import org.jetbrains.qodana.edict.core.InspectionKtsExampleRequest
+import org.jetbrains.qodana.edict.core.InspectionKtsProjectRunResult
+import org.jetbrains.qodana.edict.core.IntellijMcpServerLifecycle
 import java.net.URI
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger

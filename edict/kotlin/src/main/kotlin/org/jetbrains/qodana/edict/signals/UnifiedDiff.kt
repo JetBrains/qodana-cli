@@ -6,15 +6,15 @@ import org.eclipse.jgit.diff.DiffFormatter
 import org.eclipse.jgit.diff.RawText
 import org.eclipse.jgit.diff.RawTextComparator
 import org.eclipse.jgit.util.QuotedString
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import java.io.ByteArrayOutputStream
 
 /** Strict ordinary Git unified-diff parsing, without IntelliJ PatchReader. Counts distinguish headers from source. */
 object UnifiedDiff {
     data class Changes(val before: Map<String, List<Int>>, val after: Map<String, List<Int>>) {
-        fun side(label: EdictNextSignalLabel): Map<String, List<Int>> =
-            if (label == EdictNextSignalLabel.POSITIVE) before else after
+        fun side(label: EdictSignalLabel): Map<String, List<Int>> =
+            if (label == EdictSignalLabel.POSITIVE) before else after
     }
 
     private val hunk = Regex("^@@ -(\\d+)(?:,(\\d+))? \\+(\\d+)(?:,(\\d+))? @@.*")
@@ -75,15 +75,15 @@ object UnifiedDiff {
      */
     fun excerpt(
         diff: String,
-        label: EdictNextSignalLabel,
-        ranges: List<EdictNextLineRange>,
+        label: EdictSignalLabel,
+        ranges: List<EdictLineRange>,
         maxChars: Int,
-        relatedBefore: List<EdictNextLineRange> = emptyList(),
-        relatedAfter: List<EdictNextLineRange> = emptyList(),
+        relatedBefore: List<EdictLineRange> = emptyList(),
+        relatedAfter: List<EdictLineRange> = emptyList(),
     ): String? {
         val header = diff.lineSequence().takeWhile { !it.startsWith("@@") }.joinToString("") { "$it\n" }
         val lines = parseDiff(diff).hunks.flatMapIndexed { hunk, it -> it.lines.map { line -> hunk to line } }
-        val positive = label == EdictNextSignalLabel.POSITIVE
+        val positive = label == EdictSignalLabel.POSITIVE
         val focus = lines.indices.filter { i ->
             lines[i].second.isOnSide(positive) && ranges.any { lines[i].second.number(positive) in it.start..it.end }
         }
