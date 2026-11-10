@@ -35,4 +35,18 @@ class SignalValidationTest {
     )
     assertFailsWith<IllegalArgumentException> { SignalValidation.validate(unrepresented) }
   }
+
+  @Test
+  fun `a finding users rated on GitHub needs the comment it was rated on`() {
+    val rated = signal("").copy(
+      source = EdictNextSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", url = "", replies = emptyList()),
+    )
+
+    val failure = assertFailsWith<IllegalArgumentException> { SignalValidation.validate(rated) }
+
+    assertEquals(
+      "Invalid signal 'inbox/${rated.id}.json': source: GitHubEvaluatedFinding requires inspectionName, problemMessage and url",
+      failure.message,
+    )
+  }
 }

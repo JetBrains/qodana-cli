@@ -30,7 +30,7 @@ internal class GitOrigin(private val directory: Path) {
   fun publishState(name: String, files: Map<String, String>) {
     val project = clone(name)
     val state = StateBranch(EdictLayout(project, project.resolve(".edict")), DEFAULT_EDICT_STATE_BRANCH)
-    state.checkOut()
+    state.checkOut(shallow = false)
     files.forEach { (file, content) -> project.resolve(".edict").resolve(file).apply { parent.createDirectories() }.writeText(content) }
     state.worktree().push("Run 1")
   }
@@ -41,7 +41,7 @@ internal class GitOrigin(private val directory: Path) {
    */
   fun raceNextStatePush(name: String, files: Map<String, String>) {
     val project = clone(name)
-    StateBranch(EdictLayout(project, project.resolve(".edict")), DEFAULT_EDICT_STATE_BRANCH).checkOut()
+    StateBranch(EdictLayout(project, project.resolve(".edict")), DEFAULT_EDICT_STATE_BRANCH).checkOut(shallow = false)
     val state = project.resolve(".edict")
     files.forEach { (file, content) -> state.resolve(file).apply { parent.createDirectories() }.writeText(content) }
     git(state, "add", "--all")

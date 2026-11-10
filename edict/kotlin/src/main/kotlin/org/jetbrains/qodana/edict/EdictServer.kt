@@ -29,6 +29,7 @@ import org.jetbrains.qodana.edict.feedback.GitHubFeedbackApi
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
+import java.time.Clock
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -106,7 +107,7 @@ internal class EdictServer private constructor(
           PromotionService(repository, configuration, promotionReviews, store, executionBranch = {
             GitRepository(layout.root).currentBranch()
           }),
-          feedbackApi?.let { FeedbackMcpToolset(management, FeedbackSignals(FeedbackRecords(paths), it, store)) },
+          feedbackApi?.let { FeedbackMcpToolset(management, FeedbackSignals(FeedbackRecords(paths), it, store, Clock.systemUTC())) },
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
           mcpStreamableHttp { toolset.createServer() }

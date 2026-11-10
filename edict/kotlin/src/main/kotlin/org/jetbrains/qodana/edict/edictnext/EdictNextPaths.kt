@@ -13,7 +13,7 @@ internal data class EdictRepositoryDirectory(val root: Path) {
   /** Findings reserved for review comments that await an answer, one `<record id>.json` each. */
   val activeFeedbackDirectory: Path = root.resolve("feedback").resolve("active")
 
-  /** Answered or abandoned feedback records, in a `<yyyy-MM>` directory of the month they left [activeFeedbackDirectory]. */
+  /** Answered or abandoned feedback records, in a `<yyyy-MM>` directory of the month they were reserved in. */
   val feedbackHistoryDirectory: Path = root.resolve("feedback").resolve("history")
 
   fun weakSignalPromotionHistoryPath(clusterId: String): Path {

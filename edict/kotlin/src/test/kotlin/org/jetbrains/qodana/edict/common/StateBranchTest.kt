@@ -25,7 +25,7 @@ class StateBranchTest {
   fun `starts the branch without history when origin has none, out of the project's status`() {
     val project = origin.clone("project")
 
-    val checkout = state(project).checkOut()
+    val checkout = state(project).checkOut(shallow = false)
 
     assertEquals(StateCheckout.NewBranch, checkout)
     assertEquals("Start the Edict state\n", git(project, "log", "--format=%s", BRANCH))
@@ -42,7 +42,7 @@ class StateBranchTest {
     // Git would otherwise guess an identity from the system.
     git(project, "config", "user.useConfigOnly", "true")
 
-    val checkout = state(project).checkOut()
+    val checkout = state(project).checkOut(shallow = false)
 
     assertEquals(StateCheckout.NewBranch, checkout)
     assertEquals("Qodana Edict <qodana-support@jetbrains.com>\n", git(project, "log", "--format=%an <%ae>", BRANCH))
@@ -53,7 +53,7 @@ class StateBranchTest {
     origin.publishState("first", mapOf("clusters/c.json" to "{}"))
     val project = origin.clone("second")
 
-    val checkout = state(project).checkOut()
+    val checkout = state(project).checkOut(shallow = false)
 
     assertEquals(StateCheckout.FromOrigin, checkout)
     assertEquals("{}", project.resolve(".edict/clusters/c.json").readText())
@@ -64,10 +64,46 @@ class StateBranchTest {
     origin.publishState("first", mapOf("clusters/c.json" to "{}"))
     val project = origin.clone("second", "--single-branch")
 
-    val checkout = state(project).checkOut()
+    val checkout = state(project).checkOut(shallow = false)
 
     assertEquals(StateCheckout.FromOrigin, checkout)
     assertEquals("{}", project.resolve(".edict/clusters/c.json").readText())
+  }
+
+  @Test
+  fun `a shallow checkout takes only the last commit of the branch that origin has`() {
+    origin.publishState("first", mapOf("clusters/c.json" to "{}"))
+    origin.publishState("again", mapOf("clusters/d.json" to "{}"))
+    val project = origin.clone("second", "--single-branch")
+
+    val checkout = state(project).checkOut(shallow = true)
+
+    assertEquals(StateCheckout.FromOrigin, checkout)
+    assertEquals("Run 1\n", git(project.resolve(".edict"), "log", "--format=%s"))
+  }
+
+  @Test
+  fun `remove drops the worktree and the local branch, while origin keeps the state`() {
+    origin.publishState("first", mapOf("clusters/c.json" to "{}"))
+    val project = origin.clone("second")
+    state(project).checkOut(shallow = true)
+
+    state(project).remove()
+
+    assertFalse(project.resolve(".edict").exists())
+    assertEquals("", git(project, "branch", "--list", BRANCH))
+    val worktrees = git(project, "worktree", "list", "--porcelain").lines().filter { it.startsWith("worktree ") }
+    assertEquals(listOf("worktree $project"), worktrees)
+  }
+
+  @Test
+  fun `remove keeps a state directory that is no worktree`() {
+    val project = origin.clone("project")
+    project.resolve(".edict").createDirectories().resolve("c.json").writeText("{}")
+
+    state(project).remove()
+
+    assertEquals("{}", project.resolve(".edict/c.json").readText())
   }
 
   @Test
@@ -76,43 +112,43 @@ class StateBranchTest {
     git(other, "push", "--quiet", "origin", "HEAD:refs/heads/x/$BRANCH")
     val project = origin.clone("project")
 
-    assertEquals(StateCheckout.NewBranch, state(project).checkOut())
+    assertEquals(StateCheckout.NewBranch, state(project).checkOut(shallow = false))
   }
 
   @Test
   fun `checks out the local branch of a removed worktree`() {
     val project = origin.clone("project")
-    state(project).checkOut()
+    state(project).checkOut(shallow = false)
     git(project, "worktree", "remove", ".edict")
 
-    assertEquals(StateCheckout.LocalBranch, state(project).checkOut())
+    assertEquals(StateCheckout.LocalBranch, state(project).checkOut(shallow = false))
   }
 
   @Test
   fun `checks out the local branch again after the state directory was deleted by hand`() {
     val project = origin.clone("project")
-    state(project).checkOut()
+    state(project).checkOut(shallow = false)
     project.resolve(".edict").toFile().deleteRecursively()
 
-    assertEquals(StateCheckout.LocalBranch, state(project).checkOut())
+    assertEquals(StateCheckout.LocalBranch, state(project).checkOut(shallow = false))
     assertEquals(BRANCH, git(project.resolve(".edict"), "symbolic-ref", "--short", "HEAD").trim())
   }
 
   @Test
   fun `keeps an existing checkout`() {
     val project = origin.clone("project")
-    state(project).checkOut()
+    state(project).checkOut(shallow = false)
 
-    assertEquals(StateCheckout.Existing, state(project).checkOut())
+    assertEquals(StateCheckout.Existing, state(project).checkOut(shallow = false))
   }
 
   @Test
   fun `keeps an existing checkout of another branch, and says it is not the state branch`() {
     val project = origin.clone("project")
-    state(project).checkOut()
+    state(project).checkOut(shallow = false)
     git(project.resolve(".edict"), "switch", "--quiet", "-c", "other")
 
-    assertEquals(StateCheckout.OtherBranch("other"), state(project).checkOut())
+    assertEquals(StateCheckout.OtherBranch("other"), state(project).checkOut(shallow = false))
   }
 
   @Test
@@ -120,7 +156,7 @@ class StateBranchTest {
     val project = origin.clone("project")
     val exclude = project.resolve(".git/info/exclude").apply { writeText("*.log") }
 
-    state(project).checkOut()
+    state(project).checkOut(shallow = false)
 
     assertEquals("*.log\n/.edict/\n", exclude.readText())
   }
@@ -129,7 +165,7 @@ class StateBranchTest {
   fun `refuses a project outside a git repository`() {
     val project = directory.resolve("plain").createDirectories().toRealPath()
 
-    val error = assertFailsWith<IllegalStateException> { state(project).checkOut() }
+    val error = assertFailsWith<IllegalStateException> { state(project).checkOut(shallow = false) }
 
     assertEquals("$project is not a git repository; Edict keeps its state on a branch of the project's", error.message)
   }
@@ -139,7 +175,7 @@ class StateBranchTest {
     val project = origin.clone("project")
     project.resolve(".edict").createDirectories().resolve("plan.json").writeText("{}")
 
-    val checkout = state(project).checkOut()
+    val checkout = state(project).checkOut(shallow = false)
 
     assertEquals(StateCheckout.PlainDirectory, checkout)
   }
@@ -156,7 +192,7 @@ class StateBranchTest {
   fun `push rebases onto the state that another run pushed first`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     origin.publishState("third", mapOf("third.json" to "3"))
     second.resolve(".edict/second.json").writeText("2")
 
@@ -170,7 +206,7 @@ class StateBranchTest {
   fun `push rebases again when another run pushes between its rebase and its push`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     origin.raceNextStatePush("other", mapOf("other.json" to "o"))
     second.resolve(".edict/second.json").writeText("2")
 
@@ -183,7 +219,7 @@ class StateBranchTest {
   fun `push fails when origin refuses it for another reason than another run's push`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     failingHook(origin.path, "pre-receive")
     second.resolve(".edict/second.json").writeText("2")
 
@@ -197,7 +233,7 @@ class StateBranchTest {
   fun `push commits and rebases where no git identity is configured`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     origin.publishState("third", mapOf("third.json" to "3"))
     git(second, "config", "--unset", "user.name")
     git(second, "config", "--unset", "user.email")
@@ -214,7 +250,7 @@ class StateBranchTest {
   fun `push runs none of the project's hooks`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     origin.publishState("third", mapOf("third.json" to "3"))
     listOf("pre-commit", "commit-msg", "pre-rebase", "pre-push").forEach { failingHook(second, it) }
     second.resolve(".edict/second.json").writeText("2")
@@ -228,7 +264,7 @@ class StateBranchTest {
   fun `a push that conflicts with the state another run pushed fails and leaves the worktree on its branch`() {
     origin.publishState("first", mapOf("plan.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     origin.publishState("third", mapOf("plan.json" to "3"))
     second.resolve(".edict/plan.json").writeText("2")
 
@@ -257,7 +293,7 @@ class StateBranchTest {
   fun `reset takes the branch as origin has it, without the commits of the checkout`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     second.resolve(".edict/local.json").writeText("2")
     git(second.resolve(".edict"), "add", "--all")
     git(second.resolve(".edict"), "commit", "--quiet", "-m", "Local")
@@ -273,7 +309,7 @@ class StateBranchTest {
   fun `reset refuses a checkout with uncommitted changes, which it would lose`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     second.resolve(".edict/local.json").writeText("2")
 
     val failure = assertFailsWith<IllegalStateException> { state(second).worktree().resetToOrigin() }
@@ -285,7 +321,7 @@ class StateBranchTest {
   fun `publish pushes the changes onto the branch as reset took it`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     val worktree = state(second).worktree()
     val base = worktree.resetToOrigin()
     second.resolve(".edict/second.json").writeText("2")
@@ -300,7 +336,7 @@ class StateBranchTest {
   fun `publish reports a push that lost to another run's, leaving origin as that run made it`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     val worktree = state(second).worktree()
     val base = worktree.resetToOrigin()
     origin.raceNextStatePush("other", mapOf("other.json" to "o"))
@@ -316,7 +352,7 @@ class StateBranchTest {
   fun `publish fails when origin refuses the push for another reason`() {
     origin.publishState("first", mapOf("first.json" to "1"))
     val second = origin.clone("second")
-    state(second).checkOut()
+    state(second).checkOut(shallow = false)
     val worktree = state(second).worktree()
     val base = worktree.resetToOrigin()
     failingHook(origin.path, "pre-receive")

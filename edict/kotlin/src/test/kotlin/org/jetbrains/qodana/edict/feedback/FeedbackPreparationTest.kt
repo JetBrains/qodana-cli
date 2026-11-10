@@ -59,6 +59,16 @@ class FeedbackPreparationTest {
   }
 
   @Test
+  fun `checks nothing out when origin has no state, which the routine has not published yet`() {
+    origin.clone("routine")
+
+    prepare(OWN_PULL_REQUEST)
+
+    assertFalse(stateDirectory.exists())
+    assertFalse(outputDirectory.exists())
+  }
+
+  @Test
   fun `refuses an output directory inside the project`() {
     val project = origin.clone("ci")
     val output = project.resolve("feedback")

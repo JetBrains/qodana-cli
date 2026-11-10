@@ -2,12 +2,18 @@
 
 ## Existing submitted feedback
 
-The inbox can already contain `SubmittedFeedback` records supplied with the project. Process these in place, preserving
-their original fields and IDs. The checked-in format uses a 12-digit hexadecimal signal ID and source fields
-`inspectionName`, `inspectionDescription`, `codeSnippet`, `reason`, and `suggestionId`; `suggestionId` is its stable
-source reference. This format has no `idempotencyKey`, `provenance`, or correcting diff. The alternative feedback format
-uses `source.message`, `source.url`, `idempotencyKey`, and `provenance`. Both carry an exact `fileRevision`, label, and
-description. Do not invent missing commit/PR metadata or convert existing feedback into extracted commit signals.
+The inbox can already contain `SubmittedFeedback` records supplied with the project. The checked-in format uses a
+12-digit hexadecimal signal ID and source fields `inspectionName`, `inspectionDescription`, `codeSnippet`, `reason`, and
+`suggestionId`; `suggestionId` is its stable source reference. This format has no `idempotencyKey`, `provenance`, or
+correcting diff. The alternative feedback format uses `source.message`, `source.url`, `idempotencyKey`, and
+`provenance`.
+
+The inbox also gets `GitHubEvaluatedFinding` Signals: findings of not yet promoted inspections that users rated with 👍
+(POSITIVE) or 👎 (NEGATIVE) on Edict's GitHub review comments, with `source.url` the comment and `source.replies` its
+replies as written.
+
+Process all of them in place, preserving their original fields and IDs. Each carries an exact `fileRevision`, label,
+and description. Do not invent missing commit/PR metadata or convert existing feedback into extracted commit signals.
 
 ## Extracting commit and PR signals
 

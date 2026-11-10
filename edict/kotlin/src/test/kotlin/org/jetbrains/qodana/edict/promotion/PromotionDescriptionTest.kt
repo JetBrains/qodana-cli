@@ -101,6 +101,18 @@ internal class PromotionDescriptionTest {
   }
 
   @Test
+  fun `a finding users confirmed on GitHub is cited by its review comment`() {
+    val comment = "https://github.com/JetBrains/qodana-cli/pull/7#discussion_r11"
+    val source = EdictNextSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", comment, emptyList())
+    val cluster = repository.store(referencedCluster().withSources(source))
+
+    assertEquals(
+      "1. Confirmed: \"positive 0\" in [a review comment]($comment).",
+      cluster.description().lines().first { it.startsWith("1. ") },
+    )
+  }
+
+  @Test
   fun `a commit signal without a URL links the old lines of its commit in the Space CI repository`() {
     val cluster = repository.store(referencedCluster().withSources(EdictNextSignalSource.FromCommit(COMMIT_REVISION)))
 

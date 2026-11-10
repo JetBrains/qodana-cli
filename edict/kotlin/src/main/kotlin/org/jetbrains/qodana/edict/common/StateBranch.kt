@@ -5,6 +5,7 @@ import java.nio.file.Path
 import kotlin.io.path.appendText
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.readText
 
@@ -20,9 +21,9 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
 
   /**
    * Checks [branch] out at the state directory, unless the directory already holds a state; fails outside a git
-   * repository, where Edict cannot work.
+   * repository, where Edict cannot work. A [shallow] checkout takes only the last commit of the branch from origin.
    */
-  fun checkOut(): StateCheckout {
+  fun checkOut(shallow: Boolean): StateCheckout {
     if (checkedOut) return head().let { if (it == branch) StateCheckout.Existing else StateCheckout.OtherBranch(it) }
     check(isGitWorkTree(project)) { "$project is not a git repository; Edict keeps its state on a branch of the project's" }
     if (stateDirectory.isDirectory() && stateDirectory.listDirectoryEntries().isNotEmpty()) return StateCheckout.PlainDirectory
@@ -30,7 +31,7 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
     excludeFromProject()
     val checkout = when {
       git(project, "branch", "--list", branch).isNotBlank() -> StateCheckout.LocalBranch
-      fetchFromOrigin(project) -> {
+      fetchFromOrigin(project, shallow) -> {
         // Not tracking: a single-branch clone, as CI checks a project out, has no fetch refspec for the branch.
         git(project, "branch", "--no-track", branch, "origin/$branch")
         StateCheckout.FromOrigin
@@ -57,6 +58,21 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
     val head = head()
     check(head == branch) { "$stateDirectory is on $head, not on edict.stateBranch $branch" }
     return Worktree()
+  }
+
+  /** Whether origin has [branch]; false when the project has no origin. */
+  fun onOrigin(): Boolean =
+    "origin" in git(project, "remote").lines() && git(project, "ls-remote", "origin", "refs/heads/$branch").isNotBlank()
+
+  /**
+   * Removes the worktree of the state directory and the local [branch], dropping what origin does not have; does nothing when
+   * the state directory is no worktree.
+   */
+  fun remove() {
+    // A worktree's `.git` is a file naming the repository; a directory is a repository of its own.
+    if (!stateDirectory.resolve(".git").isRegularFile()) return
+    git(project, "worktree", "remove", "--force", stateDirectory.toString())
+    git(project, "branch", "--quiet", "-D", branch)
   }
 
   fun describe(checkout: StateCheckout): String = when (checkout) {
@@ -99,7 +115,7 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
      */
     fun resetToOrigin(): String {
       check(git(stateDirectory, "status", "--porcelain").isBlank()) { "$stateDirectory has uncommitted changes" }
-      check(fetchFromOrigin(stateDirectory)) { "origin has no $branch" }
+      check(fetchFromOrigin(stateDirectory, shallow = false)) { "origin has no $branch" }
       git(stateDirectory, "reset", "--quiet", "--hard", "origin/$branch")
       return revision("HEAD")
     }
@@ -145,7 +161,7 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
     }
 
     /** The commit origin's branch is on, fetched now; null when origin has no such branch. */
-    private fun originRevision(): String? = if (fetchFromOrigin(stateDirectory)) revision("origin/$branch") else null
+    private fun originRevision(): String? = if (fetchFromOrigin(stateDirectory, shallow = false)) revision("origin/$branch") else null
 
     /** Commits every change with [message], if there is any; Edict's own commits, which the project's hooks are not for. */
     private fun commit(message: String) {
@@ -158,11 +174,14 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
     private fun revision(name: String): String = git(stateDirectory, "rev-parse", "--verify", name).trim()
   }
 
-  /** Fetches [branch] from origin into `origin/<branch>`; false when there is no origin or it has no such branch. */
-  private fun fetchFromOrigin(directory: Path): Boolean {
-    if ("origin" !in git(directory, "remote").lines()) return false
-    if (git(directory, "ls-remote", "origin", "refs/heads/$branch").isBlank()) return false
-    git(directory, "fetch", "--quiet", "--no-tags", "origin", "+refs/heads/$branch:refs/remotes/origin/$branch")
+  /**
+   * Fetches [branch] from origin into `origin/<branch>`, only its last commit when [shallow]; false when there is no origin or
+   * it has no such branch.
+   */
+  private fun fetchFromOrigin(directory: Path, shallow: Boolean): Boolean {
+    if (!onOrigin()) return false
+    val depth = if (shallow) listOf("--depth", "1") else emptyList()
+    git(directory, "fetch", "--quiet", "--no-tags", *depth.toTypedArray(), "origin", "+refs/heads/$branch:refs/remotes/origin/$branch")
     return true
   }
 

@@ -98,14 +98,15 @@ internal fun promotionDescription(
     appendLine("## Evidence")
     appendLine()
     selected.forEachIndexed { index, signal ->
-      val url = when (val source = signal.source) {
+      val citation = when (val source = signal.source) {
         is EdictNextSignalSource.FromPR -> {
           val sourceUri = URI(source.url)
-          if (ci?.provider == CiProviderId.SPACE && sourceUri.host?.lowercase() == ci.host) {
+          val url = if (ci?.provider == CiProviderId.SPACE && sourceUri.host?.lowercase() == ci.host) {
             val project = Regex("/p/([^/]+)/").find(sourceUri.path)?.groupValues?.get(1) ?: ci.owner
             "${sourceUri.scheme}://${sourceUri.rawAuthority}/p/$project/reviews/${source.prNumber}"
           }
           else source.url
+          Citation("Fixed", "PR #${source.prNumber}", url)
         }
         is EdictNextSignalSource.FromCommit -> {
           val commitUrl = source.url?.takeIf { it.isNotBlank() } ?: run {
@@ -116,7 +117,7 @@ internal fun promotionDescription(
             }
           }
           val uri = URI(commitUrl)
-          if (Regex("/p/[^/]+/repositories/[^/]+/revision/").containsMatchIn(uri.path)) {
+          val url = if (Regex("/p/[^/]+/repositories/[^/]+/revision/").containsMatchIn(uri.path)) {
             val file = URLEncoder.encode(signal.fileRevision.path, Charsets.UTF_8)
             val range = checkNotNull(signal.fileRevision.expectedRanges).first()
             // Historical evidence describes the problematic code on the old side of the fix.
@@ -124,24 +125,25 @@ internal fun promotionDescription(
               if (range.end == range.start) "" else "&to-line=OLD:${range.end}"
           }
           else commitUrl
+          Citation("Fixed", source.commitRevision.take(7), url)
         }
+        is EdictNextSignalSource.GitHubEvaluatedFinding -> Citation("Confirmed", "a review comment", source.url)
         is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> error("Unsupported promotion evidence")
       }
-      val linkText = when (val source = signal.source) {
-        is EdictNextSignalSource.FromPR -> "PR #${source.prNumber}"
-        is EdictNextSignalSource.FromCommit -> source.commitRevision.take(7)
-        is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> error("Unsupported promotion evidence")
-      }
-      appendLine("${index + 1}. Fixed: \"${signal.description.markdownText()}\" in [$linkText]($url).")
+      appendLine("${index + 1}. ${citation.verb}: \"${signal.description.markdownText()}\" in [${citation.linkText}](${citation.url}).")
       appendLine()
     }
   }
 }
 
+/** How a promotion PR cites one Signal: what was done with the code ([verb]), and the [url] it links as [linkText]. */
+private data class Citation(val verb: String, val linkText: String, val url: String)
+
 internal fun EdictNextSignal.referenceUrl(ci: ReviewRepository?): String? {
   val originUrl = when (val origin = source) {
     is EdictNextSignalSource.FromPR -> origin.url
     is EdictNextSignalSource.FromCommit -> origin.url?.takeIf { it.isNotBlank() } ?: ci?.webUrl()
+    is EdictNextSignalSource.GitHubEvaluatedFinding -> origin.url
     is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> null
   } ?: return null
   val originUri = runCatching { URI(originUrl) }.getOrNull() ?: return null

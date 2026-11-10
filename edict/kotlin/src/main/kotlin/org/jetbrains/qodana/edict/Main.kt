@@ -153,7 +153,7 @@ private fun install(qodanaYaml: Path?, deniedPaths: List<Path>) {
     val layout = EdictLayout.get(configuration.statePath)
     CodexSetup.install(layout, deniedPaths, EdictConfig(configuration.mcpPort))
     val stateBranch = StateBranch(layout, configuration.stateBranch)
-    val checkout = stateBranch.checkOut()
+    val checkout = stateBranch.checkOut(shallow = false)
     logger.info { stateBranch.describe(checkout) }
 }
 

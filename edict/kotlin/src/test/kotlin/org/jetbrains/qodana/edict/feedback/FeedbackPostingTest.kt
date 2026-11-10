@@ -32,9 +32,11 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import kotlin.io.path.exists
 import kotlin.io.path.writeText
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 class FeedbackPostingTest {
   @TempDir
@@ -49,6 +51,16 @@ class FeedbackPostingTest {
     run.post(FILES_ADDING_3, comment(RECORD) answeredWith answer(201, POSTED))
 
     assertEquals(mapOf(RECORD.id to RECORD), activeRecordsOnOrigin())
+  }
+
+  @Test
+  fun `removes the checkout of the state once it commented, which the next run takes from origin again`() {
+    val run = preparedRun()
+
+    run.post(FILES_ADDING_3, comment(RECORD) answeredWith answer(201, POSTED))
+
+    assertFalse(run.layout.stateDirectory.exists())
+    assertEquals("", git(run.layout.root, "branch", "--list", DEFAULT_EDICT_STATE_BRANCH))
   }
 
   @Test
@@ -103,6 +115,15 @@ class FeedbackPostingTest {
     assertEquals(state, stateOnOrigin())
   }
 
+  @Test
+  fun `removes the checkout of the state when the post fails too`() {
+    val run = preparedRun(report = sarifReport(internalResult("rule", "src/Main.kt", startLine = 3), revision = ""))
+
+    assertFailsWith<IllegalStateException> { run.post() }
+
+    assertFalse(run.layout.stateDirectory.exists())
+  }
+
   /**
    * A CI run of [OWN_PULL_REQUEST] after `prepare` selected cluster `rule`, in [layout]: its state checked out outside the
    * project, and its scan of [HEAD_REVISION] wrote [sarif].
@@ -120,7 +141,7 @@ class FeedbackPostingTest {
     origin.publishState("routine", stateFiles(directory.resolve("routine-state"), ClusterFixture(emptyList())))
     val project = origin.clone("ci")
     val layout = EdictLayout(project, directory.resolve("state"))
-    StateBranch(layout, DEFAULT_EDICT_STATE_BRANCH).checkOut()
+    StateBranch(layout, DEFAULT_EDICT_STATE_BRANCH).checkOut(shallow = true)
     val sarif = directory.resolve("qodana.sarif.json").apply { writeText(report) }
     return Run(layout, sarif)
   }

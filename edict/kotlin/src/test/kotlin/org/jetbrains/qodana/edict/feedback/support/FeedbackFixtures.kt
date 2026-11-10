@@ -28,6 +28,7 @@ import org.jetbrains.qodana.edict.promotion.support.promotionRepository
 import org.jetbrains.qodana.edict.promotion.support.store
 import kotlinx.serialization.json.JsonNull
 import java.nio.file.Path
+import java.time.Instant
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.io.path.relativeTo
@@ -83,26 +84,51 @@ internal fun stateFiles(directory: Path, cluster: ClusterFixture): Map<String, S
   return state.walk().filter(Path::isRegularFile).associate { it.relativeTo(state).toString() to it.readText() }
 }
 
+/** The endpoint of the pull requests of [PROJECT]. */
+private val PULLS_ENDPOINT = "/repos/${PROJECT.owner}/${PROJECT.repository}/pulls"
+
 /** The pull request endpoint of [PULL_REQUEST]. */
-private val PULL_REQUEST_ENDPOINT = "/repos/${PROJECT.owner}/${PROJECT.repository}/pulls/${PULL_REQUEST.id}"
+private val PULL_REQUEST_ENDPOINT = "$PULLS_ENDPOINT/${PULL_REQUEST.id}"
 
 /** The first page of the files of [PULL_REQUEST]. */
 internal val PULL_REQUEST_FILES = ProviderRequest("GET", "$PULL_REQUEST_ENDPOINT/files", mapOf("per_page" to "100", "page" to "1"))
 
-/** The read of [PULL_REQUEST] itself, which says its state. */
-internal val PULL_REQUEST_READ = ProviderRequest("GET", PULL_REQUEST_ENDPOINT)
+/** When the fixture routine collects the answers: the records it keeps waiting are of pull requests updated since a week. */
+internal val COLLECTED_AT: Instant = Instant.parse("2026-11-10T12:00:00Z")
+
+/** Page [page] of the pull requests of [PROJECT], the most recently updated first. */
+internal fun recentPullRequests(page: Int = 1): ProviderRequest = ProviderRequest(
+  "GET",
+  PULLS_ENDPOINT,
+  mapOf("state" to "all", "sort" to "updated", "direction" to "desc", "per_page" to "100", "page" to "$page"),
+)
+
+/** Pull request [number] of [PROJECT] as GitHub lists it in [state], `open` or `closed`, last updated at [updatedAt]. */
+internal fun listedPullRequest(number: Int, state: String, updatedAt: String = "2026-11-09T08:00:00Z"): String = buildJsonObject {
+  put("number", number)
+  put("state", state)
+  put("updated_at", updatedAt)
+  put("html_url", pullRequest(number).url)
+}.toString()
+
+/** The first page of the review comments of [pullRequest]. */
+internal fun commentsOf(pullRequest: ReviewReference): ProviderRequest = ProviderRequest(
+  "GET",
+  "$PULLS_ENDPOINT/${pullRequest.id}/comments",
+  mapOf("per_page" to "100", "page" to "1"),
+)
 
 /** The first page of the review comments of [PULL_REQUEST]. */
-internal val PULL_REQUEST_COMMENTS = ProviderRequest("GET", "$PULL_REQUEST_ENDPOINT/comments", mapOf("per_page" to "100", "page" to "1"))
+internal val PULL_REQUEST_COMMENTS = commentsOf(PULL_REQUEST)
 
-/** The web page of the review comment [id] of [PULL_REQUEST]. */
-internal fun commentUrl(id: Int): String = "${PULL_REQUEST.url}#discussion_r$id"
+/** The web page of the review comment [id] of [pullRequest]. */
+internal fun commentUrl(id: Int, pullRequest: ReviewReference = PULL_REQUEST): String = "${pullRequest.url}#discussion_r$id"
 
-/** The review comment [id] of Edict on [PULL_REQUEST] for [record], with [thumbsUp] 👍 and [thumbsDown] 👎. */
+/** The review comment [id] of Edict on the pull request of [record], with [thumbsUp] 👍 and [thumbsDown] 👎. */
 internal fun edictComment(id: Int, record: FeedbackRecord, thumbsUp: Int = 0, thumbsDown: Int = 0): String = buildJsonObject {
   put("id", id)
   put("body", feedbackComment(record))
-  put("html_url", commentUrl(id))
+  put("html_url", commentUrl(id, record.pullRequest))
   putJsonObject("user") { put("login", "github-actions[bot]") }
   putJsonObject("reactions") {
     put("total_count", thumbsUp + thumbsDown)
@@ -120,11 +146,8 @@ internal fun reply(id: Int, to: Int, login: String, body: String): String = buil
   putJsonObject("user") { put("login", login) }
 }.toString()
 
-/** [PULL_REQUEST] as GitHub reads it in [state], `open` or `closed`. */
-internal fun pullRequestIn(state: String): CiHttpResponse = answer(200, """{"number": 7, "state": "$state"}""")
-
-/** The answer that lists [comments] as the review comments of [PULL_REQUEST]. */
-internal fun reviewComments(vararg comments: String): CiHttpResponse = answer(200, comments.joinToString(",\n", "[", "]"))
+/** The answer that lists [items], such as pull requests or review comments, as one page of a GitHub list. */
+internal fun listAnswer(vararg items: String): CiHttpResponse = answer(200, items.joinToString(",\n", "[", "]"))
 
 /** A call of the feedback client that sends exactly [exchanges], answered as a script has them: no real pull request yet. */
 internal fun feedbackScripted(vararg exchanges: Exchange): Recording<GitHubFeedbackApi> =

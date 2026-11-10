@@ -73,6 +73,14 @@ object SignalValidation {
 
     val diffPositiveToNegative = when (source) {
       is EdictNextSignalSource.SubmittedFeedback -> return signal
+      is EdictNextSignalSource.GitHubEvaluatedFinding -> {
+        field(
+          "source",
+          listOf(source.inspectionName, source.problemMessage, source.url).all(String::isNotBlank),
+          "GitHubEvaluatedFinding requires inspectionName, problemMessage and url",
+        )
+        null
+      }
       is EdictNextSignalSource.FromCommit -> {
         field("source.commitRevision", validRevision(source.commitRevision.orEmpty()), "requires full correcting revision")
         null
@@ -87,7 +95,7 @@ object SignalValidation {
         source.diffPositiveToNegative
       }
       is EdictNextSignalSource.Generated -> {
-        field("source.type", false, "must be FromCommit, FromPR or SubmittedFeedback")
+        field("source.type", false, "must be FromCommit, FromPR, SubmittedFeedback or GitHubEvaluatedFinding")
         null
       }
     }
