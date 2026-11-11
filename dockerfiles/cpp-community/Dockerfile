@@ -49,7 +49,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} main" > /etc/apt/sources.list.d/llvm.list && \
     curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /etc/apt/trusted.gpg.d/llvm.gpg && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "15CF4D18AF4F7421" && \
     apt-get -qq update && \
     apt-get install -qqy -t \
       llvm-toolchain-bookworm-$CLANG \
