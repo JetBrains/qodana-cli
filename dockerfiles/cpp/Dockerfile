@@ -52,7 +52,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} main" > /etc/apt/sources.list.d/llvm.list && \
     curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /etc/apt/trusted.gpg.d/llvm.gpg && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "15CF4D18AF4F7421" && \
     apt-get -qq update && \
     apt-get install -qqy -t \
       llvm-toolchain-bookworm-$CLANG \
@@ -98,11 +97,11 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 ARG QD_RELEASE=""
 ENV QD_VERSION="2026.1" QD_IMAGE="cpp"
 ARG QD_CODE="QDCPP"
-ARG QD_BUILD="261.23048"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.23048.64.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.23048.64-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.23048.64.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.23048.64-aarch64.tar.gz.sha256"
+ARG QD_BUILD="261.25887"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.25887.177.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.25887.177-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.25887.177.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDCPP-261.25887.177-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

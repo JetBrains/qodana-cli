@@ -62,11 +62,11 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 ARG QD_RELEASE=""
 ENV QD_VERSION="2026.1" QD_IMAGE="android"
 ARG QD_CODE="QDAND"
-ARG QD_BUILD="261.23028"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.23028.166.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.23028.166-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.23028.166.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.23028.166-aarch64.tar.gz.sha256"
+ARG QD_BUILD="261.25881"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
@@ -124,8 +124,10 @@ ENV ANDROID_SDK_ROOT="/opt/android-sdk" ANDROID_USER_HOME="$QODANA_DATA/cache/an
 ENV ANDROID_HOME="$ANDROID_SDK_ROOT"
 ENV ANDROID_SDK_TOOLS="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin" QODANA_CORETTO_SDK_11="/root/.jdks/corretto-11" QODANA_CORETTO_SDK_17="/root/.jdks/corretto-17"
 # IDE includes JDK17 by default since 2022, so we need additional JDK for the most projects
-COPY --from=amazoncorretto:11.0.26 /usr/lib/jvm/java-11-amazon-corretto $QODANA_CORETTO_SDK_11
-COPY --from=amazoncorretto:17.0.14 /usr/lib/jvm/java-17-amazon-corretto $QODANA_CORETTO_SDK_17
+COPY --from=amazoncorretto:11.0.33 /usr/lib/jvm/java-11-amazon-corretto $QODANA_CORETTO_SDK_11
+COPY --from=amazoncorretto:17.0.21 /usr/lib/jvm/java-17-amazon-corretto $QODANA_CORETTO_SDK_17
+# Both JDKs link lib/security/cacerts to the Amazon Linux trust store, which is not part of the JDK directories
+COPY --from=amazoncorretto:17.0.21 /etc/pki/ca-trust/extracted/java/cacerts /etc/pki/java/cacerts
 
 ARG ANDROID_SDK_VERSION="9123335"
 ARG ANDROID_SDK_SHA256="0bebf59339eaa534f4217f8aa0972d14dc49e7207be225511073c661ae01da0a"
@@ -144,6 +146,11 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/tools && \
     echo y | ${ANDROID_SDK_TOOLS}/sdkmanager "platforms;android-${ANDROID_API_LEVEL}" && \
     chmod 777 -R $ANDROID_SDK_ROOT $HOME/.jdks/ && \
+    distrusted_roots='SHA256: (86:A1:EC:BA:08:9C:4A:8D:3B:BE:27:34:C6:12:BA:34:1D:81:3E:04:3C:F9:E8:A8:62:CD:5C:57:A3:6B:BE:6B|D7:A7:A0:FB:5D:7E:27:31:D7:71:E9:48:4E:BC:DE:F7:1D:5F:0C:3E:0A:29:48:78:2B:C8:3E:E0:EA:69:9E:F4)$' && \
+    for jdk in "$QODANA_CORETTO_SDK_11" "$QODANA_CORETTO_SDK_17"; do \
+      certs=$("$jdk/bin/keytool" -list -v -cacerts -storepass changeit) && grep -q 'Alias name' <<< "$certs" || { echo "$jdk has no readable cacerts: $certs" >&2; exit 1; }; \
+      if grep -qE "$distrusted_roots" <<< "$certs"; then echo "$jdk trusts a distrusted root CA (QD-16607)" >&2; exit 1; fi; \
+    done && \
     apt-get purge --auto-remove -y unzip && \
     rm -rf /tmp/*
 

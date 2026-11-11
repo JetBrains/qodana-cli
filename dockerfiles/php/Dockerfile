@@ -2,7 +2,7 @@
 
 ARG NODE_TAG="22-bookworm-slim"
 ARG PHP_TAG="8.4-cli-bookworm"
-ARG COMPOSER_TAG="2.8.10"
+ARG COMPOSER_TAG="2.11.0"
 FROM node:$NODE_TAG AS node_base
 FROM composer:$COMPOSER_TAG AS composer_base
 FROM php:$PHP_TAG
@@ -66,11 +66,11 @@ COPY --from=composer_base /usr/bin/composer /usr/bin/composer
 ARG QD_RELEASE=""
 ENV QD_VERSION="2026.1" QD_IMAGE="php"
 ARG QD_CODE="QDPHP"
-ARG QD_BUILD="261.23051"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.23051.56.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.23051.56-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.23051.56.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.23051.56-aarch64.tar.gz.sha256"
+ARG QD_BUILD="261.25880"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPHP-261.25880.138-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

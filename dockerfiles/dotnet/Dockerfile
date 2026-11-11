@@ -96,6 +96,30 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         fi
     done
 
+    # Remove the distrusted emSign ECC Root CA - G3 and AAA Certificate Services roots from the NuGet trust lists
+    # bundled with the SDKs. Drop this once https://github.com/dotnet/sdk/issues/56914 is fixed.
+    distrusted_roots=" 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4 "
+    set +x
+    for pem in "$DOTNET_ROOT"/sdk/*/trustedroots/*.pem; do
+        if ! grep -q -- '-----BEGIN CERTIFICATE-----' "$pem"; then
+            echo "No PEM certificates in $pem, the trust list format has changed"
+            exit 1
+        fi
+        # One part per certificate; the 8.0 SDK ships these files with CRLF line endings
+        parts=$(mktemp -d)
+        csplit --quiet --elide-empty-files --prefix "$parts/" --suffix-format '%05d' "$pem" '/-----BEGIN CERTIFICATE-----/' '{*}'
+        for part in "$parts"/*; do
+            fingerprint=$(tr -d '\r' < "$part" | sed -n '/-----BEGIN/,/-----END/{//!p}' | base64 -d | sha256sum | cut -d ' ' -f1)
+            if [[ "$distrusted_roots" == *" $fingerprint "* ]]; then
+                echo "Removing $fingerprint from $pem"
+                rm "$part"
+            fi
+        done
+        cat "$parts"/* > "$pem"
+        rm -r "$parts"
+    done
+    set -x
+
     # ------------------------------------------------------------------------------------------------------------------
     chmod 777 -R "$DOTNET_ROOT" "$HOME"
 
@@ -131,11 +155,11 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 ARG QD_RELEASE=""
 ENV QD_VERSION="2026.1" QD_IMAGE="dotnet"
 ARG QD_CODE="QDNET"
-ARG QD_BUILD="261.23036"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.23036.66.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.23036.66-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.23036.66.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.23036.66-aarch64.tar.gz.sha256"
+ARG QD_BUILD="261.24105"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
