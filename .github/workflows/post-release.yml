@@ -18,7 +18,7 @@ jobs:
       - name: Generate GitHub App token
         id: app-token
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -28,7 +28,7 @@ jobs:
           permission-pull-requests: write
           permission-workflows: write
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-action'
@@ -57,7 +57,7 @@ jobs:
       - name: Generate GitHub App token
         id: app-token
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -67,7 +67,7 @@ jobs:
           permission-pull-requests: write
           permission-workflows: write
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-lsp'
@@ -76,7 +76,7 @@ jobs:
 
       - name: Setup Node.js
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
