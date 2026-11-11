@@ -149,6 +149,11 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/tools && \
     echo y | ${ANDROID_SDK_TOOLS}/sdkmanager "platforms;android-${ANDROID_API_LEVEL}" && \
     chmod 777 -R $ANDROID_SDK_ROOT $HOME/.jdks/ && \
+    distrusted_roots='SHA256: (86:A1:EC:BA:08:9C:4A:8D:3B:BE:27:34:C6:12:BA:34:1D:81:3E:04:3C:F9:E8:A8:62:CD:5C:57:A3:6B:BE:6B|D7:A7:A0:FB:5D:7E:27:31:D7:71:E9:48:4E:BC:DE:F7:1D:5F:0C:3E:0A:29:48:78:2B:C8:3E:E0:EA:69:9E:F4)$' && \
+    for jdk in "$QODANA_CORETTO_SDK_11" "$QODANA_CORETTO_SDK_17"; do \
+      certs=$("$jdk/bin/keytool" -list -v -cacerts -storepass changeit) && grep -q 'Alias name' <<< "$certs" || { echo "$jdk has no readable cacerts: $certs" >&2; exit 1; }; \
+      if grep -qE "$distrusted_roots" <<< "$certs"; then echo "$jdk trusts a distrusted root CA (QD-16607)" >&2; exit 1; fi; \
+    done && \
     apt-get purge --auto-remove -y unzip && \
     rm -rf /tmp/*
 

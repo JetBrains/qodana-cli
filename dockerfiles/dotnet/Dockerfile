@@ -92,6 +92,30 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         fi
     done
 
+    # Remove the distrusted emSign ECC Root CA - G3 and AAA Certificate Services roots from the NuGet trust lists
+    # bundled with the SDKs. Drop this once https://github.com/dotnet/sdk/issues/56914 is fixed.
+    distrusted_roots=" 86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4 "
+    set +x
+    for pem in "$DOTNET_ROOT"/sdk/*/trustedroots/*.pem; do
+        if ! grep -q -- '-----BEGIN CERTIFICATE-----' "$pem"; then
+            echo "No PEM certificates in $pem, the trust list format has changed"
+            exit 1
+        fi
+        # One part per certificate; the 8.0 SDK ships these files with CRLF line endings
+        parts=$(mktemp -d)
+        csplit --quiet --elide-empty-files --prefix "$parts/" --suffix-format '%05d' "$pem" '/-----BEGIN CERTIFICATE-----/' '{*}'
+        for part in "$parts"/*; do
+            fingerprint=$(tr -d '\r' < "$part" | sed -n '/-----BEGIN/,/-----END/{//!p}' | base64 -d | sha256sum | cut -d ' ' -f1)
+            if [[ "$distrusted_roots" == *" $fingerprint "* ]]; then
+                echo "Removing $fingerprint from $pem"
+                rm "$part"
+            fi
+        done
+        cat "$parts"/* > "$pem"
+        rm -r "$parts"
+    done
+    set -x
+
     # ------------------------------------------------------------------------------------------------------------------
     chmod 777 -R "$DOTNET_ROOT" "$HOME"
 
