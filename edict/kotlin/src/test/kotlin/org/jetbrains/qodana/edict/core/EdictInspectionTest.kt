@@ -26,7 +26,6 @@ class EdictInspectionTest {
 
     assertTrue(result.compilationSuccess)
     assertTrue(result.overallSuccess)
-    assertTrue(result.strongExamplesSatisfied)
     assertEquals(100, result.achievedAccuracyPercent)
     assertTrue(result.failures.isEmpty())
   }
@@ -43,7 +42,6 @@ class EdictInspectionTest {
     val result = EdictInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
 
     assertTrue(result.overallSuccess)
-    assertFalse(result.strongExamplesSatisfied)
     assertEquals(EdictNextAction.REVIEW_INSPECTION, result.nextAction)
     assertEquals(listOf("positive"), result.uncoveredPositiveExampleIds)
     assertEquals(listOf("negative"), result.reportedNegativeExampleIds)
@@ -116,7 +114,6 @@ class EdictInspectionTest {
 
     assertFalse(result.compilationSuccess)
     assertFalse(result.overallSuccess)
-    assertFalse(result.strongExamplesSatisfied)
     assertTrue(result.summary.contains("does not match cluster id"))
   }
 
@@ -140,7 +137,6 @@ class EdictInspectionTest {
       val (validation, evaluation) = EdictInspection({ client }, client::analyzeProject)
         .evaluate(cluster(), "inspection", EdictInspectionAction.GENERATE)
       assertFalse(validation.overallSuccess)
-      assertFalse(validation.strongExamplesSatisfied)
       assertEquals(EdictNextAction.REPAIR_INSPECTION, validation.nextAction)
       assertEquals(null, evaluation)
     }
@@ -271,7 +267,6 @@ class EdictInspectionTest {
       .evaluate(cluster(), "inspection", EdictInspectionAction.GENERATE)
 
     assertTrue(validation.overallSuccess)
-    assertFalse(validation.strongExamplesSatisfied)
     checkNotNull(evaluation)
     assertEquals(listOf(0, 1, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     assertEquals(0.0, evaluation.precision)
@@ -288,14 +283,53 @@ class EdictInspectionTest {
   }
 
   @Test
-  fun `example set digest changes with examples and strong assignments`() {
+  fun `the example set digest changes with the examples, not with the Signals assigned to them`() {
     val base = cluster()
     val weak = cluster(example("weak", EdictSignalLabel.NEGATIVE, null))
     val reassigned = base.copy(signals = base.signals.map { it.copy(syntheticExampleId = null) })
 
-    assertEquals(exampleSetDigest(base), exampleSetDigest(cluster()))
     assertTrue(exampleSetDigest(base) != exampleSetDigest(weak))
-    assertTrue(exampleSetDigest(base) != exampleSetDigest(reassigned))
+    assertEquals(exampleSetDigest(base), exampleSetDigest(reassigned))
+  }
+
+  @Test
+  fun `a confirmed finding counts as a project finding of its reported example, and directly for an unreported one`() {
+    // `missed` is a positive the inspection does not report; the Signal of its confirmed finding makes it strong.
+    val base = cluster(example("missed", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1))))
+    val cluster = base.copy(signals = base.signals + signal("confirmed-missed", EdictSignalLabel.POSITIVE, "missed"))
+    // `positive` stands for two project findings; one true and one false positive are counted directly.
+    val previous = EdictEvaluation(
+      inspectionHash = "a".repeat(64),
+      exampleSetDigest = exampleSetDigest(cluster),
+      action = EdictInspectionAction.GENERATE,
+      tp = 3,
+      fp = 2,
+      fn = 1,
+      precision = 0.6,
+      recall = 0.75,
+      examples = mapOf(
+        "missed" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = false, satisfied = false, projectFindings = 0, weight = 1),
+        "negative" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, strong = true, satisfied = false, projectFindings = 1, weight = 1),
+        "positive" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 2, weight = 2),
+      ),
+      projectReview = null,
+      directFindings = EdictDirectFindings(tp = 1, fp = 1),
+    )
+
+    val evaluation = previous.withConfirmedFindings(cluster, mapOf("positive" to 2, "missed" to 1))
+
+    val expected = previous.copy(
+      action = EdictInspectionAction.SKIP,
+      tp = 6,
+      precision = 0.75,
+      recall = 6.0 / 7,
+      directFindings = EdictDirectFindings(tp = 2, fp = 1),
+      examples = previous.examples + mapOf(
+        "missed" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = false, projectFindings = 0, weight = 1),
+        "positive" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 4, weight = 4),
+      ),
+    )
+    assertEquals(expected, evaluation)
   }
 
   private fun cluster(vararg weakExamples: EdictStoredExample): EdictStoredCluster {

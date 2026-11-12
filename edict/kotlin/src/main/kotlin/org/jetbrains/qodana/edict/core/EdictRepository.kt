@@ -789,6 +789,10 @@ internal data class EdictStoredCluster(
   val id: String get() = manifest.id
   val signalIds: Set<String> get() = signals.mapTo(LinkedHashSet(), EdictSignal::id)
   val historyPath: Path get() = directory.historyPath
+
+  /** The Signals that no generation took into account yet; a Generated cluster took all of its own. */
+  val unprocessedSignals: List<EdictSignal> =
+    if (manifest.status == EdictClusterStatus.Generated) emptyList() else signals.filter { it.id !in manifest.processedSignalIds }
 }
 
 internal data class EdictStoredExample(

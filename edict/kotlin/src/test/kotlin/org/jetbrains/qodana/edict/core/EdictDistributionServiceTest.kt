@@ -33,6 +33,18 @@ class EdictDistributionServiceTest {
   }
 
   @Test
+  fun `a weak Signal that reached the inbox stays there undistributed`() = runBlocking {
+    val repository = inboxRepository(2)
+    val weak = repository.loadInboxSignals().first().copy(strength = EdictSignalStrength.WEAK)
+    repository.paths.inboxDirectory.resolve("${weak.id}.json").writeText(EdictJson.encodeToString(weak))
+    val distribution = EdictDistributionService(repository, directory.resolve("neighbours.json"))
+
+    val prepared = distribution.calculateNeighbours()
+
+    assertEquals("Calculated neighbours of 1 inbox Signal(s) among 0 cluster(s)", prepared.summary)
+  }
+
+  @Test
   fun `configured distribution limit controls the batch size`() = runBlocking {
     for (expected in listOf(1, 2, 3)) {
       val repository = inboxRepository(4, "state-$expected")

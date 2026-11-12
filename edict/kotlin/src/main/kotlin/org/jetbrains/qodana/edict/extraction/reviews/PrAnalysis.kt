@@ -15,6 +15,7 @@ import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.core.EdictRepositoryState
 import org.jetbrains.qodana.edict.core.EdictSignal
+import org.jetbrains.qodana.edict.core.requireInboxStrength
 import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.jetbrains.qodana.edict.core.EdictSignalPairs
 import org.jetbrains.qodana.edict.core.EdictSignalProvenance
@@ -240,6 +241,8 @@ internal class PrAnalysis(
       try {
         require(wireJson.encodeToString(candidate).toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
         val signal = SignalValidation.validate(candidate)
+        // Refused here, before publication would refuse it after the batch's earlier Signals.
+        requireInboxStrength(signal)
         val item = chunk.firstOrNull { it.workItemId == signal.provenance.workItemId }
           ?: error("Signal work item does not belong to this chunk")
         require(signal.provenance.analysisBatchId == batchId) { "Signal provenance must preserve the analysis batch" }

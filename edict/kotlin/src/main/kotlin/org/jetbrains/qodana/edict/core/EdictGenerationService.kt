@@ -5,7 +5,12 @@ import org.jetbrains.qodana.edict.common.DEFAULT_MAX_PROJECT_ANALYSES
 import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.createDirectories
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.readBytes
+import kotlin.io.path.writeText
 import kotlin.io.path.readText
 
 /** Generates inspections for Pending clusters chosen by the manager. */
@@ -38,19 +43,16 @@ internal class EdictGenerationService(
     require(targetCount >= 1) { "generationCount must be at least 1: $targetCount" }
     val state = repository.loadState()
     requireNoIssues(validateRepositoryState(repository, state))
-    // Prefer clusters with strong positive evidence to guide generation
+    // Only new Signals give a generation something to do; strong positive evidence guides it.
     val selected = state.clusters
-      .filter { it.manifest.status == EdictClusterStatus.Pending }
+      .filter { it.manifest.status == EdictClusterStatus.Pending && it.unprocessedSignals.isNotEmpty() }
       .filter { cluster ->
         cluster.signals.any { it.strength == EdictSignalStrength.STRONG && it.label == EdictSignalLabel.POSITIVE }
       }
       .sortedWith(
         compareByDescending<EdictStoredCluster> { cluster ->
-          cluster.signals.asSequence()
-            .filter {
-              it.strength == EdictSignalStrength.STRONG && it.label == EdictSignalLabel.POSITIVE &&
-                it.id !in cluster.manifest.processedSignalIds
-            }
+          cluster.unprocessedSignals.asSequence()
+            .filter { it.strength == EdictSignalStrength.STRONG && it.label == EdictSignalLabel.POSITIVE }
             .map { it.fileRevision.path }
             .distinct()
             .count()
@@ -59,7 +61,7 @@ internal class EdictGenerationService(
       .take(targetCount)
     return EdictGenerationClustersResponse(
       clusters = selected.map { EdictGenerationTarget(it.id, it.directory.root.toString()) },
-      summary = "${selected.size} generation candidate(s) suggested; the manager may choose other Pending clusters",
+      summary = "${selected.size} generation candidate(s) suggested, of the Pending clusters with new Signals",
     )
   }
 
@@ -168,6 +170,30 @@ internal class EdictGenerationService(
     return EdictMutationResponse(true, "Renamed cluster '$clusterId' to '$newClusterId'")
   }
 
+  /**
+   * Writes the new Signals of a Pending cluster and its code examples into `signal-mapping/<clusterId>` of [scratchDirectory],
+   * without their labels, so that a mapper that cannot see them tells which example stands for each Signal's case.
+   */
+  @OptIn(ExperimentalPathApi::class)
+  fun prepareSignalMapping(clusterId: String, scratchDirectory: Path): EdictSignalMappingResponse {
+    val cluster = loadPendingCluster(clusterId)
+    val directory = scratchDirectory.resolve("signal-mapping").resolve(cluster.id)
+    directory.deleteRecursively()
+    val signals = directory.resolve("signals").createDirectories()
+    cluster.unprocessedSignals.forEach { signal ->
+      signals.resolve("${signal.id}.json")
+        .writeText(EdictJson.encodeToString(EdictUnlabelledSignal.serializer(), EdictUnlabelledSignal(signal.id, signal.fileRevision)))
+    }
+    cluster.examples.forEach { example ->
+      directory.resolve("examples").resolve(example.metadata.id).createDirectories().resolve(example.metadata.fileName).writeText(example.code)
+    }
+    return EdictSignalMappingResponse(
+      directory = directory.toString(),
+      signalIds = cluster.unprocessedSignals.map(EdictSignal::id),
+      exampleIds = cluster.examples.map { it.metadata.id },
+    )
+  }
+
   fun appendHistory(clusterId: String, entry: String): EdictMutationResponse {
     loadPendingCluster(clusterId)
     repository.appendHistory(clusterId, entry)
@@ -218,9 +244,9 @@ internal class EdictGenerationService(
     )
   }
 
-  suspend fun getInspectionAction(clusterId: String): EdictInspectionActionResponse {
+  fun getInspectionAction(clusterId: String): EdictInspectionActionResponse {
     val cluster = loadPendingCluster(clusterId)
-    val response = duplicateSignalAction(cluster) ?: predecessorAction(repository, cluster)
+    val response = duplicateSignalAction(cluster) ?: predecessorAction(cluster)
     inspectionActions[cluster.signalIds] = response.action
     return response
   }
@@ -353,17 +379,19 @@ internal class EdictGenerationService(
    * predecessor on SKIP) on every strong and weak example and writes `evaluation.json`, including failed evidence cases.
    * Compilation, metadata and execution must be valid, but evidence accuracy does not gate recording.
    */
+  // TODO: we definetly need to think about evaluation, as it is reaclly hard to read as of now (i.e., I can't understand what is contributed to what)
   suspend fun recordEvaluation(clusterId: String): EdictRecordEvaluationResponse {
     val cluster = loadPendingCluster(clusterId)
     return when (val selection = selectGeneratedInspection(cluster)) {
       is InspectionSelection.Rejected -> EdictRecordEvaluationResponse(false, selection.reason)
       is InspectionSelection.Selected -> {
+        if (selection.action == EdictInspectionAction.SKIP) return recordSkippedEvaluation(cluster)
         val reviewed = weakReviewResults[cluster.signalIds].orEmpty().values
         val exampleIds = cluster.examples.map { it.metadata.id }.toSet()
         val classified = reviewed.filter { it.classification != EdictFindingClassification.UNCERTAIN }
         // On GENERATE the selection requires that the last analysis, stored with its digest, was of these bytes (a rename
-        // carries the digest over); SKIP publishes a predecessor this run did not analyze.
-        val analysis = analyzedFindings[cluster.signalIds]?.takeIf { selection.action == EdictInspectionAction.GENERATE }
+        // carries the digest over).
+        val analysis = analyzedFindings[cluster.signalIds]
         val stillReported = analysis?.findings?.map { it.location() }?.toSet().orEmpty()
         val assignments = classified.mapNotNull { finding ->
           finding.exampleId?.takeIf { it in exampleIds }?.let {
@@ -402,6 +430,27 @@ internal class EdictGenerationService(
         }
       }
     }
+  }
+
+  /**
+   * On SKIP, records the predecessor's evaluation with the findings users confirmed in review comments since, which the new
+   * positive answers to its findings carry, without running the inspection again: neither it nor the code examples changed.
+   */
+  private fun recordSkippedEvaluation(cluster: EdictStoredCluster): EdictRecordEvaluationResponse {
+    val previous = predecessorEvaluation(cluster)
+      ?: return EdictRecordEvaluationResponse(false, "$NO_PREDECESSOR_EVALUATION any more; call edict_get_inspection_action again")
+    val confirmed = cluster.unprocessedSignals.filter { it.isAnswer(EdictSignalLabel.POSITIVE, previous.inspectionHash) }
+    confirmed.firstOrNull { it.syntheticExampleId == null }?.let {
+      return EdictRecordEvaluationResponse(false, "Signal '${it.id}' has no code example; reconcile the examples first")
+    }
+    val evaluation = previous.withConfirmedFindings(cluster, confirmed.mapNotNull(EdictSignal::syntheticExampleId).groupingBy { it }.eachCount())
+    repository.saveEvaluation(cluster.id, evaluation)
+    return EdictRecordEvaluationResponse(
+      true,
+      "Recorded the predecessor's evaluation with the findings users confirmed since: " +
+        "tp=${evaluation.tp}, fp=${evaluation.fp}, fn=${evaluation.fn}",
+      evaluation,
+    )
   }
 
   /**
@@ -457,7 +506,11 @@ internal class EdictGenerationService(
     if (!validation.overallSuccess) {
       return rejectedFinalisation(generated, "Selected inspection has invalid compilation, metadata or execution: ${validation.summary}")
     }
-    if (reportUploader != null && evaluation.projectReview != null && evaluation.projectReview.reportUrl == null) {
+    // On SKIP the evaluation keeps the predecessor's project review, which this run did not analyze.
+    if (
+      reportUploader != null && selection.action == EdictInspectionAction.GENERATE &&
+      evaluation.projectReview != null && evaluation.projectReview.reportUrl == null
+    ) {
       val findings = analyzedFindings[cluster.signalIds]
         ?: return rejectedFinalisation(generated, "Project analysis is unavailable for cloud upload; analyze and evaluate again")
       check(findings.candidateDigest == evaluation.inspectionHash && findings.projectRevision == evaluation.projectReview.projectRevision) {
@@ -520,27 +573,35 @@ internal class EdictGenerationService(
     }
   }
 
-  private suspend fun predecessorAction(
-    repository: EdictRepository,
-    cluster: EdictStoredCluster,
-  ): EdictInspectionActionResponse {
-    val predecessorId = cluster.manifest.predecessorId
-                        ?: return EdictInspectionActionResponse(
-                          EdictInspectionAction.GENERATE,
-                          "The cluster has no predecessor inspection",
-                        )
-    val code = repository.paths.inspectionPath(predecessorId).readText()
-    val validation = inspection.validate(cluster, code)
-    val reusable = validation.strongExamplesSatisfied
+  /**
+   * SKIP when the predecessor inspection is unchanged and was evaluated on exactly the current code examples, so its
+   * results stand, and no user answered one of its findings as a false positive since: a false positive is a case to look
+   * into, even when an example already stands for it. Otherwise GENERATE.
+   */
+  private fun predecessorAction(cluster: EdictStoredCluster): EdictInspectionActionResponse {
+    val evaluation = predecessorEvaluation(cluster)
+      ?: return EdictInspectionActionResponse(EdictInspectionAction.GENERATE, NO_PREDECESSOR_EVALUATION)
+    val falsePositives = cluster.unprocessedSignals
+      .filter { it.isAnswer(EdictSignalLabel.NEGATIVE, evaluation.inspectionHash) }
+      .map(EdictSignal::id)
+    if (falsePositives.isNotEmpty()) {
+      return EdictInspectionActionResponse(
+        EdictInspectionAction.GENERATE,
+        "Users answered findings of the predecessor inspection as false positives: ${falsePositives.joinToString()}",
+      )
+    }
     return EdictInspectionActionResponse(
-      action = if (reusable) EdictInspectionAction.SKIP else EdictInspectionAction.GENERATE,
-      summary = if (reusable) {
-        "The predecessor inspection meets the strong-example reuse criterion: ${validation.summary}"
-      } else {
-        "The predecessor inspection does not meet the strong-example reuse criterion: ${validation.summary}"
-      },
+      EdictInspectionAction.SKIP,
+      "The predecessor inspection and the code examples are those of its evaluation; the new Signals are cases they already cover",
     )
   }
+
+  /** The evaluation of the unchanged predecessor inspection on exactly the current code examples; null when there is none. */
+  private fun predecessorEvaluation(cluster: EdictStoredCluster): EdictEvaluation? {
+    val path = cluster.manifest.predecessorId?.let(repository.paths::inspectionPath)?.takeIf(Path::isRegularFile) ?: return null
+    return repository.loadEvaluation(cluster)?.takeIf { cluster.isCurrentEvaluation(it, sha256Hex(path.readBytes())) }
+  }
+
 
   private fun loadPendingCluster(clusterId: String): EdictStoredCluster {
     val cluster = repository.loadCluster(clusterId)
@@ -565,3 +626,5 @@ private fun unresolvedIssue(exampleId: String, unresolved: EdictUnresolvedRefere
   "Code example '$exampleId' has references that do not resolve in the module of " +
     "${unresolved.contextPath ?: "the project"}: ${unresolved.references.joinToString(", ")}" +
     ". Declare each one in the example, or set contextPath to a file whose module provides them"
+
+private const val NO_PREDECESSOR_EVALUATION = "No predecessor inspection was evaluated on the current code examples"

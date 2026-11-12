@@ -9,6 +9,7 @@ import org.jetbrains.qodana.edict.ci.support.answer
 import org.jetbrains.qodana.edict.ci.support.answeredWith
 import org.jetbrains.qodana.edict.common.DEFAULT_EDICT_STATE_BRANCH
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.FeedbackConfiguration
 import org.jetbrains.qodana.edict.common.StateBranch
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.support.GitOrigin
@@ -24,6 +25,7 @@ import org.jetbrains.qodana.edict.feedback.support.internalResult
 import org.jetbrains.qodana.edict.feedback.support.sarifReport
 import org.jetbrains.qodana.edict.feedback.support.stateFiles
 import org.jetbrains.qodana.edict.promotion.support.ClusterFixture
+import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
 import org.junit.jupiter.api.Test
@@ -132,7 +134,9 @@ class FeedbackPostingTest {
     /** Runs the feedback step on a client that sends exactly [exchanges]. */
     fun post(vararg exchanges: Exchange) {
       val clock = Clock.fixed(CREATED_AT, ZoneOffset.UTC)
-      feedbackScripted(*exchanges).replay { postFeedback(layout, DEFAULT_EDICT_STATE_BRANCH, OWN_PULL_REQUEST, sarif, this, clock) }
+      feedbackScripted(*exchanges).replay {
+        postFeedback(layout, DEFAULT_EDICT_STATE_BRANCH, OWN_PULL_REQUEST, sarif, this, clock, FeedbackConfiguration())
+      }
     }
   }
 
@@ -164,8 +168,9 @@ private val CREATED_AT = Instant.parse("2026-11-06T12:00:00Z")
 
 /** The record of the finding of cluster `rule` on line 3 of `src/Main.kt` of [PULL_REQUEST] at [HEAD_REVISION]. */
 private val RECORD = FeedbackRecord(
-  id = "f-cbcb81a836de388928f6cb5a",
+  id = "f-83cae18e4eade70f700b4581",
   clusterId = "rule",
+  inspectionDigest = INSPECTION_DIGEST,
   pullRequest = PULL_REQUEST,
   revision = HEAD_REVISION,
   path = "src/Main.kt",

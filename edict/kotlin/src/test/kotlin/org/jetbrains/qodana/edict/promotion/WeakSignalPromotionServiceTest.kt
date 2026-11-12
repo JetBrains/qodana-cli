@@ -103,6 +103,15 @@ internal class WeakSignalPromotionServiceTest {
   }
 
   @Test
+  fun `a cluster with fewer referenced source files than promotion is configured to need is a candidate`() {
+    repository.store(referencedCluster().withEvaluation(projectReview()))
+
+    val prepared = weakSignalService(repository, reviews, PROMOTION.copy(minSourceFiles = 6)).prepare()
+
+    assertEquals(WeakSignalPreparationResponse(listOf(CANDIDATE), emptyList()), prepared)
+  }
+
+  @Test
   fun `a cluster with five referenced source files is no candidate`() {
     repository.store(referencedCluster().withEvaluation(projectReview()))
 

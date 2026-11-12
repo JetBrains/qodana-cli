@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.promotion
 
+import org.jetbrains.qodana.edict.common.DEFAULT_MIN_PROMOTION_SOURCE_FILES
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE
 import org.jetbrains.qodana.edict.core.EdictFileRevision
@@ -103,7 +104,7 @@ internal class PromotionDescriptionTest {
   @Test
   fun `a finding users confirmed on GitHub is cited by its review comment`() {
     val comment = "https://github.com/JetBrains/qodana-cli/pull/7#discussion_r11"
-    val source = EdictSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", comment, emptyList())
+    val source = EdictSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", comment, emptyList(), INSPECTION_DIGEST)
     val cluster = repository.store(referencedCluster().withSources(source))
 
     assertEquals(
@@ -182,7 +183,7 @@ internal class PromotionDescriptionTest {
 
   /** The description of the stored inspection under the cluster's stored evaluation, in the CI repository [ci]. */
   private fun promotionDescription(cluster: EdictStoredCluster, ci: ReviewRepository = PROMOTION_REPOSITORY) =
-    promotionDescription(cluster, INSPECTION_DIGEST, ci, repository.loadEvaluation(cluster))
+    promotionDescription(cluster, INSPECTION_DIGEST, ci, repository.loadEvaluation(cluster), DEFAULT_MIN_PROMOTION_SOURCE_FILES)
 
   private fun EdictStoredCluster.description(): String = promotionDescription(this)
 }

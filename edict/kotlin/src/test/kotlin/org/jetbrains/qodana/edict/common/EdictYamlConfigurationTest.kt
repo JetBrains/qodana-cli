@@ -45,10 +45,11 @@ internal class EdictYamlConfigurationTest {
         statePath = "../edict-state",
         stateBranch = "edict/kotlin-state",
         ci = KOTLIN,
-        promotion = PromotionConfiguration("reviewer-login", "release/2.3", "quality/inspections", 0.95, 0.7, 0.85, KOTLIN_EDICT),
+        promotion = PromotionConfiguration("reviewer-login", "release/2.3", "quality/inspections", 0.95, 0.7, 0.85, 8, KOTLIN_EDICT),
         extraction = ExtractionConfiguration(250),
         distribution = DistributionConfiguration(750),
         generation = GenerationConfiguration(maxProjectAnalyses = 5, defaultGenerationCount = 10),
+        feedback = FeedbackConfiguration(maxPerInspection = 20, maxPerPullRequest = 4),
         calculatePrice = true,
         projectAnalysisTimeoutMinutes = 75,
         bots = setOf("KotlinBuild"),
@@ -67,6 +68,8 @@ internal class EdictYamlConfigurationTest {
       "distribution.defaultSignalCount" to 1,
       "generation.maxProjectAnalyses" to 1,
       "generation.defaultGenerationCount" to 1,
+      "feedback.maxPerInspection" to 1,
+      "feedback.maxPerPullRequest" to 1,
     )
 
     assertEquals(
@@ -75,6 +78,7 @@ internal class EdictYamlConfigurationTest {
         extraction = ExtractionConfiguration(1),
         distribution = DistributionConfiguration(1),
         generation = GenerationConfiguration(maxProjectAnalyses = 1, defaultGenerationCount = 1),
+        feedback = FeedbackConfiguration(maxPerInspection = 1, maxPerPullRequest = 1),
         projectAnalysisTimeoutMinutes = 1,
       ),
       EdictYamlConfiguration.load(path),
@@ -217,6 +221,8 @@ internal class EdictYamlConfigurationTest {
     "distribution.defaultSignalCount, 0, edict.distribution.defaultSignalCount must be at least 1: 0",
     "generation.maxProjectAnalyses, 0, edict.generation.maxProjectAnalyses must be at least 1: 0",
     "generation.defaultGenerationCount, 0, edict.generation.defaultGenerationCount must be at least 1: 0",
+    "feedback.maxPerInspection, 0, edict.feedback.maxPerInspection must be at least 1: 0",
+    "feedback.maxPerPullRequest, 0, edict.feedback.maxPerPullRequest must be at least 1: 0",
   )
   fun `a number out of its range is refused with the value`(key: String, value: Int, message: String) {
     val error = assertFailsWith<IllegalArgumentException> { EdictYamlConfiguration.load(edictYaml(directory, key to value)) }
@@ -232,6 +238,15 @@ internal class EdictYamlConfigurationTest {
       PromotionConfiguration("reviewer", targetPrecision = 0.0, targetRecall = 1.0, targetF1 = 1.0),
       EdictYamlConfiguration.load(path).promotion,
     )
+  }
+
+  @Test
+  fun `a promotion that needs no source file is refused`() {
+    val error = assertFailsWith<IllegalArgumentException> {
+      EdictYamlConfiguration.load(promotionYaml(directory, "promotion.minSourceFiles" to 0))
+    }
+
+    assertEquals("edict.promotion.minSourceFiles must be at least 1: 0", error.message)
   }
 
   @ParameterizedTest

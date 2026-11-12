@@ -68,8 +68,10 @@ finalise `Discontinued` with its Signal evidence.
 Call `edict_get_inspection_action(clusterId)` before any generation round.
 
 - `CONFLICT`: finalise `Invalid` with the conflicting Signal ids.
-- `SKIP`: the predecessor passes every strong example. Call `edict_record_evaluation`, and finalise
-  `Generated`, recording reuse; weak-example failures do not prevent reuse. Do not launch a generation round.
+- `SKIP`: neither the predecessor inspection nor the code examples changed since its evaluation, so the new Signals are
+  cases the examples already stand for, and no user answered one of its findings as a false positive. Call
+  `edict_record_evaluation`, which adds the findings users confirmed, and finalise `Generated`, recording reuse;
+  failing examples do not prevent reuse. Do not launch a generation round.
 - `GENERATE`: run generation rounds.
 
 ## 3. Generation rounds

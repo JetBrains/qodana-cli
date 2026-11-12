@@ -39,13 +39,31 @@ class SignalValidationTest {
   @Test
   fun `a finding users rated on GitHub needs the comment it was rated on`() {
     val rated = signal("").copy(
-      source = EdictSignalSource.GitHubEvaluatedFinding("Rule", "Reports the rule.", "Breaks the rule", url = "", replies = emptyList()),
+      source = EdictSignalSource.GitHubEvaluatedFinding(
+        "Rule", "Reports the rule.", "Breaks the rule", url = "", replies = emptyList(), inspectionDigest = "a".repeat(64),
+      ),
     )
 
     val failure = assertFailsWith<IllegalArgumentException> { SignalValidation.validate(rated) }
 
     assertEquals(
       "Invalid signal 'inbox/${rated.id}.json': source: GitHubEvaluatedFinding requires inspectionName, problemMessage and url",
+      failure.message,
+    )
+  }
+
+  @Test
+  fun `a finding users rated on GitHub needs the digest of the inspection bytes that reported it`() {
+    val rated = signal("").copy(
+      source = EdictSignalSource.GitHubEvaluatedFinding(
+        "Rule", "Reports the rule.", "Breaks the rule", "https://github.com/owner/project/pull/7#discussion_r1", emptyList(), "rule",
+      ),
+    )
+
+    val failure = assertFailsWith<IllegalArgumentException> { SignalValidation.validate(rated) }
+
+    assertEquals(
+      "Invalid signal 'inbox/${rated.id}.json': source.inspectionDigest: must be the SHA-256 hex of the inspection",
       failure.message,
     )
   }

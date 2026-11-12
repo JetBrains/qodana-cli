@@ -4,8 +4,8 @@ package org.jetbrains.qodana.edict.feedback
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.FeedbackConfiguration
 import org.jetbrains.qodana.edict.common.StateBranch
-import org.jetbrains.qodana.edict.core.EdictRepository
 import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.signals.validRevision
 import java.nio.file.Path
@@ -18,7 +18,8 @@ private const val MAX_RESERVATION_ATTEMPTS = 5
 
 /**
  * Comments on the workflow's [event] with the findings of the SARIF report at [sarif] that the inspections of `prepare` reported
- * on lines the pull request adds, at the commit the report names as analysed. First reserves the findings: records them in the
+ * on lines the pull request adds, at the commit the report names as analysed, as many as [limits] allow. First reserves the
+ * findings: records them in the
  * state directory of [layout], which `prepare` checked out, and pushes them to [stateBranch]; then posts them through [api]. A
  * comment GitHub refuses leaves its record, which the routine later finds unanswered. Finally removes the checkout of the
  * state, which the next run takes from origin again.
@@ -30,10 +31,11 @@ internal fun postFeedback(
     sarif: Path,
     api: GitHubFeedbackApi,
     clock: Clock,
+    limits: FeedbackConfiguration,
 ) {
     val branch = StateBranch(layout, stateBranch)
     try {
-        reserveAndComment(layout, branch, event, sarif, api, clock)
+        reserveAndComment(layout, branch, event, sarif, api, clock, limits)
     }
     catch (e: Throwable) {
         runCatching { branch.remove() }.exceptionOrNull()?.let(e::addSuppressed)
@@ -49,6 +51,7 @@ private fun reserveAndComment(
     sarif: Path,
     api: GitHubFeedbackApi,
     clock: Clock,
+    limits: FeedbackConfiguration,
 ) {
     val pullRequest = event.feedbackPullRequest() ?: return
     val (revision, findings) = feedbackReport(sarif)
@@ -63,7 +66,7 @@ private fun reserveAndComment(
         return
     }
     val worktree = branch.worktree()
-    val reserved = reserve(worktree, EdictRepositoryDirectory(layout.stateDirectory), pullRequest, revision, candidates, clock)
+    val reserved = reserve(worktree, EdictRepositoryDirectory(layout.stateDirectory), pullRequest, revision, candidates, clock, limits)
     reserved.forEach { record ->
         val comment = api.comment(pullRequest, record.revision, record.path, record.commentLine, feedbackComment(record))
         when (comment) {
@@ -87,12 +90,14 @@ private fun reserve(
     revision: String,
     candidates: List<FeedbackCandidate>,
     clock: Clock,
+    limits: FeedbackConfiguration,
 ): List<FeedbackRecord> {
     repeat(MAX_RESERVATION_ATTEMPTS) {
         // Drops the reservation of an attempt that lost, which is committed but not pushed.
         val base = worktree.resetToOrigin()
         val records = FeedbackRecords(paths)
-        val reserved = reserveFeedback(EdictRepository(paths), records, pullRequest, revision, candidates, clock.instant())
+        val inspections = FeedbackInspections(paths).load()
+        val reserved = reserveFeedback(inspections, records, pullRequest, revision, candidates, clock.instant(), limits)
         if (reserved.isEmpty()) {
             logger.info { "${pullRequest.url} gets no more Edict feedback" }
             return reserved

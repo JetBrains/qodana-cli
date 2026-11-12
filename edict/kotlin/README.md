@@ -135,6 +135,10 @@ edict:
     targetPrecision: 0.7
     targetRecall: 0.6
     targetF1: 0.0
+    minSourceFiles: 5                             # distinct source files with strong positive Signals
+  feedback:
+    maxPerInspection: 10                          # unanswered comments of one inspection at once
+    maxPerPullRequest: 3                          # review comments per pull request over all runs
   bots: # accounts whose review comments are ignored
     - KotlinBuild
 ```
@@ -156,13 +160,26 @@ Changing `promotion.url` while promotion PRs are still in review is not supporte
 
 Promotion proposes generated inspections as pull requests. An inspection is a candidate if it meets two conditions:
 
-- Its precision, recall, and F1 are strictly above the `target*` values.
-- It has positive Signals from at least five distinct source files.
+- Its precision, recall, and F1 are at least the `target*` values.
+- It has strong positive Signals from at least `minSourceFiles` distinct source files.
 
 The promotion skill reviews the candidates and decides which to propose.
 
 When `QODANA_TOKEN` is set, each newly generated inspection uploads its project analysis to Qodana Cloud. The promotion
 PR then links to that report.
+
+### Feedback
+
+`state push` also writes `feedback/inspections.json`. It lists the generated inspections, in any cluster state, that
+meet all of these conditions:
+
+- Their evaluation matches their bytes and current examples, with at least `targetPrecision`.
+- No promotion proposed them.
+- Their findings got at most five false-positive answers that no generation took into account yet.
+
+`qodana edict feedback prepare` and `qodana edict feedback post` read only that file. A pull request gets at most
+`maxPerPullRequest` review comments over all its runs, and at most `maxPerInspection` comments of one inspection's
+bytes await an answer at once.
 
 ## Logs
 
