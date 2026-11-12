@@ -1,3 +1,28 @@
+variable "BASE_REPO" {
+  default = "registry.jetbrains.team/p/sa/containers/qodana"
+}
+
+# Comma-separated; CI builds one platform per native runner
+variable "BASE_PLATFORMS" {
+  default = "linux/amd64,linux/arm64"
+}
+
+# CI only: push untagged by digest; multi-arch tags are created later from `bake --print` without this flag
+variable "PUSH_BY_DIGEST" {
+  type    = bool
+  default = false
+}
+
+function "tags" {
+  params = [tag]
+  result = PUSH_BY_DIGEST ? [] : ["${BASE_REPO}:${tag}"]
+}
+
+target "_base" {
+  platforms = split(",", BASE_PLATFORMS)
+  output    = PUSH_BY_DIGEST ? ["type=image,name=${BASE_REPO},push-by-digest=true,name-canonical=true,push=true"] : []
+}
+
 group "all" {
   targets = [
     "jvm-community", "jvm", "python-community", "python",
@@ -67,85 +92,75 @@ group "ruby" {
 }
 
 target "jvm-community" {
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("jvm-community-base-latest")
   dockerfile = "jvm-community.Dockerfile"
 }
 
 target "jvm" {
+  inherits = ["_base"]
   contexts = {
     jvm-community = "target:jvm-community"
   }
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:jvm-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("jvm-base-latest")
   dockerfile = "jvm.Dockerfile"
 }
 
 target "python-community" {
+  inherits = ["_base"]
   contexts = {
     jvm-community = "target:jvm-community"
   }
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-community-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("python-community-base-latest")
   dockerfile = "python-community.Dockerfile"
 }
 
 target "python" {
+  inherits = ["_base"]
   contexts = {
     python-community = "target:python-community"
   }
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("python-base-latest")
   dockerfile = "python.Dockerfile"
 }
 
 target "poly-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:poly-base-latest"]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("poly-base-latest")
   dockerfile = "poly.Dockerfile"
 }
 
 target "go-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:go-base-latest"]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("go-base-latest")
   dockerfile = "go.Dockerfile"
 }
 
 target "js-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:js-base-latest"]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("js-base-latest")
   dockerfile = "js.Dockerfile"
 }
 
 target "php-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:php-base-latest"]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("php-base-latest")
   dockerfile = "php.Dockerfile"
 }
 
 target "rust-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:rust-base-latest"]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("rust-base-latest")
   dockerfile = "rust.Dockerfile"
 }
 
 target "cpp-community" {
+  inherits = ["_base"]
   matrix = {
     clang = ["20", "21"]
   }
   name = "cpp-community-${clang}-latest"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("cpp-community-base-${clang}-latest")
   dockerfile = "cpp-community.Dockerfile"
   args = {
     CLANG = clang
@@ -153,6 +168,7 @@ target "cpp-community" {
 }
 
 target "cpp" {
+  inherits = ["_base"]
   contexts = {
     cpp-community = "target:cpp-community-${clang}-latest"
   }
@@ -160,10 +176,7 @@ target "cpp" {
     clang = ["20", "21"]
   }
   name = "cpp-base-${clang}-latest"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("cpp-base-${clang}-latest")
   dockerfile = "cpp.Dockerfile"
   args = {
     CLANG = clang
@@ -172,14 +185,12 @@ target "cpp" {
 
 # Bookworm-based cpp for clang 16-19 (LLVM apt doesn't have these for Trixie)
 target "cpp-community-bookworm" {
+  inherits = ["_base"]
   matrix = {
     clang = ["16", "17", "18", "19"]
   }
   name = "cpp-community-bookworm-${clang}-latest"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("cpp-community-base-${clang}-latest")
   dockerfile = "cpp-community-bookworm.Dockerfile"
   args = {
     CLANG = clang
@@ -187,6 +198,7 @@ target "cpp-community-bookworm" {
 }
 
 target "cpp-bookworm" {
+  inherits = ["_base"]
   contexts = {
     cpp-community = "target:cpp-community-bookworm-${clang}-latest"
   }
@@ -194,10 +206,7 @@ target "cpp-bookworm" {
     clang = ["16", "17", "18", "19"]
   }
   name = "cpp-base-bookworm-${clang}-latest"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("cpp-base-${clang}-latest")
   dockerfile = "cpp-bookworm.Dockerfile"
   args = {
     CLANG = clang
@@ -205,33 +214,27 @@ target "cpp-bookworm" {
 }
 
 target "dotnet-community" {
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  inherits = ["_base"]
+  tags = tags("dotnet-community-base-latest")
   dockerfile = "dotnet-community.Dockerfile"
 }
 
 target "dotnet" {
+  inherits = ["_base"]
   contexts = {
     dotnet-community = "target:dotnet-community"
   }
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("dotnet-base-latest")
   dockerfile = "dotnet.Dockerfile"
 }
 
 target "ruby3x" {
+  inherits = ["_base"]
   matrix = {
     version = ["2", "3", "4"]
   }
   name = "ruby-base-3${version}"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
+  tags = tags("ruby-base-3.${version}-latest")
   dockerfile = "ruby.Dockerfile"
   args = {
     RUBY_TAG = "3.${version}-debian13-dev"
