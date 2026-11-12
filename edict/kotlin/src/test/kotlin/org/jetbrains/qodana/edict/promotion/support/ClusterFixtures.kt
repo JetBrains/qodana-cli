@@ -10,7 +10,6 @@ import org.jetbrains.qodana.edict.core.EdictEvaluation
 import org.jetbrains.qodana.edict.core.EdictExampleDirectory
 import org.jetbrains.qodana.edict.core.EdictExampleEvaluation
 import org.jetbrains.qodana.edict.core.EdictFileRevision
-import org.jetbrains.qodana.edict.core.EdictInspectionAction
 import org.jetbrains.qodana.edict.core.EdictJson
 import org.jetbrains.qodana.edict.core.EdictLanguage
 import org.jetbrains.qodana.edict.core.EdictLineRange
@@ -47,17 +46,21 @@ internal data class ClusterFixture(
 )
 
 /**
- * An evaluation of the stored cluster that satisfies the example of each of its Signals but the [missed] ones. It is
+ * An evaluation of the stored cluster that satisfies the example of each of its Signals but the [missed] ones. Beside
+ * them, one more example of each kind holds the project findings attributed to it: a satisfied positive one
+ * [truePositives], an unsatisfied negative one [falsePositives], and an unsatisfied positive one [falseNegatives]. It is
  * current, of the stored inspection and examples, unless [inspectionDigest] or [exampleSetDigest] name others.
  */
 internal data class EvaluationFixture(
-  val precision: Double = 1.0,
-  val recall: Double = 1.0,
+  val truePositives: Int = 0,
+  val falsePositives: Int = 0,
+  val falseNegatives: Int = 0,
   /** Ids of the Signals whose examples the inspection misses. */
   val missed: Set<String> = emptySet(),
   val projectReview: EdictProjectReview? = null,
   val inspectionDigest: String? = null,
   val exampleSetDigest: String? = null,
+  val inspectionDescription: String = INSPECTION_SUMMARY,
 )
 
 /** The name every fixture evaluation gives the inspection. */
@@ -105,18 +108,16 @@ internal fun EdictRepository.store(cluster: ClusterFixture): EdictStoredCluster 
 private fun EvaluationFixture.of(cluster: EdictStoredCluster, inspection: String): EdictEvaluation = EdictEvaluation(
   inspectionHash = inspectionDigest ?: sha256Hex(inspection),
   exampleSetDigest = exampleSetDigest ?: exampleSetDigest(cluster),
-  action = EdictInspectionAction.GENERATE,
-  tp = cluster.signals.size - missed.size,
-  fp = 0,
-  fn = missed.size,
-  precision = precision,
-  recall = recall,
   examples = cluster.signals.filter { it.syntheticExampleId != null }.associate {
-    it.syntheticExampleId!! to EdictExampleEvaluation(it.label, it.strength == EdictSignalStrength.STRONG, it.id !in missed, 0, 1)
-  },
+    it.syntheticExampleId!! to EdictExampleEvaluation(it.label, it.id !in missed, 0)
+  } + listOf(
+    "true-positives" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, true, truePositives),
+    "false-positives" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, false, falsePositives),
+    "false-negatives" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, false, falseNegatives),
+  ).filter { (_, example) -> example.projectFindings > 0 },
   projectReview = projectReview,
   inspectionName = INSPECTION_NAME,
-  inspectionDescription = INSPECTION_SUMMARY,
+  inspectionDescription = inspectionDescription,
 )
 
 /** Replaces the generated inspection of [clusterId] with [content], as a later generation or a broken write would. */

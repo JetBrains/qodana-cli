@@ -1,6 +1,6 @@
 ## Inspection
 
-Avoid busy waiting
+Reports blocking calls on the worker thread.
 
 Inspection `rule` is generated, but has satisfied, referenced strong positive Signals from fewer than five distinct source files for normal promotion. These source fixes seek feedback on its true-positive findings.
 

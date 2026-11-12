@@ -12,7 +12,6 @@ import org.jetbrains.qodana.edict.core.EdictFileRevision
 import org.jetbrains.qodana.edict.core.EdictExampleEvaluation
 import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.core.EdictEvaluation
-import org.jetbrains.qodana.edict.core.EdictInspectionAction
 import org.jetbrains.qodana.edict.core.exampleSetDigest
 import org.jetbrains.qodana.edict.core.sha256Hex
 import org.jetbrains.qodana.edict.core.EdictJson
@@ -96,7 +95,7 @@ class PromotionIntegrationTest : IntegrationTest() {
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
     repository.loadCluster("integration-rule").directory.evaluationPath.writeText(EdictJson.encodeToString(EdictEvaluation(
       sha256Hex("inspection"), exampleSetDigest(repository.loadCluster("integration-rule")),
-      EdictInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, (0..5).associate { "example-$it" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, true, true, 0, 1) }, null, "Integration rule", "Detects integration problems.",
+      (0..5).associate { "example-$it" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, true, 0) }, null, "Integration rule", "Detects integration problems.",
     )))
   }
 }

@@ -3,8 +3,11 @@
 package org.jetbrains.qodana.edict.core
 
 import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.KeepGeneratedSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encoding.Decoder
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import kotlinx.serialization.json.Json
@@ -405,58 +408,85 @@ internal data class EdictInspectionResultsResponse(
   /** True when the project findings equal those of this cluster's previous analysis, which were already reviewed. */
   @EncodeDefault(EncodeDefault.Mode.ALWAYS)
   val findingsUnchanged: Boolean = false,
+  /** False when this run reviewed every finding already and no example lost what reproduces its findings. */
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val weakReviewNeeded: Boolean = true,
 )
 
 /**
- * `clusters/<id>/evaluation.json`: the final score of one inspection on one example set, written only by
- * `edict_record_evaluation`. Every example weighs the project findings the weak-signal review assigned to it, at
- * least 1: tp sums the weights of satisfied positive examples, fn of unsatisfied positive ones, and fp of negative
- * examples the inspection reports, each with the [directFindings] of its kind. Finalising Generated requires one
- * matching the published inspection and examples.
+ * `clusters/<id>/evaluation.json`: the score of one inspection on one example set, written only by
+ * `edict_record_evaluation`. Each example weighs the project findings attributed to it, at least 1: tp sums the weights of
+ * satisfied positive examples, fn of unsatisfied positive ones, and fp of unsatisfied negative ones. The scores are written
+ * for the reader and computed again on reading. Finalising Generated requires one matching the published inspection and
+ * examples.
  */
-@Serializable
+@KeepGeneratedSerializer
+@Serializable(with = EdictEvaluationSerializer::class)
 internal data class EdictEvaluation(
+  /** SHA-256 hex of the evaluated inspection's bytes. */
   val inspectionHash: String,
   val exampleSetDigest: String,
-  val action: EdictInspectionAction,
-  val tp: Int,
-  val fp: Int,
-  val fn: Int,
-  val precision: Double,
-  val recall: Double,
   val examples: Map<String, EdictExampleEvaluation>,
-  /** The published inspection's project analysis and its weak-signal review; null when this run analyzed no such bytes. */
+  /** The published inspection's project analysis and its weak-signal review; null only in evaluations of earlier versions. */
   val projectReview: EdictProjectReview?,
   val inspectionName: String = "",
   val inspectionDescription: String = "",
-  val directFindings: EdictDirectFindings = EdictDirectFindings(tp = 0, fp = 0),
-)
+) {
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val tp: Int = examples.weight(EdictSignalLabel.POSITIVE, satisfied = true)
 
-/**
- * The findings an evaluation counts directly rather than through an example's weight, [tp] true and [fp] false positives:
- * the inspection does not decide the example of each as the finding was classified, or users confirmed one in a review.
- */
-@Serializable
-internal data class EdictDirectFindings(val tp: Int, val fp: Int)
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val fp: Int = examples.weight(EdictSignalLabel.NEGATIVE, satisfied = false)
 
-@Serializable
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val fn: Int = examples.weight(EdictSignalLabel.POSITIVE, satisfied = false)
+
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val precision: Double = if (tp + fp == 0) 0.0 else tp.toDouble() / (tp + fp)
+
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val recall: Double = if (tp + fn == 0) 0.0 else tp.toDouble() / (tp + fn)
+
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val f1: Double = if (precision + recall == 0.0) 0.0 else 2 * precision * recall / (precision + recall)
+}
+
+private fun Map<String, EdictExampleEvaluation>.weight(label: EdictSignalLabel, satisfied: Boolean): Int =
+  values.filter { it.label == label && it.satisfied == satisfied }.sumOf { it.weight }
+
+@KeepGeneratedSerializer
+@Serializable(with = EdictExampleEvaluationSerializer::class)
 internal data class EdictExampleEvaluation(
   val label: EdictSignalLabel,
-  val strong: Boolean,
   val satisfied: Boolean,
+  /** The project findings attributed to this example: those the weak-signal review assigned to it. */
   val projectFindings: Int,
-  val weight: Int,
-)
+) {
+  /** At least 1: the example was made from a finding, even when none of the analyzed ones is attributed to it. */
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val weight: Int = maxOf(1, projectFindings)
+}
+
+/**
+ * Writes the computed scores for the reader and computes them again on reading: `copy()` runs the constructor, whose body
+ * derives them from the examples, whatever the file held.
+ */
+internal object EdictEvaluationSerializer : KSerializer<EdictEvaluation> by EdictEvaluation.generatedSerializer() {
+  override fun deserialize(decoder: Decoder): EdictEvaluation = EdictEvaluation.generatedSerializer().deserialize(decoder).copy()
+}
+
+/** Writes the computed weight for the reader and computes it again on reading, as [EdictEvaluationSerializer] does. */
+internal object EdictExampleEvaluationSerializer : KSerializer<EdictExampleEvaluation> by EdictExampleEvaluation.generatedSerializer() {
+  override fun deserialize(decoder: Decoder): EdictExampleEvaluation =
+    EdictExampleEvaluation.generatedSerializer().deserialize(decoder).copy()
+}
 
 @Serializable
 internal data class EdictProjectReview(
+  /** Full SHA of the analyzed project revision. */
   val projectRevision: String,
   val totalFindings: Int,
   val reviewedFindings: Int,
-  val uncertain: Int,
-  val unassigned: Int,
-  val unreproduced: Int,
-  val inspectionDescription: String = "",
   /** Exact locations classified TP for these inspection bytes, retained across server restarts. */
   val truePositiveFindings: List<EdictProjectFinding> = emptyList(),
   val reportUrl: String? = null,

@@ -60,7 +60,7 @@ internal class FeedbackInspections(private val paths: EdictRepositoryDirectory) 
 }
 
 /**
- * The generated inspections of [repository], in any cluster state, the most precise first, that have an evaluation of their
+ * The generated inspections of [repository], in any cluster state, that have an evaluation of their
  * bytes on their cluster's current examples with at least [targetPrecision], that no promotion proposed, and whose findings
  * got at most [MAX_UNPROCESSED_FALSE_POSITIVES] 👎 answers that no generation took into account yet.
  */

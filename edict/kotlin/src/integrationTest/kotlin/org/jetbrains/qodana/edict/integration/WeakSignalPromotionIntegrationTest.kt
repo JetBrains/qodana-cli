@@ -41,7 +41,7 @@ class WeakSignalPromotionIntegrationTest : IntegrationTest() {
             val fixed = changes.files.getValue(Fixture.sourcePath)
             assertFalse("Thread.sleep" in fixed, "Remove the redundant delay")
             assertContains(fixed, "result.get()", message = "Keep waiting for the future")
-            assertContains(request.description, projectReview.inspectionDescription)
+            assertContains(request.description, evaluation.inspectionDescription)
             assertContains(request.description, "accept/merge this PR if you agree")
             assertContains(request.description, "## Validation")
 
