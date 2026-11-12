@@ -20,6 +20,7 @@ edict:
     targetPrecision: 0.95
     targetRecall: 0.7
     targetF1: 0.85
+    minSourceFiles: 8
     url: https://github.com/qodana/kotlin-edict
   extraction:
     defaultSignalCount: 250
@@ -28,3 +29,6 @@ edict:
   generation:
     maxProjectAnalyses: 5
     defaultGenerationCount: 10
+  feedback:
+    maxPerInspection: 20
+    maxPerPullRequest: 4

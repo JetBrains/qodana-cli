@@ -17,11 +17,10 @@ import java.net.URI
 import java.net.URLEncoder
 import java.util.Locale
 
-internal const val MIN_PROMOTION_SOURCE_FILES = 5
 private const val MAX_DESCRIPTION_SOURCE_FILES = 5
 
 /**
- * What decides how a cluster's inspection is promoted. An inspection PR needs [MIN_PROMOTION_SOURCE_FILES] source files
+ * What decides how a cluster's inspection is promoted. An inspection PR needs `edict.promotion.minSourceFiles` source files
  * of both kinds; a weak-signal source-fix review is for an inspection with fewer [referencedSourceFiles].
  */
 internal data class PromotionEligibility(
@@ -55,12 +54,13 @@ internal fun EdictStoredCluster.promotionEvidence(ci: ReviewRepository?, evaluat
 private fun EdictSignal.isStrongPositive(): Boolean =
   strength == EdictSignalStrength.STRONG && label == EdictSignalLabel.POSITIVE
 
-/** Describes a cluster with [MIN_PROMOTION_SOURCE_FILES] referenced source files; only those can support a promotion PR. */
+/** Describes a cluster with [minSourceFiles] referenced source files; only those can support a promotion PR. */
 internal fun promotionDescription(
   cluster: EdictStoredCluster,
   digest: String,
   ci: ReviewRepository?,
   evaluation: EdictEvaluation?,
+  minSourceFiles: Int,
 ): String {
   require(evaluation != null && cluster.isCurrentEvaluation(evaluation, digest)) {
     "Promotion requires a current evaluation matching the inspection and examples"
@@ -69,8 +69,8 @@ internal fun promotionDescription(
     "Promotion requires inspection name and description; re-evaluate the inspection"
   }
   val evidence = cluster.promotionEvidence(ci, evaluation)
-  require(evidence.size >= MIN_PROMOTION_SOURCE_FILES) {
-    "Promotion requires strong positive Signals from at least $MIN_PROMOTION_SOURCE_FILES distinct source files with satisfied examples and file/line URLs; found ${evidence.size}"
+  require(evidence.size >= minSourceFiles) {
+    "Promotion requires strong positive Signals from at least $minSourceFiles distinct source files with satisfied examples and file/line URLs; found ${evidence.size}"
   }
   val selected = evidence.take(MAX_DESCRIPTION_SOURCE_FILES)
   val precision = evaluation.precision

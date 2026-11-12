@@ -94,7 +94,8 @@ edict:
 ```
 
 Inspection promotion uses two MCP calls. `edict_select_promotion_clusters` suggests candidates whose precision,
-recall, and F1 are strictly above the configured targets (defaults: precision 0.7, recall 0.6, F1 0), with a saved
+recall, and F1 are at least the configured targets (defaults: precision 0.7, recall 0.6, F1 0), with strong positive
+Signals from at least `minSourceFiles` distinct source files (default 5), and with a saved
 evaluation matching the inspection and current examples. F1 is the harmonic mean of precision and recall. Each
 target must be between 0 and 1. Selection returns the configured thresholds in `thresholds` and does not create PRs.
 Its optional positive `count` limits the number of eligible clusters returned; omitting it selects all eligible clusters.
@@ -102,7 +103,7 @@ Its optional positive `count` limits the number of eligible clusters returned; o
 The promotion skill reviews candidates and chooses explicit cluster IDs for `edict_promote_clusters`. It may choose
 a subset or deliberately choose other Generated inspections based on their evidence. Publication does not reapply
 metric thresholds. It requires a current evaluation, an inspection file, and referenced strong positive Signals
-from five distinct source files whose strong positive examples are satisfied. Descriptions include the compiled inspection name and description and cite at most five fixes,
+from `minSourceFiles` distinct source files whose strong positive examples are satisfied. Descriptions include the compiled inspection name and description and cite at most five fixes,
 linking to their PR numbers or short commit hashes. When `QODANA_TOKEN` is set in the Edict server environment,
 finalizing a newly generated inspection uploads its last project analysis to Qodana Cloud and saves the report URL in
 `evaluation.json`. The PR links its findings count to that report. `QODANA_ENDPOINT` optionally selects the cloud endpoint
@@ -117,6 +118,20 @@ edict:
     targetPrecision: 0.7
     targetRecall: 0.6
     targetF1: 0.0
+    minSourceFiles: 5
+```
+
+`state-push` also writes `feedback/inspections.json`: the generated inspections, in any cluster state, whose evaluation
+matches their bytes and current examples with at least `targetPrecision`, that no promotion proposed, and whose findings
+got at most five false-positive answers no generation took into account yet. `feedback-prepare` and `feedback-post` read
+only that file. A pull request gets at most `maxPerPullRequest` review comments over all its runs, and at most
+`maxPerInspection` comments of one inspection's bytes await an answer at once:
+
+```yaml
+edict:
+  feedback:
+    maxPerInspection: 10
+    maxPerPullRequest: 3
 ```
 
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
@@ -183,7 +198,10 @@ before running the skills. The fixes are based on the analyzed revision, even wh
   cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution run through
   Ultimate's generic inspection MCP; this CLI contains only its lifecycle and HTTP client.
   Generation publishes valid analyzed inspections as `Generated` even when strong or weak examples fail; evaluation
-  records their actual coverage, precision and recall. `Pending` remains an input state, not a generation outcome.
+  records their actual coverage, precision and recall. Only Pending clusters with new Signals are suggested. The
+  example overseer first has one `edict-signal-mapping` worker map the new Signals, without labels, to the examples that
+  stand for their cases. A predecessor is reused (`SKIP`) only when neither it nor the examples changed since its
+  evaluation and no user answered one of its findings as a false positive; findings users confirmed are added to it. `Pending` remains an input state, not a generation outcome.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
   complete discussion provenance, exact source snapshots, task-bound batches,
   ordered coverage validation, publication receipts tied to exact Signal models, and normalized analyzed-PR coverage

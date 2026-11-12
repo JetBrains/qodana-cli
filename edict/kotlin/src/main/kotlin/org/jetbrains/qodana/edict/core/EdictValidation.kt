@@ -1,5 +1,6 @@
 package org.jetbrains.qodana.edict.core
 
+import org.jetbrains.qodana.edict.signals.validDigest
 import java.nio.file.Path
 import kotlin.collections.plusAssign
 import kotlin.io.path.exists
@@ -156,7 +157,7 @@ internal suspend fun validateRepositoryState(
 
 internal fun validatePromotion(promotion: InspectionPromotion) {
   require(promotion.id.matches(Regex("p-[0-9a-f]{24}"))) { "Invalid promotion id '${promotion.id}'" }
-  require(promotion.inspectionDigest.matches(Regex("[0-9a-f]{64}"))) { "Invalid promotion inspection digest" }
+  require(validDigest(promotion.inspectionDigest)) { "Invalid promotion inspection digest" }
   require(promotion.targetBranch.isNotBlank()) { "Promotion target branch is required" }
   val targetPath = Path.of(promotion.targetPath)
   require(promotion.targetPath.isNotBlank() && !targetPath.isAbsolute && targetPath.none { it.toString() == ".." }) {

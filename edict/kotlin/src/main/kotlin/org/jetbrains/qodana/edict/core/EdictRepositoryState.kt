@@ -94,7 +94,9 @@ internal class EdictRepositoryState(
   val clustersById: Map<String, EdictStoredCluster> = clusters.associateBy(EdictStoredCluster::id)
   val inboxSignalsById: Map<String, EdictSignal> = inboxSignals.associateBy(EdictSignal::id)
   val inboxSignalIds: Set<String> = inboxSignals.mapTo(LinkedHashSet(), EdictSignal::id)
-  val jvmInboxSignalIds: Set<String> = inboxSignals.filter(EdictSignal::isJvmLanguage)
+  /** The inbox Signals that distribution places in clusters. */
+  // TODO: think about how weak Signals are processed; one that reached the inbox before they were refused stays there.
+  val distributableInboxSignalIds: Set<String> = inboxSignals.filter { it.isJvmLanguage && it.strength == EdictSignalStrength.STRONG }
     .mapTo(LinkedHashSet(), EdictSignal::id)
   val signalsById: Map<String, EdictSignal> = (clusters.flatMap(EdictStoredCluster::signals) + inboxSignals)
     .associateBy(EdictSignal::id)
@@ -276,6 +278,7 @@ internal class EdictRepositoryState(
   ): SignalPublication {
     val capability = authorize(token)
     require(capability.skill in SIGNAL_PUBLISHERS) { "${capability.skill} cannot publish inbox Signals" }
+    requireInboxStrength(signal)
     SignalValidation.validate(signal)
     val path = "inbox/${signal.id}.json"
     val content = EdictJson.encodeToString(signal)
@@ -631,4 +634,10 @@ private fun RepositoryPrAnalysisCoverage.normalized(): RepositoryPrAnalysisCover
     analyzedDateRanges = mergedRanges,
     analyzedPrNumbers = analyzedPrNumbers.distinct().sorted(),
   )
+}
+
+/** Refuses a Signal the inbox does not take: only STRONG Signals go there. */
+// TODO: think about how weak Signals are processed; until then they stay out of the inbox.
+internal fun requireInboxStrength(signal: EdictSignal) {
+  require(signal.strength == EdictSignalStrength.STRONG) { "Only STRONG Signals can be published to the inbox" }
 }

@@ -16,6 +16,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertEquals
 import kotlin.test.assertFails
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.reflect.KClass
@@ -165,6 +166,29 @@ class EdictRepositoryStateTest {
       val replacement = signal.copy(description = "Updated finding")
       assertFalse(state.publishSignal(batch.token, replacement).created)
       assertEquals(replacement, state.inboxSignal(signal.id))
+    }
+  }
+
+  @Test
+  fun `a weak Signal is not published to the inbox`() {
+    EdictRepositoryState.open(directory).use { state ->
+      val (_, batch) = state.batch()
+      val key = "repository:commit:item:weak"
+      val signal = EdictSignal(
+        id = stableSignalId(key),
+        idempotencyKey = key,
+        fileRevision = EdictFileRevision("src/Example.kt", "a".repeat(40), listOf(EdictLineRange(1, 1))),
+        source = EdictSignalSource.FromCommit("b".repeat(40)),
+        label = EdictSignalLabel.NEGATIVE,
+        description = "Example finding",
+        strength = EdictSignalStrength.WEAK,
+        provenance = EdictSignalProvenance("commit-item"),
+      )
+
+      val failure = assertFailsWith<IllegalArgumentException> { state.publishSignal(batch.token, signal) }
+
+      assertEquals("Only STRONG Signals can be published to the inbox", failure.message)
+      assertFalse(Files.exists(directory.resolve("inbox/${signal.id}.json")))
     }
   }
 

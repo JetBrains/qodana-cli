@@ -304,8 +304,25 @@ internal class EdictMcpToolset(
     }
 
     server.addTool(
+      name = "edict_prepare_signal_mapping",
+      description = "Write the new Signals of a Pending cluster, those no generation took into account yet, and every code " +
+        "example of it into a directory of your scratch, without labels, descriptions or sources: signals/<id>.json holds " +
+        "a Signal's id and file revision with its expected ranges, examples/<id>/ an example's source file without its " +
+        "metadata. Give the " +
+        "returned directory to an edict-signal-mapping worker, which tells which example stands for each Signal's case.",
+      inputSchema = stringArguments(
+        "token" to "Your edict-code-example-overseer task token",
+        "clusterId" to "Pending cluster whose examples you reconcile",
+      ),
+    ) { request ->
+      val token = request.requireString("token")
+      management.requireSkill(token, "edict-code-example-overseer")
+      generation.prepareSignalMapping(request.requireString("clusterId"), management.scratchDirectory(token)).toToolResult()
+    }
+
+    server.addTool(
       name = "edict_get_inspection_action",
-      description = "Detect conflicting Signals, then return SKIP when the predecessor passes every strong example; otherwise return GENERATE. Call before changing the cluster id or inspection candidate.",
+      description = "Detect conflicting Signals, then return SKIP when the predecessor inspection was evaluated on exactly the current code examples and no new Signal is a user's false-positive answer to its findings; otherwise return GENERATE. Assigning Signals to existing examples keeps them current; saving, changing or deleting an example does not. Call before changing the cluster id or inspection candidate.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),
     ) { request ->
       generation
@@ -405,7 +422,7 @@ internal class EdictMcpToolset(
 
     server.addTool(
       name = "edict_record_evaluation",
-      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Records failing strong and weak examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
+      description = "Last step before finalising Generated: score the inspection that would be published and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. On GENERATE scores the analyzed candidate on every strong and weak example; on SKIP keeps the predecessor's evaluation and adds the findings users confirmed in review comments since, without running it. Records failing strong and weak examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-cluster-generation task token",
         "clusterId" to "Pending cluster chosen for generation",

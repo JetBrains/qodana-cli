@@ -16,6 +16,9 @@ internal data class EdictRepositoryDirectory(val root: Path) {
   /** Answered or abandoned feedback records, in a `<yyyy-MM>` directory of the month they were reserved in. */
   val feedbackHistoryDirectory: Path = root.resolve("feedback").resolve("history")
 
+  /** The inspections whose findings may become review comments, as the last push of the state chose them. */
+  val feedbackInspectionsPath: Path = root.resolve("feedback").resolve("inspections.json")
+
   fun weakSignalPromotionHistoryPath(clusterId: String): Path {
     require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
     return promotionsDirectory.resolve("history").resolve("$clusterId.json")

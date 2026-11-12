@@ -125,6 +125,7 @@ private fun feedbackSignal(answer: FeedbackAnswer, description: String): EdictSi
             problemMessage = record.message,
             url = answer.url,
             replies = answer.replies,
+            inspectionDigest = record.inspectionDigest,
         ),
         label = answer.label,
         description = description,

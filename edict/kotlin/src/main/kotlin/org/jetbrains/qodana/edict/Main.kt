@@ -8,9 +8,13 @@ import org.jetbrains.qodana.edict.common.DEFAULT_EDICT_STATE_BRANCH
 import org.jetbrains.qodana.edict.common.EdictYamlConfiguration
 import org.jetbrains.qodana.edict.common.StateBranch
 import org.jetbrains.qodana.edict.core.EdictMcpToolset
+import org.jetbrains.qodana.edict.core.EdictRepository
+import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.core.EdictRepositoryState
 import org.jetbrains.qodana.edict.core.IntellijMcpServerService
 import org.jetbrains.qodana.edict.core.defaultQodanaExecutable
+import org.jetbrains.qodana.edict.feedback.FeedbackInspections
+import org.jetbrains.qodana.edict.feedback.chooseFeedbackInspections
 import org.jetbrains.qodana.edict.feedback.actionsEventPath
 import org.jetbrains.qodana.edict.feedback.actionsFeedbackApi
 import org.jetbrains.qodana.edict.feedback.actionsPullRequest
@@ -120,7 +124,8 @@ fun main(args: Array<String>) {
                     Installs skills into .codex/skills and adds Edict settings for edict.mcpPort from qodana.yaml to .codex/config.toml.
                     Checks out edict.stateBranch (default $DEFAULT_EDICT_STATE_BRANCH) as a worktree at edict.statePath, from origin when it has the branch.
                   edict state-push [--qodana-yaml <path>] [--message <message>]
-                    Commits the state on edict.stateBranch and pushes it to origin; fails while a server owns the state.
+                    Chooses the inspections whose findings feedback may comment on, then commits the state on edict.stateBranch
+                    and pushes it to origin; fails while a server owns the state.
                   edict feedback-prepare --state-dir <path> --output-dir <path> [--qodana-yaml <path>]
                     For a GitHub Actions run of a pull request of the repository itself: checks edict.stateBranch out at
                     --state-dir and copies the inspections to run for feedback into --output-dir, outside the project and missing or empty.
@@ -162,7 +167,7 @@ private fun prepareFeedbackInspections(qodanaYaml: Path?, stateDirectory: String
     logOutsideTheProject()
     val configuration = EdictYamlConfiguration.load(qodanaYaml)
     val event = actionsPullRequest(actionsEventPath())
-    prepareFeedback(EdictLayout.get(stateDirectory), configuration.stateBranch, event, outputDirectory)
+    prepareFeedback(EdictLayout.get(stateDirectory), configuration.stateBranch, event, outputDirectory, configuration.feedback)
 }
 
 /** Comments on the workflow's pull request with the feedback findings of the [sarif] report, reserved in the state first. */
@@ -170,7 +175,10 @@ private fun postFeedbackComments(qodanaYaml: Path?, stateDirectory: String, sari
     logOutsideTheProject()
     val configuration = EdictYamlConfiguration.load(qodanaYaml)
     val event = actionsPullRequest(actionsEventPath())
-    postFeedback(EdictLayout.get(stateDirectory), configuration.stateBranch, event, sarif, actionsFeedbackApi(), Clock.systemUTC())
+    postFeedback(
+        EdictLayout.get(stateDirectory), configuration.stateBranch, event, sarif, actionsFeedbackApi(), Clock.systemUTC(),
+        configuration.feedback,
+    )
 }
 
 /**
@@ -189,7 +197,12 @@ private fun pushState(qodanaYaml: Path?, message: String) {
     // Before the lock, which creates files in the state directory that would keep install from checking it out.
     val worktree = StateBranch(layout, configuration.stateBranch).worktree()
     // Holding the state lock keeps a running server from writing while the state is committed.
-    EdictRepositoryState.open(layout.stateDirectory).use { worktree.push(message) }
+    EdictRepositoryState.open(layout.stateDirectory).use {
+        val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
+        // Feedback runs on the inspections this push chooses, so that `feedback-prepare` reads one file of the state.
+        FeedbackInspections(repository.paths).save(chooseFeedbackInspections(repository, configuration.targetPrecision))
+        worktree.push(message)
+    }
     logger.info { "Pushed the Edict state in ${layout.stateDirectory} to ${configuration.stateBranch}" }
 }
 

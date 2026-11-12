@@ -28,6 +28,7 @@ import org.jetbrains.qodana.edict.feedback.support.pullRequest
 import org.jetbrains.qodana.edict.feedback.support.recentPullRequests
 import org.jetbrains.qodana.edict.feedback.support.reply
 import org.jetbrains.qodana.edict.feedback.support.storeActive
+import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
 import org.jetbrains.qodana.edict.support.launch
@@ -190,6 +191,7 @@ class FeedbackSignalsTest {
           problemMessage = "Blocking call on the worker thread",
           url = commentUrl(11),
           replies = listOf(EdictReply("alice", "It really blocks")),
+          inspectionDigest = INSPECTION_DIGEST,
         ),
         label = EdictSignalLabel.POSITIVE,
         description = "Sleeps on the worker thread",

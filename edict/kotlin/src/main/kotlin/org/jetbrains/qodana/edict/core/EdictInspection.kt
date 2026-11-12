@@ -41,25 +41,18 @@ internal class EdictInspection(
         weight = maxOf(1, findings),
       )
     }.toSortedMap()
-    fun weight(label: EdictSignalLabel, satisfied: Boolean) =
-      examples.values.filter { it.label == label && it.satisfied == satisfied }.sumOf { it.weight }
-    fun direct(classification: EdictFindingClassification) = unreproduced.count { it.classification == classification }
-    val tp = weight(EdictSignalLabel.POSITIVE, satisfied = true) + direct(EdictFindingClassification.TP)
-    val fn = weight(EdictSignalLabel.POSITIVE, satisfied = false)
-    val fp = weight(EdictSignalLabel.NEGATIVE, satisfied = false) + direct(EdictFindingClassification.FP)
-    return measurement.validation to EdictEvaluation(
+    return measurement.validation to scoredEvaluation(
       inspectionHash = sha256Hex(code),
-      inspectionName = measurement.inspectionName,
-      inspectionDescription = measurement.inspectionDescription,
       exampleSetDigest = exampleSetDigest(cluster),
       action = action,
-      tp = tp,
-      fp = fp,
-      fn = fn,
-      precision = if (tp + fp == 0) 0.0 else tp.toDouble() / (tp + fp),
-      recall = if (tp + fn == 0) 0.0 else tp.toDouble() / (tp + fn),
       examples = examples,
+      direct = EdictDirectFindings(
+        tp = unreproduced.count { it.classification == EdictFindingClassification.TP },
+        fp = unreproduced.count { it.classification == EdictFindingClassification.FP },
+      ),
       projectReview = projectReview?.copy(unreproduced = unreproduced.size),
+      inspectionName = measurement.inspectionName,
+      inspectionDescription = measurement.inspectionDescription,
     )
   }
 
@@ -124,7 +117,6 @@ internal class EdictInspection(
     val scoredExampleIds = examplesById.keys
     val strongExampleIds = cluster.strongExampleIds()
     val weakExampleIds = scoredExampleIds - strongExampleIds
-    val strongPositiveCount = strongExampleIds.count { examplesById[it]?.metadata?.label == EdictSignalLabel.POSITIVE }
     val strongCorrectCount = strongExampleIds.count { outcomesById[it]?.satisfied == true }
     val weakCorrectCount = weakExampleIds.count { outcomesById[it]?.satisfied == true }
     val correctCount = scoredExampleIds.count { outcomesById[it]?.satisfied == true }
@@ -147,7 +139,6 @@ internal class EdictInspection(
       compilationSuccess = true,
       overallSuccess = executionSuccess,
       summary = summary,
-      strongExamplesSatisfied = executionSuccess && strongPositiveCount > 0 && strongCorrectCount == strongExampleIds.size,
       failures = failures,
       achievedAccuracyPercent = achieved,
       reportedNegativeExampleIds = reportedNegatives,
@@ -292,13 +283,12 @@ private val UNRESOLVED_REFERENCES_INSPECTION: String =
 internal fun EdictStoredCluster.strongExampleIds(): Set<String> =
   signals.asSequence().filter { it.strength == EdictSignalStrength.STRONG }.mapNotNull(EdictSignal::syntheticExampleId).toSet()
 
+/**
+ * The digest of the code examples of [cluster]: their ids, metadata and code. Assigning a Signal to an example leaves it as it
+ * is: the example stands for the Signal's case as it did, and the inspection that passed it passes it again.
+ */
 internal fun exampleSetDigest(cluster: EdictStoredCluster): String {
-  val strong = cluster.signals.asSequence()
-    .filter { it.strength == EdictSignalStrength.STRONG }
-    .mapNotNull(EdictSignal::syntheticExampleId)
-    .toSortedSet()
   val content = buildString {
-    appendLine("strong:${strong.joinToString(",")}")
     cluster.examples.sortedBy { it.metadata.id }.forEach { example ->
       appendLine("example:${example.metadata.id}")
       appendLine(EdictJson.encodeToString(EdictCodeExampleMetadata.serializer(), example.metadata))
@@ -311,3 +301,67 @@ internal fun exampleSetDigest(cluster: EdictStoredCluster): String {
 /** Whether [evaluation] scored the inspection whose SHA-256 hex is [inspectionDigest] on this cluster's current examples. */
 internal fun EdictStoredCluster.isCurrentEvaluation(evaluation: EdictEvaluation, inspectionDigest: String): Boolean =
   evaluation.inspectionHash == inspectionDigest && evaluation.exampleSetDigest == exampleSetDigest(this)
+
+/**
+ * The evaluation of the inspection whose SHA-256 hex is [inspectionHash] on the examples of [exampleSetDigest]: tp sums the
+ * weights of satisfied positive [examples], fn of unsatisfied positive ones, and fp of unsatisfied negative ones, each with the
+ * [direct] findings of its kind.
+ */
+private fun scoredEvaluation(
+  inspectionHash: String,
+  exampleSetDigest: String,
+  action: EdictInspectionAction,
+  examples: Map<String, EdictExampleEvaluation>,
+  direct: EdictDirectFindings,
+  projectReview: EdictProjectReview?,
+  inspectionName: String,
+  inspectionDescription: String,
+): EdictEvaluation {
+  val tp = examples.weight(EdictSignalLabel.POSITIVE, satisfied = true) + direct.tp
+  val fn = examples.weight(EdictSignalLabel.POSITIVE, satisfied = false)
+  val fp = examples.weight(EdictSignalLabel.NEGATIVE, satisfied = false) + direct.fp
+  return EdictEvaluation(
+    inspectionHash = inspectionHash,
+    inspectionName = inspectionName,
+    inspectionDescription = inspectionDescription,
+    exampleSetDigest = exampleSetDigest,
+    action = action,
+    tp = tp,
+    fp = fp,
+    fn = fn,
+    precision = if (tp + fp == 0) 0.0 else tp.toDouble() / (tp + fp),
+    recall = if (tp + fn == 0) 0.0 else tp.toDouble() / (tp + fn),
+    examples = examples,
+    projectReview = projectReview,
+    directFindings = direct,
+  )
+}
+
+private fun Map<String, EdictExampleEvaluation>.weight(label: EdictSignalLabel, satisfied: Boolean): Int =
+  values.filter { it.label == label && it.satisfied == satisfied }.sumOf { it.weight }
+
+/**
+ * This evaluation of an unchanged inspection on unchanged examples, reused on SKIP for [cluster], whose new Signals may have
+ * made weak examples strong, with the findings users [confirmed] in review comments: their number by the example of each
+ * one's Signal. A confirmed finding counts as a project finding of its example, or directly when the inspection does not
+ * report the example, as the weak-signal review counts the findings it assigns.
+ */
+internal fun EdictEvaluation.withConfirmedFindings(cluster: EdictStoredCluster, confirmed: Map<String, Int>): EdictEvaluation {
+  require(examples.keys.containsAll(confirmed.keys)) { "Confirmed findings name examples the evaluation lacks: ${confirmed.keys - examples.keys}" }
+  val strong = cluster.strongExampleIds()
+  val reported = examples.filterValues { it.label == EdictSignalLabel.POSITIVE && it.satisfied }.keys
+  val updated = examples.mapValues { (id, example) ->
+    val findings = example.projectFindings + if (id in reported) confirmed[id] ?: 0 else 0
+    example.copy(strong = id in strong, projectFindings = findings, weight = maxOf(1, findings))
+  }.toSortedMap()
+  return scoredEvaluation(
+    inspectionHash = inspectionHash,
+    exampleSetDigest = exampleSetDigest,
+    action = EdictInspectionAction.SKIP,
+    examples = updated,
+    direct = directFindings.copy(tp = directFindings.tp + confirmed.filterKeys { it !in reported }.values.sum()),
+    projectReview = projectReview,
+    inspectionName = inspectionName,
+    inspectionDescription = inspectionDescription,
+  )
+}
