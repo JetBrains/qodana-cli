@@ -1,29 +1,19 @@
 name: '🔁 Backport'
 # Backport a merged PR to release branches: add a `backport <branch>` label (e.g. `backport 262`)
-# before or after merging, or comment `/backport` on the merged PR to retry its backport labels.
+# before or after merging. To retry a backport, remove the label and add it again.
 # The backport PRs are created by qodana-release-bot, so the usual checks run and approval is required.
 on:
   pull_request_target:
     types: [closed, labeled]
-  issue_comment:
-    types: [created]
 
 permissions: {}
 
 jobs:
   backport:
     if: >
-      (
-        github.event_name == 'pull_request_target' &&
-        github.event.pull_request.merged && (
-          (github.event.action == 'closed' && contains(toJSON(github.event.pull_request.labels.*.name), '"backport ')) ||
-          (github.event.action == 'labeled' && startsWith(github.event.label.name, 'backport '))
-        )
-      ) || (
-        github.event_name == 'issue_comment' &&
-        github.event.issue.pull_request &&
-        startsWith(github.event.comment.body, '/backport') &&
-        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+      github.event.pull_request.merged && (
+        (github.event.action == 'closed' && contains(toJSON(github.event.pull_request.labels.*.name), '"backport ')) ||
+        (github.event.action == 'labeled' && startsWith(github.event.label.name, 'backport '))
       )
     runs-on: ubuntu-latest
     steps:
