@@ -21,49 +21,30 @@ on:
 # arm64 on ubuntu-24.04-arm. Images are pushed by digest, then the merge job
 # assembles the multi-arch tags defined in docker-bake.hcl.
 jobs:
-  groups:
-    runs-on: ubuntu-latest
-    outputs:
-      groups: ${{ steps.groups.outputs.groups }}
-    steps:
-      - id: groups
-        run: |
-          # Bake groups from dockerfiles/base/docker-bake.hcl, one job per group and platform
-          groups='[
-            "jvm",
-            "dotnet",
-            "clang",
-            "clang-16",
-            "clang-17",
-            "clang-18",
-            "clang-19",
-            "go",
-            "js",
-            "poly",
-            "php",
-            "rust",
-            "ruby"
-          ]'
-          echo "groups=$(jq -c . <<< "$groups")" >> "$GITHUB_OUTPUT"
-
   base:
-    needs: groups
     strategy:
       fail-fast: false
       matrix:
-        group: ${{ fromJSON(needs.groups.outputs.groups) }}
+        # Bake groups from dockerfiles/base/docker-bake.hcl; the merge job reuses this list
+        group: &groups
+          - jvm        # jvm-community → jvm → python-community → python
+          - dotnet     # dotnet-community → dotnet
+          - clang      # clang 20, 21 (Trixie)
+          - clang-16   # clang 16 (Bookworm)
+          - clang-17   # clang 17 (Bookworm)
+          - clang-18   # clang 18 (Bookworm)
+          - clang-19   # clang 19 (Bookworm)
+          - go         # standalone
+          - js         # standalone
+          - poly       # standalone
+          - php        # standalone
+          - rust       # standalone
+          - ruby       # ruby 3.2, 3.3, 3.4
         platform:
-          - linux/amd64
-          - linux/arm64
-        include:
-          - platform: linux/amd64
-            arch: amd64
-            runner: ubuntu-latest
-          - platform: linux/arm64
-            arch: arm64
-            runner: ubuntu-24.04-arm
-    name: base (${{ matrix.group }}, ${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+          - { name: linux/amd64, arch: amd64, runner: ubuntu-latest }
+          - { name: linux/arm64, arch: arm64, runner: ubuntu-24.04-arm }
+    name: base (${{ matrix.group }}, ${{ matrix.platform.arch }})
+    runs-on: ${{ matrix.platform.runner }}
     steps:
       - name: Clean up
         run: |
@@ -85,57 +66,44 @@ jobs:
           registry: dhi.io
           username: ${{ secrets.DHI_USERNAME }}
           password: ${{ secrets.DHI_PASSWORD }}
-      - name: Prepare bake override
-        working-directory: dockerfiles/base
-        env:
-          PUSH: ${{ github.event_name == 'push' }}
-        run: |
-          # On push: drop tags and push each target untagged by digest to the repository of its first tag
-          # (a tagged ref can't be pushed by digest). Tags are applied later in the merge job.
-          docker buildx bake --print "${{ matrix.group }}" | jq --argjson push "$PUSH" '
-            {target: (.target | with_entries(.value = (if $push then {
-              tags: [],
-              output: ["type=image,name=\(.value.tags[0] | sub(":[^:/]+$"; "")),push-by-digest=true,name-canonical=true,push=true"]
-            } else {} end)))}' > "$RUNNER_TEMP/bake-override.json"
-          cat "$RUNNER_TEMP/bake-override.json"
       - name: Build${{ github.event_name == 'push' && ' and push by digest' || '' }}
         id: bake
         uses: docker/bake-action@v6
+        env:
+          # See docker-bake.hcl: one platform per native runner; on push, untagged by digest
+          BASE_PLATFORMS: ${{ matrix.platform.name }}
+          PUSH_BY_DIGEST: ${{ github.event_name == 'push' }}
         with:
           workdir: dockerfiles/base
           source: .
-          files: |
-            docker-bake.hcl
-            ${{ runner.temp }}/bake-override.json
           targets: ${{ matrix.group }}
           set: |
-            *.platform=${{ matrix.platform }}
-            *.cache-from=type=gha,scope=base-${{ matrix.group }}-${{ matrix.arch }}
-            *.cache-to=type=gha,scope=base-${{ matrix.group }}-${{ matrix.arch }},mode=max
+            *.cache-from=type=gha,scope=base-${{ matrix.group }}-${{ matrix.platform.arch }}
+            *.cache-to=type=gha,scope=base-${{ matrix.group }}-${{ matrix.platform.arch }},mode=max
       - name: Save bake metadata
         if: github.event_name == 'push'
         env:
           METADATA: ${{ steps.bake.outputs.metadata }}
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
-          printf '%s' "$METADATA" > "$RUNNER_TEMP/digests/${{ matrix.group }}-${{ matrix.arch }}.json"
+          printf '%s' "$METADATA" > "$RUNNER_TEMP/digests/${{ matrix.group }}-${{ matrix.platform.arch }}.json"
       - name: Upload bake metadata
         if: github.event_name == 'push'
         uses: actions/upload-artifact@v6
         with:
-          name: digests-${{ matrix.group }}-${{ matrix.arch }}
+          name: digests-${{ matrix.group }}-${{ matrix.platform.arch }}
           path: ${{ runner.temp }}/digests/*
           if-no-files-found: error
           retention-days: 1
 
   merge:
-    needs: [groups, base]
+    needs: base
     # Run per group even if another group failed; a group with a missing platform fails on its own
     if: ${{ !cancelled() && github.event_name == 'push' }}
     strategy:
       fail-fast: false
       matrix:
-        group: ${{ fromJSON(needs.groups.outputs.groups) }}
+        group: *groups
     name: merge (${{ matrix.group }})
     runs-on: ubuntu-latest
     steps:
@@ -156,32 +124,4 @@ jobs:
           password: ${{ secrets.SPACE_PASSWORD }}
       - name: Create multi-arch tags
         working-directory: dockerfiles/base
-        env:
-          GROUP: ${{ matrix.group }}
-          DIGESTS: ${{ runner.temp }}/digests
-        run: |
-          set -euo pipefail
-          for arch in amd64 arm64; do
-            [ -f "$DIGESTS/$GROUP-$arch.json" ] || { echo "::error::No $arch build for group $GROUP"; exit 1; }
-          done
-
-          # Tags come from docker-bake.hcl; per-platform digests from bake metadata:
-          # { "<target>": { "image.name": "<repo>", "containerimage.digest": "sha256:..." }, ... }
-          docker buildx bake --print "$GROUP" > "$RUNNER_TEMP/bake-print.json"
-          for target in $(jq -r '.target | keys[]' "$RUNNER_TEMP/bake-print.json"); do
-            mapfile -t tags < <(jq -r --arg t "$target" '.target[$t].tags[]' "$RUNNER_TEMP/bake-print.json")
-            sources=()
-            for arch in amd64 arm64; do
-              name=$(jq -r --arg t "$target" '.[$t]["image.name"] // empty' "$DIGESTS/$GROUP-$arch.json")
-              digest=$(jq -r --arg t "$target" '.[$t]["containerimage.digest"] // empty' "$DIGESTS/$GROUP-$arch.json")
-              if [ -z "$name" ] || [ -z "$digest" ]; then
-                echo "::error::No $arch digest for target $target"
-                exit 1
-              fi
-              sources+=("$name@$digest")
-            done
-            echo "::group::$target -> ${tags[*]}"
-            docker buildx imagetools create "${tags[@]/#/--tag=}" "${sources[@]}"
-            docker buildx imagetools inspect "${tags[0]}"
-            echo "::endgroup::"
-          done
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/merge-base-images.py" "${{ matrix.group }}" "$RUNNER_TEMP/digests"
