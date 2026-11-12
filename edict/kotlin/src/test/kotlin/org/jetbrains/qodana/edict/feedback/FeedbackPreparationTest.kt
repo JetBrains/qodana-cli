@@ -5,6 +5,7 @@ import org.jetbrains.qodana.edict.common.DEFAULT_EDICT_STATE_BRANCH
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.FeedbackConfiguration
 import org.jetbrains.qodana.edict.common.support.GitOrigin
+import org.jetbrains.qodana.edict.feedback.support.FEEDBACK_CLUSTER
 import org.jetbrains.qodana.edict.feedback.support.OWN_PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.stateFiles
@@ -33,7 +34,7 @@ class FeedbackPreparationTest {
 
   @Test
   fun `copies the selected inspections of the state on origin into the output directory`() {
-    origin.publishState("routine", routineState(ClusterFixture(emptyList())))
+    origin.publishState("routine", routineState(FEEDBACK_CLUSTER))
 
     prepare(OWN_PULL_REQUEST)
 
@@ -42,7 +43,7 @@ class FeedbackPreparationTest {
 
   @Test
   fun `copies into an output directory that exists and is empty`() {
-    origin.publishState("routine", routineState(ClusterFixture(emptyList())))
+    origin.publishState("routine", routineState(FEEDBACK_CLUSTER))
     outputDirectory.createDirectories()
 
     prepare(OWN_PULL_REQUEST)
@@ -52,7 +53,7 @@ class FeedbackPreparationTest {
 
   @Test
   fun `copies nothing when no inspection is selected`() {
-    origin.publishState("routine", routineState(ClusterFixture(emptyList(), evaluation = EvaluationFixture(precision = 0.5))))
+    origin.publishState("routine", routineState(ClusterFixture(emptyList(), evaluation = EvaluationFixture(falsePositives = 1))))
 
     prepare(OWN_PULL_REQUEST)
 
@@ -92,7 +93,7 @@ class FeedbackPreparationTest {
 
   @Test
   fun `leaves a pull request from a fork alone, without checking the state out`() {
-    origin.publishState("routine", routineState(ClusterFixture(emptyList())))
+    origin.publishState("routine", routineState(FEEDBACK_CLUSTER))
 
     prepare(ActionsPullRequest.FromFork(PULL_REQUEST))
 
@@ -102,7 +103,7 @@ class FeedbackPreparationTest {
 
   @Test
   fun `leaves a run for no pull request alone, without checking the state out`() {
-    origin.publishState("routine", routineState(ClusterFixture(emptyList())))
+    origin.publishState("routine", routineState(FEEDBACK_CLUSTER))
 
     prepare(ActionsPullRequest.None)
 

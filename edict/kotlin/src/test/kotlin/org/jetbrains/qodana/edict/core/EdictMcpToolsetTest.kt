@@ -601,7 +601,7 @@ class EdictMcpToolsetTest {
       assertEquals(setOf("Generated", "Invalid", "Discontinued"), statuses.map { (it as JsonPrimitive).content }.toSet())
       assertContains(finalise.description.orEmpty(), "accuracy never block Generated")
       assertContains(finalise.description.orEmpty(), "Pending is not a generation outcome")
-      assertContains(server.tools.getValue("edict_record_evaluation").tool.description.orEmpty(), "Records failing strong and weak examples too")
+      assertContains(server.tools.getValue("edict_record_evaluation").tool.description.orEmpty(), "Records failing examples too")
     }
   }
 

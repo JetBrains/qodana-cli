@@ -44,9 +44,7 @@ internal fun EdictStoredCluster.promotionEligibility(ci: ReviewRepository?, eval
 internal fun EdictStoredCluster.promotionEvidence(ci: ReviewRepository?, evaluation: EdictEvaluation?): List<EdictSignal> = signals
   .filter {
     it.isStrongPositive() && it.referenceUrl(ci) != null &&
-      evaluation?.examples?.get(it.syntheticExampleId)?.let { example ->
-        example.strong && example.label == EdictSignalLabel.POSITIVE && example.satisfied
-      } == true
+      evaluation?.examples?.get(it.syntheticExampleId)?.satisfied == true
   }
   .sortedBy { it.id }
   .distinctBy { it.fileRevision.path }
@@ -73,9 +71,6 @@ internal fun promotionDescription(
     "Promotion requires strong positive Signals from at least $minSourceFiles distinct source files with satisfied examples and file/line URLs; found ${evidence.size}"
   }
   val selected = evidence.take(MAX_DESCRIPTION_SOURCE_FILES)
-  val precision = evaluation.precision
-  val recall = evaluation.recall
-  val f1 = if (precision + recall == 0.0) 0.0 else 2 * precision * recall / (precision + recall)
   fun percent(value: Double): String = String.format(Locale.ROOT, "%.1f%%", value * 100)
   return buildString {
     appendLine("## Description")
@@ -86,7 +81,7 @@ internal fun promotionDescription(
     appendLine()
     appendLine(evaluation.inspectionDescription.markdownText())
     appendLine()
-    appendLine("Estimated precision: **${percent(precision)}** · recall: **${percent(recall)}** · F1: **${percent(f1)}**")
+    appendLine("Estimated precision: **${percent(evaluation.precision)}** · recall: **${percent(evaluation.recall)}** · F1: **${percent(evaluation.f1)}**")
     appendLine()
     evaluation.projectReview?.let { review ->
       val count = "${review.totalFindings} findings"

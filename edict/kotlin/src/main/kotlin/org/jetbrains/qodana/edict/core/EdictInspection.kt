@@ -13,57 +13,75 @@ internal class EdictInspection(
     exampleAnalysis = { code, requests -> server.withClient { it.runExamples(code, requests) } },
   )
 
-  suspend fun validate(cluster: EdictStoredCluster, code: String): EdictInspectionValidationResponse =
-    measure(cluster, code).validation
+  /**
+   * Runs [code] on the examples of [cluster]: [EdictMeasurement.Invalid] when compilation, metadata or the execution of an
+   * example is invalid; how many examples are satisfied is advisory.
+   */
+  suspend fun measure(cluster: EdictStoredCluster, code: String): EdictMeasurement {
+    val execution = exampleAnalysis(code, exampleRequests(cluster))
+    metadataRejection(cluster.id, execution.compilation)?.let { rejection ->
+      return EdictMeasurement.Invalid(
+        EdictInspectionValidationResponse(compilationSuccess = false, overallSuccess = false, summary = "Inspection rejected: $rejection"),
+      )
+    }
+    val outcomes = cluster.examples.associateWith { example ->
+      evaluateExample(example, execution.files.singleOrNull { it.id == example.metadata.id })
+    }
+    val strongExampleIds = cluster.strongExampleIds()
+    val (strong, weak) = outcomes.entries.partition { it.key.metadata.id in strongExampleIds }
+    val uncovered = outcomes.failingIds(EdictSignalLabel.POSITIVE)
+    val reportedNegatives = outcomes.failingIds(EdictSignalLabel.NEGATIVE)
+    val executed = outcomes.values.all(ExampleOutcome::executed)
+    val validation = EdictInspectionValidationResponse(
+      compilationSuccess = true,
+      overallSuccess = executed,
+      summary = "${strong.satisfiedOfAll()} strong evidence cases correct (advisory); " +
+        "${weak.satisfiedOfAll()} weak evidence cases correct (advisory); " +
+        "${uncovered.size} uncovered positive(s), ${reportedNegatives.size} reported negative(s)" +
+        if (executed) "" else "; example execution failed or returned missing/duplicate results",
+      failures = outcomes.values.flatMap(ExampleOutcome::failures),
+      achievedAccuracyPercent = if (outcomes.isEmpty()) 0 else outcomes.values.count(ExampleOutcome::satisfied) * 100 / outcomes.size,
+      reportedNegativeExampleIds = reportedNegatives,
+      uncoveredPositiveExampleIds = uncovered,
+    )
+    if (!executed) return EdictMeasurement.Invalid(validation)
+    return EdictMeasurement.Measured(validation, outcomes.mapValues { it.value.satisfied }, execution.compilation)
+  }
 
+  /**
+   * Scores [code] on the examples of [cluster], each with the number of project findings [attributed] to it by example id
+   * (ids of other examples are ignored); null with the validation when compilation, metadata or execution is invalid.
+   */
   suspend fun evaluate(
     cluster: EdictStoredCluster,
     code: String,
-    action: EdictInspectionAction,
-    assignments: List<EdictFindingAssignment> = emptyList(),
-    projectReview: EdictProjectReview? = null,
+    attributed: Map<String, Int>,
+    projectReview: EdictProjectReview,
   ): Pair<EdictInspectionValidationResponse, EdictEvaluation?> {
-    val measurement = measure(cluster, code)
-    if (!measurement.validation.overallSuccess) return measurement.validation to null
-    val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
-    fun reported(exampleId: String) =
-      (labels[exampleId] == EdictSignalLabel.POSITIVE) == (measurement.satisfiedByExampleId[exampleId] == true)
-    val (unreproduced, reproduced) = assignments.partition { it.stillReported && !reported(it.exampleId) }
-    val findingsByExampleId = reproduced.groupingBy { it.exampleId }.eachCount()
-    val examples = cluster.examples.associate { example ->
+    val measurement = when (val measurement = measure(cluster, code)) {
+      is EdictMeasurement.Invalid -> return measurement.validation to null
+      is EdictMeasurement.Measured -> measurement
+    }
+    val examples = measurement.satisfiedByExample.entries.associate { (example, satisfied) ->
       val id = example.metadata.id
-      val findings = findingsByExampleId[id] ?: 0
-      id to EdictExampleEvaluation(
-        label = example.metadata.label,
-        strong = id in measurement.strongExampleIds,
-        satisfied = measurement.satisfiedByExampleId[id] == true,
-        projectFindings = findings,
-        weight = maxOf(1, findings),
-      )
+      id to EdictExampleEvaluation(example.metadata.label, satisfied, attributed[id] ?: 0)
     }.toSortedMap()
-    return measurement.validation to scoredEvaluation(
+    return measurement.validation to EdictEvaluation(
       inspectionHash = sha256Hex(code),
       exampleSetDigest = exampleSetDigest(cluster),
-      action = action,
       examples = examples,
-      direct = EdictDirectFindings(
-        tp = unreproduced.count { it.classification == EdictFindingClassification.TP },
-        fp = unreproduced.count { it.classification == EdictFindingClassification.FP },
-      ),
-      projectReview = projectReview?.copy(unreproduced = unreproduced.size),
-      inspectionName = measurement.inspectionName,
-      inspectionDescription = measurement.inspectionDescription,
+      projectReview = projectReview,
+      inspectionName = measurement.compilation.inspectionName.orEmpty(),
+      inspectionDescription = measurement.compilation.inspectionDescription.orEmpty(),
     )
   }
 
-  suspend fun reports(cluster: EdictStoredCluster, code: String): Map<String, Boolean> {
-    val measurement = measure(cluster, code)
-    check(measurement.validation.overallSuccess) { measurement.validation.summary }
-    return cluster.examples.associate { example ->
-      val satisfied = measurement.satisfiedByExampleId[example.metadata.id] == true
-      example.metadata.id to ((example.metadata.label == EdictSignalLabel.POSITIVE) == satisfied)
+  /** Whether [code] reports each example of [cluster]; fails unless compilation, metadata and execution are valid. */
+  suspend fun reports(cluster: EdictStoredCluster, code: String): Map<String, Boolean> =
+    when (val measurement = measure(cluster, code)) {
+      is EdictMeasurement.Invalid -> error(measurement.validation.summary)
+      is EdictMeasurement.Measured -> measurement.reported
     }
-  }
 
   suspend fun unresolvedReferences(
     cluster: EdictStoredCluster,
@@ -102,63 +120,13 @@ internal class EdictInspection(
     }
   }
 
-  private suspend fun measure(cluster: EdictStoredCluster, code: String): Measurement {
-    val execution = exampleAnalysis(code, exampleRequests(cluster))
-    rejectMetadata(cluster.id, execution.compilation)?.let { return Measurement(it, emptyMap(), emptySet()) }
-
-    val failures = mutableListOf<EdictInspectionFailure>()
-    val outcomesById = cluster.examples.associate { example ->
-      val result = execution.files.singleOrNull { it.id == example.metadata.id }
-      val outcome = evaluateExample(example, result)
-      failures += outcome.failures
-      example.metadata.id to outcome
-    }
-    val examplesById = cluster.examples.associateBy { it.metadata.id }
-    val scoredExampleIds = examplesById.keys
-    val strongExampleIds = cluster.strongExampleIds()
-    val weakExampleIds = scoredExampleIds - strongExampleIds
-    val strongCorrectCount = strongExampleIds.count { outcomesById[it]?.satisfied == true }
-    val weakCorrectCount = weakExampleIds.count { outcomesById[it]?.satisfied == true }
-    val correctCount = scoredExampleIds.count { outcomesById[it]?.satisfied == true }
-    val achieved = if (scoredExampleIds.isEmpty()) 0 else correctCount * 100 / scoredExampleIds.size
-    val uncovered = cluster.examples.filter {
-      it.metadata.label == EdictSignalLabel.POSITIVE && outcomesById[it.metadata.id]?.satisfied != true
-    }.map { it.metadata.id }.sorted()
-    val reportedNegatives = cluster.examples.filter {
-      it.metadata.label == EdictSignalLabel.NEGATIVE && outcomesById[it.metadata.id]?.satisfied != true
-    }.map { it.metadata.id }.sorted()
-    val executionSuccess = cluster.examples.all { example ->
-      execution.files.singleOrNull { it.id == example.metadata.id }?.let { it.executionError == null } == true
-    }
-    val summary =
-      "$strongCorrectCount/${strongExampleIds.size} strong evidence cases correct (advisory); " +
-      "$weakCorrectCount/${weakExampleIds.size} weak evidence cases correct (advisory); " +
-      "${uncovered.size} uncovered positive(s), ${reportedNegatives.size} reported negative(s)" +
-      if (executionSuccess) "" else "; example execution failed or returned missing/duplicate results"
-    val validation = EdictInspectionValidationResponse(
-      compilationSuccess = true,
-      overallSuccess = executionSuccess,
-      summary = summary,
-      failures = failures,
-      achievedAccuracyPercent = achieved,
-      reportedNegativeExampleIds = reportedNegatives,
-      uncoveredPositiveExampleIds = uncovered,
-    )
-    return Measurement(validation, outcomesById.mapValues { it.value.satisfied }, strongExampleIds,
-      execution.compilation.inspectionName.orEmpty(), execution.compilation.inspectionDescription.orEmpty())
-  }
-
   suspend fun analyzeProject(
     cluster: EdictStoredCluster,
     code: String,
     projectRevision: String,
   ): EdictInspectionFindings {
     val analysis = projectAnalysis(code)
-    val compilation = analysis.compilation
-    check(compilation.compilationSuccess) { "Inspection compilation failed: ${compilation.compilationStatus}" }
-    check(compilation.inspectionId == cluster.id) {
-      "Inspection id '${compilation.inspectionId}' does not match cluster id '${cluster.id}'"
-    }
+    metadataRejection(cluster.id, analysis.compilation)?.let { error("Inspection rejected: $it") }
     val executionErrors = analysis.files.filter { it.executionError != null }
     check(executionErrors.isEmpty()) {
       "Inspection execution failed for ${executionErrors.size} project file(s): ${executionErrors.first().executionError}"
@@ -169,11 +137,11 @@ internal class EdictInspection(
           fileRevision = EdictFileRevision(
             path = file.path,
             revision = projectRevision,
-            expectedRanges = problem.lineNumber.takeIf { it > 0 }?.let { listOf(EdictLineRange(it, it)) },
+            expectedRanges = problem.line?.let { listOf(EdictLineRange(it, it)) },
           ),
           message = problem.message,
           contextSnippet = problem.elementText,
-          contextStartLine = problem.lineNumber.takeIf { it > 0 },
+          contextStartLine = problem.line,
         )
       }
     }.distinct().sortedBy { it.fileRevision.path + ":" + it.fileRevision.expectedRanges }.toList()
@@ -181,48 +149,39 @@ internal class EdictInspection(
       clusterId = cluster.id,
       candidateDigest = sha256Hex(code),
       projectRevision = projectRevision,
-      inspectionDescription = compilation.inspectionDescription.orEmpty(),
+      inspectionDescription = analysis.compilation.inspectionDescription.orEmpty(),
       language = cluster.manifest.language,
       findings = findings,
     )
   }
 
-  private fun rejectMetadata(
-    expectedId: String,
-    compilation: InspectionKtsCompileResult,
-  ): EdictInspectionValidationResponse? {
-    val rejection = when {
+  /** Why the compiled inspection cannot be the one of the cluster [expectedId]; null when it can. */
+  private fun metadataRejection(expectedId: String, compilation: InspectionKtsCompileResult): String? =
+    when {
       !compilation.compilationSuccess -> compilation.compilationStatus ?: "unknown compilation error"
       compilation.inspectionId == null -> "compiled inspection has no id"
       !EDICT_KEBAB_CASE.matches(compilation.inspectionId) -> "inspection id '${compilation.inspectionId}' is not lowercase kebab-case"
       compilation.inspectionId != expectedId -> "inspection id '${compilation.inspectionId}' does not match cluster id '$expectedId'"
       compilation.inspectionName.isNullOrBlank() -> "inspection name must not be blank"
       compilation.inspectionDescription.isNullOrBlank() -> "inspection description must not be blank"
-      else -> return null
+      else -> null
     }
-    return EdictInspectionValidationResponse(
-      compilationSuccess = false,
-      overallSuccess = false,
-      summary = "Inspection rejected: $rejection",
-    )
-  }
 
   private fun evaluateExample(example: EdictStoredExample, result: InspectionKtsFileResult?): ExampleOutcome {
     if (result == null) {
-      return ExampleOutcome(listOf(EdictInspectionFailure(example.metadata.id, "Inspection returned no result")), false)
+      return ExampleOutcome(listOf(EdictInspectionFailure(example.metadata.id, "Inspection returned no result")), false, executed = false)
     }
     result.executionError?.let {
-      return ExampleOutcome(listOf(EdictInspectionFailure(example.metadata.id, "Inspection execution failed: $it")), false)
+      return ExampleOutcome(listOf(EdictInspectionFailure(example.metadata.id, "Inspection execution failed: $it")), false, executed = false)
     }
-    val actualRanges = result.foundProblems.mapNotNull { problem ->
-      problem.lineNumber.takeIf { it > 0 }?.let { EdictLineRange(it, it) }
-    }
+    val actualRanges = result.foundProblems.mapNotNull { problem -> problem.line?.let { EdictLineRange(it, it) } }
     val expectedRanges = example.metadata.expectedRanges.orEmpty()
     return when (example.metadata.label) {
       EdictSignalLabel.POSITIVE -> positiveOutcome(example.metadata.id, expectedRanges, actualRanges)
       EdictSignalLabel.NEGATIVE -> ExampleOutcome(
         failures = actualRanges.map { EdictInspectionFailure(example.metadata.id, "Unexpected finding at range: $it") },
         satisfied = actualRanges.isEmpty(),
+        executed = true,
       )
     }
   }
@@ -233,7 +192,7 @@ internal class EdictInspection(
     actualRanges: List<EdictLineRange>,
   ): ExampleOutcome {
     if (expectedRanges.isEmpty()) {
-      return ExampleOutcome(listOf(EdictInspectionFailure(exampleId, "Positive example has no expected ranges")), false)
+      return ExampleOutcome(listOf(EdictInspectionFailure(exampleId, "Positive example has no expected ranges")), false, executed = true)
     }
     val missing = expectedRanges.filterNot { expected -> actualRanges.any(expected::intersects) }
     val unexpected = actualRanges.filterNot { actual -> expectedRanges.any(actual::intersects) }
@@ -243,33 +202,57 @@ internal class EdictInspection(
         if (unexpected.isNotEmpty()) add(EdictInspectionFailure(exampleId, "Unexpected findings: $unexpected"))
       },
       satisfied = missing.isEmpty() && unexpected.isEmpty(),
+      executed = true,
     )
   }
-
-  private data class ExampleOutcome(val failures: List<EdictInspectionFailure>, val satisfied: Boolean)
-
-  private class Measurement(
-    val validation: EdictInspectionValidationResponse,
-    val satisfiedByExampleId: Map<String, Boolean>,
-    val strongExampleIds: Set<String>,
-    val inspectionName: String = "",
-    val inspectionDescription: String = "",
-  )
 }
 
-/** What makes two analyses' findings the same for review: every reported location, in order. */
-internal fun EdictInspectionFindings.reviewKey(): List<Pair<String, List<EdictLineRange>?>> =
-  findings.map { it.fileRevision.path to it.fileRevision.expectedRanges }
+/** How an inspection behaved on the examples of a cluster. */
+internal sealed interface EdictMeasurement {
+  val validation: EdictInspectionValidationResponse
 
-/** A reviewed finding assigned to an existing example; [stillReported] when the published inspection reports it. */
-internal data class EdictFindingAssignment(
-  val exampleId: String,
-  val classification: EdictFindingClassification,
-  val stillReported: Boolean,
-)
+  /** Compilation, metadata or the execution of an example is invalid. */
+  data class Invalid(override val validation: EdictInspectionValidationResponse) : EdictMeasurement
+
+  /** Every example ran. */
+  class Measured(
+    override val validation: EdictInspectionValidationResponse,
+    /** Whether the inspection behaves on each example as its label expects. */
+    val satisfiedByExample: Map<EdictStoredExample, Boolean>,
+    val compilation: InspectionKtsCompileResult,
+  ) : EdictMeasurement {
+    /** Whether the inspection reports each example, by example id: a satisfied POSITIVE or an unsatisfied NEGATIVE. */
+    val reported: Map<String, Boolean> = satisfiedByExample.entries.associate { (example, satisfied) ->
+      example.metadata.id to ((example.metadata.label == EdictSignalLabel.POSITIVE) == satisfied)
+    }
+  }
+}
+
+/** [executed] is false when the example has no single result or its execution failed. */
+private data class ExampleOutcome(val failures: List<EdictInspectionFailure>, val satisfied: Boolean, val executed: Boolean)
+
+/** `<satisfied>/<all>` of these outcomes. */
+private fun List<Map.Entry<EdictStoredExample, ExampleOutcome>>.satisfiedOfAll(): String = "${count { it.value.satisfied }}/$size"
+
+/** The sorted ids of the examples with [label] whose outcome is not satisfied. */
+private fun Map<EdictStoredExample, ExampleOutcome>.failingIds(label: EdictSignalLabel): List<String> =
+  filter { (example, outcome) -> example.metadata.label == label && !outcome.satisfied }.map { it.key.metadata.id }.sorted()
+
+/** The line the inspection reports the problem at; null when it gives none. */
+private val InspectionKtsProblem.line: Int?
+  get() = lineNumber.takeIf { it > 0 }
+
+/**
+ * Where the findings are: the file's path in the project and the 1-based line of the finding, 0 when it has none. A
+ * review records one answer per location, so two analyses with the same locations need no new review, whatever their
+ * messages and however many findings share a location.
+ */
+internal fun EdictInspectionFindings.locations(): Set<Pair<String, Int>> = findings.map { it.location() }.toSet()
 
 internal fun EdictProjectFinding.location(): Pair<String, Int> =
   fileRevision.path to (fileRevision.expectedRanges?.firstOrNull()?.start ?: 0)
+
+internal fun EdictReviewedFinding.location(): Pair<String, Int> = path to line
 
 /** The [references] of an example that do not resolve in the module of [contextPath], each as `line <n> '<name>'`. */
 internal data class EdictUnresolvedReferences(val contextPath: String?, val references: List<String>)
@@ -301,67 +284,3 @@ internal fun exampleSetDigest(cluster: EdictStoredCluster): String {
 /** Whether [evaluation] scored the inspection whose SHA-256 hex is [inspectionDigest] on this cluster's current examples. */
 internal fun EdictStoredCluster.isCurrentEvaluation(evaluation: EdictEvaluation, inspectionDigest: String): Boolean =
   evaluation.inspectionHash == inspectionDigest && evaluation.exampleSetDigest == exampleSetDigest(this)
-
-/**
- * The evaluation of the inspection whose SHA-256 hex is [inspectionHash] on the examples of [exampleSetDigest]: tp sums the
- * weights of satisfied positive [examples], fn of unsatisfied positive ones, and fp of unsatisfied negative ones, each with the
- * [direct] findings of its kind.
- */
-private fun scoredEvaluation(
-  inspectionHash: String,
-  exampleSetDigest: String,
-  action: EdictInspectionAction,
-  examples: Map<String, EdictExampleEvaluation>,
-  direct: EdictDirectFindings,
-  projectReview: EdictProjectReview?,
-  inspectionName: String,
-  inspectionDescription: String,
-): EdictEvaluation {
-  val tp = examples.weight(EdictSignalLabel.POSITIVE, satisfied = true) + direct.tp
-  val fn = examples.weight(EdictSignalLabel.POSITIVE, satisfied = false)
-  val fp = examples.weight(EdictSignalLabel.NEGATIVE, satisfied = false) + direct.fp
-  return EdictEvaluation(
-    inspectionHash = inspectionHash,
-    inspectionName = inspectionName,
-    inspectionDescription = inspectionDescription,
-    exampleSetDigest = exampleSetDigest,
-    action = action,
-    tp = tp,
-    fp = fp,
-    fn = fn,
-    precision = if (tp + fp == 0) 0.0 else tp.toDouble() / (tp + fp),
-    recall = if (tp + fn == 0) 0.0 else tp.toDouble() / (tp + fn),
-    examples = examples,
-    projectReview = projectReview,
-    directFindings = direct,
-  )
-}
-
-private fun Map<String, EdictExampleEvaluation>.weight(label: EdictSignalLabel, satisfied: Boolean): Int =
-  values.filter { it.label == label && it.satisfied == satisfied }.sumOf { it.weight }
-
-/**
- * This evaluation of an unchanged inspection on unchanged examples, reused on SKIP for [cluster], whose new Signals may have
- * made weak examples strong, with the findings users [confirmed] in review comments: their number by the example of each
- * one's Signal. A confirmed finding counts as a project finding of its example, or directly when the inspection does not
- * report the example, as the weak-signal review counts the findings it assigns.
- */
-internal fun EdictEvaluation.withConfirmedFindings(cluster: EdictStoredCluster, confirmed: Map<String, Int>): EdictEvaluation {
-  require(examples.keys.containsAll(confirmed.keys)) { "Confirmed findings name examples the evaluation lacks: ${confirmed.keys - examples.keys}" }
-  val strong = cluster.strongExampleIds()
-  val reported = examples.filterValues { it.label == EdictSignalLabel.POSITIVE && it.satisfied }.keys
-  val updated = examples.mapValues { (id, example) ->
-    val findings = example.projectFindings + if (id in reported) confirmed[id] ?: 0 else 0
-    example.copy(strong = id in strong, projectFindings = findings, weight = maxOf(1, findings))
-  }.toSortedMap()
-  return scoredEvaluation(
-    inspectionHash = inspectionHash,
-    exampleSetDigest = exampleSetDigest,
-    action = EdictInspectionAction.SKIP,
-    examples = updated,
-    direct = directFindings.copy(tp = directFindings.tp + confirmed.filterKeys { it !in reported }.values.sum()),
-    projectReview = projectReview,
-    inspectionName = inspectionName,
-    inspectionDescription = inspectionDescription,
-  )
-}

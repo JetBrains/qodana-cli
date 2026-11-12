@@ -25,13 +25,13 @@ class FeedbackReservationTest {
   private val paths by lazy { EdictRepositoryDirectory(directory) }
 
   @Test
-  fun `reserves the first finding of each selected inspection, in the order the state chose them`() {
+  fun `reserves the first finding of each selected inspection, in the order of the selection`() {
     val candidates = listOf(candidate("a", "src/Main.kt", 5), candidate("a", "src/Main.kt", 3), candidate("b", "src/Other.kt", 1))
 
     val reserved = reserve(candidates, inspection("b"), inspection("a"))
 
     assertEquals(
-      listOf(record("f-0a943aaf5e7fc5dd20e034d6", "b", "src/Other.kt", 1), record("f-c117ecc332fe37782a9c4f88", "a", "src/Main.kt", 3)),
+      listOf(record("f-c117ecc332fe37782a9c4f88", "a", "src/Main.kt", 3), record("f-0a943aaf5e7fc5dd20e034d6", "b", "src/Other.kt", 1)),
       reserved,
     )
   }

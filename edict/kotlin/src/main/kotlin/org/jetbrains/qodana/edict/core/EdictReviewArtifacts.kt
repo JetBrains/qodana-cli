@@ -24,12 +24,8 @@ internal object EdictReviewArtifacts {
     val weakReviewOutputPath = attemptDirectory.resolve("weak-signal-review").resolve("summary.md")
     weakReviewOutputPath.parent.createDirectories()
 
-    weakFindingsPath.writeText(
-      EdictJson.encodeToString(
-        EdictInspectionFindings.serializer(),
-        findings.copy(findings = sample(findings, reviewedLocations)),
-      ),
-    )
+    val sample = sample(findings, reviewedLocations)
+    weakFindingsPath.writeText(EdictJson.encodeToString(EdictInspectionFindings.serializer(), findings.copy(findings = sample)))
 
     val clusterPath = clusterDirectory.absoluteString()
     val candidatePath = candidateInspection.absoluteString()
@@ -54,16 +50,16 @@ internal object EdictReviewArtifacts {
     return EdictInspectionResultsResponse(
       weakSignalReviewConfigPath = weakConfigPath.absoluteString(),
       remainingProjectAnalyses = remainingProjectAnalyses,
+      weakReviewNeeded = sample.isNotEmpty() || unreproducedFindings.isNotEmpty(),
     )
   }
 
-  private fun sample(findings: EdictInspectionFindings, reviewedLocations: Set<Pair<String, Int>>): List<EdictProjectFinding> {
-    val unreviewed = findings.findings.filter { it.location() !in reviewedLocations }
-    return unreviewed.ifEmpty { findings.findings }
+  /** Up to [SAMPLE_SIZE] findings not reviewed in this run yet, so none is reviewed twice. */
+  private fun sample(findings: EdictInspectionFindings, reviewedLocations: Set<Pair<String, Int>>): List<EdictProjectFinding> =
+    findings.findings.filter { it.location() !in reviewedLocations }
       .shuffled(Random(findings.candidateDigest.hashCode()))
       .take(SAMPLE_SIZE)
       .sortedWith(compareBy({ it.fileRevision.path }, { it.location().second }))
-  }
 
   private fun Path.absoluteString(): String = toAbsolutePath().normalize().toString()
 

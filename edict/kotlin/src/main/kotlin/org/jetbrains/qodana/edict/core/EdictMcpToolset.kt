@@ -303,6 +303,9 @@ internal class EdictMcpToolset(
       CallToolResult(content = listOf(TextContent(examples)))
     }
 
+    // TODO: a single false positive users answered to the predecessor inspection forces GENERATE, hard-coded in
+    //  EdictGenerationService.predecessorAction, even when the new Signals map to existing examples; come up with a better
+    //  decision for when such answers need a new inspection.
     server.addTool(
       name = "edict_prepare_signal_mapping",
       description = "Write the new Signals of a Pending cluster, those no generation took into account yet, and every code " +
@@ -422,7 +425,7 @@ internal class EdictMcpToolset(
 
     server.addTool(
       name = "edict_record_evaluation",
-      description = "Last step before finalising Generated: score the inspection that would be published and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. On GENERATE scores the analyzed candidate on every strong and weak example; on SKIP keeps the predecessor's evaluation and adds the findings users confirmed in review comments since, without running it. Records failing strong and weak examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
+      description = "Last step before finalising Generated: score the inspection that would be published and write clusters/<id>/evaluation.json. On GENERATE scores the analyzed candidate on every example: each weighs the project findings the weak-signal review classified TP or FP and assigned to it, at least 1; tp sums satisfied positive examples, fn unsatisfied positive ones, fp unsatisfied negative ones. On SKIP keeps the predecessor's evaluation, without running it. Records failing examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-cluster-generation task token",
         "clusterId" to "Pending cluster chosen for generation",

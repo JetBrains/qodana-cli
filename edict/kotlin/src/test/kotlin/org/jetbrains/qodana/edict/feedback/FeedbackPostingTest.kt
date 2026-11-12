@@ -15,6 +15,7 @@ import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.support.GitOrigin
 import org.jetbrains.qodana.edict.core.EdictJson
 import org.jetbrains.qodana.edict.core.EdictLineRange
+import org.jetbrains.qodana.edict.feedback.support.FEEDBACK_CLUSTER
 import org.jetbrains.qodana.edict.feedback.support.FINDING_MESSAGE
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.OWN_PULL_REQUEST
@@ -24,7 +25,6 @@ import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
 import org.jetbrains.qodana.edict.feedback.support.internalResult
 import org.jetbrains.qodana.edict.feedback.support.sarifReport
 import org.jetbrains.qodana.edict.feedback.support.stateFiles
-import org.jetbrains.qodana.edict.promotion.support.ClusterFixture
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
@@ -142,7 +142,7 @@ class FeedbackPostingTest {
 
   /** A run whose scan wrote [report]. */
   private fun preparedRun(report: String = sarifReport(internalResult("rule", "src/Main.kt", startLine = 3))): Run {
-    origin.publishState("routine", stateFiles(directory.resolve("routine-state"), ClusterFixture(emptyList())))
+    origin.publishState("routine", stateFiles(directory.resolve("routine-state"), FEEDBACK_CLUSTER))
     val project = origin.clone("ci")
     val layout = EdictLayout(project, directory.resolve("state"))
     StateBranch(layout, DEFAULT_EDICT_STATE_BRANCH).checkOut(shallow = true)

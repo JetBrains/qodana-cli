@@ -42,7 +42,7 @@ class FeedbackSelectionTest {
 
     val selection = select(inspection("busy"), inspection("regenerated"), inspection("free"))
 
-    assertEquals(FeedbackSelection(listOf(inspection("regenerated"), inspection("free")), LIMITS.maxPerPullRequest), selection)
+    assertEquals(FeedbackSelection(listOf(inspection("free"), inspection("regenerated")), LIMITS.maxPerPullRequest), selection)
   }
 
   @Test
@@ -54,12 +54,20 @@ class FeedbackSelectionTest {
   }
 
   @Test
-  fun `runs at most the inspection limit, in the order the state chose them`() {
-    val inspections = List(MAX_FEEDBACK_INSPECTIONS + 1) { inspection("rule-%02d".format(it)) }.reversed()
+  fun `runs at most the inspection limit`() {
+    val inspections = List(MAX_FEEDBACK_INSPECTIONS + 1) { inspection("rule-%02d".format(it)) }
 
     val selection = select(*inspections.toTypedArray())
 
     assertEquals(FeedbackSelection(inspections.take(MAX_FEEDBACK_INSPECTIONS), LIMITS.maxPerPullRequest), selection)
+  }
+
+  @Test
+  fun `selects the most precise inspections first, then by id`() {
+    // The least precise has the first id, so that an order by id alone fails.
+    val selection = select(inspection("c"), inspection("a", precision = 0.8), inspection("b"))
+
+    assertEquals(FeedbackSelection(listOf(inspection("b"), inspection("c"), inspection("a", 0.8)), LIMITS.maxPerPullRequest), selection)
   }
 
   private fun select(vararg inspections: FeedbackInspection): FeedbackSelection =
@@ -72,9 +80,9 @@ private val LIMITS = FeedbackConfiguration(maxPerInspection = 4, maxPerPullReque
 /** The bytes of the inspection of cluster [clusterId] in the fixture state. */
 private fun digest(clusterId: String): String = sha256Hex(clusterId)
 
-/** The chosen inspection of cluster [clusterId]. */
-private fun inspection(clusterId: String) =
-  FeedbackInspection(clusterId, digest(clusterId), "inspections/$clusterId.inspection.kts", INSPECTION_NAME, INSPECTION_SUMMARY, 0.9)
+/** The chosen inspection of cluster [clusterId], with [precision]. */
+private fun inspection(clusterId: String, precision: Double = 0.9) =
+  FeedbackInspection(clusterId, digest(clusterId), "inspections/$clusterId.inspection.kts", INSPECTION_NAME, INSPECTION_SUMMARY, precision)
 
 /** Record [index] of a finding of the inspection of [clusterId], or of other bytes of it, on [pullRequest]. */
 private fun record(index: Int, clusterId: String, pullRequest: org.jetbrains.qodana.edict.ci.ReviewReference = PULL_REQUEST, digest: String = digest(clusterId)) =

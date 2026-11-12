@@ -42,8 +42,6 @@ internal const val PROJECT_REVISION = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 /** The full revision the source fix merged as. */
 internal const val MERGED_REVISION = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 
-internal const val INSPECTION_DESCRIPTION = "Avoid busy waiting"
-
 /** A true positive the project review found on [line] of [path] at [PROJECT_REVISION]. */
 internal fun finding(line: Int, path: String = "src/Worker.kt"): EdictProjectFinding =
   EdictProjectFinding(EdictFileRevision(path, PROJECT_REVISION, listOf(EdictLineRange(line, line))), "Busy waiting")
@@ -55,8 +53,7 @@ internal fun projectReview(
   findings: List<EdictProjectFinding> = FINDINGS,
   /** The analyzed revision; a full SHA unless a test breaks it. */
   revision: String = PROJECT_REVISION,
-  description: String = INSPECTION_DESCRIPTION,
-): EdictProjectReview = EdictProjectReview(revision, findings.size, findings.size, 0, 0, 0, description, findings)
+): EdictProjectReview = EdictProjectReview(revision, findings.size, findings.size, findings)
 
 /**
  * The cluster with a positive and a negative example, and its evaluation with [review]; of the inspection
@@ -87,7 +84,7 @@ internal fun correctedCluster(): ClusterFixture = correctableCluster().let { it.
 
 /** The candidate [weakCluster] offers: its findings by path and line. */
 internal val CANDIDATE = WeakSignalPromotionCandidate(
-  "rule", INSPECTION_DIGEST, PROJECT_REVISION, INSPECTION_DESCRIPTION, listOf(finding(3, "src/Other.kt"), finding(1), finding(2)),
+  "rule", INSPECTION_DIGEST, PROJECT_REVISION, INSPECTION_SUMMARY, listOf(finding(3, "src/Other.kt"), finding(1), finding(2)),
 )
 
 internal val WORKER_FIX = WeakSignalFix(
@@ -236,7 +233,7 @@ internal enum class UnpreparedCluster(val cluster: ClusterFixture, val message: 
     "No project review for this inspection; regenerate it before promoting weak signals",
   ),
   NO_DESCRIPTION(
-    weakCluster().withEvaluation(projectReview(description = "")),
+    weakCluster().let { it.copy(evaluation = it.evaluation?.copy(inspectionDescription = "")) },
     "No persisted inspection description or exact project revision; regenerate the inspection",
   ),
   INEXACT_REVISION(

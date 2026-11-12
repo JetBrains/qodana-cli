@@ -292,7 +292,7 @@ internal class WeakSignalPromotionService(
     val evaluation = requireNotNull(repository.loadEvaluation(cluster)) { "No persisted evaluation; regenerate the inspection to review project findings" }
     require(evaluation.inspectionHash == digest) { "Evaluation does not match the generated inspection" }
     val review = requireNotNull(evaluation.projectReview) { "No project review for this inspection; regenerate it before promoting weak signals" }
-    require(validRevision(review.projectRevision) && review.inspectionDescription.isNotBlank()) {
+    require(validRevision(review.projectRevision) && evaluation.inspectionDescription.isNotBlank()) {
       "No persisted inspection description or exact project revision; regenerate the inspection"
     }
     val findings = review.truePositiveFindings.filter {
@@ -300,7 +300,7 @@ internal class WeakSignalPromotionService(
     }.distinctBy { it.fileRevision.path to it.line() }
       .sortedWith(compareBy({ it.fileRevision.path }, { it.line() }))
       .take(MAX_WEAK_SIGNAL_FIXES)
-    return WeakSignalPromotionCandidate(cluster.id, digest, review.projectRevision, review.inspectionDescription, findings)
+    return WeakSignalPromotionCandidate(cluster.id, digest, review.projectRevision, evaluation.inspectionDescription, findings)
   }
 }
 

@@ -33,16 +33,6 @@ class FeedbackInspectionsTest {
   private val repository: EdictRepository by lazy { promotionRepository(directory) }
 
   @Test
-  fun `ranks inspections by the precision of their current evaluation, then by id`() {
-    // The least precise has the first id, so that an order by id alone fails.
-    repository.store(cluster("a", precision = 0.8))
-    repository.store(cluster("c", precision = 0.9))
-    repository.store(cluster("b", precision = 0.9))
-
-    assertEquals(listOf(inspection("b", 0.9), inspection("c", 0.9), inspection("a", 0.8)), choose())
-  }
-
-  @Test
   fun `chooses the inspection of a cluster in any state that has its evaluation`() {
     repository.store(cluster("generated"))
     repository.store(cluster("invalid").copy(status = EdictClusterStatus.Invalid))
@@ -83,15 +73,15 @@ class FeedbackInspectionsTest {
   @Test
   fun `leaves out an inspection whose evaluation scored other bytes`() {
     repository.store(cluster("current"))
-    repository.store(cluster("outdated").copy(evaluation = EvaluationFixture(precision = 0.9, inspectionDigest = "0".repeat(64))))
+    repository.store(cluster("outdated").copy(evaluation = EvaluationFixture(9, 1, inspectionDigest = "0".repeat(64))))
 
     assertEquals(listOf(inspection("current")), choose())
   }
 
   @Test
   fun `needs at least the target precision`() {
-    repository.store(cluster("at-target", precision = TARGET_PRECISION))
-    repository.store(cluster("below-target", precision = 0.79))
+    repository.store(cluster("at-target", truePositives = 4))
+    repository.store(cluster("below-target", truePositives = 3))
 
     assertEquals(listOf(inspection("at-target", TARGET_PRECISION)), choose())
   }
@@ -101,7 +91,11 @@ class FeedbackInspectionsTest {
     // Five answers in the inbox and one not yet processed by its Pending cluster.
     storeInbox(*Array(MAX_UNPROCESSED_FALSE_POSITIVES) { falsePositive(it) })
     val pending = falsePositive(MAX_UNPROCESSED_FALSE_POSITIVES)
-    repository.store(ClusterFixture(listOf(pending), "busy", EdictClusterStatus.Pending, unprocessed = setOf(pending.id)))
+    repository.store(
+      ClusterFixture(
+        listOf(pending), "busy", EdictClusterStatus.Pending, evaluation = EvaluationFixture(truePositives = 1), unprocessed = setOf(pending.id),
+      ),
+    )
 
     assertEquals(emptyList(), choose())
   }
@@ -110,7 +104,7 @@ class FeedbackInspectionsTest {
   fun `counts only the unprocessed false-positive answers to the inspection's own bytes`() {
     storeInbox(*Array(MAX_UNPROCESSED_FALSE_POSITIVES) { falsePositive(it) })
     // Processed by its Generated cluster, to the bytes of another inspection, and a true positive.
-    repository.store(ClusterFixture(listOf(falsePositive(10)), "processed"))
+    repository.store(ClusterFixture(listOf(falsePositive(10)), "processed", evaluation = EvaluationFixture(truePositives = 1)))
     storeInbox(falsePositive(11, inspectionDigest = "0".repeat(64)), falsePositive(12).copy(label = EdictSignalLabel.POSITIVE))
 
     assertEquals(listOf(inspection("processed", 1.0)), choose())
@@ -139,9 +133,9 @@ private const val TARGET_PRECISION = 0.8
 private fun inspection(id: String, precision: Double = 0.9) =
   FeedbackInspection(id, INSPECTION_DIGEST, "inspections/$id.inspection.kts", INSPECTION_NAME, INSPECTION_SUMMARY, precision)
 
-/** A generated cluster [id] without Signals, whose current evaluation has [precision]. */
-private fun cluster(id: String, precision: Double = 0.9) =
-  ClusterFixture(emptyList(), id, evaluation = EvaluationFixture(precision = precision))
+/** A generated cluster [id] without Signals, whose current evaluation weighs [truePositives] against one false positive. */
+private fun cluster(id: String, truePositives: Int = 9) =
+  ClusterFixture(emptyList(), id, evaluation = EvaluationFixture(truePositives, falsePositives = 1))
 
 /** A user's 👎 answer to a finding of the inspection bytes of [inspectionDigest]. */
 private fun falsePositive(index: Int, inspectionDigest: String = INSPECTION_DIGEST) = EdictSignal(
