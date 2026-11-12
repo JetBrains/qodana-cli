@@ -131,7 +131,8 @@ internal class PromotionServiceTest {
 
   @Test
   fun `a selected cluster is promoted whatever its metrics`() {
-    repository.store(referencedCluster().copy(evaluation = EvaluationFixture(precision = 0.1, recall = 0.1)))
+    // Five true positives against 45 false positives and 45 false negatives: precision and recall 0.1.
+    repository.store(referencedCluster().copy(evaluation = EvaluationFixture(falsePositives = 45, falseNegatives = 45)))
 
     assertEquals(PromotionPromoteResponse(listOf(PROMOTED_RULE)), service.promote(RULE))
   }
@@ -287,10 +288,11 @@ internal class PromotionServiceTest {
   }
 
   @ParameterizedTest
-  @CsvSource("0.69, 0.9", "0.9, 0.69", "0.72, 0.75")
-  fun `a cluster with one metric below its target is not selected`(precision: Double, recall: Double) {
-    // Only one metric misses: precision under its target, recall under its target, or F1 at 0.73, under its target of 0.75.
-    repository.store(referencedCluster().copy(evaluation = EvaluationFixture(precision, recall)))
+  @CsvSource("3, 0", "0, 3", "2, 2")
+  fun `a cluster with one metric below its target is not selected`(falsePositives: Int, falseNegatives: Int) {
+    // Five true positives, so only one metric misses: precision 0.625 under its target, recall 0.625 under its target, or
+    // precision and recall at 0.714 with F1 at 0.714, under its target of 0.75.
+    repository.store(referencedCluster().copy(evaluation = EvaluationFixture(falsePositives = falsePositives, falseNegatives = falseNegatives)))
     val targets = PROMOTION.copy(targetPrecision = 0.7, targetRecall = 0.7, targetF1 = 0.75)
 
     assertEquals(PromotionSelectionResponse(PromotionThresholds(0.7, 0.7, 0.75)), promotionService(repository, reviews, targets).select())
@@ -298,11 +300,12 @@ internal class PromotionServiceTest {
 
   @Test
   fun `a cluster with every metric at its target is selected`() {
-    repository.store(referencedCluster().copy(evaluation = EvaluationFixture(precision = 0.5, recall = 0.5)))
+    // Five true positives against five false positives and five false negatives: precision, recall and F1 0.5.
+    repository.store(referencedCluster().copy(evaluation = EvaluationFixture(falsePositives = 5, falseNegatives = 5)))
     val targets = PROMOTION.copy(targetPrecision = 0.5, targetRecall = 0.5, targetF1 = 0.5)
 
     assertEquals(
-      PromotionSelectionResponse(PromotionThresholds(0.5, 0.5, 0.5), listOf(candidate("rule").copy(f1 = 0.5))),
+      PromotionSelectionResponse(PromotionThresholds(0.5, 0.5, 0.5), listOf(candidate("rule"))),
       promotionService(repository, reviews, targets).select(),
     )
   }
@@ -495,7 +498,7 @@ internal class PromotionServiceTest {
 
   /** The candidate cluster [id] is: five referenced source files under the fixture evaluation. */
   private fun candidate(id: String): PromotionCandidate = PromotionCandidate(
-    id, repository.paths.inspectionPath(id).toString(), INSPECTION_DIGEST, 5, repository.loadEvaluation(repository.loadCluster(id))!!, 1.0,
+    id, repository.paths.inspectionPath(id).toString(), INSPECTION_DIGEST, 5, repository.loadEvaluation(repository.loadCluster(id))!!,
   )
 
   // decideReviews

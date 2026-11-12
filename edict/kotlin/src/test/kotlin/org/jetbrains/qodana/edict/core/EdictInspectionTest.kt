@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -22,10 +23,15 @@ class EdictInspectionTest {
         InspectionKtsFileResult("negative", "Negative.kt"),
       ),
     )
-    val result = EdictInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
+    val result = EdictInspection({ client }, client::analyzeProject).measure(cluster, "inspection").validation
 
     assertTrue(result.compilationSuccess)
     assertTrue(result.overallSuccess)
+    assertEquals(
+      "2/2 strong evidence cases correct (advisory); 0/0 weak evidence cases correct (advisory); " +
+        "0 uncovered positive(s), 0 reported negative(s)",
+      result.summary,
+    )
     assertEquals(100, result.achievedAccuracyPercent)
     assertTrue(result.failures.isEmpty())
   }
@@ -39,7 +45,7 @@ class EdictInspectionTest {
         InspectionKtsFileResult("negative", "Negative.kt", listOf(problem(1))),
       ),
     )
-    val result = EdictInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
+    val result = EdictInspection({ client }, client::analyzeProject).measure(cluster, "inspection").validation
 
     assertTrue(result.overallSuccess)
     assertEquals(EdictNextAction.REVIEW_INSPECTION, result.nextAction)
@@ -64,7 +70,7 @@ class EdictInspectionTest {
       compilation = { results.compilation },
       examples = { _, examples -> results.also { requests += examples } },
     )
-    EdictInspection({ client }, client::analyzeProject).validate(cluster(fromFinding, unlinked), "inspection")
+    EdictInspection({ client }, client::analyzeProject).measure(cluster(fromFinding, unlinked), "inspection").validation
 
     assertEquals(
       mapOf(
@@ -110,7 +116,7 @@ class EdictInspectionTest {
         compilation = successfulCompilation().copy(inspectionId = "different-rule"),
       ),
     )
-    val result = EdictInspection({ client }, client::analyzeProject).validate(cluster, "inspection")
+    val result = EdictInspection({ client }, client::analyzeProject).measure(cluster, "inspection").validation
 
     assertFalse(result.compilationSuccess)
     assertFalse(result.overallSuccess)
@@ -135,7 +141,7 @@ class EdictInspectionTest {
     for (result in results) {
       val client = ideClient(result)
       val (validation, evaluation) = EdictInspection({ client }, client::analyzeProject)
-        .evaluate(cluster(), "inspection", EdictInspectionAction.GENERATE)
+        .evaluate(cluster(), "inspection", emptyMap(), REVIEW)
       assertFalse(validation.overallSuccess)
       assertEquals(EdictNextAction.REPAIR_INSPECTION, validation.nextAction)
       assertEquals(null, evaluation)
@@ -173,14 +179,11 @@ class EdictInspectionTest {
         InspectionKtsFileResult("weak-reported", "WeakReported.kt", listOf(problem(1))),
       ),
     )
-    val review = EdictProjectReview("abcdef", totalFindings = 40, reviewedFindings = 12, uncertain = 1, unassigned = 0, unreproduced = 0)
+    val review = EdictProjectReview("abcdef", totalFindings = 40, reviewedFindings = 12)
     val (validation, evaluation) = EdictInspection({ client }, client::analyzeProject).evaluate(
       cluster,
       "inspection",
-      EdictInspectionAction.GENERATE,
-      assignments = assigned("positive", 6, EdictFindingClassification.TP) +
-        assigned("weak-missed", 2, EdictFindingClassification.TP) +
-        assigned("weak-reported", 3, EdictFindingClassification.FP),
+      attributed = mapOf("positive" to 6, "weak-missed" to 2, "weak-reported" to 3),
       projectReview = review,
     )
 
@@ -194,10 +197,10 @@ class EdictInspectionTest {
     assertEquals(6.0 / 8, evaluation.recall)
     assertEquals(
       mapOf(
-        "negative" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, strong = true, satisfied = true, projectFindings = 0, weight = 1),
-        "positive" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 6, weight = 6),
-        "weak-missed" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = false, satisfied = false, projectFindings = 2, weight = 2),
-        "weak-reported" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, strong = false, satisfied = false, projectFindings = 3, weight = 3),
+        "negative" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, satisfied = true, projectFindings = 0),
+        "positive" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, satisfied = true, projectFindings = 6),
+        "weak-missed" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, satisfied = false, projectFindings = 2),
+        "weak-reported" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, satisfied = false, projectFindings = 3),
       ),
       evaluation.examples,
     )
@@ -207,37 +210,7 @@ class EdictInspectionTest {
   }
 
   @Test
-  fun `a still reported finding its example does not reproduce counts by its classification`() = runBlocking {
-    val cluster = cluster()
-    val client = ideClient(
-      examples = batchResult(
-        InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
-        InspectionKtsFileResult("negative", "Negative.kt"),
-      ),
-    )
-    val review = EdictProjectReview("abcdef", totalFindings = 10, reviewedFindings = 3, uncertain = 0, unassigned = 0, unreproduced = 0)
-    val (_, evaluation) = EdictInspection({ client }, client::analyzeProject).evaluate(
-      cluster,
-      "inspection",
-      EdictInspectionAction.GENERATE,
-      assignments = listOf(
-        // The inspection no longer reports the negative example but still reports this finding: a real false positive.
-        EdictFindingAssignment("negative", EdictFindingClassification.FP, stillReported = true),
-        // Fixed together with the negative example, so it only weighs it.
-        EdictFindingAssignment("negative", EdictFindingClassification.FP, stillReported = false),
-        EdictFindingAssignment("positive", EdictFindingClassification.TP, stillReported = true),
-      ),
-      projectReview = review,
-    )
-
-    checkNotNull(evaluation)
-    assertEquals(listOf(1, 1, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
-    assertEquals(1, evaluation.examples.getValue("negative").projectFindings)
-    assertEquals(1, evaluation.projectReview?.unreproduced)
-  }
-
-  @Test
-  fun `without review data every example weighs 1`() = runBlocking {
+  fun `without attributed findings every example weighs 1`() = runBlocking {
     val cluster = cluster(example("weak-missed", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1))))
     val client = ideClient(
       examples = batchResult(
@@ -247,12 +220,11 @@ class EdictInspectionTest {
       ),
     )
     val (_, evaluation) = EdictInspection({ client }, client::analyzeProject)
-      .evaluate(cluster, "inspection", EdictInspectionAction.SKIP)
+      .evaluate(cluster, "inspection", emptyMap(), REVIEW)
 
     checkNotNull(evaluation)
     assertEquals(listOf(1, 0, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     assertTrue(evaluation.examples.values.all { it.weight == 1 && it.projectFindings == 0 })
-    assertEquals(null, evaluation.projectReview)
   }
 
   @Test
@@ -264,22 +236,22 @@ class EdictInspectionTest {
       ),
     )
     val (validation, evaluation) = EdictInspection({ client }, client::analyzeProject)
-      .evaluate(cluster(), "inspection", EdictInspectionAction.GENERATE)
+      .evaluate(cluster(), "inspection", emptyMap(), REVIEW)
 
     assertTrue(validation.overallSuccess)
     checkNotNull(evaluation)
     assertEquals(listOf(0, 1, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     assertEquals(0.0, evaluation.precision)
     assertEquals(0.0, evaluation.recall)
-    assertTrue(evaluation.examples.values.all { it.strong && !it.satisfied })
+    assertTrue(evaluation.examples.values.all { !it.satisfied })
   }
 
   @Test
   fun `findings compare by reported locations only`() {
-
-    assertEquals(findings(3, 7).reviewKey(), findings(3, 7, message = "reworded").reviewKey())
-    assertTrue(findings(3, 7).reviewKey() != findings(3, 8).reviewKey())
-    assertTrue(findings(3, 7).reviewKey() != findings(3).reviewKey())
+    assertEquals(findings(3, 7).locations(), findings(3, 7, message = "reworded").locations())
+    assertEquals(findings(3, 7).locations(), findings(3, 7, 7).locations())
+    assertNotEquals(findings(3, 7).locations(), findings(3, 8).locations())
+    assertNotEquals(findings(3, 7).locations(), findings(3).locations())
   }
 
   @Test
@@ -290,46 +262,6 @@ class EdictInspectionTest {
 
     assertTrue(exampleSetDigest(base) != exampleSetDigest(weak))
     assertEquals(exampleSetDigest(base), exampleSetDigest(reassigned))
-  }
-
-  @Test
-  fun `a confirmed finding counts as a project finding of its reported example, and directly for an unreported one`() {
-    // `missed` is a positive the inspection does not report; the Signal of its confirmed finding makes it strong.
-    val base = cluster(example("missed", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1))))
-    val cluster = base.copy(signals = base.signals + signal("confirmed-missed", EdictSignalLabel.POSITIVE, "missed"))
-    // `positive` stands for two project findings; one true and one false positive are counted directly.
-    val previous = EdictEvaluation(
-      inspectionHash = "a".repeat(64),
-      exampleSetDigest = exampleSetDigest(cluster),
-      action = EdictInspectionAction.GENERATE,
-      tp = 3,
-      fp = 2,
-      fn = 1,
-      precision = 0.6,
-      recall = 0.75,
-      examples = mapOf(
-        "missed" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = false, satisfied = false, projectFindings = 0, weight = 1),
-        "negative" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, strong = true, satisfied = false, projectFindings = 1, weight = 1),
-        "positive" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 2, weight = 2),
-      ),
-      projectReview = null,
-      directFindings = EdictDirectFindings(tp = 1, fp = 1),
-    )
-
-    val evaluation = previous.withConfirmedFindings(cluster, mapOf("positive" to 2, "missed" to 1))
-
-    val expected = previous.copy(
-      action = EdictInspectionAction.SKIP,
-      tp = 6,
-      precision = 0.75,
-      recall = 6.0 / 7,
-      directFindings = EdictDirectFindings(tp = 2, fp = 1),
-      examples = previous.examples + mapOf(
-        "missed" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = false, projectFindings = 0, weight = 1),
-        "positive" to EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 4, weight = 4),
-      ),
-    )
-    assertEquals(expected, evaluation)
   }
 
   private fun cluster(vararg weakExamples: EdictStoredExample): EdictStoredCluster {
@@ -388,9 +320,8 @@ private fun ideClient(
   project: InspectionKtsProjectRunResult = InspectionKtsProjectRunResult(examples.compilation),
 ) = FakeInspectionKtsClient(compilation = { examples.compilation }, examples = { _, _ -> examples }, projectAnalysis = { project })
 
-/** [count] assignments of project findings to [exampleId], each classified as [classification]. */
-private fun assigned(exampleId: String, count: Int, classification: EdictFindingClassification) =
-  List(count) { EdictFindingAssignment(exampleId, classification, stillReported = false) }
+/** A project analysis of the inspection that reported no finding. */
+private val REVIEW = EdictProjectReview("abcdef", totalFindings = 0, reviewedFindings = 0)
 
 /** Findings of one candidate on the [lines] of one file, each with [message]. */
 private fun findings(vararg lines: Int, message: String = "problem") = EdictInspectionFindings(

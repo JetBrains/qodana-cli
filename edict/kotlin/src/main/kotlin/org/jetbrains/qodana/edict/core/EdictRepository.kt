@@ -375,7 +375,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       require(signal.language == cluster.manifest.language) { "Signal language does not match source cluster" }
       val example = cluster.examples.singleOrNull { it.metadata.id == signal.syntheticExampleId }
       require(signal.syntheticExampleId == null || example?.metadata?.label == signal.label) { "Signal must reference an existing matching example" }
-      require(example != null && cluster.signals.any { it.syntheticExampleId == example.metadata.id && it.strength == EdictSignalStrength.STRONG }) {
+      require(example != null && example.metadata.id in cluster.strongExampleIds()) {
         "Direct evidence must reuse an existing strong representative example; otherwise publish to inbox"
       }
       require(!paths.inboxDirectory.resolve("${signal.id}.json").exists()) { "Signal already exists in inbox" }

@@ -198,10 +198,12 @@ before running the skills. The fixes are based on the analyzed revision, even wh
   cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution run through
   Ultimate's generic inspection MCP; this CLI contains only its lifecycle and HTTP client.
   Generation publishes valid analyzed inspections as `Generated` even when strong or weak examples fail; evaluation
-  records their actual coverage, precision and recall. Only Pending clusters with new Signals are suggested. The
+  records their actual coverage, precision and recall. Each example weighs the project findings the weak-signal review
+  attributed to it, at least 1: tp sums satisfied positive examples, fn unsatisfied positive ones and fp unsatisfied
+  negative ones. Only Pending clusters with new Signals are suggested. The
   example overseer first has one `edict-signal-mapping` worker map the new Signals, without labels, to the examples that
   stand for their cases. A predecessor is reused (`SKIP`) only when neither it nor the examples changed since its
-  evaluation and no user answered one of its findings as a false positive; findings users confirmed are added to it. `Pending` remains an input state, not a generation outcome.
+  evaluation and no user answered one of its findings as a false positive; its evaluation then stays as it is. `Pending` remains an input state, not a generation outcome.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
   complete discussion provenance, exact source snapshots, task-bound batches,
   ordered coverage validation, publication receipts tied to exact Signal models, and normalized analyzed-PR coverage

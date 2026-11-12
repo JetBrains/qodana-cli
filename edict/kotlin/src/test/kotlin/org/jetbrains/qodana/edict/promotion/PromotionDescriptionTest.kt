@@ -70,11 +70,18 @@ internal class PromotionDescriptionTest {
 
   @ParameterizedTest
   @CsvSource(
-    "0.8, 0.6, 'Estimated precision: **80.0%** · recall: **60.0%** · F1: **68.6%**'",
-    "0.0, 0.0, 'Estimated precision: **0.0%** · recall: **0.0%** · F1: **0.0%**'",
+    // Besides the five true positives of the Signals' examples: 12 against 3 and 8, then 5 against 5 and none.
+    "7, 3, 8, 'Estimated precision: **80.0%** · recall: **60.0%** · F1: **68.6%**'",
+    "0, 5, 0, 'Estimated precision: **50.0%** · recall: **100.0%** · F1: **66.7%**'",
   )
-  fun `the description estimates precision, recall and their harmonic mean`(precision: Double, recall: Double, estimate: String) {
-    val cluster = repository.store(referencedCluster().copy(evaluation = EvaluationFixture(precision, recall)))
+  fun `the description estimates precision, recall and their harmonic mean`(
+    truePositives: Int,
+    falsePositives: Int,
+    falseNegatives: Int,
+    estimate: String,
+  ) {
+    val evaluation = EvaluationFixture(truePositives, falsePositives, falseNegatives)
+    val cluster = repository.store(referencedCluster().copy(evaluation = evaluation))
 
     assertEquals(estimate, cluster.description().lines().single { it.startsWith("Estimated") })
   }
@@ -85,7 +92,7 @@ internal class PromotionDescriptionTest {
     "'javascript:alert(1)', 'Last project analysis reported 73 findings; 20 were reviewed.'",
   )
   fun `the description links the last project analysis only by a web report URL`(reportUrl: String, analysis: String) {
-    val review = EdictProjectReview("a".repeat(40), 73, 20, 0, 0, 0, reportUrl = reportUrl)
+    val review = EdictProjectReview("a".repeat(40), 73, 20, reportUrl = reportUrl)
     val cluster = repository.store(referencedCluster().copy(evaluation = EvaluationFixture(projectReview = review)))
 
     assertEquals(analysis, cluster.description().lines().single { it.startsWith("Last project analysis") })

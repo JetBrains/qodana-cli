@@ -75,18 +75,16 @@ internal class PromotionService(
           StoredInspection.NotEvaluated -> return@forEach
           is EvaluatedInspection -> inspection
         }
-        val precision = current.precision
-        val recall = current.recall
-        val f1 = if (precision == 0.0 || recall == 0.0) 0.0 else 2 / (1 / precision + 1 / recall)
-        if (!precision.isFinite() || precision !in 0.0..1.0 || !recall.isFinite() || recall !in 0.0..1.0 ||
-          precision < configuration.targetPrecision || recall < targets.targetRecall || f1 < targets.targetF1) return@forEach
+        if (current.precision < configuration.targetPrecision || current.recall < targets.targetRecall || current.f1 < targets.targetF1) {
+          return@forEach
+        }
         val targetPath = "${targets.inspectionsDirectory.trim('/')}/$id.inspection.kts"
         if (cluster.manifest.promotions.any {
           it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath
         }) return@forEach
         // Validate the referenced evidence without publishing anything.
         promotionDescription(cluster, digest, configuration.ci, current, configuration.minPromotionSourceFiles)
-        candidates += PromotionCandidate(id, path.toString(), digest, eligibility.referencedSourceFiles, current, f1)
+        candidates += PromotionCandidate(id, path.toString(), digest, eligibility.referencedSourceFiles, current)
       }
       catch (e: Exception) {
         failures += PromotionFailure(id, e.message ?: e.javaClass.simpleName)

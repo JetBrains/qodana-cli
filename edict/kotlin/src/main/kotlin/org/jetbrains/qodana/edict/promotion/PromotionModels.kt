@@ -20,7 +20,6 @@ internal data class PromotionCandidate(
   val inspectionDigest: String,
   val strongPositiveSourceFiles: Int,
   val evaluation: EdictEvaluation,
-  val f1: Double,
 )
 
 @Serializable

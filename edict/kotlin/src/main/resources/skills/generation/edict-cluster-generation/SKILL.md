@@ -20,9 +20,9 @@ Managed state is read-only to filesystem tools; change the target cluster only t
 your own task token:
 
 - `edict_append_cluster_history(token, clusterId, entry)` appends an operational decision to `history.md`;
-- `edict_record_evaluation(token, clusterId)` scores the inspection that would be published on every strong and
-  weak example and writes `evaluation.json`; finalising `Generated` requires it for exactly that inspection and the
-  current examples;
+- `edict_record_evaluation(token, clusterId)` scores the inspection that would be published on every example and
+  writes `evaluation.json`, or keeps the predecessor's on `SKIP`; finalising `Generated` requires one for exactly that
+  inspection and the current examples;
 - `edict_finalise_cluster(token, clusterId, status, reason)` records the reason and sets `Generated`,
   `Discontinued`, or `Invalid`, applying that status's file changes. It rejects a status whose contract
   the cluster does not meet and leaves the cluster unchanged.
@@ -70,7 +70,7 @@ Call `edict_get_inspection_action(clusterId)` before any generation round.
 - `CONFLICT`: finalise `Invalid` with the conflicting Signal ids.
 - `SKIP`: neither the predecessor inspection nor the code examples changed since its evaluation, so the new Signals are
   cases the examples already stand for, and no user answered one of its findings as a false positive. Call
-  `edict_record_evaluation`, which adds the findings users confirmed, and finalise `Generated`, recording reuse;
+  `edict_record_evaluation`, which keeps the predecessor's evaluation, and finalise `Generated`, recording reuse;
   failing examples do not prevent reuse. Do not launch a generation round.
 - `GENERATE`: run generation rounds.
 

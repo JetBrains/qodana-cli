@@ -25,6 +25,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.qodana.edict.promotion.support.ClusterFixture
+import org.jetbrains.qodana.edict.promotion.support.EvaluationFixture
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
@@ -87,6 +88,9 @@ internal fun EdictRepositoryDirectory.storeHistory(vararg records: FeedbackRecor
   val month = feedbackHistoryDirectory.resolve("2026-10").createDirectories()
   records.forEach { month.resolve(it.fileName).writeText(it.fileText()) }
 }
+
+/** A generated cluster without Signals whose evaluation counts one true positive, so feedback chooses its inspection. */
+internal val FEEDBACK_CLUSTER = ClusterFixture(emptyList(), evaluation = EvaluationFixture(truePositives = 1))
 
 /**
  * The files of a state holding [cluster], built in [directory], contents by their path in the state, with the feedback

@@ -161,7 +161,8 @@ If the response has `findingsUnchanged: true`, the project findings equal the pr
 reviewed: this round changed the candidate only on cases that the project does not contain, and the examples that
 define them are checked by the save. Skip both reviews and continue with step 3. Otherwise:
 
-1. Launch a fresh worker with only:
+1. If the response has `weakReviewNeeded: false`, this run already reviewed every finding and no example needs repair:
+   skip this step. Otherwise launch a fresh worker with only:
 
    ```text
    Load the edict-weak-signal-review skill.

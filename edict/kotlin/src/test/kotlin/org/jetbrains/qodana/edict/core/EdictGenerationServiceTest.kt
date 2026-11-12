@@ -135,7 +135,6 @@ class EdictGenerationServiceTest {
     assertEquals(0.0, evaluation.precision)
     assertEquals(0.0, evaluation.recall)
     assertTrue(evaluation.examples.values.all { !it.satisfied })
-    assertEquals(2, evaluation.examples.values.count { it.strong })
 
     val finalised = generation.finaliseCluster("busy-wait", EdictClusterStatus.Generated, "All strong and weak examples fail; recorded as limitations")
     assertTrue(finalised.success, finalised.summary)
@@ -184,7 +183,10 @@ class EdictGenerationServiceTest {
         ),
         listOf(unevaluated, action),
       )
-      assertEquals(evaluation.copy(action = EdictInspectionAction.SKIP), generation.recordEvaluation("retry").evaluation)
+      assertEquals(
+        EdictRecordEvaluationResponse(true, "The predecessor's evaluation stays: neither it nor the examples changed", evaluation),
+        generation.recordEvaluation("retry"),
+      )
       assertTrue(generation.finaliseCluster("retry", EdictClusterStatus.Generated, "Reuse with a known miss").success)
     }
     finally {
@@ -234,28 +236,6 @@ class EdictGenerationServiceTest {
   }
 
   @Test
-  fun `SKIP adds the findings users confirmed in review comments since to the predecessor's evaluation`() = runBlocking<Unit> {
-    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
-    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
-    try {
-      // The example the confirmed finding is a case of already stands for one project finding.
-      val source = feedbackSource(predecessorDigest(repository, "retry"))
-      writeSignal("retry", "confirmed", EdictSignalStrength.STRONG, EdictSignalLabel.POSITIVE, source = source)
-      repository.assignCodeExample("retry", "confirmed", "retry-example")
-      val evaluation = storePredecessorEvaluation(repository, "retry", satisfied = true, projectFindings = 1)
-      generation.getInspectionAction("retry")
-
-      val recorded = generation.recordEvaluation("retry").evaluation
-
-      val example = EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 2, weight = 2)
-      assertEquals(evaluation.copy(action = EdictInspectionAction.SKIP, tp = 2, examples = mapOf("retry-example" to example)), recorded)
-    }
-    finally {
-      inspection.stop()
-    }
-  }
-
-  @Test
   fun `a false-positive answer to an earlier version of the inspection does not force GENERATE`() = runBlocking<Unit> {
     val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
@@ -298,26 +278,6 @@ class EdictGenerationServiceTest {
   }
 
   @Test
-  fun `SKIP records nothing while a confirmed finding has no code example`() = runBlocking<Unit> {
-    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
-    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
-    try {
-      val source = feedbackSource(predecessorDigest(repository, "retry"))
-      writeSignal("retry", "confirmed", EdictSignalStrength.STRONG, EdictSignalLabel.POSITIVE, source = source)
-      storePredecessorEvaluation(repository, "retry", satisfied = true)
-      generation.getInspectionAction("retry")
-
-      assertEquals(
-        EdictRecordEvaluationResponse(false, "Signal 'confirmed' has no code example; reconcile the examples first"),
-        generation.recordEvaluation("retry"),
-      )
-    }
-    finally {
-      inspection.stop()
-    }
-  }
-
-  @Test
   fun `the signal mapping holds the new Signals and the examples, without their labels`() = runBlocking<Unit> {
     val (generation, inspection) = generation()
     val scratch = directory.resolve("scratch")
@@ -347,32 +307,14 @@ class EdictGenerationServiceTest {
   private fun predecessorDigest(repository: EdictRepository, clusterId: String): String =
     sha256Hex(repository.paths.inspectionPath(checkNotNull(repository.loadCluster(clusterId).manifest.predecessorId)).readText())
 
-  /**
-   * Stores the evaluation of the predecessor of [clusterId] on its current examples, each [satisfied] or not and standing for
-   * [projectFindings], as its generation recorded it.
-   */
-  private fun storePredecessorEvaluation(
-    repository: EdictRepository,
-    clusterId: String,
-    satisfied: Boolean,
-    projectFindings: Int = 0,
-  ): EdictEvaluation {
+  /** Stores the evaluation of the predecessor of [clusterId] on its current examples, each [satisfied] or not. */
+  private fun storePredecessorEvaluation(repository: EdictRepository, clusterId: String, satisfied: Boolean): EdictEvaluation {
     val cluster = repository.loadCluster(clusterId)
     val code = repository.paths.inspectionPath(checkNotNull(cluster.manifest.predecessorId)).readText()
-    val examples = cluster.examples.associate {
-      it.metadata.id to EdictExampleEvaluation(it.metadata.label, true, satisfied, projectFindings, maxOf(1, projectFindings))
-    }
-    val tp = if (satisfied) maxOf(1, projectFindings) else 0
     val evaluation = EdictEvaluation(
       inspectionHash = sha256Hex(code),
       exampleSetDigest = exampleSetDigest(cluster),
-      action = EdictInspectionAction.GENERATE,
-      tp = tp,
-      fp = 0,
-      fn = 1 - tp.coerceAtMost(1),
-      precision = if (satisfied) 1.0 else 0.0,
-      recall = if (satisfied) 1.0 else 0.0,
-      examples = examples,
+      examples = cluster.examples.associate { it.metadata.id to EdictExampleEvaluation(it.metadata.label, satisfied, 0) },
       projectReview = null,
     )
     cluster.directory.evaluationPath.writeText(EdictJson.encodeToString(evaluation))
@@ -933,16 +875,14 @@ class EdictGenerationServiceTest {
     // The candidate reports every example, so the weak negative is a weighted false positive.
     assertEquals(listOf(2, 3, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     val review = checkNotNull(evaluation.projectReview)
-    assertEquals(listOf(25, 6, 1, 0), listOf(review.totalFindings, review.reviewedFindings, review.uncertain, review.unassigned))
+    assertEquals(listOf(25, 6), listOf(review.totalFindings, review.reviewedFindings))
     assertEquals(listOf(1, 2), review.truePositiveFindings.map { it.fileRevision.expectedRanges!!.first().start })
-    assertTrue(review.inspectionDescription.isNotBlank())
     assertEquals(evaluation, repository.loadEvaluation(repository.loadCluster("busy-wait")))
 
-    // Findings of a deleted example no longer weigh anything and count as unassigned.
+    // Findings of a deleted example no longer weigh anything.
     generation.deleteCodeExample("busy-wait", negative.id)
     val afterDelete = checkNotNull(generation.recordEvaluation("busy-wait").evaluation)
     assertEquals(listOf(2, 0, 0), listOf(afterDelete.tp, afterDelete.fp, afterDelete.fn))
-    assertEquals(3, afterDelete.projectReview?.unassigned)
   }
 
   @Test
@@ -968,6 +908,44 @@ class EdictGenerationServiceTest {
 
     val second = sampledLines(generation.getNewInspectionResults("busy-wait", scratch))
     assertEquals((1..25).toSet() - first.toSet(), second.toSet())
+  }
+
+  @Test
+  fun `a round whose findings this run reviewed already needs no weak review`() = withGeneration { generation, _ ->
+    val scratch = directory.resolve("scratch").toString()
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=2")
+    generation.getNewInspectionResults("busy-wait", scratch)
+    generation.recordWeakReview(
+      "busy-wait",
+      (1..2).map { EdictReviewedFinding("src/Found.java", it, EdictFindingClassification.TP, "busy-wait-example") },
+    )
+    // The next candidate reports a part of the reviewed findings, so its findings differ from the previous ones.
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=1")
+
+    val response = generation.getNewInspectionResults("busy-wait", scratch)
+
+    val config = EdictJson.decodeFromString<EdictWeakSignalReviewConfig>(Path.of(response.weakSignalReviewConfigPath).readText())
+    val sample = EdictJson.decodeFromString<EdictInspectionFindings>(Path.of(config.findingsPath).readText()).findings
+    assertEquals(listOf(false, false, true), listOf(response.findingsUnchanged, response.weakReviewNeeded, sample.isEmpty()))
+  }
+
+  @Test
+  fun `the project review counts only the reviewed findings the evaluated candidate reports`() = withGeneration { generation, _ ->
+    val scratch = directory.resolve("scratch").toString()
+    generation.getInspectionAction("busy-wait")
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=2")
+    generation.getNewInspectionResults("busy-wait", scratch)
+    generation.recordWeakReview(
+      "busy-wait",
+      (1..2).map { EdictReviewedFinding("src/Found.java", it, EdictFindingClassification.TP, "busy-wait-example") },
+    )
+    // The evaluated candidate reports line 1 only; line 2 was a finding of the earlier one.
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=1")
+    generation.getNewInspectionResults("busy-wait", scratch)
+
+    val review = checkNotNull(generation.recordEvaluation("busy-wait").evaluation?.projectReview)
+
+    assertEquals(listOf(1, 1, 1), listOf(review.totalFindings, review.reviewedFindings, review.truePositiveFindings.size))
   }
 
   @Test
@@ -1071,11 +1049,10 @@ class EdictGenerationServiceTest {
     assertEquals(EdictReviewExampleStatus(EdictSignalLabel.POSITIVE, strong = true, reported = true), config.exampleStatus["busy-wait-example"])
     assertEquals(mapOf(negative.id to EdictUnreproducedFindings(listOf("src/Found.java:1"), noLongerReported = 1)), config.unreproducedFindings)
 
-    // Not moved to a reproducing example, the still reported finding counts as a false positive by itself.
+    // Both findings count by their example, which the repaired candidate passes.
     val evaluation = checkNotNull(generation.recordEvaluation("busy-wait").evaluation)
-    assertEquals(listOf(1, 1, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
-    assertEquals(1, evaluation.projectReview?.unreproduced)
-    assertEquals(1, evaluation.examples.getValue(negative.id).projectFindings)
+    assertEquals(listOf(1, 0, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(2, evaluation.examples.getValue(negative.id).projectFindings)
     assertTrue(repository.loadCluster("busy-wait").examples.any { it.metadata.id == negative.id })
   }
 
