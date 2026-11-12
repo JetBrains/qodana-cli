@@ -98,6 +98,8 @@ sealed interface EdictSignalSource {
     /** The web page of the review comment. */
     val url: String,
     val replies: List<EdictReply>,
+    /** The SHA-256 hex of the inspection's bytes that reported the finding: each version of an inspection is its own. */
+    val inspectionDigest: String,
   ) : EdictSignalSource
 
   @Serializable
@@ -146,6 +148,11 @@ data class EdictSignal(
     get() = idempotencyKey.ifBlank { (source as? EdictSignalSource.SubmittedFeedback)?.suggestionId.orEmpty() }
 
   internal val isJvmLanguage: Boolean get() = EdictLanguage.fromPathOrNull(fileRevision.path) != null
+
+  /** Whether this is a user's answer with [label] in a review comment to a finding of the inspection bytes of [inspectionDigest]. */
+  internal fun isAnswer(label: EdictSignalLabel, inspectionDigest: String): Boolean =
+    this.label == label && (source as? EdictSignalSource.GitHubEvaluatedFinding)?.inspectionDigest == inspectionDigest
+
   internal val language: EdictLanguage
     get() = requireNotNull(EdictLanguage.fromPathOrNull(fileRevision.path)) {
       "Unsupported Signal source language: ${fileRevision.path}"
@@ -342,6 +349,20 @@ internal data class EdictMutationResponse(
   val summary: String,
 )
 
+/** The [directory] that holds the cluster's new Signals and its code examples without their labels, for a blind mapping. */
+@Serializable
+internal data class EdictSignalMappingResponse(
+  val directory: String,
+  /** The new Signals, each in `signals/<id>.json`. */
+  val signalIds: List<String>,
+  /** The code examples, each as its source file in `examples/<id>/`. */
+  val exampleIds: List<String>,
+)
+
+/** What a blind mapper sees of a Signal: where its case is, without its label, description or source. */
+@Serializable
+internal data class EdictUnlabelledSignal(val id: String, val fileRevision: EdictFileRevision)
+
 @Serializable
 internal enum class EdictInspectionAction {
   CONFLICT,
@@ -368,8 +389,6 @@ internal data class EdictInspectionValidationResponse(
   /** Compilation, metadata and example execution are valid; evidence accuracy is advisory. */
   val overallSuccess: Boolean,
   val summary: String,
-  /** Used only to decide whether an existing predecessor can be reused without regeneration. */
-  val strongExamplesSatisfied: Boolean = false,
   val failures: List<EdictInspectionFailure> = emptyList(),
   val achievedAccuracyPercent: Int? = null,
   val reportedNegativeExampleIds: List<String> = emptyList(),
@@ -392,7 +411,8 @@ internal data class EdictInspectionResultsResponse(
  * `clusters/<id>/evaluation.json`: the final score of one inspection on one example set, written only by
  * `edict_record_evaluation`. Every example weighs the project findings the weak-signal review assigned to it, at
  * least 1: tp sums the weights of satisfied positive examples, fn of unsatisfied positive ones, and fp of negative
- * examples the inspection reports. Finalising Generated requires one matching the published inspection and examples.
+ * examples the inspection reports, each with the [directFindings] of its kind. Finalising Generated requires one
+ * matching the published inspection and examples.
  */
 @Serializable
 internal data class EdictEvaluation(
@@ -409,7 +429,15 @@ internal data class EdictEvaluation(
   val projectReview: EdictProjectReview?,
   val inspectionName: String = "",
   val inspectionDescription: String = "",
+  val directFindings: EdictDirectFindings = EdictDirectFindings(tp = 0, fp = 0),
 )
+
+/**
+ * The findings an evaluation counts directly rather than through an example's weight, [tp] true and [fp] false positives:
+ * the inspection does not decide the example of each as the finding was classified, or users confirmed one in a review.
+ */
+@Serializable
+internal data class EdictDirectFindings(val tp: Int, val fp: Int)
 
 @Serializable
 internal data class EdictExampleEvaluation(

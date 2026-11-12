@@ -25,6 +25,8 @@ internal data class FeedbackRecord(
     val id: String,
     /** The cluster whose inspection reported the finding. */
     val clusterId: String,
+    /** The SHA-256 hex of the inspection's bytes that reported the finding: each version of an inspection is its own. */
+    val inspectionDigest: String,
     val pullRequest: ReviewReference,
     /** The full SHA of the commit the inspection reported the finding on. */
     val revision: String,

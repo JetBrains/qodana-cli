@@ -186,7 +186,7 @@ internal class EdictManagementService(
         "source" to signalSource,
         "label" to enumOf("POSITIVE", "NEGATIVE"),
         "description" to string,
-        "strength" to enumOf("STRONG", "WEAK"),
+        "strength" to enumOf("STRONG"),
         "syntheticExampleId" to nullableString,
         "provenance" to provenance,
       ),
@@ -207,7 +207,7 @@ internal class EdictManagementService(
             "fileRevision" to fileRevision,
             "label" to enumOf("POSITIVE", "NEGATIVE"),
             "description" to string,
-            "strength" to enumOf("STRONG", "WEAK"),
+            "strength" to enumOf("STRONG"),
             "diff" to objectOf(
               properties = mapOf(
                 "before" to string,

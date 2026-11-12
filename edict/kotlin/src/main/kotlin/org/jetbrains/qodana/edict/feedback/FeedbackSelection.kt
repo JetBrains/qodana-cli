@@ -1,78 +1,40 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.feedback
 
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.qodana.edict.ci.ReviewReference
-import org.jetbrains.qodana.edict.core.EdictClusterStatus
-import org.jetbrains.qodana.edict.core.EdictRepository
-import org.jetbrains.qodana.edict.core.EdictStoredCluster
+import org.jetbrains.qodana.edict.common.FeedbackConfiguration
 import org.jetbrains.qodana.edict.core.EvaluatedInspection
-import org.jetbrains.qodana.edict.core.StoredInspection
-import org.jetbrains.qodana.edict.core.storedInspection
-
-private val logger = KotlinLogging.logger {}
-
-/** Review comments a pull request gets at most, over all its runs. */
-internal const val MAX_FEEDBACK_PER_PULL_REQUEST = 3
-
-/** Records of one inspection that may await an answer at once. */
-internal const val MAX_ACTIVE_FEEDBACK_PER_INSPECTION = 10
-
-/** The precision an inspection's evaluation must exceed for its findings to reach a review. */
-internal const val MIN_FEEDBACK_PRECISION = 0.7
+import kotlin.sequences.sortedWith
 
 /** Inspections one run analyses for feedback at most; each adds to the analysis time. */
 internal const val MAX_FEEDBACK_INSPECTIONS = 50
 
 /** The inspections whose findings may become review comments on a pull request, and how many comments it has [remaining]. */
-internal data class FeedbackSelection(val inspections: List<EvaluatedInspection>, val remaining: Int)
+internal data class FeedbackSelection(val inspections: List<FeedbackInspection>, val remaining: Int)
 
 /**
- * What [pullRequest] may still get: nothing once it got its [MAX_FEEDBACK_PER_PULL_REQUEST] records, else the rest of them, from
- * the generated, not yet promoted inspections that have no record on it, whose current evaluation exceeds
- * [MIN_FEEDBACK_PRECISION] and that await fewer than [MAX_ACTIVE_FEEDBACK_PER_INSPECTION] answers. The most precise come first,
- * up to [MAX_FEEDBACK_INSPECTIONS].
+ * What [pullRequest] may still get under [limits]: nothing once it got [FeedbackConfiguration.maxPerPullRequest] records, else
+ * the rest of them, from the [inspections] the state chose, in their order, that have no record on it and of whose bytes fewer
+ * than [FeedbackConfiguration.maxPerInspection] records await an answer, up to [MAX_FEEDBACK_INSPECTIONS].
  */
 internal fun selectFeedbackInspections(
-    repository: EdictRepository,
+    inspections: List<FeedbackInspection>,
     records: FeedbackRecords,
     pullRequest: ReviewReference,
+    limits: FeedbackConfiguration,
 ): FeedbackSelection {
     val active = records.active()
     // Answered records leave active: without the history, a pull request whose comments got answers would get new ones.
     val commented = (active + records.history()).filter { it.pullRequest == pullRequest }
-    if (commented.size >= MAX_FEEDBACK_PER_PULL_REQUEST) return FeedbackSelection(emptyList(), 0)
-    val commentedClusters = commented.map(FeedbackRecord::clusterId).toSet()
-    val activeByCluster = active.groupingBy(FeedbackRecord::clusterId).eachCount()
-    val inspections = repository.loadClusters()
-        .asSequence()
-        .filter { it.manifest.status == EdictClusterStatus.Generated && it.id !in commentedClusters }
-        .filter { activeByCluster.getOrDefault(it.id, 0) < MAX_ACTIVE_FEEDBACK_PER_INSPECTION }
-        .mapNotNull { repository.feedbackInspection(it) }
-        .filter { it.evaluation.precision > MIN_FEEDBACK_PRECISION }
-        .sortedWith(compareByDescending<EvaluatedInspection> { it.evaluation.precision }.thenBy(EvaluatedInspection::clusterId))
+    if (commented.size >= limits.maxPerPullRequest) return FeedbackSelection(emptyList(), 0)
+    val commentedInspections = commented.map(FeedbackRecord::inspectionDigest).toSet()
+    val activeByInspection = active.groupingBy(FeedbackRecord::inspectionDigest).eachCount()
+    // select inspections so that max 1 comment per inspection in one PR, less than maxPerInspection overall
+    // inspections sorted in best precision order by chooseFeedbackInspection
+    val selected = inspections
+        .filter { it.digest !in commentedInspections }
+        .filter { activeByInspection.getOrDefault(it.digest, 0) < limits.maxPerInspection }
+        .sortedWith(compareByDescending<FeedbackInspection> { it.precision }.thenBy(FeedbackInspection::clusterId))
         .take(MAX_FEEDBACK_INSPECTIONS)
-        .toList()
-    return FeedbackSelection(inspections, MAX_FEEDBACK_PER_PULL_REQUEST - commented.size)
+    return FeedbackSelection(selected, limits.maxPerPullRequest - commented.size)
 }
-
-/**
- * The cluster's generated inspection, unless no evaluation of its current bytes and examples ranks it or a promotion proposed
- * these bytes. A cluster without its inspection only loses its feedback, not that of the others.
- */
-private fun EdictRepository.feedbackInspection(cluster: EdictStoredCluster): EvaluatedInspection? =
-    when (val inspection = storedInspection(cluster, loadEvaluation(cluster))) {
-        StoredInspection.Missing -> {
-            logger.warn { "Edict feedback leaves out ${cluster.id}: its generated inspection is missing" }
-            null
-        }
-        StoredInspection.NotEvaluated -> null
-        is EvaluatedInspection -> inspection.takeUnless { cluster.isPromoted(it.digest) }
-    }
-
-/**
- * Whether a promotion proposed exactly the inspection bytes of [digest], whatever its state: it awaits its review, was accepted,
- * or was closed and awaits its decision. Only deciding a closed one regenerates the inspection, so the promotions of earlier
- * bytes are decided ones, and the new bytes may get feedback.
- */
-private fun EdictStoredCluster.isPromoted(digest: String): Boolean = manifest.promotions.any { it.inspectionDigest == digest }

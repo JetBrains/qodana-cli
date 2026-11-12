@@ -18,6 +18,34 @@ review artifacts, or other clusters.
 Change examples only through `edict_save_code_example`, `edict_assign_code_example`, and
 `edict_delete_code_example`, with your own task token for an overseer repair.
 
+Each code example stands for one case of the cluster's rule: one way a problem occurs, or one reason a problem is absent.
+Several Signals of one case share its example: assign the existing example to such a Signal rather than reducing another one.
+A strong Signal may get an example no strong Signal referenced yet; the example then becomes strong.
+
+## Map the new Signals
+
+First call `edict_prepare_signal_mapping(token, clusterId)`. When it returns new Signals and at least one example, create
+and delegate exactly one `edict-signal-mapping` managed task, named `Map Signals for <clusterId>`, to a fresh native
+subagent, following the manager protocol, with only:
+
+```text
+Load the edict-signal-mapping skill.
+
+Cluster id: <clusterId>
+Mapping directory: <returned directory>
+```
+
+Wait for it to complete. Its lines are hints for the reconciliation below, not decisions; confirm each against the exact
+sources before acting on it. Compare the label of each mapped Signal with the label of its example:
+
+- the same label: the example is the candidate for the Signal's case; when it does stand for that case, assign it with
+  `edict_assign_code_example` instead of reducing a new example;
+- the opposite label: a contradiction to look into. The Signal, the example or the mapping is wrong: check the example
+  against the exact source of the Signals assigned to it, and the new Signal against its own;
+- `none`: the Signal needs an example of its own.
+
+When the worker fails, reconcile without hints.
+
 ## Reconcile the evidence
 
 List every Signal in the cluster with `edict_get_cluster_signals` and read its examples with
@@ -43,7 +71,7 @@ For every Signal with an assigned example:
 2. Inspect its assigned example. Keep it when it is a faithful, focused semantic slice of the exact source.
 3. Delete every incorrect example with `edict_delete_code_example`; this unassigns its Signals.
 
-Then handle every Signal without an example. When at most three Signals are without an example, reduce each yourself
+Then handle every Signal without an example. When at most three Signals are without an example of their case, reduce each yourself
 from its exact source, as [the code-example skill](../edict-code-example/SKILL.md) describes, avoiding the defect
 of any example you deleted for it, and assign it with `edict_assign_code_example`; do not delegate them. Otherwise
 split the Signals without an example, in Signal ID order, into groups of at most five, and for each group create and
@@ -70,7 +98,7 @@ its exact source revision because structural validation cannot establish source 
 Examples not referenced by a `STRONG` cluster Signal are weak. Make sure no weak example contradicts a strong Signal:
 delete the complete directory of an example no cluster Signal references when its label contradicts a strong Signal on
 the same semantic case, for example a weak negative containing the construct a strong positive reports. Keep every
-other weak example as it is. Do not assign weak examples to strong Signals.
+other weak example as it is.
 
 Return a concise summary listing every Signal and its example id, created or changed examples, deleted weak examples
 with the strong Signal each contradicted, and any evidence that prevented complete reconciliation.

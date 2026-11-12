@@ -69,7 +69,7 @@ internal class PromotionService(
       try {
         val evaluation = repository.loadEvaluation(cluster)
         val eligibility = cluster.promotionEligibility(configuration.ci, evaluation)
-        if (eligibility.strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) return@forEach
+        if (eligibility.strongPositiveSourceFiles < configuration.minPromotionSourceFiles) return@forEach
         val (path, digest, current) = when (val inspection = repository.storedInspection(cluster, evaluation)) {
           StoredInspection.Missing -> error("generated inspection is missing")
           StoredInspection.NotEvaluated -> return@forEach
@@ -79,13 +79,13 @@ internal class PromotionService(
         val recall = current.recall
         val f1 = if (precision == 0.0 || recall == 0.0) 0.0 else 2 / (1 / precision + 1 / recall)
         if (!precision.isFinite() || precision !in 0.0..1.0 || !recall.isFinite() || recall !in 0.0..1.0 ||
-          precision <= targets.targetPrecision || recall <= targets.targetRecall || f1 <= targets.targetF1) return@forEach
+          precision < configuration.targetPrecision || recall < targets.targetRecall || f1 < targets.targetF1) return@forEach
         val targetPath = "${targets.inspectionsDirectory.trim('/')}/$id.inspection.kts"
         if (cluster.manifest.promotions.any {
           it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath
         }) return@forEach
         // Validate the referenced evidence without publishing anything.
-        promotionDescription(cluster, digest, configuration.ci, current)
+        promotionDescription(cluster, digest, configuration.ci, current, configuration.minPromotionSourceFiles)
         candidates += PromotionCandidate(id, path.toString(), digest, eligibility.referencedSourceFiles, current, f1)
       }
       catch (e: Exception) {
@@ -93,7 +93,7 @@ internal class PromotionService(
       }
     }
     return PromotionSelectionResponse(
-      PromotionThresholds(targets.targetPrecision, targets.targetRecall, targets.targetF1), candidates, failures,
+      PromotionThresholds(configuration.targetPrecision, targets.targetRecall, targets.targetF1), candidates, failures,
     )
   }
 
@@ -153,7 +153,9 @@ internal class PromotionService(
           targetPath = targetPath,
           inspectionDigest = digest,
           inspectionContent = content,
-          description = promotionDescription(cluster, digest, configuration.ci, repository.loadEvaluation(cluster)),
+          description = promotionDescription(
+            cluster, digest, configuration.ci, repository.loadEvaluation(cluster), configuration.minPromotionSourceFiles,
+          ),
         ),
       )
       val now = Instant.now(clock).toString()

@@ -42,7 +42,7 @@ internal class EdictDistributionService(
         }
         if (replacedSignals.isNotEmpty()) state = repository.loadState()
         requireNoIssues(validateRepositoryState(repository, state))
-        val signalIds = state.jvmInboxSignalIds.sorted()
+        val signalIds = state.distributableInboxSignalIds.sorted()
         neighbours = prepareNeighbours(state, signalIds)
         return EdictCalculateNeighboursResponse(
           summary = buildString {
@@ -71,6 +71,9 @@ internal class EdictDistributionService(
               nextAction = EdictNextAction.HAND_OFF,
             )
         }
+        // TODO: a GitHubEvaluatedFinding Signal must go to the cluster whose inspection reported its finding, but a generation
+        //  round may rename that cluster's directory after the feedback record named it; until clusters keep their id, such
+        //  Signals are distributed like the others (which is fine as inspection digest will be different).
         val signal = state.inboxSignalsById.getValue(signalId)
         val pairedSignal = pairs.sibling(signalId)
             ?.takeIf { it in currentBatch.signalIds }
@@ -204,7 +207,7 @@ internal class EdictDistributionService(
     private suspend fun selectBatch(): DistributionBatch {
         val neighbours = checkNotNull(neighbours) { "Call edict_calculate_neighbours_by_embeddings first" }
         val state = repository.loadState()
-        val signalIds = state.jvmInboxSignalIds.filter(neighbours::containsKey).sorted().take(defaultSignalCount)
+        val signalIds = state.distributableInboxSignalIds.filter(neighbours::containsKey).sorted().take(defaultSignalCount)
         return DistributionBatch(state, signalIds.toSet(), neighbours)
     }
 

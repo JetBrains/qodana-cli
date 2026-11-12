@@ -31,7 +31,7 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    repeated on several lines. Give both drafts of one correction the same `correction` number, distinct within the
    work item, so they are distributed together; a draft without a counterpart has none.
    Record each finding as a Signal draft: `workItemId`, `fileRevision` with bounded one-based
-   `expectedRanges`, `label`, `strength`, `description`, and `diff`, the exact prepared `before` (base or comment) and
+   `expectedRanges`, `label`, `strength` (always `STRONG`), `description`, and `diff`, the exact prepared `before` (base or comment) and
    `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. When the finding
    depends on diff lines away from its ranges, such as an added import, a new field or a changed helper, name them in
    `relatedBeforeRanges` (before-side line numbers) and `relatedAfterRanges` (after-side line numbers). Do not copy PR

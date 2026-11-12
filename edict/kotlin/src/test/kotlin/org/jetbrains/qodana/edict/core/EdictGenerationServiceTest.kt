@@ -120,7 +120,6 @@ class EdictGenerationServiceTest {
     val code = "// busy-wait report skip=busy-wait-example skip=weak-positive"
     val validation = generation.saveCandidateInspection("busy-wait", code)
     assertTrue(validation.overallSuccess)
-    assertFalse(validation.strongExamplesSatisfied)
     assertEquals(0, validation.achievedAccuracyPercent)
     assertEquals(EdictNextAction.REVIEW_INSPECTION, validation.nextAction)
     val scratch = directory.resolve("scratch").toString()
@@ -165,29 +164,219 @@ class EdictGenerationServiceTest {
   }
 
   @Test
-  fun `predecessor reuse still requires strong examples but not weak accuracy`() = runBlocking<Unit> {
-    val (generation, inspection) = generation(
-      "retry" to (EdictSignalStrength.STRONG to EdictSignalLabel.POSITIVE),
-      predecessorId = "retry",
-    )
+  fun `SKIP keeps the predecessor evaluated on the current examples, whatever examples it fails`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
     try {
-      val predecessor = repository.paths.inspectionPath("retry")
-      predecessor.writeText("// retry")
-      assertEquals(EdictInspectionAction.GENERATE, generation.getInspectionAction("retry").action)
+      repository.paths.inspectionPath("retry").writeText("// retry report skip=retry-example")
+      val unevaluated = generation.getInspectionAction("retry")
+      val evaluation = storePredecessorEvaluation(repository, "retry", satisfied = false)
 
-      val weak = EdictCodeExampleMetadata("weak-positive", "Weak.java", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1)))
-      repository.saveCodeExample("retry", weak.id, weak, "class Weak {}")
-      predecessor.writeText("// retry report skip=weak-positive")
-      assertEquals(EdictInspectionAction.SKIP, generation.getInspectionAction("retry").action)
-      val evaluation = generation.recordEvaluation("retry")
-      assertTrue(evaluation.success, evaluation.summary)
-      assertEquals(1, evaluation.evaluation?.fn)
-      assertTrue(generation.finaliseCluster("retry", EdictClusterStatus.Generated, "Reuse with a known weak miss").success)
+      val action = generation.getInspectionAction("retry")
+
+      assertEquals(
+        listOf(
+          EdictInspectionActionResponse(EdictInspectionAction.GENERATE, "No predecessor inspection was evaluated on the current code examples"),
+          EdictInspectionActionResponse(
+            EdictInspectionAction.SKIP,
+            "The predecessor inspection and the code examples are those of its evaluation; the new Signals are cases they already cover",
+          ),
+        ),
+        listOf(unevaluated, action),
+      )
+      assertEquals(evaluation.copy(action = EdictInspectionAction.SKIP), generation.recordEvaluation("retry").evaluation)
+      assertTrue(generation.finaliseCluster("retry", EdictClusterStatus.Generated, "Reuse with a known miss").success)
     }
     finally {
       inspection.stop()
     }
+  }
+
+  @Test
+  fun `GENERATE once a code example changed since the predecessor's evaluation`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      storePredecessorEvaluation(repository, "retry", satisfied = true)
+      val added = EdictCodeExampleMetadata("added", "Added.java", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1)))
+      repository.saveCodeExample("retry", added.id, added, "class Added {}")
+
+      assertEquals(
+        EdictInspectionActionResponse(EdictInspectionAction.GENERATE, "No predecessor inspection was evaluated on the current code examples"),
+        generation.getInspectionAction("retry"),
+      )
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `GENERATE when a user answered a finding of the predecessor as a false positive`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val source = feedbackSource(predecessorDigest(repository, "retry"))
+      writeSignal("retry", "answered", EdictSignalStrength.STRONG, EdictSignalLabel.NEGATIVE, source = source)
+      storePredecessorEvaluation(repository, "retry", satisfied = true)
+
+      assertEquals(
+        EdictInspectionActionResponse(
+          EdictInspectionAction.GENERATE,
+          "Users answered findings of the predecessor inspection as false positives: answered",
+        ),
+        generation.getInspectionAction("retry"),
+      )
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `SKIP adds the findings users confirmed in review comments since to the predecessor's evaluation`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      // The example the confirmed finding is a case of already stands for one project finding.
+      val source = feedbackSource(predecessorDigest(repository, "retry"))
+      writeSignal("retry", "confirmed", EdictSignalStrength.STRONG, EdictSignalLabel.POSITIVE, source = source)
+      repository.assignCodeExample("retry", "confirmed", "retry-example")
+      val evaluation = storePredecessorEvaluation(repository, "retry", satisfied = true, projectFindings = 1)
+      generation.getInspectionAction("retry")
+
+      val recorded = generation.recordEvaluation("retry").evaluation
+
+      val example = EdictExampleEvaluation(EdictSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 2, weight = 2)
+      assertEquals(evaluation.copy(action = EdictInspectionAction.SKIP, tp = 2, examples = mapOf("retry-example" to example)), recorded)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `a false-positive answer to an earlier version of the inspection does not force GENERATE`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val earlier = feedbackSource(sha256Hex("// retry"))
+      writeSignal("retry", "answered", EdictSignalStrength.STRONG, EdictSignalLabel.NEGATIVE, source = earlier)
+      storePredecessorEvaluation(repository, "retry", satisfied = true)
+
+      assertEquals(EdictInspectionAction.SKIP, generation.getInspectionAction("retry").action)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `SKIP records nothing once a code example changed after it was decided`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val evaluation = storePredecessorEvaluation(repository, "retry", satisfied = true)
+      generation.getInspectionAction("retry")
+      val added = EdictCodeExampleMetadata("added", "Added.java", EdictSignalLabel.POSITIVE, listOf(EdictLineRange(1, 1)))
+      repository.saveCodeExample("retry", added.id, added, "class Added {}")
+
+      val recorded = generation.recordEvaluation("retry")
+
+      assertEquals(
+        EdictRecordEvaluationResponse(
+          false,
+          "No predecessor inspection was evaluated on the current code examples any more; call edict_get_inspection_action again",
+        ),
+        recorded,
+      )
+      assertEquals(evaluation, repository.loadEvaluation(repository.loadCluster("retry")))
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `SKIP records nothing while a confirmed finding has no code example`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("retry" to STRONG_POSITIVE, predecessorId = "retry")
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val source = feedbackSource(predecessorDigest(repository, "retry"))
+      writeSignal("retry", "confirmed", EdictSignalStrength.STRONG, EdictSignalLabel.POSITIVE, source = source)
+      storePredecessorEvaluation(repository, "retry", satisfied = true)
+      generation.getInspectionAction("retry")
+
+      assertEquals(
+        EdictRecordEvaluationResponse(false, "Signal 'confirmed' has no code example; reconcile the examples first"),
+        generation.recordEvaluation("retry"),
+      )
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `the signal mapping holds the new Signals and the examples, without their labels`() = runBlocking<Unit> {
+    val (generation, inspection) = generation()
+    val scratch = directory.resolve("scratch")
+    try {
+      val mapping = generation.prepareSignalMapping("busy-wait", scratch)
+
+      val root = scratch.resolve("signal-mapping/busy-wait")
+      val files = Files.walk(root).use { paths ->
+        paths.filter(Files::isRegularFile).toList().associate { root.relativize(it).toString() to it.readText() }
+      }
+      val signal = EdictUnlabelledSignal("s-busy-wait", EdictFileRevision("s-busy-wait.java", "abc", listOf(EdictLineRange(1, 1))))
+      assertEquals(EdictSignalMappingResponse(root.toString(), listOf("s-busy-wait"), listOf("busy-wait-example")), mapping)
+      assertEquals(
+        mapOf(
+          "signals/s-busy-wait.json" to EdictJson.encodeToString(EdictUnlabelledSignal.serializer(), signal),
+          "examples/busy-wait-example/Example.java" to "class Example {}",
+        ),
+        files,
+      )
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  /** The digest of the predecessor inspection of [clusterId]. */
+  private fun predecessorDigest(repository: EdictRepository, clusterId: String): String =
+    sha256Hex(repository.paths.inspectionPath(checkNotNull(repository.loadCluster(clusterId).manifest.predecessorId)).readText())
+
+  /**
+   * Stores the evaluation of the predecessor of [clusterId] on its current examples, each [satisfied] or not and standing for
+   * [projectFindings], as its generation recorded it.
+   */
+  private fun storePredecessorEvaluation(
+    repository: EdictRepository,
+    clusterId: String,
+    satisfied: Boolean,
+    projectFindings: Int = 0,
+  ): EdictEvaluation {
+    val cluster = repository.loadCluster(clusterId)
+    val code = repository.paths.inspectionPath(checkNotNull(cluster.manifest.predecessorId)).readText()
+    val examples = cluster.examples.associate {
+      it.metadata.id to EdictExampleEvaluation(it.metadata.label, true, satisfied, projectFindings, maxOf(1, projectFindings))
+    }
+    val tp = if (satisfied) maxOf(1, projectFindings) else 0
+    val evaluation = EdictEvaluation(
+      inspectionHash = sha256Hex(code),
+      exampleSetDigest = exampleSetDigest(cluster),
+      action = EdictInspectionAction.GENERATE,
+      tp = tp,
+      fp = 0,
+      fn = 1 - tp.coerceAtMost(1),
+      precision = if (satisfied) 1.0 else 0.0,
+      recall = if (satisfied) 1.0 else 0.0,
+      examples = examples,
+      projectReview = null,
+    )
+    cluster.directory.evaluationPath.writeText(EdictJson.encodeToString(evaluation))
+    return evaluation
   }
 
   @Test
@@ -218,7 +407,6 @@ class EdictGenerationServiceTest {
       // Suggestions are not an allowlist; evidence accuracy is advisory for explicitly chosen clusters too.
       val validation = generation.saveCandidateInspection("weak-positive", "// weak-positive report")
       assertTrue(validation.overallSuccess)
-      assertFalse(validation.strongExamplesSatisfied)
     }
     finally {
       inspection.stop()
@@ -300,7 +488,7 @@ class EdictGenerationServiceTest {
   }
 
   @Test
-  fun `Pending clusters with only processed positive evidence remain eligible at lowest priority`() = runBlocking<Unit> {
+  fun `Pending clusters whose Signals were all processed are not selected`() = runBlocking<Unit> {
     val (generation, inspection) = generation("fresh" to (EdictSignalStrength.STRONG to EdictSignalLabel.POSITIVE))
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
     val cluster = repository.loadCluster("busy-wait")
@@ -308,7 +496,7 @@ class EdictGenerationServiceTest {
       EdictJson.encodeToString(cluster.manifest.copy(processedSignalIds = cluster.signalIds)),
     )
     try {
-      assertEquals(listOf("fresh", "busy-wait"), generation.selectGenerationClusters().clusters.map { it.clusterId })
+      assertEquals(listOf("fresh"), generation.selectGenerationClusters().clusters.map { it.clusterId })
     }
     finally {
       inspection.stop()
@@ -993,7 +1181,6 @@ class EdictGenerationServiceTest {
     assertFalse(generation.finaliseCluster("busy-wait", EdictClusterStatus.Generated, "Stale evaluation").success)
     val missed = generation.saveCandidateInspection("busy-wait", code)
     assertTrue(missed.overallSuccess)
-    assertFalse(missed.strongExamplesSatisfied)
 
     // A source-based correction restores the declaration line; the same candidate now passes without a workaround.
     generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, EdictLineRange(1, 1))
@@ -1149,13 +1336,14 @@ class EdictGenerationServiceTest {
     label: EdictSignalLabel,
     path: String = "$signalId.java",
     revision: String = "abc",
+    source: EdictSignalSource = EdictSignalSource.SubmittedFeedback(),
   ) {
     directory.resolve("state/clusters/$clusterId/signals/$signalId.json").writeText(
       EdictJson.encodeToString(
         EdictSignal(
           id = signalId,
           fileRevision = EdictFileRevision(path, revision, listOf(EdictLineRange(1, 1))),
-          source = EdictSignalSource.SubmittedFeedback(),
+          source = source,
           label = label,
           strength = strength,
           description = "Example of $clusterId",
@@ -1197,3 +1385,10 @@ private fun markedCompilation(code: String): InspectionKtsCompileResult {
   val clusterId = Regex("id = \"([^\"]+)\"").find(code)?.groupValues?.get(1) ?: code.removePrefix("// ").substringBefore(' ')
   return InspectionKtsCompileResult(true, inspectionId = clusterId, inspectionName = clusterId, inspectionDescription = clusterId)
 }
+
+private val STRONG_POSITIVE = EdictSignalStrength.STRONG to EdictSignalLabel.POSITIVE
+
+/** A user's answer in a review comment to a finding of the inspection bytes of [inspectionDigest]. */
+private fun feedbackSource(inspectionDigest: String) = EdictSignalSource.GitHubEvaluatedFinding(
+  "Rule", "Reports the rule.", "Breaks the rule", "https://github.com/owner/project/pull/7#discussion_r1", emptyList(), inspectionDigest,
+)

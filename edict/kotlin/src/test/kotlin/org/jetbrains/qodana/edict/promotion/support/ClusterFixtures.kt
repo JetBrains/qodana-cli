@@ -42,6 +42,8 @@ internal data class ClusterFixture(
   val examples: List<EdictCodeExampleMetadata> = emptyList(),
   /** Null when the inspection was never evaluated. */
   val evaluation: EvaluationFixture? = EvaluationFixture(),
+  /** Ids of the Signals that no generation took into account yet; every other Signal was. */
+  val unprocessed: Set<String> = emptySet(),
 )
 
 /**
@@ -89,7 +91,7 @@ internal fun EdictRepository.store(cluster: ClusterFixture): EdictStoredCluster 
     EdictLanguage.Kotlin,
     cluster.status,
     promotions = cluster.promotions,
-    processedSignalIds = cluster.signals.mapTo(LinkedHashSet(), EdictSignal::id),
+    processedSignalIds = cluster.signals.map(EdictSignal::id).filterTo(LinkedHashSet()) { it !in cluster.unprocessed },
   )))
   directory.historyPath.writeText(HISTORY)
   cluster.signals.forEach { directory.signalPath(it.id).writeText(EdictJson.encodeToString(it)) }

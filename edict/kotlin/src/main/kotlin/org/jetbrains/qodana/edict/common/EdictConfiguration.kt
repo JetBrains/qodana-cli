@@ -29,6 +29,7 @@ internal data class EdictConfiguration(
   val extraction: ExtractionConfiguration = ExtractionConfiguration(),
   val distribution: DistributionConfiguration = DistributionConfiguration(),
   val generation: GenerationConfiguration = GenerationConfiguration(),
+  val feedback: FeedbackConfiguration = FeedbackConfiguration(),
   val calculatePrice: Boolean = false,
   val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
   /** Review accounts that post as users but are bots, such as a build server's; providers mark their apps themselves. */
@@ -36,6 +37,12 @@ internal data class EdictConfiguration(
 ) {
   /** Where promotion PRs are opened: `edict.promotion.url`, else the `edict.ci.url` repository reviews are read from. */
   val promotionRepository: ReviewRepository? = promotion?.repository ?: ci
+
+  /** The precision an inspection needs for promotion, and for its findings to become review comments. */
+  val targetPrecision: Double = promotion?.targetPrecision ?: DEFAULT_TARGET_PRECISION
+
+  /** The distinct source files with a strong positive Signal that an inspection needs for promotion. */
+  val minPromotionSourceFiles: Int = promotion?.minSourceFiles ?: DEFAULT_MIN_PROMOTION_SOURCE_FILES
 
   init {
     require(promotion == null || promotionRepository != null) { "edict.promotion requires edict.promotion.url or edict.ci.url" }
@@ -102,17 +109,39 @@ internal data class GenerationConfiguration(
 internal const val DEFAULT_MAX_PROJECT_ANALYSES = 3
 internal const val DEFAULT_GENERATION_COUNT = 5
 
+/**
+ * The review comments that feedback posts: at most [maxPerInspection] of one inspection's bytes await an answer at once,
+ * and a pull request gets at most [maxPerPullRequest] over all its runs.
+ */
+internal data class FeedbackConfiguration(
+  val maxPerInspection: Int = DEFAULT_MAX_FEEDBACK_PER_INSPECTION,
+  val maxPerPullRequest: Int = DEFAULT_MAX_FEEDBACK_PER_PULL_REQUEST,
+) {
+  init {
+    require(maxPerInspection >= 1) { "edict.feedback.maxPerInspection must be at least 1: $maxPerInspection" }
+    require(maxPerPullRequest >= 1) { "edict.feedback.maxPerPullRequest must be at least 1: $maxPerPullRequest" }
+  }
+}
+
+internal const val DEFAULT_MAX_FEEDBACK_PER_INSPECTION = 10
+internal const val DEFAULT_MAX_FEEDBACK_PER_PULL_REQUEST = 3
+internal const val DEFAULT_TARGET_PRECISION = 0.7
+internal const val DEFAULT_MIN_PROMOTION_SOURCE_FILES = 5
+
 internal data class PromotionConfiguration(
   val reviewer: String,
   val targetBranch: String? = null,
   val inspectionsDirectory: String = "inspections",
-  val targetPrecision: Double = 0.7,
+  val targetPrecision: Double = DEFAULT_TARGET_PRECISION,
   val targetRecall: Double = 0.6,
   val targetF1: Double = 0.0,
+  /** Distinct source files with a strong positive Signal that an inspection needs for promotion. */
+  val minSourceFiles: Int = DEFAULT_MIN_PROMOTION_SOURCE_FILES,
   /** Where promotion PRs are opened when it isn't the `edict.ci.url` repository. */
   val repository: ReviewRepository? = null,
 ) {
   init {
+    require(minSourceFiles >= 1) { "edict.promotion.minSourceFiles must be at least 1: $minSourceFiles" }
     mapOf("targetPrecision" to targetPrecision, "targetRecall" to targetRecall, "targetF1" to targetF1).forEach { (name, value) ->
       require(value.isFinite() && value in 0.0..1.0) { "edict.promotion.$name must be between 0 and 1: $value" }
     }
@@ -165,6 +194,7 @@ internal class EdictYaml {
   var extraction: ExtractionYaml? = null
   var distribution: DistributionYaml? = null
   var generation: GenerationYaml? = null
+  var feedback: FeedbackYaml? = null
   var calculatePrice: Boolean? = null
   var projectAnalysisTimeoutMinutes: Long? = null
   var bots: List<String>? = null
@@ -178,6 +208,7 @@ internal class EdictYaml {
     extraction = extraction?.toConfiguration() ?: ExtractionConfiguration(),
     distribution = distribution?.toConfiguration() ?: DistributionConfiguration(),
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
+    feedback = feedback?.toConfiguration() ?: FeedbackConfiguration(),
     calculatePrice = calculatePrice ?: false,
     projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes ?: DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
     bots = bots.orEmpty().mapIndexed { i, bot -> bot.checkNotEmpty("edict.bots[$i]") }.toSet(),
@@ -210,6 +241,16 @@ internal class GenerationYaml {
   )
 }
 
+internal class FeedbackYaml {
+  var maxPerInspection: Int? = null
+  var maxPerPullRequest: Int? = null
+
+  fun toConfiguration() = FeedbackConfiguration(
+    maxPerInspection = maxPerInspection ?: DEFAULT_MAX_FEEDBACK_PER_INSPECTION,
+    maxPerPullRequest = maxPerPullRequest ?: DEFAULT_MAX_FEEDBACK_PER_PULL_REQUEST,
+  )
+}
+
 internal class EdictCIYaml {
   var url: String? = null
 
@@ -223,15 +264,17 @@ internal class PromotionYaml {
   var targetPrecision: Double? = null
   var targetRecall: Double? = null
   var targetF1: Double? = null
+  var minSourceFiles: Int? = null
   var url: String? = null
 
   fun toConfiguration() = PromotionConfiguration(
     reviewer = reviewer.checkNotEmpty("edict.promotion.reviewer"),
     targetBranch = targetBranch?.checkNotEmpty("edict.promotion.targetBranch"),
     inspectionsDirectory = inspectionsDirectory?.checkNotEmpty("edict.promotion.inspectionsDirectory") ?: "inspections",
-    targetPrecision = targetPrecision ?: 0.7,
+    targetPrecision = targetPrecision ?: DEFAULT_TARGET_PRECISION,
     targetRecall = targetRecall ?: 0.6,
     targetF1 = targetF1 ?: 0.0,
+    minSourceFiles = minSourceFiles ?: DEFAULT_MIN_PROMOTION_SOURCE_FILES,
     repository = url?.checkNotEmpty("edict.promotion.url")?.let { reviewRepository(it, "edict.promotion.url") },
   )
 }

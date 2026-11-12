@@ -666,6 +666,22 @@ internal class ConfiguredPrAnalysisTest {
   }
 
   @Test
+  fun `a weak draft is refused before publication, which takes only strong Signals`() {
+    val batch = pr.correctionBatch(correctionFiles())
+    val item = pr.item(batch)
+
+    assertEquals(
+      listOf(
+        PrSignalStoreFailure(
+          0, stableSignalId("${item.workItemId}|0|POSITIVE|src/Example.kt|$BASE|2:2"), item.workItemId,
+          "Only STRONG Signals can be published to the inbox",
+        ),
+      ),
+      pr.storeDrafts(batch, draft(item, POSITIVE).copy(strength = EdictSignalStrength.WEAK)).failures,
+    )
+  }
+
+  @Test
   fun `a positive draft on the new path of a moved file is refused, as it belongs to the old one`() {
     val batch = pr.correctionBatch()
     val item = pr.item(batch)

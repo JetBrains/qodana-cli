@@ -3,8 +3,8 @@ package org.jetbrains.qodana.edict.feedback
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.FeedbackConfiguration
 import org.jetbrains.qodana.edict.common.StateBranch
-import org.jetbrains.qodana.edict.core.EdictRepository
 import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import java.nio.file.Path
 import kotlin.io.path.copyTo
@@ -16,15 +16,16 @@ import kotlin.io.path.name
 private val logger = KotlinLogging.logger {}
 
 /**
- * Checks [stateBranch] out at the state directory of [layout] and copies the inspections that [selectFeedbackInspections] picks for
- * the workflow's [event] into [inspectionsDirectory], which must be outside the project and missing or empty. Leaves it so when the
- * run gets no feedback: it is for no pull request, for one from a fork, or nothing is selected.
+ * Checks [stateBranch] out at the state directory of [layout] and copies the inspections that [selectFeedbackInspections] picks
+ * under [limits] for the workflow's [event] into [inspectionsDirectory], which must be outside the project and missing or empty.
+ * Leaves it so when the run gets no feedback: it is for no pull request, for one from a fork, or nothing is selected.
  */
 internal fun prepareFeedback(
     layout: EdictLayout,
     stateBranch: String,
     event: ActionsPullRequest,
-    inspectionsDirectory: Path
+    inspectionsDirectory: Path,
+    limits: FeedbackConfiguration,
 ) {
     // The scan's git operations, such as committing quick fixes, could touch it inside the project.
     require(!layout.root.resolve(inspectionsDirectory).normalize().startsWith(layout.root)) {
@@ -44,12 +45,15 @@ internal fun prepareFeedback(
     val checkout = branch.checkOut(shallow = true)
     logger.info { branch.describe(checkout) }
     val paths = EdictRepositoryDirectory(layout.stateDirectory)
-    val inspections = selectFeedbackInspections(EdictRepository(paths), FeedbackRecords(paths), pullRequest).inspections
+    val inspections = selectFeedbackInspections(FeedbackInspections(paths).load(), FeedbackRecords(paths), pullRequest, limits).inspections
     if (inspections.isEmpty()) {
         logger.info { "No Edict inspection runs for feedback on ${pullRequest.url}" }
         return
     }
     inspectionsDirectory.createDirectories()
-    inspections.forEach { it.path.copyTo(inspectionsDirectory.resolve(it.path.name)) }
+    inspections.forEach { inspection ->
+        val file = paths.root.resolve(inspection.path)
+        file.copyTo(inspectionsDirectory.resolve(file.name))
+    }
     logger.info { "Edict feedback runs ${inspections.joinToString { it.clusterId }} on ${pullRequest.url}" }
 }

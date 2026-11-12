@@ -7,6 +7,9 @@ import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.feedback.ActionsPullRequest
+import org.jetbrains.qodana.edict.common.DEFAULT_TARGET_PRECISION
+import org.jetbrains.qodana.edict.feedback.FeedbackInspections
+import org.jetbrains.qodana.edict.feedback.chooseFeedbackInspections
 import org.jetbrains.qodana.edict.feedback.FeedbackRecord
 import org.jetbrains.qodana.edict.feedback.FeedbackRecords
 import org.jetbrains.qodana.edict.feedback.fileName
@@ -22,6 +25,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.qodana.edict.promotion.support.ClusterFixture
+import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_SUMMARY
 import org.jetbrains.qodana.edict.promotion.support.promotionRepository
@@ -51,11 +55,17 @@ internal const val HEAD_REVISION = "d0d0cafed0d0cafed0d0cafed0d0cafed0d0cafe"
 /** [PULL_REQUEST] as the workflow event of a pull request of the repository itself has it. */
 internal val OWN_PULL_REQUEST = ActionsPullRequest.Own(PULL_REQUEST)
 
-/** Record `f-<index>` of a finding of [clusterId] on [pullRequest]. */
-internal fun feedbackRecord(index: Int, clusterId: String = "rule", pullRequest: ReviewReference = PULL_REQUEST): FeedbackRecord =
+/** Record `f-<index>` of a finding of [clusterId], of the inspection bytes of [inspectionDigest], on [pullRequest]. */
+internal fun feedbackRecord(
+  index: Int,
+  clusterId: String = "rule",
+  pullRequest: ReviewReference = PULL_REQUEST,
+  inspectionDigest: String = INSPECTION_DIGEST,
+): FeedbackRecord =
   FeedbackRecord(
     id = "f-%02d".format(index),
     clusterId = clusterId,
+    inspectionDigest = inspectionDigest,
     pullRequest = pullRequest,
     revision = "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00",
     path = "src/Main.kt",
@@ -78,9 +88,14 @@ internal fun EdictRepositoryDirectory.storeHistory(vararg records: FeedbackRecor
   records.forEach { month.resolve(it.fileName).writeText(it.fileText()) }
 }
 
-/** The files of a state holding [cluster], built in [directory], contents by their path in the state. */
+/**
+ * The files of a state holding [cluster], built in [directory], contents by their path in the state, with the feedback
+ * inspections a push of it chooses.
+ */
 internal fun stateFiles(directory: Path, cluster: ClusterFixture): Map<String, String> {
-  val state = promotionRepository(directory).apply { store(cluster) }.paths.root
+  val repository = promotionRepository(directory).apply { store(cluster) }
+  FeedbackInspections(repository.paths).save(chooseFeedbackInspections(repository, DEFAULT_TARGET_PRECISION))
+  val state = repository.paths.root
   return state.walk().filter(Path::isRegularFile).associate { it.relativeTo(state).toString() to it.readText() }
 }
 

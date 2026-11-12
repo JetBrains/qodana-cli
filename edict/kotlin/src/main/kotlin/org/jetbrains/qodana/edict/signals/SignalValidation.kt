@@ -79,6 +79,7 @@ object SignalValidation {
           listOf(source.inspectionName, source.problemMessage, source.url).all(String::isNotBlank),
           "GitHubEvaluatedFinding requires inspectionName, problemMessage and url",
         )
+        field("source.inspectionDigest", validDigest(source.inspectionDigest), "must be the SHA-256 hex of the inspection")
         null
       }
       is EdictSignalSource.FromCommit -> {
