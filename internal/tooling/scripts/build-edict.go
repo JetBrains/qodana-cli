@@ -4,6 +4,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"log"
@@ -11,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
@@ -50,10 +53,73 @@ func buildEdict(root string) error {
 	if err != nil {
 		return err
 	}
-	// Tool extraction reuses existing cache files. A content hash prevents stale JARs
-	// when the Kotlin sources or bundled skills change within one CLI version.
-	digest := sha256.Sum256(data)
 	libs := filepath.Join(root, "internal", "tooling", "libs")
+	// Keep the portable JAR for jdeps module inference. It is not embedded in the CLI.
+	if err := writeEdictJar(libs, data); err != nil {
+		return err
+	}
+	// Generate every target under the same lock: GoReleaser compiles different
+	// platforms concurrently from this checkout. Only the matching JAR is embedded.
+	for target, nativePlatform := range edictNativePlatforms {
+		filtered, err := edictPlatformJar(data, nativePlatform)
+		if err != nil {
+			return fmt.Errorf("filter Edict JAR for %s: %w", target, err)
+		}
+		if err := writeEdictJar(filepath.Join(libs, target), filtered); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ONNX Runtime 1.22.0 does not ship Windows ARM64 libraries. That target keeps
+// the Java code, as before, but cannot run local embeddings with this dependency.
+var edictNativePlatforms = map[string]string{
+	"darwin-amd64":  "osx-x64",
+	"darwin-arm64":  "osx-aarch64",
+	"linux-amd64":   "linux-x64",
+	"linux-arm64":   "linux-aarch64",
+	"windows-amd64": "win-x64",
+	"windows-arm64": "",
+}
+
+func edictPlatformJar(data []byte, nativePlatform string) ([]byte, error) {
+	reader, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+	if err != nil {
+		return nil, err
+	}
+	var output bytes.Buffer
+	writer := zip.NewWriter(&output)
+	const nativePrefix = "ai/onnxruntime/native/"
+	for _, entry := range reader.File {
+		if strings.HasPrefix(entry.Name, nativePrefix) &&
+			(nativePlatform == "" || !strings.HasPrefix(entry.Name, nativePrefix+nativePlatform+"/")) {
+			continue
+		}
+		if entry.FileInfo().IsDir() {
+			// Gradle deflates empty directory entries. Go's raw ZIP copy rejects
+			// their nonzero compressed size, so recreate only the directory header.
+			header := entry.FileHeader
+			if _, err := writer.CreateHeader(&header); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		// Copy the existing compressed data without decompressing or recompressing it.
+		if err := writer.Copy(entry); err != nil {
+			return nil, err
+		}
+	}
+	if err := writer.Close(); err != nil {
+		return nil, err
+	}
+	return output.Bytes(), nil
+}
+
+func writeEdictJar(libs string, data []byte) error {
+	// Tool extraction reuses existing cache files. Hash the filtered content too,
+	// so a platform or dependency change cannot reuse a stale extracted JAR.
+	digest := sha256.Sum256(data)
 	if err := os.MkdirAll(libs, 0o755); err != nil {
 		return err
 	}
@@ -74,6 +140,6 @@ func buildEdict(root string) error {
 			}
 		}
 	}
-	log.Printf("Bundled %s", filepath.Base(destination))
+	log.Printf("Bundled %s (%d bytes)", destination, len(data))
 	return nil
 }

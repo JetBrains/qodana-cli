@@ -54,7 +54,13 @@ go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
 ```
 
 Generation builds `./gradlew bundledJar`, embeds the JAR with the other Java tools,
-and updates the bundled runtime's module set. A content hash in the JAR name and
+and updates the bundled runtime's module set. The portable JAR is kept for runtime
+module detection and standalone use. CLI generation also creates one JAR per target
+under `internal/tooling/libs/<os>-<arch>/`, keeping only that target's ONNX Runtime
+native libraries. Go build constraints embed only the matching JAR, so parallel
+cross-compilation does not include libraries for other platforms. ONNX Runtime
+1.22.0 does not supply Windows ARM64 natives; local embeddings remain unavailable
+on that target. A content hash in the JAR name and
 a module hash in the runtime name prevent reuse of stale extracted tools. No
 separate JVM installation is needed to use the Go commands. For standalone use,
 run `java -jar build/libs/edict-cli.jar --help` after building `bundledJar`.
