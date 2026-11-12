@@ -19,8 +19,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// newEdictCommand returns the parent command for edict-related tooling.
-func newEdictCommand() *cobra.Command {
+// NewCommand returns the parent command for edict-related tooling.
+func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "edict",
 		Short: "Edict commands: extract inspection rules from your development history",
