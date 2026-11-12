@@ -21,6 +21,7 @@ import (
 	"os"
 	"slices"
 
+	edictcmd "github.com/JetBrains/qodana-cli/edict/cmd"
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
@@ -184,7 +185,7 @@ func InitCli() {
 		newViewCommand(),
 		newContributorsCommand(),
 		newClocCommand(),
-		newEdictCommand(),
+		edictcmd.NewCommand(),
 	)
 }
 

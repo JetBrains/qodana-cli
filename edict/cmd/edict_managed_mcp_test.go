@@ -260,32 +260,8 @@ func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
 	}
 }
 
-func TestEdictServerCommandDetection(t *testing.T) {
-	root := newRootCommand()
-	root.AddCommand(newEdictCommand())
-	for _, args := range [][]string{
-		{"edict", "mcp", "start"},
-		{"--log-level", "debug", "edict", "mcp", "start"},
-		{"edict", "--disable-update-checks", "mcp", "start", "--config", "/tmp/qodana.yaml"},
-		{"edict", "ide-mcp", "--project-dir", "/tmp/project"},
-	} {
-		if !isEdictServerCommand(root, args) {
-			t.Errorf("Edict server invocation was not detected: %v", args)
-		}
-	}
-	for _, args := range [][]string{
-		{"edict", "install", "--deny", "mcp"},
-		{"edict", "mcp"},
-		{"edict"},
-	} {
-		if isEdictServerCommand(root, args) {
-			t.Errorf("ordinary CLI command was mistaken for an Edict server: %v", args)
-		}
-	}
-}
-
 func TestEdictIDEMCPCommandIsHidden(t *testing.T) {
-	for _, command := range newEdictCommand().Commands() {
+	for _, command := range NewCommand().Commands() {
 		if command.Name() == "ide-mcp" && !command.Hidden {
 			t.Fatal("ide-mcp is internal to the Kotlin Edict server and must stay hidden")
 		}
