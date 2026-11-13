@@ -18,7 +18,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 26
       - name: Validate Renovate config
         # No path arg: auto-discovery validates .github/renovate.json as a repository config
         # (the mode Renovate actually consumes it in), not as a global config.

@@ -26,14 +26,6 @@
       ".teamcity/**"
     ]
   },
-  "hostRules": [
-    {
-      "matchHost": "dhi.io",
-      "hostType": "docker",
-      "username": "{{ secrets.DHI_USERNAME }}",
-      "password": "{{ secrets.DHI_PASSWORD }}"
-    }
-  ],
   "customManagers": [
     {
       "customType": "regex",
@@ -138,7 +130,8 @@
       "description": "uv downloads only the Python builds it knows, so a Python bump may need a uv bump in the same PR.",
       "matchDepNames": ["astral-sh/uv", "uv-script-python"],
       "groupName": "uv and its script Python",
-      "separateMajorMinor": false
+      "separateMajorMinor": false,
+      "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
       "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
@@ -154,6 +147,11 @@
       "description": "Don't bump dependencies to freshly published versions, which protects against hijacked publishes.",
       "matchPackageNames": ["*"],
       "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "dhi.io, java-version and the docker-static index publish no release dates; without this the cooldown above holds their updates forever.",
+      "matchPackageNames": ["dhi.io/**", "java-jdk", "docker"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ],
   "labels": ["dependencies"],
@@ -161,5 +159,7 @@
     "addLabels": ["security"]
   },
   "commitMessagePrefix": ":arrow_up: QD-8148",
-  "schedule": ["* 0-3 * * 1"]
+  "schedule": ["* * * * 1"],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 20
 }
