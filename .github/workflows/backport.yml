@@ -1,0 +1,49 @@
+name: '🔁 Backport'
+# Backport a merged PR to release branches: add a `backport <branch>` label (e.g. `backport 262`)
+# before or after merging. To retry a backport, remove the label and add it again.
+# The backport PRs are created by qodana-release-bot, so the usual checks run and approval is required.
+on:
+  pull_request_target:
+    types: [closed, labeled]
+
+permissions: {}
+
+jobs:
+  backport:
+    if: >
+      github.event.pull_request.merged && (
+        (github.event.action == 'closed' && contains(toJSON(github.event.pull_request.labels.*.name), '"backport ')) ||
+        (github.event.action == 'labeled' && startsWith(github.event.label.name, 'backport '))
+      )
+    runs-on: ubuntu-latest
+    steps:
+      - name: Target branch of the added label
+        id: label
+        if: github.event.action == 'labeled'
+        env:
+          LABEL: ${{ github.event.label.name }}
+        # Only backport to the label just added, not again to the ones the PR already has
+        run: echo "branch=${LABEL#backport }" >> "$GITHUB_OUTPUT"
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          # Backported commits may change .github/workflows
+          permission-workflows: write
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      - name: Create backport pull requests
+        uses: korthout/backport-action@ad272ff24e4a8593bf18a951a154ae6af93b26b8 # v5.0.0
+        with:
+          github_token: ${{ steps.app-token.outputs.token }}
+          label_pattern: ${{ github.event.action != 'labeled' && '^backport ([^ ]+)$' || '' }}
+          target_branches: ${{ steps.label.outputs.branch }}
+          pull_title: '${pull_title} (${target_branch})'
+          git_committer_name: qodana-bot
+          git_committer_email: qodana-support@jetbrains.com
+          add_author_as_assignee: true
