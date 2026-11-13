@@ -17,12 +17,14 @@ and description. Do not invent missing commit/PR metadata or convert existing fe
 
 ## Extracting commit and PR signals
 
-Accept a PR discussion or human-authored corrective commit when human material requests, identifies, or confirms a
+Accept a PR discussion or human-authored corrective commit when its review or commit material requests, identifies, or confirms a
 concrete source correction, the exact before/after change demonstrates it, and its problematic or corrected form is
 bounded to source ranges without hidden information. Inspect complete discussion, title/body, anchored source, and diff
 together. Questions, `nit` comments, terse alternatives, and human-confirmed
 naming/style/documentation/API/configuration corrections qualify. Downstream clustering determines reuse; do not require
-severity, recurrence, or broad generalizability here.
+severity, recurrence, or broad generalizability here. A thread message with `fromBot: true` comes from a review bot:
+it counts as review material only when the exact change makes the correction it asks for, because a person chose to
+apply it; reject a bot's request that the source did not follow.
 
 Reject unsupported speculation, no concrete correction, source that did not change as requested, generated churn,
 merges, reverts, or evidence depending on unavailable intent/runtime facts. Do not pre-filter solely by the title or
@@ -86,7 +88,7 @@ a transient run/plan ID in this key. PR Signal drafts carry neither key nor ID: 
 supplies an immutable analysis batch ID, preserve it in provenance.
 Keep mutable orchestration progress in the MCP plan.
 
-PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
+PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete `discussionMessages`,
 focused `diffPositiveToNegative` (at most 4000 characters), and discussion `url`. A PR chunk worker does not write it: it
 stores Signal drafts naming the diff's revisions and paths, and optionally related diff lines away from the ranges. The
 server completes this source from the prepared work item, cutting the canonical diff to the file's changes, or, when they

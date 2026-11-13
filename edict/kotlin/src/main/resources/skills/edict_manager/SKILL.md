@@ -145,10 +145,10 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
 8. `edict-promote`: always select candidates and let the promotion worker choose Generated inspections to publish through the configured promotion
    target, including when enrichment or generation failed, was cancelled, or had no targets. Omit selection `count`
    to consider all eligible inspections, including earlier runs, unless the task requests a limit. Apply any cluster ID
-   restrictions when choosing IDs for publication. Configured thresholds are returned by `edict_select_promotion_clusters`. Eligibility requires a current evaluation whose precision, recall and F1 are strictly above the
+   restrictions when choosing IDs for publication. Configured thresholds are returned by `edict_select_promotion_clusters`. Eligibility requires a current evaluation whose precision, recall and F1 are at least the
    configured promotion targets; all others remain Generated. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
 9. `edict-promote-weak-signal`: attempt source fixes and feedback PRs for Generated inspections lacking referenced
-   strong positive Signals from five distinct source files for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
+   strong positive Signals from the configured minimum of distinct source files for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
    promotion settles, including when it fails. The worker selects up to five reviewed true-positive locations per
    inspection, attempts focused fixes, and opens a PR describing the inspection and asking users to accept if they agree.
    Report skipped locations, validation limitations, and missing or stale review evidence.

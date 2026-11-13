@@ -172,7 +172,7 @@ internal class WeakSignalPromotionService(
     val reviews = reviews()
     val config = requireNotNull(configuration.promotion) { "Weak-signal promotion requires edict.promotion.reviewer configuration" }
     val cluster = repository.loadCluster(clusterId)
-    require(eligible(cluster)) { "Cluster '$clusterId' must be Generated with satisfied, referenced strong positive Signals from fewer than five distinct source files" }
+    require(eligible(cluster)) { "Cluster '$clusterId' must be Generated with satisfied, referenced strong positive Signals from fewer than ${configuration.minPromotionSourceFiles} distinct source files" }
     val candidate = candidate(cluster)
     require(candidate.inspectionDigest == inspectionDigest) { "Inspection changed since weak-signal selection" }
     require(fixes.isNotEmpty() && fixes.map { it.path }.distinct().size == fixes.size) { "Supply unique, nonempty source fixes" }
@@ -198,7 +198,7 @@ internal class WeakSignalPromotionService(
       appendLine()
       appendLine(candidate.inspectionDescription.markdownText())
       appendLine()
-      appendLine("Inspection `$clusterId` is generated, but has satisfied, referenced strong positive Signals from fewer than five distinct source files for normal promotion. These source fixes seek feedback on its true-positive findings.")
+      appendLine("Inspection `$clusterId` is generated, but has satisfied, referenced strong positive Signals from fewer than ${configuration.minPromotionSourceFiles} distinct source files for normal promotion. These source fixes seek feedback on its true-positive findings.")
       appendLine()
       appendLine("## Proposed improvements")
       appendLine()

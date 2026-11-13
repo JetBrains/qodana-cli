@@ -63,13 +63,24 @@ internal class FeedbackInspections(private val paths: EdictRepositoryDirectory) 
  * The generated inspections of [repository], in any cluster state, that have an evaluation of their
  * bytes on their cluster's current examples with at least [targetPrecision], that no promotion proposed, and whose findings
  * got at most [MAX_UNPROCESSED_FALSE_POSITIVES] 👎 answers that no generation took into account yet.
+ *
+ * The state push saves the day's work whatever this chooses, so broken state is logged, not thrown: a cluster that does not
+ * load, or whose inspection or evaluation does not, is left out; an inbox that does not load leaves out every inspection,
+ * because the 👎 answers waiting there are unknown.
  */
 internal fun chooseFeedbackInspections(repository: EdictRepository, targetPrecision: Double): List<FeedbackInspection> {
-    val clusters = repository.loadClusters()
-    val unprocessed = repository.loadInboxSignals() + clusters.flatMap(EdictStoredCluster::unprocessedSignals)
+    val inbox = runCatching { repository.loadInboxSignals() }.getOrElse { failure ->
+        logger.error(failure) { "Edict feedback offers no inspections: the inbox does not load" }
+        return emptyList()
+    }
+    val clusters = repository.loadEachCluster().mapNotNull { (id, cluster) -> cluster.orLeftOut(id, "it does not load") }
+    val unprocessed = inbox + clusters.flatMap(EdictStoredCluster::unprocessedSignals)
     return clusters
         .asSequence()
-        .mapNotNull { repository.getInspectionForFeedbackIfSuitable(it) }
+        .mapNotNull { cluster ->
+            runCatching { repository.getInspectionForFeedbackIfSuitable(cluster) }
+                .orLeftOut(cluster.id, "its inspection or evaluation does not load")
+        }
         .filter { it.evaluation.precision >= targetPrecision }
         .filter { inspection ->
             // Do not show inspection that has too many FPs reported
@@ -89,6 +100,12 @@ internal fun chooseFeedbackInspections(repository: EdictRepository, targetPrecis
 }
 
 private val SERIALIZER = ListSerializer(FeedbackInspection.serializer())
+
+/** The value, or null after logging why cluster [clusterId] is left out of feedback. */
+private fun <T> Result<T>.orLeftOut(clusterId: String, reason: String): T? = getOrElse { failure ->
+    logger.error(failure) { "Edict feedback leaves out $clusterId: $reason" }
+    null
+}
 
 /**
  * The cluster's generated inspection, unless no evaluation of its current bytes and examples ranks it or a promotion proposed

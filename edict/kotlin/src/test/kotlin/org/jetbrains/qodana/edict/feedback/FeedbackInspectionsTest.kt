@@ -111,6 +111,31 @@ class FeedbackInspectionsTest {
   }
 
   @Test
+  fun `leaves out a cluster that does not load, but chooses the others`() {
+    repository.store(cluster("readable"))
+    repository.paths.clustersDirectory.resolve("no-manifest").createDirectories()
+
+    assertEquals(listOf(inspection("readable")), choose())
+  }
+
+  @Test
+  fun `leaves out a cluster whose evaluation does not load, but chooses the others`() {
+    repository.store(cluster("readable"))
+    repository.store(cluster("broken-evaluation"))
+    repository.loadCluster("broken-evaluation").directory.evaluationPath.writeText("{")
+
+    assertEquals(listOf(inspection("readable")), choose())
+  }
+
+  @Test
+  fun `offers no inspection when the inbox does not load, as its false-positive answers are unknown`() {
+    repository.store(cluster("readable"))
+    repository.paths.inboxDirectory.createDirectories().resolve("broken.json").writeText("{")
+
+    assertEquals(emptyList(), choose())
+  }
+
+  @Test
   fun `loads what it saved, and nothing before it saved anything`() {
     val inspections = FeedbackInspections(repository.paths)
     val empty = inspections.load()

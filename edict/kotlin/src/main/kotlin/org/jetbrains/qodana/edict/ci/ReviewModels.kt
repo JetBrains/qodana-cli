@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.ci
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
@@ -132,6 +134,14 @@ data class ReviewMessage(
   val body: String,
   /** When the message was posted, as the provider's ISO-8601 instant. */
   val createdAt: String,
+  /**
+   * Whether a review bot wrote the message: an app, as the provider marks it, since configured bot accounts never reach a
+   * thread. What it asks counts only through a change a person made. Written only when true, so that the messages of
+   * people, and the batch ids hashed from them, read as before.
+   */
+  @OptIn(ExperimentalSerializationApi::class)
+  @EncodeDefault(EncodeDefault.Mode.NEVER)
+  val fromBot: Boolean = false,
 )
 
 @Serializable

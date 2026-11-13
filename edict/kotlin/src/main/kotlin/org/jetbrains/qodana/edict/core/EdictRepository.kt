@@ -21,13 +21,18 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     filesByRelativePath = loadRepositoryFiles(),
   )
 
-  fun loadClusters(): List<EdictStoredCluster> =
+  fun loadClusters(): List<EdictStoredCluster> = clusterDirectories().map(::loadCluster)
+
+  /** Each stored cluster by its directory name: the loaded cluster, or the failure that keeps it from loading. */
+  fun loadEachCluster(): Map<String, Result<EdictStoredCluster>> =
+    clusterDirectories().associate { directory -> directory.root.name to runCatching { loadCluster(directory) } }
+
+  private fun clusterDirectories(): List<EdictClusterDirectory> =
     paths.clustersDirectory
       .takeIf { path -> path.isDirectory() }?.listDirectoryEntries().orEmpty()
       .filter(Path::isDirectory)
       .sortedBy(Path::name)
-      .map { clusterPath -> EdictClusterDirectory(clusterPath) }
-      .map { clusterDir -> loadCluster(clusterDir) }
+      .map(::EdictClusterDirectory)
 
   fun loadCluster(clusterId: String): EdictStoredCluster {
     require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
