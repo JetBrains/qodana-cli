@@ -272,7 +272,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		if argument := legacyLicenseAuditArgumentFor(c); argument != "" {
 			arguments = append(arguments, argument)
 		}
-		for _, property := range c.Property() {
+		for _, property := range withContainerInternalDirProperty(c.Property()) {
 			arguments = append(arguments, "--property="+property)
 		}
 	} else if c.Prod().Is251orNewer() {
