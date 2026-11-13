@@ -14,6 +14,7 @@ import org.jetbrains.qodana.edict.ci.github.gitHubPages
 import org.jetbrains.qodana.edict.ci.github.gitHubToken
 import org.jetbrains.qodana.edict.ci.github.gitHubTransport
 import org.jetbrains.qodana.edict.ci.urlPart
+import org.jetbrains.qodana.edict.ci.feedbackRecordId
 import org.jetbrains.qodana.edict.common.number
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text

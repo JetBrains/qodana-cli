@@ -30,6 +30,8 @@ object Skills {
     }
 
     private fun install(destination: Path, selected: List<String>): List<String> {
+        // TODO: installing over an earlier `.codex/skills` keeps the skills no longer bundled, such as the `edict-next-*`
+        //  ones from before the rename, which name tools that no longer exist and stay in Codex's skill catalogue.
         selected.forEach { name ->
             val root = resourceRoots.getValue(name)
             resources.filter { it == "$root/SKILL.md" || it.startsWith("$root/") }.forEach { entry ->

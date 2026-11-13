@@ -503,7 +503,7 @@ internal class EdictMcpToolset(
 
     server.addTool(
       name = "edict_promote_clusters",
-      description = "Publish only the Generated clusters explicitly chosen by the skill. Selection thresholds are advisory here: this call does not reapply metric targets. Requires inspection files, a current evaluation, and satisfied strong positive source evidence from at least five distinct files. Descriptions cite at most five signals with exact file/line links. Already-published digests are skipped.",
+      description = "Publish only the Generated clusters explicitly chosen by the skill. Selection thresholds are advisory here: this call does not reapply metric targets. Requires inspection files, a current evaluation, and satisfied strong positive source evidence from at least ${configuration.minPromotionSourceFiles} distinct files. Descriptions cite at most five signals with exact file/line links. Already-published digests are skipped.",
       inputSchema = toolSchema(
         required = listOf("token", "clusterIds"),
         "token" to property("string", "Your delegated edict-promote task token"),
@@ -655,7 +655,7 @@ internal class EdictMcpToolset(
 
     server.addTool(
       name = "edict_prepare_weak_signal_promotion",
-      description = "Select up to five persisted true-positive project locations per Generated inspection that lacks referenced strong positive Signals from five distinct source files. Skips clusters with an active source-fix review, including merged reviews awaiting signal publication.",
+      description = "Select up to five persisted true-positive project locations per Generated inspection that lacks referenced strong positive Signals from ${configuration.minPromotionSourceFiles} distinct source files. Skips clusters with an active source-fix review, including merged reviews awaiting signal publication.",
       inputSchema = toolSchema(
         required = listOf("token"),
         "token" to property("string", "Your delegated edict-promote-weak-signal task token"),

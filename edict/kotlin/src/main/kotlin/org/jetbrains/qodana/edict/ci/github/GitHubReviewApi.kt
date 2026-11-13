@@ -28,6 +28,7 @@ import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.ReviewFileChange
+import org.jetbrains.qodana.edict.ci.feedbackRecordId
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
@@ -166,17 +167,23 @@ internal class GitHubReviewApi(
     val reviews = http.gitHubPages("$endpoint/reviews", emptyMap()).toList()
     val byId = comments.associateBy { it.number("id") }
     require(byId.size == comments.size && byId.keys.all { it > 0 }) { "Invalid or duplicate comment IDs" }
+    // Review bots stay in threads, marked, as a person may have applied what one asked; only the configured accounts don't.
     val threads = comments.groupBy { it.number("in_reply_to_id").takeIf { id -> id > 0 } ?: it.number("id") }
+      // The answers to Edict's own findings become Signals through edict-feedback-signal-analysis, so they are not extracted twice.
+      .filterKeys { rootId -> byId[rootId]?.let { feedbackRecordId(it.text("body")) } == null }
       .mapNotNull { (commentId, group) ->
         val anchor = byId[commentId] ?: error("Missing root comment $commentId")
         val lines = anchor.anchorLines()
-        val messages = reviews.filter {
-          it.number("id") == anchor.number("pull_request_review_id") && it.text("body").isNotBlank()
-        }
-          .filterNot { it.isBot() }
-          .map { ReviewMessage(it.obj("user").text("login"), it.text("body"), it.text("submitted_at")) } +
-          group.filterNot { it.isBot() }
-            .map { ReviewMessage(it.obj("user").text("login"), it.text("body"), it.text("created_at")) }
+        val reviewMessages = reviews
+          .filter {
+            it.number("id") == anchor.number("pull_request_review_id") && it.text("body").isNotBlank()
+          }
+          .filterNot { it.isConfiguredBot() }
+          .map { it.reviewMessage("submitted_at") }
+        val groupMessages = group
+          .filterNot { it.isConfiguredBot() }
+          .map { it.reviewMessage("created_at") }
+        val messages = reviewMessages + groupMessages
         if (messages.isEmpty()) null else ReviewThread(
           "github-$number-$commentId",
           "${pullRequest.url}#discussion_r$commentId",
@@ -409,10 +416,18 @@ internal class GitHubReviewApi(
     return ReviewStatus(state, messages.joinToString("\n\n"))
   }
 
-  /** Whether a bot wrote this comment or review: an app, which GitHub marks as `Bot`, or one of [bots]. */
-  private fun JsonObject.isBot(): Boolean = obj("user").let { user ->
-    user.text("type") == "Bot" || bots.any { it.equals(user.text("login"), ignoreCase = true) }
-  }
+  /** Whether a bot wrote this comment or review: an app, or one of [bots]. */
+  private fun JsonObject.isBot(): Boolean = isApp() || isConfiguredBot()
+
+  /** Whether an app wrote this comment or review, which GitHub marks as `Bot`. */
+  private fun JsonObject.isApp(): Boolean = obj("user").text("type") == "Bot"
+
+  /** Whether one of [bots], in any case, wrote this comment or review. */
+  private fun JsonObject.isConfiguredBot(): Boolean = bots.any { it.equals(obj("user").text("login"), ignoreCase = true) }
+
+  /** This review or review comment as a message of its thread, posted at its [createdAt] field. */
+  private fun JsonObject.reviewMessage(createdAt: String): ReviewMessage =
+    ReviewMessage(obj("user").text("login"), text("body"), text(createdAt), fromBot = isApp())
 
   private fun get(endpoint: String, query: Map<String, String> = emptyMap()): CiHttpResponse =
     http.send("GET", endpoint, query).also { expectStatus(it, "GitHub read of $endpoint", 200) }

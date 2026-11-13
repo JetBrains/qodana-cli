@@ -14,7 +14,7 @@ Registry ID: `edict-promote`.
    number returned. Apply any task restriction on cluster IDs when choosing which clusters to publish.
    The configured precision, recall and F1 thresholds are available in this call's `thresholds` response field.
    Selection applies these targets, requires a current
-   evaluation and referenced STRONG POSITIVE Signals from at least five distinct source files, and excludes digests
+   evaluation and referenced STRONG POSITIVE Signals from at least the configured minimum of distinct source files, and excludes digests
    already published to the configured target. It returns inspection paths, digests, evaluations and F1 without creating PRs.
 2. Review the returned candidates and their evidence. Decide which inspections to publish based on their metrics,
    examples, inspection code and the task's instructions. You may choose a subset. You may also deliberately choose
@@ -23,7 +23,7 @@ Registry ID: `edict-promote`.
 3. Call `edict_promote_clusters` with your token and an explicit nonempty `clusterIds` list of your chosen clusters.
    Omitted IDs are never published. If you choose none, do not call publication. Unchosen clusters remain Generated.
    Publication requires an inspection file and a current evaluation matching the inspection and examples, and strong positive Signals with satisfied strong positive examples
-   from at least five distinct source files. It does not reapply metric thresholds.
+   from at least that minimum of distinct source files. It does not reapply metric thresholds.
    The server builds fix links from the source evidence, using the source repository or configured repository.
    Negative Signals, generated evidence, `SubmittedFeedback`, and weak Signals do not count toward the reference
    requirement; a `GitHubEvaluatedFinding` 👍 counts, linked to its review comment. Never invent URLs to bypass this check. A repository-relative path counts once across

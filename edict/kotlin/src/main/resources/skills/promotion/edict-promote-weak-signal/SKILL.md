@@ -11,8 +11,8 @@ Registry ID: `edict-promote-weak-signal`.
 
 Take the inspected project and your scratch directory from your run context. Call
 `edict_prepare_weak_signal_promotion(token)`, passing `clusterIds` only when the assignment restricts the targets.
-Selection considers Generated inspections with satisfied, referenced strong positive Signals from fewer than five
-distinct source files and returns
+Selection considers Generated inspections with satisfied, referenced strong positive Signals from fewer than the
+configured minimum of distinct source files and returns
 up to five distinct, reviewed true-positive project locations per inspection. Clusters with an open source-fix review
 or merged review awaiting signal publication are skipped. Missing persisted project review evidence requires a new
 generation/review run; report that prerequisite.

@@ -15,7 +15,7 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
 
 1. Start the managed task. Call `edict_get_pr_analysis_chunk` with the assigned batch ID and chunk index. Process its
    ordered `workItemIds` strictly one by one. For each ID, call `edict_get_pr_analysis_item` and inspect the complete
-   human discussion, PR context, and its `evidence`: the commented file's unified diff from the comment revision to
+   discussion, including review bots' messages, PR context, and its `evidence`: the commented file's unified diff from the comment revision to
    head near the comment, and the numbered code the comment is anchored to. Decide from that evidence when it suffices; most items need
    no other reads.
 2. Read more only when the decision needs it: another file, more context than the evidence shows, or a different
