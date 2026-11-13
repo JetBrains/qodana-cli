@@ -2,17 +2,22 @@
 package org.jetbrains.qodana.edict.ci.github
 
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewSelection
+import org.jetbrains.qodana.edict.ci.feedbackMarker
 import org.jetbrains.qodana.edict.ci.support.FIRST_TWO_MERGED_SELECTION
 import org.jetbrains.qodana.edict.ci.support.MISSING_PULL_REQUEST
 import org.jetbrains.qodana.edict.ci.support.SEVERAL_NUMBERS_SELECTION
 import org.jetbrains.qodana.edict.ci.support.TWO_DISCOVERY_PAGES_SELECTION
 import org.jetbrains.qodana.edict.ci.support.WEEKEND_SELECTION
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
+import org.jetbrains.qodana.edict.ci.support.with
 import org.jetbrains.qodana.edict.ci.support.withBody
+import org.jetbrains.qodana.edict.common.number
 import org.jetbrains.qodana.edict.extraction.reviews.withValidThreads
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -77,23 +82,38 @@ internal class GitHubFetchTest {
   }
 
   @Test
-  fun `a thread only a bot took part in is left out`() {
+  fun `a review bot's thread is kept, its messages marked as from a bot`() {
     // PR 7185: a thread Copilot started in a review whose body Copilot wrote, nobody answering, and a thread of people.
     val recording = kotlinRecording("fetch-bot-thread-7185")
 
-    val threads = recording.replay { fetch(selectionOf(7185)) }.pullRequests.single().threads
-
-    assertEquals(listOf("github-7185-3721437321"), threads.map { it.threadId })
+    assertEquals(recording.result<ReviewFetchResult>(), recording.replay { fetch(selectionOf(7185)) })
   }
 
   @Test
   fun `a configured bot's comments are left out of threads, whatever the case of its login`() {
-    // PR 7185: timofeys1 opened the thread of people, which rbbozkurt answered.
-    val recording = kotlinRecording("fetch-bot-thread-7185", bots = setOf("TimofeyS1"))
+    // PR 7185: timofeys1 opened the thread of people, which rbbozkurt answered; Copilot alone wrote the other thread.
+    val bots = setOf("TimofeyS1", "COPILOT-PULL-REQUEST-REVIEWER[BOT]", "copilot")
+    val recording = kotlinRecording("fetch-bot-thread-7185", bots = bots)
 
     val threads = recording.replay { fetch(selectionOf(7185)) }.pullRequests.single().threads
 
     assertEquals(listOf("github-7185-3721437321" to listOf("rbbozkurt")), threads.map { it.threadId to it.messages.map(ReviewMessage::author) })
+  }
+
+  @Test
+  fun `a thread with Edict's own feedback comment is left out, whoever posted it`() {
+    // PR 7185, with the people's thread opened by an Edict finding that timofeys1 posted and rbbozkurt answered.
+    val recording = kotlinRecording("fetch-bot-thread-7185").answering("GET", "/pulls/7185/comments") { comments ->
+      val bodies = comments.response.body.jsonArray.map { comment ->
+        if (comment.jsonObject.number("id") != 3721437321) comment
+        else comment.with("body" to JsonPrimitive("Edict test finding\n\n${feedbackMarker("f-0123456789abcdef01234567")}"))
+      }
+      listOf(comments.withBody(JsonArray(bodies)))
+    }
+
+    val threads = recording.replay { fetch(selectionOf(7185)) }.pullRequests.single().threads
+
+    assertEquals(listOf("github-7185-3701804217"), threads.map { it.threadId })
   }
 
   @Test

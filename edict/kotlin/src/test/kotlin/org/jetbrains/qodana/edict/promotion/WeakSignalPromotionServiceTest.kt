@@ -292,7 +292,7 @@ internal class WeakSignalPromotionServiceTest {
 
     val error = assertFailsWith<IllegalArgumentException> { service.publish("rule", INSPECTION_DIGEST, SOURCE_FIXES, VALIDATION) }
     assertEquals(
-      "Cluster 'rule' must be Generated with satisfied, referenced strong positive Signals from fewer than five distinct source files",
+      "Cluster 'rule' must be Generated with satisfied, referenced strong positive Signals from fewer than 5 distinct source files",
       error.message,
     )
   }

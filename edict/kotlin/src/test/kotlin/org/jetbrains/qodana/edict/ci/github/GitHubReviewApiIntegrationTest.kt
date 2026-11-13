@@ -100,7 +100,7 @@ internal class GitHubReviewApiIntegrationTest {
   }
 
   @Test
-  fun `a thread only a bot took part in is left out`() {
+  fun `a review bot's thread is kept, its messages marked as from a bot`() {
     // PR 7185: a thread Copilot started that nobody answered, and a thread of people.
     val recording = kotlinRecording("fetch-bot-thread-7185")
 
