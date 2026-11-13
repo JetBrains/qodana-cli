@@ -16,12 +16,17 @@ on:
       - '.github/workflows/base.yml'
   schedule:
     - cron: '0 0 * * 1'
+
+# Each bake group is built natively per platform (no QEMU): amd64 on ubuntu-latest,
+# arm64 on ubuntu-24.04-arm. Images are pushed by digest, then the merge job
+# assembles the multi-arch tags defined in docker-bake.hcl.
 jobs:
   base:
     strategy:
       fail-fast: false
       matrix:
-        group:
+        # Bake groups from dockerfiles/base/docker-bake.hcl; the merge job reuses this list
+        group: &groups
           - jvm        # jvm-community → jvm → python-community → python
           - dotnet     # dotnet-community → dotnet
           - clang      # clang 20, 21 (Trixie)
@@ -35,7 +40,11 @@ jobs:
           - php        # standalone
           - rust       # standalone
           - ruby       # ruby 3.2, 3.3, 3.4
-    runs-on: ubuntu-latest
+        platform:
+          - { name: linux/amd64, arch: amd64, runner: ubuntu-latest }
+          - { name: linux/arm64, arch: arm64, runner: ubuntu-24.04-arm }
+    name: base (${{ matrix.group }}, ${{ matrix.platform.arch }})
+    runs-on: ${{ matrix.platform.runner }}
     steps:
       - name: Clean up
         run: |
@@ -45,8 +54,6 @@ jobs:
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - uses: docker/login-action@v3
@@ -59,13 +66,62 @@ jobs:
           registry: dhi.io
           username: ${{ secrets.DHI_USERNAME }}
           password: ${{ secrets.DHI_PASSWORD }}
-      - name: Build and push
+      - name: Build${{ github.event_name == 'push' && ' and push by digest' || '' }}
+        id: bake
         uses: docker/bake-action@v6
+        env:
+          # See docker-bake.hcl: one platform per native runner; on push, untagged by digest
+          BASE_PLATFORMS: ${{ matrix.platform.name }}
+          PUSH_BY_DIGEST: ${{ github.event_name == 'push' }}
         with:
-          push: ${{ github.event_name == 'push' }}
           workdir: dockerfiles/base
           source: .
           targets: ${{ matrix.group }}
           set: |
-            *.cache-from=type=gha,scope=provenance
-            *.cache-to=type=gha,scope=provenance,mode=max
+            *.cache-from=type=gha,scope=base-${{ matrix.group }}-${{ matrix.platform.arch }}
+            *.cache-to=type=gha,scope=base-${{ matrix.group }}-${{ matrix.platform.arch }},mode=max
+      - name: Save bake metadata
+        if: github.event_name == 'push'
+        env:
+          METADATA: ${{ steps.bake.outputs.metadata }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/digests"
+          printf '%s' "$METADATA" > "$RUNNER_TEMP/digests/${{ matrix.group }}-${{ matrix.platform.arch }}.json"
+      - name: Upload bake metadata
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v6
+        with:
+          name: digests-${{ matrix.group }}-${{ matrix.platform.arch }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    needs: base
+    # Run per group even if another group failed; a group with a missing platform fails on its own
+    if: ${{ !cancelled() && github.event_name == 'push' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        group: *groups
+    name: merge (${{ matrix.group }})
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Download bake metadata
+        uses: actions/download-artifact@v7
+        with:
+          pattern: digests-${{ matrix.group }}-*
+          path: ${{ runner.temp }}/digests
+          merge-multiple: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.jetbrains.team
+          username: ${{ secrets.SPACE_USERNAME }}
+          password: ${{ secrets.SPACE_PASSWORD }}
+      - name: Create multi-arch tags
+        working-directory: dockerfiles/base
+        run: python3 "$GITHUB_WORKSPACE/.github/scripts/merge-base-images.py" "${{ matrix.group }}" "$RUNNER_TEMP/digests"
