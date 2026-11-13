@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "ignorePaths": [
     "**/node_modules/**",
@@ -26,10 +26,12 @@
       ".teamcity/**"
     ]
   },
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": [
-        "(^|/)(.*\\.)?Dockerfile$"
+      "customType": "regex",
+      "managerFilePatterns": [
+        "**/Dockerfile",
+        "**/*.Dockerfile"
       ],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\sENV .*?_VERSION=\"?(?<currentValue>.*?)\"?\\s"
@@ -37,8 +39,9 @@
       "versioningTemplate": "{{#if versioning}}{{versioning}}{{else}}semver{{/if}}"
     },
     {
-      "fileMatch": [
-        "internal/tooling/scripts/build-qodana-jbr\\.go$"
+      "customType": "regex",
+      "managerFilePatterns": [
+        "internal/tooling/scripts/build-qodana-jbr.go"
       ],
       "matchStrings": [
         "renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?\"(?<currentValue>.*?)\""
@@ -46,18 +49,20 @@
       "versioningTemplate": "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:\\.(?<revision>\\d+))?b(?<build>.*)$"
     },
     {
+      "customType": "regex",
       "description": "Container-engine rows of the CI test matrix.",
-      "fileMatch": [
-        "^\\.github/workflows/ci\\.yml$"
+      "managerFilePatterns": [
+        ".github/workflows/ci.yml"
       ],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+container-engine: (?:&\\S+ )?[a-z]+@(?<currentValue>\\S+)"
       ]
     },
     {
+      "customType": "regex",
       "description": "The pep723 manager doesn't track requires-python.",
-      "fileMatch": [
-        "^\\.github/actions/setup-docker/normalize-version\\.py$"
+      "managerFilePatterns": [
+        ".github/actions/setup-docker/normalize-version.py"
       ],
       "matchStrings": [
         "# requires-python = \"==(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
@@ -68,8 +73,8 @@
     }
   ],
   "pep723": {
-    "fileMatch": [
-      "^\\.github/actions/setup-docker/normalize-version\\.py$"
+    "managerFilePatterns": [
+      ".github/actions/setup-docker/normalize-version.py"
     ]
   },
   "customDatasources": {
@@ -80,6 +85,37 @@
     }
   },
   "packageRules": [
+    {
+      "matchManagers": ["gomod", "github-actions", "maven"],
+      "commitMessagePrefix": ":arrow_up: QD-12983"
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "Go modules"
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "GitHub Actions"
+    },
+    {
+      "matchManagers": ["maven"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "Maven dependencies"
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "Docker images"
+    },
+    {
+      "description": "Tools pinned via # renovate: comments in dockerfiles (ENV *_VERSION), not the base images.",
+      "matchManagers": ["custom.regex"],
+      "matchFileNames": ["dockerfiles/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "Dockerfile tool versions"
+    },
     {
       "description": "Qodana artifacts are only on packages.jetbrains.team. Also querying Central lets a Central 429 abort the run whenever packages.jetbrains.team fails.",
       "matchDatasources": ["maven"],
@@ -94,7 +130,8 @@
       "description": "uv downloads only the Python builds it knows, so a Python bump may need a uv bump in the same PR.",
       "matchDepNames": ["astral-sh/uv", "uv-script-python"],
       "groupName": "uv and its script Python",
-      "separateMajorMinor": false
+      "separateMajorMinor": false,
+      "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
       "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
@@ -107,29 +144,22 @@
       "extractVersion": "^v(?<version>.*)$"
     },
     {
-      "datasources": ["repology"],
-      "packagePatterns": [
-        "^debian_11/"
-      ],
-      "separateMajorMinor": false,
-      "groupName": "debian packages",
-      "groupSlug": "debian",
-      "paths": ["dockerfiles/**"]
-    },
-    {
       "description": "Don't bump dependencies to freshly published versions, which protects against hijacked publishes.",
       "matchPackageNames": ["*"],
       "minimumReleaseAge": "7 days"
     },
     {
-      "datasources": ["docker"],
-      "paths": ["dockerfiles/**"]
+      "description": "dhi.io, java-version and the docker-static index publish no release dates; without this the cooldown above holds their updates forever.",
+      "matchPackageNames": ["dhi.io/**", "java-jdk", "docker"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ],
   "labels": ["dependencies"],
   "vulnerabilityAlerts": {
     "addLabels": ["security"]
   },
-  "commitMessagePrefix": "QD-8148 ",
-  "schedule": ["* 0-3 1 * *"]
+  "commitMessagePrefix": ":arrow_up: QD-8148",
+  "schedule": ["* * * * 1"],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 20
 }
