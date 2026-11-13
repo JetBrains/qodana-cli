@@ -84,6 +84,19 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected: "cli:dev",
 		},
 		{
+			ci: "Plain docker run",
+			variables: map[string]string{
+				qdenv.QodanaDockerEnv: "true",
+			},
+		},
+		{
+			ci: "Plain docker run with empty QODANA_ENV",
+			variables: map[string]string{
+				qdenv.QodanaDockerEnv: "true",
+				qdenv.QodanaEnv:       "",
+			},
+		},
+		{
 			ci: "User defined",
 			variables: map[string]string{
 				qdenv.QodanaEnv:       "user-defined",
@@ -213,6 +226,17 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:    fmt.Sprintf("bitbucket:%s", version.Version),
 			jobUrlExpected: "https://bitbucket.org/sa/entrypoint/pipelines/results/123456789",
 		},
+		{
+			ci: "BitBucket Pipelines in Qodana image",
+			variables: map[string]string{
+				"BITBUCKET_PIPELINE_UUID":  "123456789",
+				"BITBUCKET_BUILD_NUMBER":   "123456789",
+				"BITBUCKET_REPO_FULL_NAME": "sa/entrypoint",
+				qdenv.QodanaDockerEnv:      "true",
+			},
+			envExpected:    fmt.Sprintf("bitbucket:%s", version.Version),
+			jobUrlExpected: "https://bitbucket.org/sa/entrypoint/pipelines/results/123456789",
+		},
 	} {
 		t.Run(
 			tc.ci, func(t *testing.T) {
@@ -304,5 +328,20 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				}
 			},
 		)
+	}
+}
+
+func Test_ExtractQodanaEnvironment_PassesOsQodanaEnvToContainer(t *testing.T) {
+	t.Setenv(qdenv.QodanaEnv, "gradle")
+	t.Setenv(qdenv.QodanaDockerEnv, "")
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
+	c := Context{}
+	qdenv.ExtractQodanaEnvironment(func(k, v string) {
+		c = c.withEnv(k, v, false)
+	})
+
+	if got := qdenv.GetEnv(c, qdenv.QodanaEnv); got != "gradle" {
+		t.Errorf("Expected gradle, got %s", got)
 	}
 }
