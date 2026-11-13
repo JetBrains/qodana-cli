@@ -377,6 +377,19 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 			},
 		)
 	}
+	if dir := internalInspectionsDir(c); dir != "" {
+		internalInspectionsPath, err := fs.Canonical(dir)
+		if err != nil {
+			log.Fatalf("Failed to get absolute path for internal inspections directory %s: %s", dir, err)
+		}
+		volumes = append(
+			volumes, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: internalInspectionsPath,
+				Target: qdcontainer.DataInternalInspectionsDir,
+			},
+		)
+	}
 	for _, volume := range c.Volumes() {
 		source, target := extractDockerVolumes(volume)
 		if source != "" && target != "" {
