@@ -222,11 +222,14 @@ func serveIDEMCP(
 	if err := ide.Start(); err != nil {
 		return fmt.Errorf("launching %s: %w", arguments[0], err)
 	}
+	// exited reports why the IDE exited on its own; stopped only tells stopIDE that a requested stop is done.
 	exited := make(chan error, 1)
+	stopped := make(chan struct{})
 	go func() {
 		err := ide.Wait()
 		_ = outputWriter.Close()
 		exited <- err
+		close(stopped)
 	}()
 	endpoints := make(chan string, 1)
 	go forwardIDEOutput(output, stderr, endpoints)
@@ -246,7 +249,7 @@ func serveIDEMCP(
 			deadline.Stop()
 			readiness := map[string]any{"status": "ready", "url": url, "pid": ide.Process.Pid}
 			if err := json.NewEncoder(stdout).Encode(readiness); err != nil {
-				return errors.Join(fmt.Errorf("publishing MCP readiness: %w", err), stopIDE(ide, exited))
+				return errors.Join(fmt.Errorf("publishing MCP readiness: %w", err), stopIDE(ide, stopped))
 			}
 		case err := <-exited:
 			if err == nil {
@@ -259,28 +262,30 @@ func serveIDEMCP(
 		case <-deadline.C:
 			return errors.Join(
 				fmt.Errorf("IntelliJ MCP server did not become ready within %s", waitTimeout),
-				stopIDE(ide, exited),
+				stopIDE(ide, stopped),
 			)
 		case <-stdinClosed:
-			return stopIDE(ide, exited)
+			return stopIDE(ide, stopped)
 		case <-ctx.Done():
-			return stopIDE(ide, exited)
+			return stopIDE(ide, stopped)
 		}
 	}
 }
 
-func stopIDE(ide *exec.Cmd, exited <-chan error) error {
+// stopIDE asks the IDE to terminate, kills it if it does not stop in time, and waits until it has exited. The exit
+// status of an IDE that was asked to stop is not a failure.
+func stopIDE(ide *exec.Cmd, stopped <-chan struct{}) error {
 	if err := foundationexec.RequestTermination(ide.Process); err != nil && !errors.Is(err, os.ErrProcessDone) {
 		_ = ide.Process.Kill()
 	}
 	select {
-	case <-exited:
+	case <-stopped:
 		return nil
 	case <-time.After(ideMCPStopTimeout):
 		if err := ide.Process.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
 			return fmt.Errorf("killing IntelliJ MCP server: %w", err)
 		}
-		<-exited
+		<-stopped
 		return nil
 	}
 }
