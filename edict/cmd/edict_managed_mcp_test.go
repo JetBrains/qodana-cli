@@ -8,7 +8,6 @@ package cmd
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,52 +24,22 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 	defer cancel()
 	server := startEdictMCP(t, ctx)
 	session := connectEdictMCP(t, ctx, server.url)
-	defer session.Close()
+	defer func() { _ = session.Close() }()
 	if _, err := os.Stat(filepath.Join(project, ".edict")); err != nil {
 		t.Fatalf("default state directory was not created: %v", err)
 	}
+	created := createEdictPlan(t, ctx, session, "Check project history", []map[string]string{
+		{"skill": "edict-distribution", "title": "Process existing signals"},
+	})
+	if len(created.Plan.Tasks) != 1 {
+		t.Fatalf("plan has %d tasks, not the one requested", len(created.Plan.Tasks))
+	}
+	// The manager token that tokenless plan creation returned is accepted.
+	callEdictTool(t, ctx, session, "edict_delegate", map[string]any{
+		"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
+		"prompt": "$edict-distribution\nRead /skills/edict-distribution/SKILL.md. Process existing signals.",
+	})
 	result, err := session.CallTool(
-		ctx, &mcp.CallToolParams{
-			Name: "edict_plan_create", Arguments: map[string]any{
-				"request": "Check project history", "steps": []map[string]string{
-					{"skill": "edict-distribution", "title": "Process existing signals"},
-				},
-			},
-		},
-	)
-	if err != nil || result.IsError {
-		t.Fatalf("tokenless plan creation failed: %v, %+v", err, result)
-	}
-	data, err := json.Marshal(result.StructuredContent)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var created struct {
-		Token string `json:"token"`
-		Plan  *struct {
-			Tasks []struct {
-				ID string `json:"id"`
-			} `json:"tasks"`
-		} `json:"plan"`
-	}
-	if err := json.Unmarshal(data, &created); err != nil {
-		t.Fatal(err)
-	}
-	if len(created.Token) != 64 || created.Plan == nil || len(created.Plan.Tasks) != 1 {
-		t.Fatal("missing manager capability or plan")
-	}
-	result, err = session.CallTool(
-		ctx, &mcp.CallToolParams{
-			Name: "edict_delegate", Arguments: map[string]any{
-				"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
-				"prompt": "$edict-distribution\nRead /skills/edict-distribution/SKILL.md. Process existing signals.",
-			},
-		},
-	)
-	if err != nil || result.IsError {
-		t.Fatalf("returned manager token was not accepted: %v, %+v", err, result)
-	}
-	result, err = session.CallTool(
 		ctx, &mcp.CallToolParams{
 			Name: "edict_plan_create",
 			Arguments: map[string]any{
@@ -79,8 +48,11 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 			},
 		},
 	)
-	if err != nil || !result.IsError {
-		t.Fatalf("second plan creation was not rejected: %v, %+v", err, result)
+	if err != nil {
+		t.Fatalf("second plan creation: %v", err)
+	}
+	if !result.IsError {
+		t.Fatalf("second plan creation was not rejected: %s", toolResultText(result))
 	}
 	_ = session.Close()
 	server.stop(t, cancel)
