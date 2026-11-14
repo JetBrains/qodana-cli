@@ -54,21 +54,6 @@ func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
 	project = realWorkingDirectory(t)
 	initGitRepository(t, project)
 	useFakeCodex(t)
-	t.Setenv("CODEX_HOME", codexHome)
-	// Codex ignores the local config of an untrusted project; TestEdictInstallRequiresCodexTrust checks the real rule.
-	ignored := filepath.Join(codexHome, fakeCodexAnswerFile)
-	if err := os.WriteFile(ignored, []byte("[]"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	if output, err := runEdictInstall(); err == nil || !strings.Contains(output, "is not trusted") {
-		t.Fatalf("install into a project Codex does not trust: %v\n%s", err, output)
-	}
-	if _, err := os.Stat(filepath.Join(".codex", "config.toml")); !os.IsNotExist(err) {
-		t.Fatal("failed install kept the local Codex config")
-	}
-	if err := os.Remove(ignored); err != nil {
-		t.Fatal(err)
-	}
 	trusted := trustCodexProject(t, codexHome, project)
 	if output := installEdict(t, "--deny", "gold.sarif.json"); !strings.Contains(output, "Installed skills") {
 		t.Fatalf("install did not log the installed skills:\n%s", output)
@@ -139,44 +124,50 @@ func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
 	}
 }
 
-// The contract the fake Codex stands in for: Codex loads .codex/config.toml only for a project trusted in CODEX_HOME.
+// Install fails, leaving no local config, until Codex trusts the project; it never edits the global Codex config.
 func TestEdictInstallRequiresCodexTrust(t *testing.T) {
-	codex, err := exec.LookPath("codex")
-	if err != nil {
-		// CI must run this check; elsewhere it needs Codex on PATH.
-		if os.Getenv("CI") != "" || os.Getenv("TEAMCITY_VERSION") != "" {
-			t.Fatalf("codex is not on PATH: %v", err)
-		}
-		t.Skip("codex is not on PATH")
-	}
-	t.Setenv("CODEX_BIN", codex)
 	t.Chdir(t.TempDir())
 	project := realWorkingDirectory(t)
 	initGitRepository(t, project)
+	useFakeCodex(t)
 	codexHome := t.TempDir()
 	t.Setenv("CODEX_HOME", codexHome)
-	if output, err := runEdictInstall(); err == nil || !strings.Contains(output, "is not trusted") {
-		t.Fatalf("install into a project unknown to Codex: %v\n%s", err, output)
+	globalConfig := filepath.Join(codexHome, "config.toml")
+	requireUntrustedInstallFails := func(description string) {
+		t.Helper()
+		before, _ := os.ReadFile(globalConfig)
+		if output, err := runEdictInstall(); err == nil || !strings.Contains(output, "is not trusted") {
+			t.Fatalf("install into a project %s: %v\n%s", description, err, output)
+		}
+		if _, err := os.Stat(filepath.Join(".codex", "config.toml")); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("failed install into a project %s kept the local Codex config: %v", description, err)
+		}
+		if after, _ := os.ReadFile(globalConfig); !bytes.Equal(before, after) {
+			t.Fatalf("failed install into a project %s changed the global Codex config:\n%s", description, after)
+		}
 	}
+
+	requireUntrustedInstallFails("unknown to Codex")
 	untrusted := fmt.Sprintf("[projects.%s]\ntrust_level = \"untrusted\"\n", strconv.Quote(project))
-	if err := os.WriteFile(filepath.Join(codexHome, "config.toml"), []byte(untrusted), 0o600); err != nil {
+	if err := os.WriteFile(globalConfig, []byte(untrusted), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if output, err := runEdictInstall(); err == nil || !strings.Contains(output, "is not trusted") {
-		t.Fatalf("install into a project marked untrusted: %v\n%s", err, output)
+	requireUntrustedInstallFails("marked untrusted")
+	other := fmt.Sprintf("[projects.%s]\ntrust_level = \"trusted\"\n", strconv.Quote(t.TempDir()))
+	if err := os.WriteFile(globalConfig, []byte(other), 0o600); err != nil {
+		t.Fatal(err)
 	}
+	requireUntrustedInstallFails("when only another project is trusted")
+
 	trustCodexProject(t, codexHome, project)
 	installEdict(t)
 }
 
-const (
-	fakeCodexEnv = "QODANA_TEST_FAKE_CODEX"
-	// A test makes the fake Codex ignore the project config by writing another answer here, in CODEX_HOME.
-	fakeCodexAnswerFile = "fake-mcp-list.json"
-)
+const fakeCodexEnv = "QODANA_TEST_FAKE_CODEX"
 
 // useFakeCodex points CODEX_BIN at the test binary, which then answers Edict's trust check, `codex mcp list --json`,
-// as if Codex loaded the project's edict-mcp server. It works without Codex and on every platform.
+// by the rule of Codex: it lists the servers of the project's .codex/config.toml only if CODEX_HOME trusts the
+// project. It works without Codex and on every platform.
 func useFakeCodex(t *testing.T) {
 	t.Helper()
 	executable, err := os.Executable()
@@ -192,12 +183,77 @@ func runFakeCodex() int {
 		_, _ = fmt.Fprintf(os.Stderr, "fake codex supports only 'mcp list --json', got: %s\n", args)
 		return 2
 	}
-	if answer, err := os.ReadFile(filepath.Join(os.Getenv("CODEX_HOME"), fakeCodexAnswerFile)); err == nil {
-		_, _ = os.Stdout.Write(answer)
-		return 0
+	servers, err := fakeCodexServers()
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "fake codex: %v\n", err)
+		return 1
 	}
-	_, _ = os.Stdout.WriteString(`[{"name":"edict-mcp"}]`)
+	answer, err := json.Marshal(servers)
+	if err != nil {
+		_, _ = fmt.Fprintf(os.Stderr, "fake codex: %v\n", err)
+		return 1
+	}
+	_, _ = os.Stdout.Write(answer)
 	return 0
+}
+
+// fakeCodexServers are the MCP servers of ./.codex/config.toml when $CODEX_HOME/config.toml trusts the working
+// directory, and none otherwise. It reads only the TOML shapes that trustCodexProject and install write.
+func fakeCodexServers() ([]map[string]string, error) {
+	servers := []map[string]string{}
+	project, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	if trusted, err := fakeCodexTrusts(project); err != nil || !trusted {
+		return servers, err
+	}
+	local, err := os.ReadFile(filepath.Join(".codex", "config.toml"))
+	if errors.Is(err, os.ErrNotExist) {
+		return servers, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	for _, line := range strings.Split(string(local), "\n") {
+		header, _, _ := strings.Cut(strings.TrimSpace(line), "#")
+		if name, ok := strings.CutPrefix(strings.TrimSpace(header), "[mcp_servers."); ok && strings.HasSuffix(name, "]") {
+			servers = append(servers, map[string]string{"name": strings.TrimSuffix(name, "]")})
+		}
+	}
+	return servers, nil
+}
+
+func fakeCodexTrusts(project string) (bool, error) {
+	global, err := os.ReadFile(filepath.Join(os.Getenv("CODEX_HOME"), "config.toml"))
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	project, err = filepath.EvalSymlinks(project)
+	if err != nil {
+		return false, err
+	}
+	inProject := false
+	for _, line := range strings.Split(string(global), "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "[") {
+			inProject = false
+			if quoted, ok := strings.CutPrefix(line, "[projects."); ok {
+				path, err := strconv.Unquote(strings.TrimSuffix(quoted, "]"))
+				if err != nil {
+					return false, err
+				}
+				resolved, err := filepath.EvalSymlinks(path)
+				inProject = err == nil && resolved == project
+			}
+		} else if inProject && line == `trust_level = "trusted"` {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // installEdict runs `qodana edict install` in the current directory and returns its console output.
