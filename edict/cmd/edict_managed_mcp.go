@@ -122,12 +122,37 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 			return err
 		},
 	}
-	command.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
-	command.Flags().StringVar(&ideDist, "ide-dist", "", "Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)")
-	command.Flags().StringVar(&ideLinter, "ide-linter", "", "Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)")
+	command.Flags().StringVar(
+		&configFile,
+		"config",
+		"",
+		"Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)",
+	)
+	command.Flags().StringVar(
+		&ideDist,
+		"ide-dist",
+		"",
+		"Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)",
+	)
+	command.Flags().StringVar(
+		&ideLinter,
+		"ide-linter",
+		"",
+		"Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)",
+	)
 	command.Flags().StringArrayVar(&ideProperties, "ide-property", nil, "Set a JVM property or option for the IDE")
-	command.Flags().DurationVar(&ideWaitTimeout, "ide-wait-timeout", 0, "Maximum time to wait for the IDE MCP server to become ready (default 1h)")
-	command.Flags().BoolVar(&foreground, "foreground", false, "Serve in this process until it is interrupted, instead of in the background")
+	command.Flags().DurationVar(
+		&ideWaitTimeout,
+		"ide-wait-timeout",
+		0,
+		"Maximum time to wait for the IDE MCP server to become ready (default 1h)",
+	)
+	command.Flags().BoolVar(
+		&foreground,
+		"foreground",
+		false,
+		"Serve in this process until it is interrupted, instead of in the background",
+	)
 	command.MarkFlagsMutuallyExclusive("ide-dist", "ide-linter")
 	return command
 }
@@ -142,21 +167,29 @@ func startDetached(command *cobra.Command) error {
 	if err != nil {
 		return err
 	}
-	return startDetachedEdictServer(executable, foregroundArguments(command.Flags()), files, command.OutOrStdout())
+	return startDetachedEdictServer(
+		executable,
+		foregroundArguments(command.Flags()),
+		files,
+		edictServerStartTimeout,
+		command.OutOrStdout(),
+	)
 }
 
 // foregroundArguments start the server in the foreground with every flag set on the command line, as given.
 func foregroundArguments(flags *pflag.FlagSet) []string {
 	arguments := []string{"edict", "mcp", "start", "--foreground"}
-	flags.Visit(func(flag *pflag.Flag) {
-		values := []string{flag.Value.String()}
-		if slice, ok := flag.Value.(pflag.SliceValue); ok {
-			values = slice.GetSlice()
-		}
-		for _, value := range values {
-			arguments = append(arguments, "--"+flag.Name+"="+value)
-		}
-	})
+	flags.Visit(
+		func(flag *pflag.Flag) {
+			values := []string{flag.Value.String()}
+			if slice, ok := flag.Value.(pflag.SliceValue); ok {
+				values = slice.GetSlice()
+			}
+			for _, value := range values {
+				arguments = append(arguments, "--"+flag.Name+"="+value)
+			}
+		},
+	)
 	return arguments
 }
 
