@@ -366,10 +366,10 @@ func TestEdictJVMPropagatesFailure(t *testing.T) {
 	}
 }
 
-func TestEdictManagedMCPHTTPProxy(t *testing.T) {
-	project := prepareEdictProject(t)
+// `edict mcp start` serves the Kotlin server over Streamable HTTP at the address install wrote, with the configured state.
+func TestEdictMCPStartServesOverHTTP(t *testing.T) {
+	project := prepareEdictProject(t, "custom state")
 	state := filepath.Join(project, "custom state")
-	appendEdictStatePath(t, state)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	server := startEdictMCP(t, ctx)
@@ -378,21 +378,15 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 	}
 	// Speak Streamable HTTP like an agent host: the SDK client initializes and keeps the session.
 	session := connectEdictMCP(t, ctx, server.url)
-	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: "edict_registry", Arguments: map[string]any{}})
-	if err != nil || result.IsError {
-		t.Fatalf("edict_registry over HTTP failed: %v, %+v", err, result)
-	}
-	registry, err := json.Marshal(result.StructuredContent)
+	registry, err := json.Marshal(callEdictTool(t, ctx, session, "edict_registry", map[string]any{}).StructuredContent)
 	if err != nil || !bytes.Contains(registry, []byte(`"edict_manager"`)) || !bytes.Contains(registry, []byte(`"edict-distribution"`)) {
 		t.Fatalf("unexpected Kotlin HTTP registry: %s, %v", registry, err)
 	}
-	result, err = session.CallTool(ctx, &mcp.CallToolParams{Name: "edict_context", Arguments: map[string]any{}})
-	if err != nil || result.IsError {
-		t.Fatalf("edict_context over HTTP failed: %v, %+v", err, result)
-	}
+	token := createEdictPlan(t, ctx, session, "Check the HTTP server", nil).Token
+	runContext := callEdictTool(t, ctx, session, "edict_context", map[string]any{"token": token})
 	var paths struct{ ProjectDirectory, StateDirectory, ScratchDirectory string }
-	if data, err := json.Marshal(result.StructuredContent); err != nil || json.Unmarshal(data, &paths) != nil {
-		t.Fatalf("unexpected edict_context result: %+v", result)
+	if data, err := json.Marshal(runContext.StructuredContent); err != nil || json.Unmarshal(data, &paths) != nil {
+		t.Fatalf("unexpected edict_context result: %s", toolResultText(runContext))
 	}
 	if paths.ProjectDirectory != project || paths.StateDirectory != state ||
 		!strings.HasPrefix(paths.ScratchDirectory, filepath.Join(project, "log", "agent-work")+string(filepath.Separator)) {
@@ -402,37 +396,107 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 		t.Fatalf("scratch directory was not created: %v", err)
 	}
 	_ = session.Close()
-	// The configured state path is exclusively locked by the JVM.
-	duplicate := newEdictManagedMCPStartCommand()
-	duplicate.SetArgs([]string{"--foreground"})
-	duplicate.SetIn(strings.NewReader(""))
-	if output, err := executeEdictCommand(ctx, duplicate); err == nil || !strings.Contains(output, "already owned") {
-		t.Fatalf("second JVM did not respect the state lock: %v, %s", err, output)
-	}
-	// Another state cannot move to another port: the agent config names this one.
-	otherState := filepath.Join(project, "other state")
-	replaceEdictStatePath(t, state, otherState)
-	busy := newEdictManagedMCPStartCommand()
-	busy.SetArgs([]string{"--foreground"})
-	busy.SetIn(strings.NewReader(""))
-	if output, err := executeEdictCommand(ctx, busy); err == nil || !strings.Contains(output, "Address already in use") {
-		t.Fatalf("second JVM did not fail on the busy port: %v, %s", err, output)
-	}
 	server.stop(t, cancel)
 	firstEdictProcessLog(t, project, "edict.log")
 	firstEdictProcessLog(t, project, "edict-mcp-system.log")
-	if _, err := os.Stat(filepath.Join(project, ".edict")); !os.IsNotExist(err) {
-		t.Fatal("custom state directory was ignored")
+	if _, err := os.Stat(filepath.Join(project, ".edict")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("custom state directory was ignored: %v", err)
 	}
-	// A fresh process must be able to acquire the same state and port after cancellation.
-	replaceEdictStatePath(t, otherState, state)
+}
+
+// The JVM locks its state directory: a second server on it fails, and a fresh one takes it after the first stops.
+func TestEdictMCPStartLocksTheStateDirectory(t *testing.T) {
+	prepareEdictProject(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	server := startEdictMCP(t, ctx)
+	if output, err := runEdictMCPStart(ctx); err == nil || !strings.Contains(output, "already owned") {
+		t.Fatalf("second JVM did not respect the state lock: %v, %s", err, output)
+	}
+	server.stop(t, cancel)
 	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer restartCancel()
 	startEdictMCP(t, restartContext).stop(t, restartCancel)
 }
 
-// prepareEdictProject installs Edict into a fresh project and makes it the current directory.
-func prepareEdictProject(t *testing.T) string {
+// Another state cannot move to another port: the agent config names the one install wrote.
+func TestEdictMCPStartFailsOnABusyPort(t *testing.T) {
+	project := prepareEdictProject(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	server := startEdictMCP(t, ctx)
+	appendEdictStatePath(t, filepath.Join(project, "other state"))
+	if output, err := runEdictMCPStart(ctx); err == nil || !strings.Contains(output, "Address already in use") {
+		t.Fatalf("second JVM did not fail on the busy port: %v, %s", err, output)
+	}
+	server.stop(t, cancel)
+}
+
+// runEdictMCPStart runs `qodana edict mcp start --foreground` to completion, for a start that is expected to fail.
+func runEdictMCPStart(ctx context.Context) (string, error) {
+	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
+	command.SetIn(strings.NewReader(""))
+	return executeEdictCommand(ctx, command)
+}
+
+// callEdictTool calls a tool that must succeed, and fails the test with the server's message otherwise.
+func callEdictTool(t *testing.T, ctx context.Context, session *mcp.ClientSession, name string, arguments map[string]any) *mcp.CallToolResult {
+	t.Helper()
+	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: arguments})
+	if err != nil {
+		t.Fatalf("%s: %v", name, err)
+	}
+	if result.IsError {
+		t.Fatalf("%s failed: %s", name, toolResultText(result))
+	}
+	return result
+}
+
+// toolResultText is the text a tool returned, such as the message of a failed call.
+func toolResultText(result *mcp.CallToolResult) string {
+	var text []string
+	for _, content := range result.Content {
+		if content, ok := content.(*mcp.TextContent); ok {
+			text = append(text, content.Text)
+		}
+	}
+	return strings.Join(text, "\n")
+}
+
+type edictPlanCreation struct {
+	Token string `json:"token"`
+	Plan  *struct {
+		Tasks []struct {
+			ID string `json:"id"`
+		} `json:"tasks"`
+	} `json:"plan"`
+}
+
+// createEdictPlan creates the run's plan, which needs no token, and returns it with the manager token.
+func createEdictPlan(t *testing.T, ctx context.Context, session *mcp.ClientSession, request string, steps []map[string]string) edictPlanCreation {
+	t.Helper()
+	if steps == nil {
+		steps = []map[string]string{}
+	}
+	result := callEdictTool(t, ctx, session, "edict_plan_create", map[string]any{"request": request, "steps": steps})
+	data, err := json.Marshal(result.StructuredContent)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var created edictPlanCreation
+	if err := json.Unmarshal(data, &created); err != nil {
+		t.Fatalf("unexpected edict_plan_create result: %v\n%s", err, data)
+	}
+	if len(created.Token) != 64 || created.Plan == nil {
+		t.Fatalf("edict_plan_create returned no manager capability or plan: %s", data)
+	}
+	return created
+}
+
+// prepareEdictProject installs Edict into a fresh project and makes it the current directory. A state directory,
+// relative to the project, replaces the default .edict before install checks the state out there.
+func prepareEdictProject(t *testing.T, stateDirectory ...string) string {
 	t.Helper()
 	t.Chdir(t.TempDir())
 	project := realWorkingDirectory(t)
@@ -441,6 +505,9 @@ func prepareEdictProject(t *testing.T) string {
 	initGitRepository(t, project)
 	// A free port keeps tests independent of a real server on the default port.
 	writeEdictPort(t, freePort(t))
+	for _, state := range stateDirectory {
+		appendEdictStatePath(t, filepath.Join(project, state))
+	}
 	installEdict(t)
 	return project
 }
@@ -466,23 +533,11 @@ func appendEdictStatePath(t *testing.T, statePath string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer file.Close()
-	if _, err := fmt.Fprintf(file, "  statePath: %q\n", statePath); err != nil {
-		t.Fatal(err)
+	_, err = fmt.Fprintf(file, "  statePath: %q\n", statePath)
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
 	}
-}
-
-func replaceEdictStatePath(t *testing.T, oldPath, newPath string) {
-	t.Helper()
-	data, err := os.ReadFile("qodana.yaml")
 	if err != nil {
-		t.Fatal(err)
-	}
-	updated := strings.Replace(string(data), fmt.Sprintf("statePath: %q", oldPath), fmt.Sprintf("statePath: %q", newPath), 1)
-	if updated == string(data) {
-		t.Fatalf("qodana.yaml does not contain state path %q", oldPath)
-	}
-	if err := os.WriteFile("qodana.yaml", []byte(updated), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -493,8 +548,11 @@ func freePort(t *testing.T) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer listener.Close()
-	return listener.Addr().(*net.TCPAddr).Port
+	port := listener.Addr().(*net.TCPAddr).Port
+	if err := listener.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return port
 }
 
 // realWorkingDirectory resolves symlinks such as macOS /var -> /private/var, like the Kotlin side does.
@@ -629,7 +687,7 @@ func TestEdictFeedbackPrepareForNoPullRequestCopiesNothingAndLogsOutsideTheProje
 	if !strings.Contains(stdout.String(), "The workflow runs for no pull request") {
 		t.Fatalf("feedback prepare logged:\n%s\n%s", stdout.String(), stderr.String())
 	}
-	if _, err := os.Stat(output); !os.IsNotExist(err) {
+	if _, err := os.Stat(output); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("feedback prepare made the output directory: %v", err)
 	}
 	if entries, err := os.ReadDir(project); err != nil || len(entries) != 1 || entries[0].Name() != ".git" {
