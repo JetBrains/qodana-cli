@@ -26,7 +26,7 @@ jobs:
         run: echo "branch=${LABEL#backport }" >> "$GITHUB_OUTPUT"
       - name: Generate GitHub App token
         id: app-token
-        uses: actions/create-github-app-token@v2
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.GH_APP_ID }}
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
@@ -34,7 +34,7 @@ jobs:
           permission-pull-requests: write
           # Backported commits may change .github/workflows
           permission-workflows: write
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
       - name: Create backport pull requests
