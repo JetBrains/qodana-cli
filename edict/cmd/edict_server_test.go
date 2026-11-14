@@ -30,7 +30,7 @@ func TestDetachedEdictServerKeepsRunningAfterStartReturns(t *testing.T) {
 	files, script := fakeEdictServer(t, fakeServerReady+"\nexec sleep 60")
 
 	var output bytes.Buffer
-	if err := startDetachedEdictServer(script, nil, files, &output); err != nil {
+	if err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &output); err != nil {
 		t.Fatal(err)
 	}
 
@@ -48,7 +48,7 @@ func TestDetachedEdictServerKeepsRunningAfterStartReturns(t *testing.T) {
 func TestDetachedEdictServerFailsWithItsLogWhenItExitsBeforeServing(t *testing.T) {
 	files, script := fakeEdictServer(t, "echo 'Edict is not installed'\nexit 3")
 
-	err := startDetachedEdictServer(script, nil, files, &bytes.Buffer{})
+	err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &bytes.Buffer{})
 
 	expected := fmt.Sprintf(
 		"the Edict server exited before serving MCP: exit status 3; server log %s:\nEdict is not installed", files.log,
@@ -58,13 +58,32 @@ func TestDetachedEdictServerFailsWithItsLogWhenItExitsBeforeServing(t *testing.T
 	}
 }
 
+func TestDetachedEdictServerStopsAServerThatDoesNotServeInTime(t *testing.T) {
+	files, script := fakeEdictServer(t, "echo $$ > \"$0.pid\"\necho 'Edict is starting'\nexec sleep 60")
+
+	err := startDetachedEdictServer(script, nil, files, time.Second, &bytes.Buffer{})
+
+	expected := fmt.Sprintf(
+		"the Edict server did not serve MCP within 1s; server log %s:\nEdict is starting", files.log,
+	)
+	if err == nil || err.Error() != expected {
+		t.Fatalf("start error: %v\nexpected: %s", err, expected)
+	}
+	if pid := readPid(t, script+".pid"); processAlive(pid) {
+		t.Fatalf("the server (pid %d) that did not serve in time keeps running", pid)
+	}
+	if _, err := os.Stat(files.record); !os.IsNotExist(err) {
+		t.Fatalf("the server that did not serve in time was recorded: %v", err)
+	}
+}
+
 func TestDetachedEdictServerRefusesASecondServerForTheProject(t *testing.T) {
 	files, script := fakeEdictServer(t, fakeServerReady+"\nexec sleep 60")
-	if err := startDetachedEdictServer(script, nil, files, &bytes.Buffer{}); err != nil {
+	if err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
 
-	err := startDetachedEdictServer(script, nil, files, &bytes.Buffer{})
+	err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &bytes.Buffer{})
 
 	expected := fmt.Sprintf(
 		"an Edict server already runs for this project (pid %d); stop it with `qodana edict mcp stop`", recordedPid(t, files),
@@ -76,7 +95,7 @@ func TestDetachedEdictServerRefusesASecondServerForTheProject(t *testing.T) {
 
 func TestStopEdictServerTerminatesTheRecordedServer(t *testing.T) {
 	files, script := fakeEdictServer(t, fakeServerReady+"\nexec sleep 60")
-	if err := startDetachedEdictServer(script, nil, files, &bytes.Buffer{}); err != nil {
+	if err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
 	pid := recordedPid(t, files)
@@ -97,7 +116,7 @@ func TestStopEdictServerTerminatesTheRecordedServer(t *testing.T) {
 func TestStopEdictServerKillsTheSessionOfAServerThatIgnoresTermination(t *testing.T) {
 	// The server ignores SIGTERM and has started a child, as the IDE is.
 	files, script := fakeEdictServer(t, "trap '' TERM\nsleep 60 &\necho $! > \"$0.child\"\n"+fakeServerReady+"\nwhile :; do sleep 1; done")
-	if err := startDetachedEdictServer(script, nil, files, &bytes.Buffer{}); err != nil {
+	if err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
 	pid := recordedPid(t, files)
@@ -118,7 +137,7 @@ func TestStopEdictServerKillsTheSessionOfAServerThatIgnoresTermination(t *testin
 
 func TestStopEdictServerTreatsARecordOfAnExitedProcessAsNoServer(t *testing.T) {
 	files, script := fakeEdictServer(t, fakeServerReady+"\nexec sleep 60")
-	if err := startDetachedEdictServer(script, nil, files, &bytes.Buffer{}); err != nil {
+	if err := startDetachedEdictServer(script, nil, files, edictServerStartTimeout, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
 	if err := syscall.Kill(recordedPid(t, files), syscall.SIGKILL); err != nil {
