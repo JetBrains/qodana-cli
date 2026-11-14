@@ -47,9 +47,10 @@ func runEdictJVM(command *cobra.Command, args ...string) error {
 		if err != nil {
 			return err
 		}
-		defer stdin.Close()
+		// Best-effort cleanup: the pump below closes stdin when the input ends, and the JVM owns its own errors.
+		defer func() { _ = stdin.Close() }()
 		if closer, ok := input.(io.Closer); ok {
-			defer closer.Close()
+			defer func() { _ = closer.Close() }()
 			process.Cancel = func() error {
 				_ = closer.Close()
 				return foundationexec.RequestTermination(process.Process)
@@ -70,7 +71,7 @@ func runEdictJVM(command *cobra.Command, args ...string) error {
 		return ctx.Err()
 	}
 	if err != nil {
-		return fmt.Errorf("Edict JVM: %w", err)
+		return fmt.Errorf("the Edict JVM failed: %w", err)
 	}
 	return nil
 }

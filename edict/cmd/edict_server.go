@@ -129,25 +129,31 @@ func startDetachedEdictServer(
 	if err != nil {
 		return err
 	}
-	defer log.Close()
+	// The detached server writes the log through its own handle; this one only passes it on.
+	defer func() { _ = log.Close() }()
 	server := exec.Command(executable, arguments...)
 	server.Stdout, server.Stderr = log, log
 	server.SysProcAttr = detachedProcessAttributes()
 	if err := server.Start(); err != nil {
 		return fmt.Errorf("start the Edict server: %w", err)
 	}
+	// exited reports why the server exited on its own; stopped only tells terminateEdictServer that it has been reaped.
 	exited := make(chan error, 1)
-	go func() { exited <- server.Wait() }()
+	stopped := make(chan struct{})
+	go func() {
+		exited <- server.Wait()
+		close(stopped)
+	}()
 	url, err := awaitEdictServer(files.log, exited, timeout)
 	if errors.Is(err, errEdictServerExited) {
 		return fmt.Errorf("%w; server log %s:\n%s", err, files.log, tail(files.log, 40))
 	}
 	if err != nil {
-		err = errors.Join(err, terminateEdictServer(server.Process, exited, edictServerStopTimeout))
+		err = errors.Join(err, terminateEdictServer(server.Process, stopped, edictServerStopTimeout))
 		return fmt.Errorf("%w; server log %s:\n%s", err, files.log, tail(files.log, 40))
 	}
 	if err := files.writeRunning(server.Process.Pid); err != nil {
-		return errors.Join(err, terminateEdictServer(server.Process, exited, edictServerStopTimeout))
+		return errors.Join(err, terminateEdictServer(server.Process, stopped, edictServerStopTimeout))
 	}
 	_, err = fmt.Fprintf(stdout, "%s%s\nServer log: %s\nStop it with `qodana edict mcp stop`.\n", edictServerReadyLine, url, files.log)
 	return err
@@ -179,11 +185,12 @@ func awaitEdictServer(log string, exited <-chan error, timeout time.Duration) (s
 	}
 }
 
-// terminateEdictServer stops a server that has not been recorded, as stopEdictServer stops a recorded one, and reaps it.
-func terminateEdictServer(server *os.Process, exited <-chan error, timeout time.Duration) error {
+// terminateEdictServer stops a server that has not been recorded, as stopEdictServer stops a recorded one, and waits
+// until it is reaped. The exit status of a server that was asked to stop is not a failure.
+func terminateEdictServer(server *os.Process, stopped <-chan struct{}, timeout time.Duration) error {
 	if err := foundationexec.RequestTermination(server); err == nil || errors.Is(err, os.ErrProcessDone) {
 		select {
-		case <-exited:
+		case <-stopped:
 			return nil
 		case <-time.After(timeout):
 		}
@@ -191,7 +198,7 @@ func terminateEdictServer(server *os.Process, exited <-chan error, timeout time.
 	if err := killProcessSession(server.Pid); err != nil {
 		return fmt.Errorf("kill the Edict server (pid %d): %w", server.Pid, err)
 	}
-	<-exited
+	<-stopped
 	return nil
 }
 
@@ -200,7 +207,7 @@ func edictServerEndpoint(log string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }() // Read only: closing cannot lose data.
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		if _, url, ok := strings.Cut(scanner.Text(), edictServerReadyLine); ok {

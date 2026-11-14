@@ -10,6 +10,7 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -72,7 +73,7 @@ func TestDetachedEdictServerStopsAServerThatDoesNotServeInTime(t *testing.T) {
 	if pid := readPid(t, script+".pid"); processAlive(pid) {
 		t.Fatalf("the server (pid %d) that did not serve in time keeps running", pid)
 	}
-	if _, err := os.Stat(files.record); !os.IsNotExist(err) {
+	if _, err := os.Stat(files.record); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("the server that did not serve in time was recorded: %v", err)
 	}
 }
@@ -108,7 +109,7 @@ func TestStopEdictServerTerminatesTheRecordedServer(t *testing.T) {
 	if output.String() != fmt.Sprintf("Stopped the Edict server (pid %d)\n", pid) || processAlive(pid) {
 		t.Fatalf("stop output %q; server alive: %v", output.String(), processAlive(pid))
 	}
-	if _, err := os.Stat(files.record); !os.IsNotExist(err) {
+	if _, err := os.Stat(files.record); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("the server record was kept: %v", err)
 	}
 }
@@ -153,7 +154,7 @@ func TestStopEdictServerTreatsARecordOfAnExitedProcessAsNoServer(t *testing.T) {
 	if output.String() != "No Edict server runs for this project\n" {
 		t.Fatalf("stop output: %q", output.String())
 	}
-	if _, err := os.Stat(files.record); !os.IsNotExist(err) {
+	if _, err := os.Stat(files.record); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("the record of the exited server was kept: %v", err)
 	}
 }
