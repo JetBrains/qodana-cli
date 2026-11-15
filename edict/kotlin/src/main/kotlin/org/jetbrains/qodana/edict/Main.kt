@@ -60,6 +60,7 @@ fun main(args: Array<String>) {
                         "qodana-executable",
                         "ide-dist",
                         "ide-linter",
+                        "ide-cache-dir",
                         "ide-property",
                         "ide-wait-timeout",
                         "parent-pid",
@@ -77,6 +78,7 @@ fun main(args: Array<String>) {
                 val ideArguments = buildList {
                     options["ide-dist"]?.let { add("--dist=$it") }
                     options["ide-linter"]?.let { add("--linter=$it") }
+                    options["ide-cache-dir"]?.let { add("--cache-dir=$it") }
                     optionPairs.filter { it.first == "ide-property" }.forEach { add("--property=${it.second}") }
                     options["ide-wait-timeout"]?.let { add("--wait-timeout=$it") }
                 }
@@ -132,7 +134,7 @@ fun main(args: Array<String>) {
                   edict feedback-post --state-dir <path> --sarif <path> [--qodana-yaml <path>]
                     After the scan of that run: reserves the findings of those inspections in the SARIF report on lines the pull request
                     adds, pushing them to edict.stateBranch from --state-dir, and posts them as review comments at the commit it analysed.
-                  edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
+                  edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-cache-dir <path>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
                     edict.calculatePrice=true enables the manager-only price-report MCP tool and private run report.
                     Each run logs to log/process-log/<run-id> and gives agents log/agent-work/<run-id>; the run id is its start time.

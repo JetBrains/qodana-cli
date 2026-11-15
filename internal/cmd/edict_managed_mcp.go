@@ -8,7 +8,9 @@ package cmd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -51,7 +53,7 @@ func newEdictManagedMCPStartCommand() *cobra.Command {
 }
 
 func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string) error) *cobra.Command {
-	var configFile, ideDist, ideLinter string
+	var configFile, ideDist, ideLinter, ideCacheDir string
 	var ideProperties []string
 	var ideWaitTimeout time.Duration
 	var foreground bool
@@ -72,6 +74,8 @@ On the first inspection call the server starts a native IntelliJ MCP server for
 the current directory and stops it on exit; runs without inspections never start an IDE.
 The IDE comes from --ide-dist, else --ide-linter, else QODANA_DIST; Docker linters
 are not supported. IDE output is logged to intellij-mcp.log in the run's log directory.
+The IDE keeps its caches in a temporary directory, so every server imports the project
+again; --ide-cache-dir keeps them, laid out as for 'qodana scan --cache-dir', for the next one.
 GitHub and Space PR-review data is read directly by edict-mcp from edict.ci.url;
 promotion PRs go to edict.promotion.url, defaulting to edict.ci.url. Each URL's
 host selects the provider API, including GitHub Enterprise. Configure GITHUB_TOKEN
@@ -102,8 +106,16 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 				args = append(args, "--qodana-executable", executable)
 			}
 			args = append(args, edictQodanaYamlArguments(".", configFile)...)
+			if ideCacheDir != "" {
+				// The Kotlin server and its IDE helper may resolve a relative path from another directory.
+				absolute, err := filepath.Abs(ideCacheDir)
+				if err != nil {
+					return fmt.Errorf("resolving IDE cache directory: %w", err)
+				}
+				ideCacheDir = absolute
+			}
 			for _, option := range []struct{ name, value string }{
-				{"ide-dist", ideDist}, {"ide-linter", ideLinter},
+				{"ide-dist", ideDist}, {"ide-linter", ideLinter}, {"ide-cache-dir", ideCacheDir},
 			} {
 				if option.value != "" {
 					args = append(args, "--"+option.name, option.value)
@@ -125,6 +137,12 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 	command.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
 	command.Flags().StringVar(&ideDist, "ide-dist", "", "Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)")
 	command.Flags().StringVar(&ideLinter, "ide-linter", "", "Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)")
+	command.Flags().StringVar(
+		&ideCacheDir,
+		"ide-cache-dir",
+		"",
+		"Directory for IDE caches, kept so the next server skips the project import; 'qodana scan' must not use it at the same time",
+	)
 	command.Flags().StringArrayVar(&ideProperties, "ide-property", nil, "Set a JVM property or option for the IDE")
 	command.Flags().DurationVar(&ideWaitTimeout, "ide-wait-timeout", 0, "Maximum time to wait for the IDE MCP server to become ready (default 1h)")
 	command.Flags().BoolVar(&foreground, "foreground", false, "Serve in this process until it is interrupted, instead of in the background")

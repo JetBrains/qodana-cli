@@ -172,6 +172,19 @@ func TestComputeNativeMCPContextLoadsTokenWithoutVCSDiscovery(t *testing.T) {
 	}
 }
 
+func TestComputeNativeMCPContextKeepsGivenCacheDirAsScanDoes(t *testing.T) {
+	t.Setenv(qdenv.QodanaDistEnv, "")
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+	cacheDir := filepath.Join(t.TempDir(), "qodana", "caches")
+
+	commonCtx := computeNativeMCPContext(ideMCPOptions{ProjectDir: t.TempDir(), Linter: "qodana-jvm", CacheDir: cacheDir})
+
+	// The same layout as 'qodana scan --cache-dir', so either can warm the caches the other reads.
+	if commonCtx.CacheDir != cacheDir || commonCtx.QodanaSystemDir != filepath.Dir(filepath.Dir(cacheDir)) {
+		t.Fatalf("cache dir %q and system dir %q do not follow the given %q", commonCtx.CacheDir, commonCtx.QodanaSystemDir, cacheDir)
+	}
+}
+
 func TestServeIDEMCPPublishesReadinessAndStopsIDEWhenStdinCloses(t *testing.T) {
 	skipWithoutSignals(t)
 	stdin, closeStdin := io.Pipe()

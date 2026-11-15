@@ -63,11 +63,13 @@ var (
 // ideMCPOptions select a native IDE: a local distribution, a Qodana linter the CLI downloads, or QODANA_DIST.
 // Docker is not supported, since the IDE must read the host paths the Kotlin server passes to it.
 type ideMCPOptions struct {
-	ProjectDir  string
-	Dist        string
-	Linter      string
-	Property    []string
-	ResultsDir  string
+	ProjectDir string
+	Dist       string
+	Linter     string
+	Property   []string
+	ResultsDir string
+	// CacheDir keeps the IDE caches, the imported project model among them, across sessions; empty means a temporary one.
+	CacheDir    string
 	WaitTimeout time.Duration
 	// QodanaScript starts Qodana's mcp-server script instead of the IDE's mcpServer starter.
 	QodanaScript bool
@@ -115,6 +117,13 @@ The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not suppor
 		"",
 		"Directory for IDE results and logs, kept after exit (default: a temporary directory removed on exit)",
 	)
+	flags.StringVar(
+		&options.CacheDir,
+		"cache-dir",
+		"",
+		"Directory for IDE caches, kept after exit so the next session skips the project import; laid out as for "+
+			"'qodana scan --cache-dir', which must not use it at the same time (default: a temporary directory removed on exit)",
+	)
 	// Large projects take tens of minutes to import, and the IDE serves MCP only afterwards.
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", time.Hour, "Maximum time to wait for MCP readiness")
 	flags.BoolVar(
@@ -141,6 +150,11 @@ func runIDEMCP(ctx context.Context, options ideMCPOptions, stdin io.Reader, stdo
 		// The IDE runs in the project directory, so a relative path must not be resolved from there.
 		if options.ResultsDir, err = filepath.Abs(options.ResultsDir); err != nil {
 			return fmt.Errorf("resolving results directory: %w", err)
+		}
+	}
+	if options.CacheDir != "" {
+		if options.CacheDir, err = filepath.Abs(options.CacheDir); err != nil {
+			return fmt.Errorf("resolving cache directory: %w", err)
 		}
 	}
 	if err := selectIDEDistribution(options); err != nil {
@@ -324,8 +338,10 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 	if err != nil {
 		return corescan.Context{}, noCleanup, fmt.Errorf("creating MCP configuration directory: %w", err)
 	}
-	// Keep the service separate from scan caches and concurrent MCP instances.
-	commonCtx.CacheDir = filepath.Join(configDir, "cache")
+	if options.CacheDir == "" {
+		// Keep the service separate from scan caches and concurrent MCP instances.
+		commonCtx.CacheDir = filepath.Join(configDir, "cache")
+	}
 	commonCtx.ResultsDir = options.ResultsDir
 	if commonCtx.ResultsDir == "" {
 		commonCtx.ResultsDir = filepath.Join(configDir, "results")
@@ -386,7 +402,7 @@ func ideMCPPropertyKey(property string) string {
 func computeNativeMCPContext(options ideMCPOptions) commoncontext.Context {
 	return commoncontext.Compute(
 		options.Linter, "", "", "false",
-		"", "", "", qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken), false,
+		options.CacheDir, "", "", qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken), false,
 		options.ProjectDir, options.ProjectDir, "",
 	)
 }

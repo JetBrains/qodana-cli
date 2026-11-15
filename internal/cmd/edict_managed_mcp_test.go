@@ -246,6 +246,25 @@ func TestEdictManagedMCPForwardsYamlWithoutEdictSection(t *testing.T) {
 	}
 }
 
+func TestEdictManagedMCPForwardsAbsoluteIDECacheDir(t *testing.T) {
+	project := t.TempDir()
+	t.Chdir(project)
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	command.SetArgs([]string{"--foreground", "--ide-cache-dir", "caches"})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	// The Kotlin server and its IDE helper may run elsewhere, so the relative path is resolved here.
+	expected := "--ide-cache-dir\x00" + filepath.Join(workingDirectory(t), "caches")
+	if !strings.Contains(strings.Join(forwarded, "\x00"), expected) {
+		t.Fatalf("forwarded arguments %q do not contain %q", forwarded, expected)
+	}
+}
+
 func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
 	prepareEdictProject(t)
 	if err := os.WriteFile("not-a-directory", []byte("existing"), 0o600); err != nil {
