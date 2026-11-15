@@ -94,7 +94,8 @@ func (files edictServerFiles) running() (*process.Process, error) {
 	}
 	fields := strings.Fields(string(data))
 	if len(fields) == 2 {
-		pid, pidErr := strconv.Atoi(fields[0])
+		// A pid out of the int32 range that processes use is an invalid record, like any other unparsable one.
+		pid, pidErr := strconv.ParseInt(fields[0], 10, 32)
 		createdAt, timeErr := strconv.ParseInt(fields[1], 10, 64)
 		if pidErr == nil && timeErr == nil {
 			if server, err := process.NewProcess(int32(pid)); err == nil {
