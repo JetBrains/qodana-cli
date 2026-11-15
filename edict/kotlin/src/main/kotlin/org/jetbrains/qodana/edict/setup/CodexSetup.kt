@@ -101,8 +101,13 @@ internal object CodexSetup {
 
 private val logger = KotlinLogging.logger {}
 
-// The sandbox matches resolved paths, so symlinks such as macOS /tmp -> /private/tmp must be resolved for existing paths.
-private fun Path.canonical(): Path = if (exists()) toRealPath() else toAbsolutePath().normalize()
+// The sandbox matches resolved paths, so symlinks such as macOS /tmp -> /private/tmp must be resolved, also in the
+// existing ancestors of paths that do not exist yet.
+private fun Path.canonical(): Path {
+  val absolute = toAbsolutePath().normalize()
+  val existing = generateSequence(absolute) { it.parent }.firstOrNull { it.exists() } ?: return absolute
+  return existing.toRealPath().resolve(existing.relativize(absolute))
+}
 
 private fun quote(value: Any): String = JsonPrimitive(value.toString()).toString()
 
@@ -114,7 +119,11 @@ private const val EDICT_MARKER = "# qodana-edict"
  * Agents may not read Edict's process logs, nor the sessions and logs in [codexHome]: they hold capability tokens and
  * other agents' transcripts.
  */
-private fun codexConfig(layout: EdictLayout, codexHome: Path, deniedPaths: List<Path>, port: Int): String = """
+private fun codexConfig(layout: EdictLayout, codexHome: Path, deniedPaths: List<Path>, port: Int): String {
+  val alwaysDenied = listOf(layout.processLogRoot, codexHome.resolve("sessions"), codexHome.resolve("log"))
+  // A TOML key may appear only once, so extra paths that Edict denies anyway are skipped.
+  val denied = alwaysDenied + (deniedPaths.distinct() - alwaysDenied.toSet())
+  return """
   |approval_policy = "never"
   |default_permissions = "edict"
   |model_reasoning_effort = "high"
@@ -127,10 +136,7 @@ private fun codexConfig(layout: EdictLayout, codexHome: Path, deniedPaths: List<
   |":tmpdir" = "write"
   |${quote(layout.root)} = "read"
   |${quote(layout.agentWorkRoot)} = "write"
-  |${quote(layout.processLogRoot)} = "deny"
-  |${quote(codexHome.resolve("sessions"))} = "deny"
-  |${quote(codexHome.resolve("log"))} = "deny"
-  |${deniedPaths.joinToString("") { "${quote(it)} = \"deny\"\n" }}
+  |${denied.joinToString("") { "${quote(it)} = \"deny\"\n" }}
   |[permissions.edict.network]
   |enabled = true
   |mode = "full"
@@ -150,6 +156,7 @@ private fun codexConfig(layout: EdictLayout, codexHome: Path, deniedPaths: List<
   |tool_timeout_sec = 3600
   |omit_tools_from = ["code_mode", "deferred"]
   |""".trimMargin()
+}
 
 /**
  * Adds the [edict] settings to the user's [existing] config without changing any user line. Lines from an earlier
