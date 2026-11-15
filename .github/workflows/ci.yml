@@ -105,6 +105,13 @@ jobs:
           cache-dependency-path: |
             edict/kotlin/**/*.gradle.kts
             edict/kotlin/gradle/wrapper/gradle-wrapper.properties
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Codex
+        # CodexSetupTest checks Edict's trust check against the real Codex on CI.
+        run: npm install -g @openai/codex && codex --version
       - name: Run tests except integration tests
         # Integration tests (tagged "integration") need a real Codex, model providers and review API credentials.
         run: ./gradlew --no-daemon --console=plain test -PexcludeIntegrationTests=true
