@@ -54,18 +54,21 @@ func TestMain(m *testing.M) {
 }
 
 func TestSelectIDEDistributionPrefersExplicitChoiceOverQodanaDist(t *testing.T) {
+	// Absolute on every platform: "/env-dist" is relative to the current drive on Windows.
+	parent := filepath.Dir(workingDirectory(t))
+	envDist, flagDist := filepath.Join(parent, "env-dist"), filepath.Join(parent, "flag-dist")
 	for _, test := range []struct {
 		name    string
 		env     string
 		options ideMCPOptions
 		want    string
 	}{
-		{"dist overrides env", "/env-dist", ideMCPOptions{Dist: "/flag-dist"}, "/flag-dist"},
-		{"linter overrides env", "/env-dist", ideMCPOptions{Linter: "qodana-jvm"}, ""},
-		{"env by default", "/env-dist", ideMCPOptions{}, "/env-dist"},
+		{"dist overrides env", envDist, ideMCPOptions{Dist: flagDist}, flagDist},
+		{"linter overrides env", envDist, ideMCPOptions{Linter: "qodana-jvm"}, ""},
+		{"env by default", envDist, ideMCPOptions{}, envDist},
 		// The IDE runs in the project directory, so relative paths resolve from the caller's directory first.
-		{"relative dist", "", ideMCPOptions{Dist: "../dist"}, filepath.Join(filepath.Dir(workingDirectory(t)), "dist")},
-		{"relative env", "../env-dist", ideMCPOptions{}, filepath.Join(filepath.Dir(workingDirectory(t)), "env-dist")},
+		{"relative dist", "", ideMCPOptions{Dist: "../dist"}, filepath.Join(parent, "dist")},
+		{"relative env", "../env-dist", ideMCPOptions{}, envDist},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			t.Setenv(qdenv.QodanaDistEnv, test.env)

@@ -268,7 +268,8 @@ func installEdict(t *testing.T, args ...string) string {
 
 func runEdictInstall(args ...string) (string, error) {
 	command := newEdictInstallCommand()
-	command.SetArgs(args)
+	// Never nil: cobra would parse the test binary's own os.Args, such as -coverprofile on Windows.
+	command.SetArgs(append([]string{}, args...))
 	command.SetIn(strings.NewReader(""))
 	return executeEdictCommand(context.Background(), command)
 }
