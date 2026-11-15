@@ -17,8 +17,11 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.concurrent.TimeUnit
+import kotlin.io.path.bufferedWriter
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
+import kotlin.io.path.readLines
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.Test
@@ -61,7 +64,7 @@ class EdictEnrichmentServiceTest {
   fun `commit depth wins when the date window contains more commits`() = runBlocking<Unit> {
     val now = Instant.now().plus(Duration.ofDays(3650))
     val (enrichment, _, project) = fixture(clock = Clock.fixed(now, ZoneOffset.UTC))
-    val revisions = (1..HISTORY_ANALYSIS_COMMIT_DEPTH + 3).map { commitAt(project, now.minusSeconds(1)) }
+    val revisions = commitsAt(project, now.minusSeconds(1), HISTORY_ANALYSIS_COMMIT_DEPTH + 3)
     val range = enrichment.getHistoryContext("busy-wait").range
     assertEquals(revisions.takeLast(HISTORY_ANALYSIS_COMMIT_DEPTH).reversed(), range.commitRevisions)
     assertEquals(revisions.last(), range.headRevision)
@@ -140,6 +143,39 @@ class EdictEnrichmentServiceTest {
       "GIT_AUTHOR_DATE" to instant.toString(), "GIT_COMMITTER_DATE" to instant.toString(),
     ))
     return project.resolve("HEAD")
+  }
+
+  /**
+   * Appends [count] empty commits dated [instant] to the current branch and returns them oldest first. One `git fast-import`
+   * writes them all: a `git commit` per commit takes minutes for the thousands that the commit depth needs.
+   */
+  private fun commitsAt(project: GitRepository, instant: Instant, count: Int): List<String> {
+    val branch = project.git("symbolic-ref", "HEAD").trim()
+    val parent = project.resolve("HEAD")
+    val message = "History candidate"
+    val stream = directory.resolve("history.fast-import")
+    stream.bufferedWriter().use { out ->
+      for (mark in 1..count) {
+        out.write("commit $branch\nmark :$mark\n")
+        out.write("committer Edict Test <edict-test@example.invalid> ${instant.epochSecond} +0000\n")
+        out.write("data ${message.length}\n$message\n")
+        if (mark == 1) out.write("from $parent\n")
+        out.write("\n")
+      }
+    }
+    val marks = directory.resolve("history.marks")
+    val log = directory.resolve("history.log")
+    val process = ProcessBuilder("git", "fast-import", "--quiet", "--export-marks=$marks")
+      .directory(project.root.toFile())
+      .redirectInput(stream.toFile())
+      .redirectErrorStream(true)
+      .redirectOutput(log.toFile())
+      .start()
+    check(process.waitFor(60, TimeUnit.SECONDS)) { process.destroyForcibly(); "git fast-import timed out" }
+    check(process.exitValue() == 0) { "git fast-import exited ${process.exitValue()}: ${log.readText()}" }
+    // Each line is ":<mark> <commit>"; the marks number the commits in the order they were written.
+    return marks.readLines().map { it.split(' ') }.sortedBy { it[0].removePrefix(":").toInt() }.map { it[1] }
+      .also { check(it.size == count && it.last() == project.resolve("HEAD")) { "git fast-import did not append $count commits" } }
   }
 
   private fun fixture(
