@@ -31,6 +31,8 @@ import (
 	"time"
 )
 
+// Release of https://github.com/JetBrains/qodana-jbr: JetBrains Runtime jbr-release-25.0.4.1b635.79,
+// reduced with jlink to the modules the bundled tools need. The last number is the run of its release workflow.
 const JBR_VERSION_TAG = "v25.0.4.1b635.79.11"
 
 type Release struct {
