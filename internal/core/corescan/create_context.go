@@ -92,8 +92,7 @@ func CreateContext(
 		Cleanup:                   cliOptions.Cleanup,
 		FixesStrategy:             cliOptions.FixesStrategy,
 		NoStatistics:              cliOptions.NoStatistics,
-		AirGapped: cliOptions.AirGapped || qodanaYamlConfig.AirGapped ||
-			isAirGappedByProperty(cliOptions.Property, qodanaYamlConfig.Properties),
+		AirGapped:                 cliOptions.AirGapped,
 		CdnetSolution:             cliOptions.CdnetSolution,
 		CdnetProject:              cliOptions.CdnetProject,
 		CdnetConfiguration:        cliOptions.CdnetConfiguration,

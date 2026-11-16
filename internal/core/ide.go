@@ -130,6 +130,9 @@ func GetIdeArgs(c corescan.Context) []string {
 	if c.DisableSanity() {
 		arguments = append(arguments, "--disable-sanity")
 	}
+	if c.AirGapped() {
+		arguments = append(arguments, "--air-gapped")
+	}
 	if c.ProfileName() != "" {
 		arguments = append(arguments, "--profile-name", c.ProfileName())
 	}
@@ -258,10 +261,6 @@ func GetIdeArgs(c corescan.Context) []string {
 		}
 		for _, property := range c.Property() {
 			arguments = append(arguments, "--property="+property)
-		}
-		if c.AirGapped() {
-			// a property and not --air-gapped, so that also an older CLI in the image passes the mode to the linter
-			arguments = append(arguments, "--property="+corescan.AirGappedProperty+"=true")
 		}
 	} else if c.Prod().Is251orNewer() {
 		arguments = append(arguments, "--config-dir", c.EffectiveConfigurationDir())
