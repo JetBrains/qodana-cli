@@ -26,7 +26,7 @@ ENV CHOCO_VERSION=2.2.2
 # renovate: datasource=github-releases depName=cli/cli
 ENV GH_VERSION=2.41.0
 # renovate: datasource=github-releases depName=goreleaser/goreleaser-pro
-ENV GORELEASER_VERSION=2.14.3
+ENV GORELEASER_VERSION=2.20.0
 ENV MONO_REPO="https://download.mono-project.com/repo/debian"
 
 RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
