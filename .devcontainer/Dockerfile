@@ -24,7 +24,7 @@ ENV TARGETARCH=$TARGETARCH \
 # renovate: datasource=github-releases depName=chocolatey/choco
 ENV CHOCO_VERSION=2.2.2
 # renovate: datasource=github-releases depName=cli/cli
-ENV GH_VERSION=2.41.0
+ENV GH_VERSION=2.103.3
 # renovate: datasource=github-releases depName=goreleaser/goreleaser-pro
 ENV GORELEASER_VERSION=2.14.3
 ENV MONO_REPO="https://download.mono-project.com/repo/debian"
