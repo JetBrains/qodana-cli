@@ -40,7 +40,7 @@ jobs:
           version: ${{ inputs.container-engine }}
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v7
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
