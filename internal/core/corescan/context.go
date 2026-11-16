@@ -26,7 +26,6 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 )
 
@@ -270,6 +269,8 @@ type ContextBuilder struct {
 }
 
 func (b ContextBuilder) Build() Context {
+	airGapped := b.AirGapped || b.QodanaYamlConfig.AirGapped ||
+		isAirGappedByProperty(b.Property, b.QodanaYamlConfig.Properties)
 	c := Context{
 		analyser:                  b.Analyser,
 		id:                        b.Id,
@@ -331,11 +332,10 @@ func (b ContextBuilder) Build() Context {
 		globalConfigurationId:     b.GlobalConfigurationId,
 		customLocalQodanaYamlPath: b.CustomLocalQodanaYamlPath,
 		qodanaYamlConfig:          b.QodanaYamlConfig,
-		airGapped:                 b.AirGapped || b.QodanaYamlConfig.AirGapped,
+		airGapped:                 airGapped,
 	}
-	if c.airGapped {
-		// The linter reads the mode from this variable, so that also a CLI option can turn it on.
-		c = c.withEnv(qdenv.QodanaAirGapped, "true", true)
+	if airGapped && !isAirGappedByProperty(b.Property, nil) {
+		c = c.withAddedProperties(AirGappedProperty + "=true")
 	}
 	return c
 }

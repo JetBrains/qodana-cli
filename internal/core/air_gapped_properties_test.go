@@ -51,3 +51,23 @@ func TestStatisticsKeepsTheUserValueWithoutAirGapped(t *testing.T) {
 
 	assert.Contains(t, properties, "-Didea.headless.enable.statistics=true")
 }
+
+// TestAirGappedFromPropertyTurnsOffStatistics verifies the case of the CLI in a container, which gets the mode only
+// as a property from the CLI on the host.
+func TestAirGappedFromPropertyTurnsOffStatistics(t *testing.T) {
+	context := corescan.ContextBuilder{
+		ConfigDir: filepath.Join(t.TempDir(), "config"),
+		LogDir:    filepath.Join(t.TempDir(), "log"),
+		CacheDir:  filepath.Join(t.TempDir(), "cache"),
+		Prod:      product.Product{Version: "2026.2"},
+		Property:  []string{"qodana.air.gapped=true", "idea.headless.enable.statistics=true"},
+	}.Build()
+	properties := GetScanProperties(context)
+
+	assert.Contains(t, properties, "-Didea.headless.enable.statistics=false")
+	assert.Contains(t, properties, "-Dqodana.air.gapped=true")
+}
+
+func TestAirGappedOptionPassesThePropertyToTheLinter(t *testing.T) {
+	assert.Contains(t, scanPropertiesWithStatisticsOn(t, true), "-Dqodana.air.gapped=true")
+}

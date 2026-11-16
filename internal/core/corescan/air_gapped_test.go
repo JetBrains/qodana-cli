@@ -21,18 +21,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/stretchr/testify/assert"
 )
 
-const airGappedEnv = qdenv.QodanaAirGapped + "=true"
+const airGappedOn = AirGappedProperty + "=true"
 
 func TestAirGappedFromOption(t *testing.T) {
 	context := ContextBuilder{ResultsDir: t.TempDir(), AirGapped: true}.Build()
 
 	assert.True(t, context.AirGapped())
-	assert.Contains(t, context.Env(), airGappedEnv)
+	assert.Contains(t, context.Property(), airGappedOn)
 }
 
 func TestAirGappedFromQodanaYaml(t *testing.T) {
@@ -40,15 +39,30 @@ func TestAirGappedFromQodanaYaml(t *testing.T) {
 	context := ContextBuilder{ResultsDir: t.TempDir(), QodanaYamlConfig: yaml}.Build()
 
 	assert.True(t, context.AirGapped())
-	assert.Contains(t, context.Env(), airGappedEnv)
+	assert.Contains(t, context.Property(), airGappedOn)
+}
+
+// TestAirGappedFromCliProperty verifies the case of the CLI in a container: the CLI on the host passes the mode
+// as --property, and the CLI in the container must know it too.
+func TestAirGappedFromCliProperty(t *testing.T) {
+	context := ContextBuilder{ResultsDir: t.TempDir(), Property: []string{"qodana.air.gapped=TRUE"}}.Build()
+
+	assert.True(t, context.AirGapped())
+}
+
+func TestAirGappedFromQodanaYamlProperties(t *testing.T) {
+	yaml := YamlConfig(qdyaml.QodanaYaml{Properties: map[string]string{"qodana.air.gapped": "true"}})
+	context := ContextBuilder{ResultsDir: t.TempDir(), QodanaYamlConfig: yaml}.Build()
+
+	assert.True(t, context.AirGapped())
 }
 
 func TestNotAirGappedWithoutSources(t *testing.T) {
-	context := ContextBuilder{ResultsDir: t.TempDir()}.Build()
+	context := ContextBuilder{ResultsDir: t.TempDir(), Property: []string{"qodana.air.gapped=1"}}.Build()
 
 	assert.False(t, context.AirGapped())
-	for _, e := range context.Env() {
-		assert.False(t, strings.HasPrefix(e, qdenv.QodanaAirGapped+"="), "unexpected %s", e)
+	for _, p := range context.Property() {
+		assert.False(t, strings.HasPrefix(p, airGappedOn), "unexpected %s", p)
 	}
 }
 
@@ -61,5 +75,5 @@ func TestSecondStageOfScopedScriptKeepsAirGapped(t *testing.T) {
 		SecondStageOfScopedScript(filepath.Join(resultsDir, "scope.json"), filepath.Join(resultsDir, "start.json"))
 
 	assert.True(t, context.AirGapped())
-	assert.Contains(t, context.Env(), airGappedEnv)
+	assert.Contains(t, context.Property(), airGappedOn)
 }

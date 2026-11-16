@@ -135,13 +135,6 @@ But you can always override qodana.yaml options with the following command-line 
 				log.Warnf("Failed to set %s: %v", qdenv.QodanaBaselineSource, err)
 			}
 
-			if scanContext.AirGapped() {
-				// a native linter reads the variable from the environment of the CLI
-				if err := os.Setenv(qdenv.QodanaAirGapped, "true"); err != nil {
-					log.Warnf("Failed to set %s: %v", qdenv.QodanaAirGapped, err)
-				}
-			}
-
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			// not deferred: the exit code checks below leave the process with os.Exit
 			baseline.Cleanup()
