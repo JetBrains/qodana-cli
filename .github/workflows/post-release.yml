@@ -78,7 +78,7 @@ jobs:
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '26'
 
       - name: Upgrade and send PR
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
