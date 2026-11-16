@@ -23,19 +23,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         if: github.ref == 'refs/heads/main'
         with:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_PUBLISH_USERNAME }}
           password: ${{ secrets.SPACE_PUBLISH_PASSWORD }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         if: github.ref == 'refs/heads/main'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: dhi.io
           username: ${{ secrets.DHI_USERNAME }}

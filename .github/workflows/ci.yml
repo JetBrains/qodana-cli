@@ -100,7 +100,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/mock-dependencies
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@v4
         with:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
