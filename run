@@ -20,7 +20,7 @@ docker run --rm -v `pwd`:/qodana -w /qodana/cli \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
     -v $GOPATH:/go \
     -e CGO_ENABLED=0 \
-    golang:1.24 go build -o qodana
+    golang:1.27.3 go build -o qodana
 
 docker run -it --rm \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \

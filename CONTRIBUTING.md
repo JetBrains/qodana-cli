@@ -8,7 +8,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 
 Prerequisites:
 
-- [Go 1.25+](https://golang.org/doc/install)
+- [Go 1.27.3+](https://golang.org/doc/install)
 - [Docker](https://docs.docker.com/get-docker/)
 
 Other things you might need to develop:
