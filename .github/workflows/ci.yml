@@ -75,7 +75,8 @@ jobs:
       - uses: github/codeql-action/analyze@v4
 
   test:
-    name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.container-engine }})"
+    # Required status checks match this name exactly, so it names the engine but not its version.
+    name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.engine }})"
     uses: ./.github/workflows/test.yaml
     with:
       os: ${{ matrix.os }}
@@ -86,14 +87,19 @@ jobs:
         include:
           - os: macos-15-large  # Only intel-based macOS runners support virtualization for Docker.
             container-engine: docker@latest
+            engine: docker
           - os: windows-latest
             container-engine: docker@latest
+            engine: docker
           - os: ubuntu-latest
             container-engine: docker@latest
+            engine: docker
           - os: ubuntu-latest
             container-engine: podman@latest
+            engine: podman
           - os: ubuntu-latest
             container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
+            engine: docker-oldest
 
   code-quality:
     name: "Qodana"
