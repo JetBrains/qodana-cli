@@ -18,52 +18,40 @@ package corescan
 
 import (
 	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/core/startup"
+	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
+	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/stretchr/testify/assert"
 )
 
-const airGappedOn = AirGappedProperty + "=true"
+func airGapped(options platformcmd.CliOptions, yaml qdyaml.QodanaYaml) bool {
+	return CreateContext(options, commoncontext.Context{}, startup.PreparedHost{}, YamlConfig(yaml), "").AirGapped()
+}
 
 func TestAirGappedFromOption(t *testing.T) {
-	context := ContextBuilder{ResultsDir: t.TempDir(), AirGapped: true}.Build()
-
-	assert.True(t, context.AirGapped())
-	assert.Contains(t, context.Property(), airGappedOn)
+	assert.True(t, airGapped(platformcmd.CliOptions{AirGapped: true}, qdyaml.QodanaYaml{}))
 }
 
 func TestAirGappedFromQodanaYaml(t *testing.T) {
-	yaml := YamlConfig(qdyaml.QodanaYaml{AirGapped: true})
-	context := ContextBuilder{ResultsDir: t.TempDir(), QodanaYamlConfig: yaml}.Build()
-
-	assert.True(t, context.AirGapped())
-	assert.Contains(t, context.Property(), airGappedOn)
+	assert.True(t, airGapped(platformcmd.CliOptions{}, qdyaml.QodanaYaml{AirGapped: true}))
 }
 
 // TestAirGappedFromCliProperty verifies the case of the CLI in a container: the CLI on the host passes the mode
 // as --property, and the CLI in the container must know it too.
 func TestAirGappedFromCliProperty(t *testing.T) {
-	context := ContextBuilder{ResultsDir: t.TempDir(), Property: []string{"qodana.air.gapped=TRUE"}}.Build()
-
-	assert.True(t, context.AirGapped())
+	assert.True(t, airGapped(platformcmd.CliOptions{Property: []string{"qodana.air.gapped=TRUE"}}, qdyaml.QodanaYaml{}))
 }
 
 func TestAirGappedFromQodanaYamlProperties(t *testing.T) {
-	yaml := YamlConfig(qdyaml.QodanaYaml{Properties: map[string]string{"qodana.air.gapped": "true"}})
-	context := ContextBuilder{ResultsDir: t.TempDir(), QodanaYamlConfig: yaml}.Build()
-
-	assert.True(t, context.AirGapped())
+	yaml := qdyaml.QodanaYaml{Properties: map[string]string{"qodana.air.gapped": "true"}}
+	assert.True(t, airGapped(platformcmd.CliOptions{}, yaml))
 }
 
 func TestNotAirGappedWithoutSources(t *testing.T) {
-	context := ContextBuilder{ResultsDir: t.TempDir(), Property: []string{"qodana.air.gapped=1"}}.Build()
-
-	assert.False(t, context.AirGapped())
-	for _, p := range context.Property() {
-		assert.False(t, strings.HasPrefix(p, airGappedOn), "unexpected %s", p)
-	}
+	assert.False(t, airGapped(platformcmd.CliOptions{Property: []string{"qodana.air.gapped=1"}}, qdyaml.QodanaYaml{}))
 }
 
 // TestSecondStageOfScopedScriptKeepsAirGapped verifies that the second linter run of the scoped script
@@ -75,5 +63,4 @@ func TestSecondStageOfScopedScriptKeepsAirGapped(t *testing.T) {
 		SecondStageOfScopedScript(filepath.Join(resultsDir, "scope.json"), filepath.Join(resultsDir, "start.json"))
 
 	assert.True(t, context.AirGapped())
-	assert.Contains(t, context.Property(), airGappedOn)
 }

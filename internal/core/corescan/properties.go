@@ -24,6 +24,7 @@ import (
 
 // AirGappedProperty is the JVM property that turns on air-gapped mode in the linter.
 // The CLI passes the mode as this property, as it passes the settings of the scoped stages.
+// GetScanProperties writes it for a native linter, and GetIdeArgs passes it to the CLI in a container.
 const AirGappedProperty = "-Dqodana.air.gapped"
 
 // isAirGappedByProperty tells if a CLI property or a property of qodana.yaml sets AirGappedProperty to true.
