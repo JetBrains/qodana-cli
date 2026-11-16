@@ -22,7 +22,7 @@ ENV TARGETARCH=$TARGETARCH \
     CLANG=$CLANG \
     JAVA_HOME=/usr/lib/jvm/java-21-openjdk-$TARGETARCH
 # renovate: datasource=github-releases depName=chocolatey/choco
-ENV CHOCO_VERSION=2.2.2
+ENV CHOCO_VERSION=2.7.5
 # renovate: datasource=github-releases depName=cli/cli
 ENV GH_VERSION=2.41.0
 # renovate: datasource=github-releases depName=goreleaser/goreleaser-pro
