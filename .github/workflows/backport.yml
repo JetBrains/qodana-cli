@@ -34,7 +34,7 @@ jobs:
           permission-pull-requests: write
           # Backported commits may change .github/workflows
           permission-workflows: write
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ steps.app-token.outputs.token }}
       - name: Create backport pull requests

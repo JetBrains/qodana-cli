@@ -28,7 +28,7 @@ jobs:
           permission-pull-requests: write
           permission-workflows: write
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-action'
@@ -67,7 +67,7 @@ jobs:
           permission-pull-requests: write
           permission-workflows: write
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-lsp'
