@@ -54,7 +54,7 @@ jobs:
           username: ${{ secrets.DHI_USERNAME }}
           password: ${{ secrets.DHI_PASSWORD }}
       - name: Build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           tags: jetbrains/qodana-${{ matrix.linter }}:261
           context: dockerfiles/${{ matrix.linter }}
