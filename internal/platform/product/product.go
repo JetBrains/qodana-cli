@@ -168,7 +168,7 @@ var (
 		SupportNative:   false,
 		IsPaid:          true,
 		SupportFixes:    true,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	CppLinter = Linter{
@@ -201,7 +201,7 @@ var (
 		SupportNative:   false,
 		IsPaid:          true,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	DotNetCommunityLinter = Linter{
@@ -232,7 +232,7 @@ var (
 		ProductCode:     QDPOLY,
 		DockerImage:     "jetbrains/qodana-poly",
 		SupportNative:   true,
-    IsPaid:          true,
+		IsPaid:          true,
 		SupportFixes:    false,
 		EapOnly:         false,
 	}
