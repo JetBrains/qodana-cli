@@ -7,7 +7,7 @@ FROM dhi.io/php:$PHP_TAG
 SHELL ["/bin/bash", "-c"]
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.31.0"
+ENV ESLINT_VERSION="9.39.5"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
