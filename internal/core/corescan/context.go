@@ -26,6 +26,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 )
 
@@ -108,6 +109,7 @@ type Context struct {
 	cleanup                   bool
 	fixesStrategy             string
 	noStatistics              bool
+	airGapped                 bool
 	cdnetSolution             string
 	cdnetProject              string
 	cdnetConfiguration        string
@@ -126,6 +128,7 @@ type QodanaYamlConfig struct {
 	Plugins    []qdyaml.Plugin
 	Properties map[string]string // values are in -Dproperty.name -> value format
 	DotNet     qdyaml.DotNet
+	AirGapped  bool
 }
 
 func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
@@ -134,6 +137,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 		Plugins:    yaml.Plugins,
 		Properties: normalizeYamlProperties(yaml.Properties),
 		DotNet:     yaml.DotNet,
+		AirGapped:  yaml.AirGapped,
 	}
 }
 
@@ -185,6 +189,7 @@ func (c Context) ApplyFixes() bool                   { return c.applyFixes }
 func (c Context) Cleanup() bool                      { return c.cleanup }
 func (c Context) FixesStrategy() string              { return c.fixesStrategy }
 func (c Context) NoStatistics() bool                 { return c.noStatistics }
+func (c Context) AirGapped() bool                    { return c.airGapped }
 func (c Context) CdnetSolution() string              { return c.cdnetSolution }
 func (c Context) CdnetProject() string               { return c.cdnetProject }
 func (c Context) CdnetConfiguration() string         { return c.cdnetConfiguration }
@@ -246,6 +251,8 @@ type ContextBuilder struct {
 	Cleanup                   bool
 	FixesStrategy             string
 	NoStatistics              bool
+	// AirGapped is the --air-gapped option. The airGapped field of qodana.yaml also turns on the mode.
+	AirGapped                 bool
 	CdnetSolution             string
 	CdnetProject              string
 	CdnetConfiguration        string
@@ -263,7 +270,7 @@ type ContextBuilder struct {
 }
 
 func (b ContextBuilder) Build() Context {
-	return Context{
+	c := Context{
 		analyser:                  b.Analyser,
 		id:                        b.Id,
 		ideDir:                    b.IdeDir,
@@ -324,7 +331,13 @@ func (b ContextBuilder) Build() Context {
 		globalConfigurationId:     b.GlobalConfigurationId,
 		customLocalQodanaYamlPath: b.CustomLocalQodanaYamlPath,
 		qodanaYamlConfig:          b.QodanaYamlConfig,
+		airGapped:                 b.AirGapped || b.QodanaYamlConfig.AirGapped,
 	}
+	if c.airGapped {
+		// The linter reads the mode from this variable, so that also a CLI option can turn it on.
+		c = c.withEnv(qdenv.QodanaAirGapped, "true", true)
+	}
+	return c
 }
 
 func arrayCopy(arr []string) []string {

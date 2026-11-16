@@ -61,6 +61,7 @@ const (
 	QodanaCloudRequestRetriesEnv  = "QODANA_CLOUD_REQUEST_RETRIES"
 	QodanaSkipSubmoduleUpdate     = "QODANA_SKIP_SUBMODULE_UPDATE"
 	QodanaBaselineSource          = "QODANA_BASELINE_SOURCE"
+	QodanaAirGapped               = "QODANA_AIR_GAPPED"
 	BaselineSourceLocal           = "LOCAL_BASELINE"
 	BaselineSourceCloud           = "CLOUD_BASELINE"
 	BaselineSourceNone            = "NO_BASELINE"
