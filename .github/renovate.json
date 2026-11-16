@@ -34,7 +34,7 @@
         "**/*.Dockerfile"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\sENV .*?_VERSION=\"?(?<currentValue>.*?)\"?\\s"
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\s(?:ENV|ARG) .*?_VERSION=\"?(?<currentValue>.*?)\"?\\s"
       ],
       "versioningTemplate": "{{#if versioning}}{{versioning}}{{else}}semver{{/if}}"
     },
@@ -110,7 +110,7 @@
       "groupName": "Docker images"
     },
     {
-      "description": "Tools pinned via # renovate: comments in dockerfiles (ENV *_VERSION), not the base images.",
+      "description": "Tools pinned via # renovate: comments in dockerfiles (ENV/ARG *_VERSION), not the base images.",
       "matchManagers": ["custom.regex"],
       "matchFileNames": ["dockerfiles/**"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
@@ -139,8 +139,13 @@
       "allowedVersions": "<22"
     },
     {
+      "description": "ruby.Dockerfile's RUBY_TAG is only a default; the built Ruby versions come from the ruby3x matrix in dockerfiles/base/docker-bake.hcl, which Renovate can't update.",
+      "matchPackageNames": ["dhi.io/ruby"],
+      "enabled": false
+    },
+    {
       "matchDatasources": ["github-releases"],
-      "matchPackageNames": ["mgoltzsche/podman-static"],
+      "matchPackageNames": ["mgoltzsche/podman-static", "goreleaser/goreleaser-pro", "cli/cli"],
       "extractVersion": "^v(?<version>.*)$"
     },
     {

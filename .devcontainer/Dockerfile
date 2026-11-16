@@ -21,9 +21,12 @@ ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \
     CLANG=$CLANG \
     JAVA_HOME=/usr/lib/jvm/java-21-openjdk-$TARGETARCH
-ENV CHOCO_VERSION=2.2.2 \
-    GH_VERSION=2.41.0 \
-    GORELEASER_VERSION=2.14.3
+# renovate: datasource=github-releases depName=chocolatey/choco
+ENV CHOCO_VERSION=2.2.2
+# renovate: datasource=github-releases depName=cli/cli
+ENV GH_VERSION=2.41.0
+# renovate: datasource=github-releases depName=goreleaser/goreleaser-pro
+ENV GORELEASER_VERSION=2.14.3
 ENV MONO_REPO="https://download.mono-project.com/repo/debian"
 
 RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
