@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-const JBR_VERSION_TAG = "v25.0.2b329.66.8"
+const JBR_VERSION_TAG = "v25.0.4.1b635.79.11"
 
 type Release struct {
 	TagName string  `json:"tag_name"`
