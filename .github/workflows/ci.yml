@@ -169,7 +169,7 @@ jobs:
           fi
       - name: Build CLI only
         if: steps.nightly.outputs.is_nightly != 'true'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser-pro
           version: v2.18.2
@@ -182,7 +182,7 @@ jobs:
           sed -i "s/tag_name: nightly/tag_name: ${{ steps.nightly.outputs.tag }}/" .goreleaser.yaml
       - name: Release nightly CLI only
         if: steps.nightly.outputs.is_nightly == 'true'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser-pro
           version: v2.18.2
