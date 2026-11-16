@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/mock-dependencies
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@v7
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
