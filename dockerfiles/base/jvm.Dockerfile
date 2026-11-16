@@ -4,7 +4,7 @@ FROM dhi.io/node:$NODE_TAG AS node_base
 FROM jvm-community
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.39.5"
+ENV ESLINT_VERSION="10.14.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="11.28.11"
 
