@@ -134,7 +134,7 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 			if err := RequestTermination(cmd.Process); err != nil {
 				log.Error("failed to kill process on timeout: ", err)
 			}
-			<-waitCh
+			<-waitCh //nolint:errcheck // The timeout exit code takes precedence over the process error.
 			return timeoutExitCode, nil
 		case ret := <-waitCh:
 			var exitError *exec.ExitError
