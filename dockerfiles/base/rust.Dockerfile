@@ -3,11 +3,11 @@ ARG BASE_TAG="trixie-debian13-dev"
 FROM dhi.io/debian-base:$BASE_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.31.0"
+ENV ESLINT_VERSION="9.39.5"
 
 ARG TARGETPLATFORM
 # renovate: datasource=docker depName=rust versioning=docker
-ARG RUST_VERSION="1.94.0"
+ARG RUST_VERSION="1.99.1"
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
