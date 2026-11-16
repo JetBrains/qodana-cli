@@ -203,6 +203,7 @@ func GetScanProperties(c corescan.Context) []string {
 	maps.Copy(props, propertyMaps.yamlOverrides)
 	maps.Copy(props, propertyMaps.cliOverrides)
 	if c.AirGapped() {
+		props[corescan.AirGappedProperty] = "true"
 		// With FUS on, the IDE starts statistics-uploader on exit, and postAnalysis waits for it.
 		// In a network with no access to the internet, the upload cannot succeed, so the wait only delays the exit.
 		props["-Didea.headless.enable.statistics"] = "false"

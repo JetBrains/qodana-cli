@@ -250,7 +250,6 @@ type ContextBuilder struct {
 	Cleanup                   bool
 	FixesStrategy             string
 	NoStatistics              bool
-	// AirGapped is the --air-gapped option. The airGapped field of qodana.yaml also turns on the mode.
 	AirGapped                 bool
 	CdnetSolution             string
 	CdnetProject              string
@@ -269,9 +268,7 @@ type ContextBuilder struct {
 }
 
 func (b ContextBuilder) Build() Context {
-	airGapped := b.AirGapped || b.QodanaYamlConfig.AirGapped ||
-		isAirGappedByProperty(b.Property, b.QodanaYamlConfig.Properties)
-	c := Context{
+	return Context{
 		analyser:                  b.Analyser,
 		id:                        b.Id,
 		ideDir:                    b.IdeDir,
@@ -318,6 +315,7 @@ func (b ContextBuilder) Build() Context {
 		cleanup:                   b.Cleanup,
 		fixesStrategy:             b.FixesStrategy,
 		noStatistics:              b.NoStatistics,
+		airGapped:                 b.AirGapped,
 		cdnetSolution:             b.CdnetSolution,
 		cdnetProject:              b.CdnetProject,
 		cdnetConfiguration:        b.CdnetConfiguration,
@@ -332,12 +330,7 @@ func (b ContextBuilder) Build() Context {
 		globalConfigurationId:     b.GlobalConfigurationId,
 		customLocalQodanaYamlPath: b.CustomLocalQodanaYamlPath,
 		qodanaYamlConfig:          b.QodanaYamlConfig,
-		airGapped:                 airGapped,
 	}
-	if airGapped && !isAirGappedByProperty(b.Property, nil) {
-		c = c.withAddedProperties(AirGappedProperty + "=true")
-	}
-	return c
 }
 
 func arrayCopy(arr []string) []string {
