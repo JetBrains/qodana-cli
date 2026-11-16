@@ -180,6 +180,9 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	if revision := os.Getenv(QodanaRevision); revision != "" {
 		setEnvironmentFunc(QodanaRevision, revision)
 	}
+	if qodanaEnv := os.Getenv(QodanaEnv); qodanaEnv != "" {
+		setEnvironmentFunc(QodanaEnv, qodanaEnv)
+	}
 	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"
 	if ci != nil {
@@ -203,6 +206,9 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	} else if IsBitBucket() {
 		qEnv = "bitbucket"
 		setEnvironmentFunc(QodanaJobUrl, GetBitBucketJobUrl())
+	} else if IsContainer() {
+		// A plain Docker run has no known launcher.
+		return
 	}
 	setEnvironmentFunc(QodanaEnv, fmt.Sprintf("%s:%s", qEnv, version.Version))
 }
