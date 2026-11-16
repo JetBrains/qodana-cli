@@ -22,23 +22,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// AirGappedProperty is the JVM property that turns on air-gapped mode in the linter.
-// The CLI passes the mode as this property, as it passes the settings of the scoped stages.
-// GetScanProperties writes it for a native linter, and GetIdeArgs passes it to the CLI in a container.
-const AirGappedProperty = "-Dqodana.air.gapped"
-
-// isAirGappedByProperty tells if a CLI property or a property of qodana.yaml sets AirGappedProperty to true.
-// The CLI in a container gets the mode from the CLI on the host only in this way.
-func isAirGappedByProperty(cliProperties []string, yamlProperties map[string]string) bool {
-	for _, p := range cliProperties {
-		kv := strings.SplitN(p, "=", 2)
-		if len(kv) == 2 && normalizePropertyKey(kv[0]) == AirGappedProperty && strings.EqualFold(kv[1], "true") {
-			return true
-		}
-	}
-	return strings.EqualFold(yamlProperties[AirGappedProperty], "true")
-}
-
 func normalizePropertyKey(key string) string {
 	if strings.HasPrefix(key, "-") {
 		return key

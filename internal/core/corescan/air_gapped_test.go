@@ -27,31 +27,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func airGapped(options platformcmd.CliOptions, yaml qdyaml.QodanaYaml) bool {
-	return CreateContext(options, commoncontext.Context{}, startup.PreparedHost{}, YamlConfig(yaml), "").AirGapped()
-}
-
 func TestAirGappedFromOption(t *testing.T) {
-	assert.True(t, airGapped(platformcmd.CliOptions{AirGapped: true}, qdyaml.QodanaYaml{}))
+	context := CreateContext(platformcmd.CliOptions{AirGapped: true}, commoncontext.Context{}, startup.PreparedHost{}, QodanaYamlConfig{}, "")
+
+	assert.True(t, context.AirGapped())
 }
 
-func TestAirGappedFromQodanaYaml(t *testing.T) {
-	assert.True(t, airGapped(platformcmd.CliOptions{}, qdyaml.QodanaYaml{AirGapped: true}))
-}
+// TestAirGappedIgnoresQodanaYaml verifies that the CLI does not read airGapped from qodana.yaml:
+// the linter reads it, as it reads disableSanityInspections.
+func TestAirGappedIgnoresQodanaYaml(t *testing.T) {
+	yaml := YamlConfig(qdyaml.QodanaYaml{AirGapped: true})
+	context := CreateContext(platformcmd.CliOptions{}, commoncontext.Context{}, startup.PreparedHost{}, yaml, "")
 
-// TestAirGappedFromCliProperty verifies the case of the CLI in a container: the CLI on the host passes the mode
-// as --property, and the CLI in the container must know it too.
-func TestAirGappedFromCliProperty(t *testing.T) {
-	assert.True(t, airGapped(platformcmd.CliOptions{Property: []string{"qodana.air.gapped=TRUE"}}, qdyaml.QodanaYaml{}))
-}
-
-func TestAirGappedFromQodanaYamlProperties(t *testing.T) {
-	yaml := qdyaml.QodanaYaml{Properties: map[string]string{"qodana.air.gapped": "true"}}
-	assert.True(t, airGapped(platformcmd.CliOptions{}, yaml))
-}
-
-func TestNotAirGappedWithoutSources(t *testing.T) {
-	assert.False(t, airGapped(platformcmd.CliOptions{Property: []string{"qodana.air.gapped=1"}}, qdyaml.QodanaYaml{}))
+	assert.False(t, context.AirGapped())
 }
 
 // TestSecondStageOfScopedScriptKeepsAirGapped verifies that the second linter run of the scoped script
