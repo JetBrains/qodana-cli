@@ -56,38 +56,102 @@ func TestEventsMatchScheme(t *testing.T) {
 		{groupRun, started, 0, map[string]any{"ci": "github-actions", "container": false, "interactive": true}},
 		{groupRun, licenseObtained, 0, map[string]any{"kind": "cloud", "plan": "ULTIMATE_PLUS"}},
 		{groupRun, licenseRejected, 0, map[string]any{"reject_reason": "token_declined"}},
-		{groupRun, linterReady, 0, map[string]any{"linter": "QDJVM", "version": "2025.3", "paid": true, "eap": false, "mode": "native"}},
-		{groupRun, linterReady, 0, map[string]any{"linter": "QDPYC", "version": "latest", "paid": false, "eap": true, "mode": "docker"}},
-		{groupRun, baselineResolved, 0, map[string]any{"source": "cloud", "baseline_status": "found", "request_ms": int64(250)}},
-		{groupRun, baselineResolved, 0, map[string]any{"source": "cloud", "baseline_status": "request_failed", "http_status": 403, "request_ms": int64(25)}},
+		{
+			groupRun,
+			linterReady,
+			0,
+			map[string]any{"linter": "QDJVM", "version": "2025.3", "paid": true, "eap": false, "mode": "native"},
+		},
+		{
+			groupRun,
+			linterReady,
+			0,
+			map[string]any{"linter": "QDPYC", "version": "latest", "paid": false, "eap": true, "mode": "docker"},
+		},
+		{
+			groupRun,
+			baselineResolved,
+			0,
+			map[string]any{"source": "cloud", "baseline_status": "found", "request_ms": int64(250)},
+		},
+		{
+			groupRun,
+			baselineResolved,
+			0,
+			map[string]any{
+				"source":          "cloud",
+				"baseline_status": "request_failed",
+				"http_status":     403,
+				"request_ms":      int64(25),
+			},
+		},
 		{groupRun, analysisStarted, 0, map[string]any{}},
-		{groupRun, analysisFinished, 0, map[string]any{"exit_code": 255, "reason": ReasonLinterError, "duration_ms": int64(1234), "scenario": "reversed-scope"}},
+		{
+			groupRun,
+			analysisFinished,
+			0,
+			map[string]any{
+				"exit_code":   255,
+				"reason":      ReasonLinterError,
+				"duration_ms": int64(1234),
+				"scenario":    "reversed-scope",
+			},
+		},
 		{groupRun, linterSelected, 0, map[string]any{"linter": "QDNETC", "preconfigured": false}},
 		{groupRun, linterDownloaded, 0, map[string]any{"mode": "docker", "cached": false, "download_ms": int64(42000)}},
 		{groupRun, licenseRejected, 0, map[string]any{"reject_reason": "expired", "token": "keychain"}},
-		{groupRun, problemsFound, 0, map[string]any{"total": "100+", "new": "10+", "unchanged": "100+", "absent": "0", "baseline": "applied"}},
+		{
+			groupRun,
+			problemsFound,
+			0,
+			map[string]any{"total": "100+", "new": "10+", "unchanged": "100+", "absent": "0", "baseline": "applied"},
+		},
 		{groupRun, reportPublished, 0, map[string]any{"publish_status": "uploaded"}},
-		{groupRun, finished, 0, map[string]any{"exit_code": -1, "reason": ReasonImagePull, "success": false, "stage": problemsFound, "duration_ms": int64(5)}},
+		{
+			groupRun,
+			finished,
+			0,
+			map[string]any{
+				"exit_code":   -1,
+				"reason":      ReasonImagePull,
+				"success":     false,
+				"stage":       problemsFound,
+				"duration_ms": int64(5),
+			},
+		},
 		{groupEnv, "system", 0, system},
 		{groupEnv, "software", 0, software},
 		{groupEnv, dockerEngine, 0, map[string]any{"cpu_count": "8", "ram_gb": "4", "version": "27.3.1"}},
 	}
 	for _, e := range testEvents {
-		t.Run(e.Group+"/"+e.Id, func(t *testing.T) {
-			data := maps.Clone(e.Data)
-			if e.Group == groupRun {
-				maps.Copy(data, ids)
-			}
-			assert.LessOrEqual(t, len(data), fus.MaxDataFields)
-			validated, dropped := validator.Validate(fus.LogEvent{Group: fus.Group(e.Group, 1), Event: fus.EventAction{ID: e.Id, Data: data}})
-			require.False(t, dropped)
-			assert.Equal(t, e.Id, validated.Event.ID)
-			for key, value := range validated.Event.Data {
-				if s, ok := value.(string); ok {
-					assert.False(t, strings.HasPrefix(s, "validation.") || s == "undefined", "%s=%v is rejected", key, e.Data[key])
+		t.Run(
+			e.Group+"/"+e.Id, func(t *testing.T) {
+				data := maps.Clone(e.Data)
+				if e.Group == groupRun {
+					maps.Copy(data, ids)
 				}
-			}
-		})
+				assert.LessOrEqual(t, len(data), fus.MaxDataFields)
+				validated, dropped := validator.Validate(
+					fus.LogEvent{
+						Group: fus.Group(e.Group, 1),
+						Event: fus.EventAction{ID: e.Id, Data: data},
+					},
+				)
+				require.False(t, dropped)
+				assert.Equal(t, e.Id, validated.Event.ID)
+				for key, value := range validated.Event.Data {
+					if s, ok := value.(string); ok {
+						assert.False(
+							t,
+							strings.HasPrefix(s, "validation.") || s == "undefined",
+							"%s=%v is rejected",
+							key,
+							e.Data[key],
+						)
+					}
+				}
+			},
+		)
 	}
 }
 
@@ -100,10 +164,14 @@ const (
 
 func TestSendKeepsEventTimeAndIds(t *testing.T) {
 	var report fus.Report
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		body, _ := io.ReadAll(r.Body)
-		assert.NoError(t, json.Unmarshal(body, &report))
-	}))
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				body, _ := io.ReadAll(r.Body)
+				assert.NoError(t, json.Unmarshal(body, &report))
+			},
+		),
+	)
 	defer server.Close()
 	s := &sender{
 		client:    fus.NewClient(server.URL, sendTimeout, "test"),
@@ -111,7 +179,16 @@ func TestSendKeepsEventTimeAndIds(t *testing.T) {
 		base:      fus.LogEvent{Session: "session"},
 	}
 
-	err := s.send([]event{{groupRun, analysisStarted, 1700000000000, map[string]any{"command": "scan", "project_id": testProject}}})
+	err := s.send(
+		[]event{
+			{
+				groupRun,
+				analysisStarted,
+				1700000000000,
+				map[string]any{"command": "scan", "project_id": testProject},
+			},
+		},
+	)
 
 	require.NoError(t, err)
 	require.Len(t, report.Events, 1)
@@ -125,10 +202,14 @@ func TestPostHogGetsTheEventsOfFus(t *testing.T) {
 		ApiKey string         `json:"api_key"`
 		Batch  []postHogEvent `json:"batch"`
 	}
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, "/batch/", r.URL.Path)
-		assert.NoError(t, json.NewDecoder(r.Body).Decode(&batch))
-	}))
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, "/batch/", r.URL.Path)
+				assert.NoError(t, json.NewDecoder(r.Body).Decode(&batch))
+			},
+		),
+	)
 	defer server.Close()
 	host, key := postHogHost, postHogKey
 	postHogHost, postHogKey = server.URL, "phc_test"
@@ -142,12 +223,30 @@ func TestPostHogGetsTheEventsOfFus(t *testing.T) {
 		base:      fus.LogEvent{IDs: map[string]string{"device": testDevice}, Session: "session", Build: "2026.1"},
 	}
 
-	err := s.send([]event{
-		{groupRun, licenseObtained, 1700000000000, map[string]any{"command": "scan", "kind": "cloud", "plan": "ULTIMATE", "project_id": testProject, "org_id": testOrg}},
-		{groupRun, licenseRejected, 1700000000001, map[string]any{"command": "scan", "reject_reason": "invented", "org_id": "org hash"}},
-		{groupEnv, "system", 1700000000002, map[string]any{"os": "linux"}},
-		{groupEnv, dockerEngine, 1700000000003, map[string]any{"version": "27.3.1"}},
-	})
+	err := s.send(
+		[]event{
+			{
+				groupRun,
+				licenseObtained,
+				1700000000000,
+				map[string]any{
+					"command":    "scan",
+					"kind":       "cloud",
+					"plan":       "ULTIMATE",
+					"project_id": testProject,
+					"org_id":     testOrg,
+				},
+			},
+			{
+				groupRun,
+				licenseRejected,
+				1700000000001,
+				map[string]any{"command": "scan", "reject_reason": "invented", "org_id": "org hash"},
+			},
+			{groupEnv, "system", 1700000000002, map[string]any{"os": "linux"}},
+			{groupEnv, dockerEngine, 1700000000003, map[string]any{"version": "27.3.1"}},
+		},
+	)
 
 	require.NoError(t, err)
 	assert.Equal(t, "phc_test", batch.ApiKey)
@@ -157,7 +256,11 @@ func TestPostHogGetsTheEventsOfFus(t *testing.T) {
 	assert.Equal(t, testDevice, license.DistinctId, "the subject is the device, stable per repository")
 	assert.Equal(t, false, license.Properties["$process_person_profile"])
 	assert.Equal(t, time.UnixMilli(1700000000000).UTC(), license.Timestamp)
-	assert.Equal(t, map[string]any{"organization": testOrg, "project": testProject, "repository": testDevice}, license.Properties["$groups"])
+	assert.Equal(
+		t,
+		map[string]any{"organization": testOrg, "project": testProject, "repository": testDevice},
+		license.Properties["$groups"],
+	)
 	assert.Equal(t, "ULTIMATE", license.Properties["plan"])
 	assert.Equal(t, "session", license.Properties["session"])
 	rejected := batch.Batch[1]
@@ -166,7 +269,12 @@ func TestPostHogGetsTheEventsOfFus(t *testing.T) {
 	assert.Equal(t, map[string]any{"repository": testDevice}, rejected.Properties["$groups"])
 	assert.Equal(t, testDevice, batch.Batch[2].DistinctId, "environment events are of the device of the run")
 	assert.Equal(t, "2026.1", batch.Batch[3].Properties["cli_version"])
-	assert.Equal(t, "27.3.1", batch.Batch[3].Properties["version"], "the CLI version doesn't replace the one of the event")
+	assert.Equal(
+		t,
+		"27.3.1",
+		batch.Batch[3].Properties["version"],
+		"the CLI version doesn't replace the one of the event",
+	)
 }
 
 func TestContainerHandsTheRunOver(t *testing.T) {
@@ -214,15 +322,17 @@ func TestContainerReportsOnlyAMissingStartCommit(t *testing.T) {
 func TestContainerHandover(t *testing.T) {
 	cacheDir := t.TempDir()
 	file := filepath.Join(cacheDir, handoverName)
-	handOver(file, handover{
-		Events: []event{
-			{groupRun, started, 1, nil},
-			{groupRun, licenseRejected, 2, map[string]any{"reject_reason": "token_declined"}},
+	handOver(
+		file, handover{
+			Events: []event{
+				{groupRun, started, 1, nil},
+				{groupRun, licenseRejected, 2, map[string]any{"reject_reason": "token_declined"}},
+			},
+			ProjectId: "project",
+			Reason:    ReasonLicenseRejected,
+			Allowed:   true,
 		},
-		ProjectId: "project",
-		Reason:    ReasonLicenseRejected,
-		Allowed:   true,
-	})
+	)
 	reset(t)
 	enabled = true
 
@@ -240,7 +350,10 @@ func TestRepeatedContainersAreCountedOnce(t *testing.T) {
 	enabled = true
 	license := event{groupRun, licenseObtained, 1, map[string]any{"kind": "cloud"}}
 	for _, reason := range []string{ReasonOutOfMemory, ReasonSuccess} {
-		handOver(filepath.Join(cacheDir, handoverName), handover{Events: []event{license}, Reason: reason, Allowed: true})
+		handOver(
+			filepath.Join(cacheDir, handoverName),
+			handover{Events: []event{license}, Reason: reason, Allowed: true},
+		)
 		CollectFromContainer(cacheDir)
 	}
 
@@ -254,10 +367,12 @@ func TestLicenseRejectedInContainerIsTheStage(t *testing.T) {
 	reset(t)
 	enabled = true
 	track(groupRun, analysisStarted, nil)
-	handOver(filepath.Join(cacheDir, handoverName), handover{
-		Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reject_reason": "token_declined"}}},
-		Reason: ReasonLicenseRejected,
-	})
+	handOver(
+		filepath.Join(cacheDir, handoverName), handover{
+			Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reject_reason": "token_declined"}}},
+			Reason: ReasonLicenseRejected,
+		},
+	)
 
 	CollectFromContainer(cacheDir)
 	track(groupRun, analysisFinished, nil)
@@ -272,9 +387,13 @@ func TestExpiredLicenseIsRejected(t *testing.T) {
 
 	StartAnalysis()(exitcodes.QodanaEapLicenseExpiredExitCode, "")
 
-	assert.True(t, slices.ContainsFunc(events, func(e event) bool {
-		return e.Id == licenseRejected && e.Data["reject_reason"] == "expired"
-	}))
+	assert.True(
+		t, slices.ContainsFunc(
+			events, func(e event) bool {
+				return e.Id == licenseRejected && e.Data["reject_reason"] == "expired"
+			},
+		),
+	)
 }
 
 func TestGivenReasonKeepsTheKnownOne(t *testing.T) {
@@ -294,10 +413,12 @@ func TestExpiredLicenseInContainerIsNotTheStage(t *testing.T) {
 	reset(t)
 	enabled = true
 	track(groupRun, analysisStarted, nil)
-	handOver(filepath.Join(cacheDir, handoverName), handover{
-		Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reject_reason": "expired"}}},
-		Reason: ReasonLicenseExpired,
-	})
+	handOver(
+		filepath.Join(cacheDir, handoverName), handover{
+			Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reject_reason": "expired"}}},
+			Reason: ReasonLicenseExpired,
+		},
+	)
 
 	CollectFromContainer(cacheDir)
 	track(groupRun, analysisFinished, nil)
@@ -316,8 +437,10 @@ func TestProblemsFound(t *testing.T) {
 	ProblemsFound(map[string]int{"": 7})
 
 	assert.Equal(t, "none", events[0].Data["baseline"])
-	assert.Equal(t, map[string]any{"total": "10+", "new": "1+", "unchanged": "10+", "absent": "100+", "baseline": "applied"},
-		events[2].Data, "absent problems are not of the project")
+	assert.Equal(
+		t, map[string]any{"total": "10+", "new": "1+", "unchanged": "10+", "absent": "100+", "baseline": "applied"},
+		events[2].Data, "absent problems are not of the project",
+	)
 	assert.Equal(t, "unknown", events[3].Data["baseline"], "no problems do not tell")
 	assert.Equal(t, "ignored", events[4].Data["baseline"])
 }
@@ -339,7 +462,14 @@ func TestValuesOutsideEnumsAreOther(t *testing.T) {
 }
 
 func TestVersionName(t *testing.T) {
-	for version, expected := range map[string]string{"2025.1": "2025.1", "27.3.1": "27.3.1", "24": "24", "my": other, "": other, "1..2": other} {
+	for version, expected := range map[string]string{
+		"2025.1": "2025.1",
+		"27.3.1": "27.3.1",
+		"24":     "24",
+		"my":     other,
+		"":       other,
+		"1..2":   other,
+	} {
 		assert.Equal(t, expected, versionName(version), version)
 	}
 	reset(t)
@@ -381,7 +511,16 @@ func TestLicenseOnlyContainerIsNotSent(t *testing.T) {
 }
 
 func TestPowerOfTwo(t *testing.T) {
-	for value, expected := range map[uint64]string{0: "1", 1: "1", 3: "2", 6: "4", 12: "8", 63: "32", 64: "64+", 512: "64+"} {
+	for value, expected := range map[uint64]string{
+		0:   "1",
+		1:   "1",
+		3:   "2",
+		6:   "4",
+		12:  "8",
+		63:  "32",
+		64:  "64+",
+		512: "64+",
+	} {
 		assert.Equal(t, expected, powerOfTwo(value, cpuCounts), value)
 	}
 	for value, expected := range map[uint64]string{0: "0", 1: "1", 15: "8", 127: "64", 256: "128+"} {
@@ -407,7 +546,15 @@ func TestUnknownCiIsOther(t *testing.T) {
 }
 
 func TestBucket(t *testing.T) {
-	for count, expected := range map[int]string{0: "0", 1: "1+", 9: "1+", 10: "10+", 999: "100+", 12345: "10000+", 1e7: "100000+"} {
+	for count, expected := range map[int]string{
+		0:     "0",
+		1:     "1+",
+		9:     "1+",
+		10:    "10+",
+		999:   "100+",
+		12345: "10000+",
+		1e7:   "100000+",
+	} {
 		assert.Equal(t, expected, bucket(count), count)
 	}
 }
@@ -466,7 +613,11 @@ func TestRunIsSent(t *testing.T) {
 	for _, e := range report.Events {
 		ids = append(ids, e.Event.ID)
 	}
-	assert.Subset(t, ids, []string{started, licenseObtained, baselineResolved, analysisStarted, analysisFinished, finished, "system"})
+	assert.Subset(
+		t,
+		ids,
+		[]string{started, licenseObtained, baselineResolved, analysisStarted, analysisFinished, finished, "system"},
+	)
 	last := lastEvent(report, finished)
 	assert.Equal(t, ReasonSuccess, last["reason"])
 	assert.Equal(t, analysisFinished, last["stage"])
@@ -500,19 +651,21 @@ func TestNothingIsCollectedWithoutPermission(t *testing.T) {
 		"license-only token with --env": {func(*testing.T) {}, licenseOnly},
 		"do not track":                  {func(t *testing.T) { t.Setenv(doNotTrackEnv, "1") }, nil},
 	} {
-		t.Run(name, func(t *testing.T) {
-			fakeFus(t)
-			connected := false
-			connect = func(string, string) *sender { connected = true; return nil }
-			t.Setenv(qdenv.QodanaToken, "")
-			run.setup(t)
+		t.Run(
+			name, func(t *testing.T) {
+				fakeFus(t)
+				connected := false
+				connect = func(string, string) *sender { connected = true; return nil }
+				t.Setenv(qdenv.QodanaToken, "")
+				run.setup(t)
 
-			Start("scan", func() string { return "" }, false, run.env)
-			Finish(0, "")
+				Start("scan", func() string { return "" }, false, run.env)
+				Finish(0, "")
 
-			assert.False(t, connected, "JetBrains should not be contacted")
-			assert.Empty(t, events)
-		})
+				assert.False(t, connected, "JetBrains should not be contacted")
+				assert.Empty(t, events)
+			},
+		)
 	}
 }
 
@@ -541,7 +694,12 @@ func TestWithIds(t *testing.T) {
 	reset(t)
 	command, projectId = "scan", "project"
 
-	result := withIds([]event{{groupRun, started, 1, map[string]any{"ci": "none"}}, {groupEnv, "system", 1, map[string]any{"os": "linux"}}})
+	result := withIds(
+		[]event{
+			{groupRun, started, 1, map[string]any{"ci": "none"}},
+			{groupEnv, "system", 1, map[string]any{"os": "linux"}},
+		},
+	)
 
 	assert.Equal(t, map[string]any{"command": "scan", "project_id": "project", "ci": "none"}, result[0].Data)
 	assert.Equal(t, map[string]any{"os": "linux"}, result[1].Data, "environment events are not linked to the run")
@@ -560,13 +718,20 @@ func TestDisabledInTestsOfOtherPackages(t *testing.T) {
 func fakeFus(t *testing.T) chan fus.Report {
 	reset(t)
 	disabled = false
+	// the CI runs the tests with a license-only token, which turns statistics off
+	t.Setenv(qdenv.QodanaLicenseOnlyToken, "")
+	t.Setenv(qdenv.QodanaToken, "")
 	received := make(chan fus.Report, 1)
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var report fus.Report
-		body, _ := io.ReadAll(r.Body)
-		assert.NoError(t, json.Unmarshal(body, &report))
-		received <- report
-	}))
+	server := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				var report fus.Report
+				body, _ := io.ReadAll(r.Body)
+				assert.NoError(t, json.Unmarshal(body, &report))
+				received <- report
+			},
+		),
+	)
 	t.Cleanup(server.Close)
 	connect = func(string, string) *sender {
 		return &sender{client: fus.NewClient(server.URL, sendTimeout, "test"), validator: newTestValidator(t)}
