@@ -130,6 +130,9 @@ func GetIdeArgs(c corescan.Context) []string {
 	if c.DisableSanity() {
 		arguments = append(arguments, "--disable-sanity")
 	}
+	if c.AirGapped() {
+		arguments = append(arguments, "--air-gapped")
+	}
 	if c.ProfileName() != "" {
 		arguments = append(arguments, "--profile-name", c.ProfileName())
 	}

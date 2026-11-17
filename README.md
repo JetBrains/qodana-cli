@@ -219,6 +219,7 @@ qodana scan [flags]
       --diff-end string           Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.
       --reverse                   Override the default run-scenario for diff runs to always use the reverse-scoped script
       --no-statistics             [qodana-clang/qodana-dotnet] Disable sending anonymous statistics
+      --air-gapped                Run in a network with no access to the internet: the linter does not update the statistics schema and does not upload statistics
       --compile-commands string   [qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory. (default "./build/compile_commands.json")
       --clang-args string         [qodana-clang specific] Additional arguments for clang
       --solution string           [qodana-cdnet specific] Relative path to solution file
