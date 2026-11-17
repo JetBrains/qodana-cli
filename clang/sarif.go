@@ -6,7 +6,7 @@ import (
 )
 
 func mergeSarifReports(c thirdpartyscan.Context) (int, error) {
-	totalProblems, err := platform.MergeSarifReports(c, platform.GetDeviceIdSalt()[0])
+	totalProblems, err := platform.MergeSarifReports(c, platform.GetDeviceIdSalt(c.ProjectDir())[0])
 	if err != nil {
 		return 0, err
 	}
