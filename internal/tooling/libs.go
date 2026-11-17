@@ -25,10 +25,14 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/tooling/edict"
 )
 
+// The portable Edict JAR is only for jdeps; platform files embed the filtered JAR.
+//
 //go:generate go run scripts/download-libs.go
-//go:embed libs/*.jar
+//go:generate go run scripts/build-edict.go
+//go:embed libs/baseline-cli*.jar libs/config-loader-cli*.jar libs/qodana-fuser*.jar libs/publisher-cli*.jar libs/intellij-report-converter*.jar libs/qodana-web-ui*.jar
 var libs embed.FS
 
 type Library string
@@ -36,6 +40,7 @@ type Library string
 const (
 	BaselineCli     Library = "libs/baseline-cli*.jar"
 	ConfigLoaderCli Library = "libs/config-loader-cli*.jar"
+	EdictCli        Library = "libs/*/edict-cli-*.jar"
 	Fuser           Library = "libs/qodana-fuser*.jar"
 	PublisherCli    Library = "libs/publisher-cli*.jar"
 	ReportConverter Library = "libs/intellij-report-converter*.jar"
@@ -43,14 +48,18 @@ const (
 )
 
 func (library Library) GetLibPath(cacheDir string) string {
-	matchedFile := findLibFile(library)
-	libPath := extractLib(cacheDir, matchedFile)
+	source := libs
+	if library == EdictCli {
+		source = edict.EdictLib
+	}
+	matchedFile := findLibFile(source, library)
+	libPath := extractLib(source, cacheDir, matchedFile)
 	return libPath
 }
 
-func findLibFile(library Library) string {
+func findLibFile(source fs.FS, library Library) string {
 	libPattern := string(library)
-	matches, err := fs.Glob(libs, libPattern)
+	matches, err := fs.Glob(source, libPattern)
 	if err != nil {
 		log.Fatalf("Failed to glob for %s jar: %s", libPattern, err)
 	}
@@ -60,12 +69,12 @@ func findLibFile(library Library) string {
 	return matches[0]
 }
 
-func extractLib(cacheDir string, matchedFile string) string {
+func extractLib(source fs.FS, cacheDir string, matchedFile string) string {
 	libFileName := filepath.Base(matchedFile)
 	libPath := filepath.Join(GetToolsMountPath(cacheDir), libFileName)
 	if _, err := os.Stat(libPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			jarFileBytes, err := libs.ReadFile(matchedFile)
+			jarFileBytes, err := fs.ReadFile(source, matchedFile)
 			if err != nil {
 				log.Fatalf("Failed to read %s library: %s", libFileName, err)
 			}

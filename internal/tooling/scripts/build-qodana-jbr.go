@@ -464,7 +464,7 @@ func runJdepsOnAllJars(jdepsBin, libsDir string) string {
 }
 
 func runJdeps(jdepsBin, jarPath string) []string {
-	cmd := exec.Command(jdepsBin, "--list-deps", "--ignore-missing-deps", jarPath)
+	cmd := exec.Command(jdepsBin, "--list-deps", "--multi-release", "base", "--ignore-missing-deps", jarPath)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		outStr := strings.TrimSpace(string(output))

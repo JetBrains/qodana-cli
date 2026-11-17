@@ -1,0 +1,10 @@
+{
+  "pullRequest": {
+    "provider": "github",
+    "owner": "JetBrains",
+    "repository": "qodana-cli",
+    "id": "1",
+    "url": "https://github.com/JetBrains/qodana-cli/pull/1"
+  },
+  "state": "ACCEPTED"
+}

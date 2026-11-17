@@ -1,0 +1,11 @@
+--- a/src/Example.kt
++++ b/src/Example.kt
+@@ -97,7 +97,7 @@
+ context 97 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 98 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 99 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+-bad()
++good()
+ context 101 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 102 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ context 103 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

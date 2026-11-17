@@ -81,8 +81,7 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 }
 
 func runQodanaLocal(c corescan.Context) (int, error) {
-	writeProperties(c)
-	args := getIdeRunCommand(c)
+	args := PrepareIdeRunCommand(c)
 	ideProcess, err := exec.ExecWithTimeout(
 		".",
 		os.Stdout, os.Stderr,
@@ -101,6 +100,20 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 	}
 	postAnalysis(c)
 	return res, err
+}
+
+// PrepareIdeRunCommand writes the IDE VM options required by a native Qodana run
+// and returns the command used to start it.
+func PrepareIdeRunCommand(c corescan.Context) []string {
+	writeProperties(c)
+	return getIdeRunCommand(c)
+}
+
+// PrepareNativeServiceRunCommand writes the minimal IDE VM options required by
+// a long-running native service and returns the command used to start it.
+func PrepareNativeServiceRunCommand(c corescan.Context) []string {
+	writeNativeServiceProperties(c)
+	return getIdeRunCommand(c)
 }
 
 func getIdeRunCommand(c corescan.Context) []string {
@@ -129,6 +142,9 @@ func GetIdeArgs(c corescan.Context) []string {
 	}
 	if c.DisableSanity() {
 		arguments = append(arguments, "--disable-sanity")
+	}
+	if c.AirGapped() {
+		arguments = append(arguments, "--air-gapped")
 	}
 	if c.ProfileName() != "" {
 		arguments = append(arguments, "--profile-name", c.ProfileName())
@@ -256,7 +272,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		if argument := legacyLicenseAuditArgumentFor(c); argument != "" {
 			arguments = append(arguments, argument)
 		}
-		for _, property := range c.Property() {
+		for _, property := range withContainerInternalDirProperty(c.Property()) {
 			arguments = append(arguments, "--property="+property)
 		}
 	} else if c.Prod().Is251orNewer() {

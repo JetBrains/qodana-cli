@@ -33,12 +33,13 @@ import (
 )
 
 const (
-	MountDir             = "/data/project"
-	DataResultsDir       = "/data/results"
-	DataResultsReportDir = "/data/results/report"
-	DataCacheDir         = "/data/cache"
-	DataCoverageDir      = "/data/coverage"
-	DataGlobalConfigDir  = "/data/qodana-global-config/" // when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
+	MountDir                   = "/data/project"
+	DataResultsDir             = "/data/results"
+	DataResultsReportDir       = "/data/results/report"
+	DataCacheDir               = "/data/cache"
+	DataCoverageDir            = "/data/coverage"
+	DataGlobalConfigDir        = "/data/qodana-global-config/" // when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
+	DataInternalInspectionsDir = "/data/internal-inspections"  // the inspections that Qodana runs without reporting their findings
 )
 
 func PrepareContainerEnvSettings() {

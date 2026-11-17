@@ -1,0 +1,19 @@
+<configuration>
+  <!-- INFO and above go to the console and to edict.log in EdictLayout.processLogDirectory, which agents cannot read
+       and which also keeps stack traces. The same edict.log.dir and edict.run.id system properties name the folder. -->
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level %logger{0} - %msg%n%nopex</pattern>
+    </encoder>
+  </appender>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>${edict.log.dir:-log}/process-log/${edict.run.id}/edict.log</file>
+    <encoder>
+      <pattern>%d{ISO8601} %-5level [%thread] %logger - %msg%n</pattern>
+    </encoder>
+  </appender>
+  <root level="INFO">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="FILE"/>
+  </root>
+</configuration>

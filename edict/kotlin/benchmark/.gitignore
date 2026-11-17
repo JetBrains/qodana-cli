@@ -1,0 +1,2 @@
+# The parent Go repository ignores directories named qodana as binary output.
+!src/**/qodana/

@@ -231,6 +231,14 @@ func TestLoadQodanaYamlByFullPath(t *testing.T) {
 		assert.Equal(t, "1.0", result.Version)
 		assert.Equal(t, "jetbrains/qodana-jvm", result.Linter)
 	})
+
+	t.Run("airGapped", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "qodana.yaml")
+		if err := os.WriteFile(path, []byte("version: \"1.0\"\nairGapped: true"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, LoadQodanaYamlByFullPath(path).AirGapped)
+	})
 }
 
 func TestQodanaYaml_Sort(t *testing.T) {
@@ -303,4 +311,24 @@ func TestSetQodanaDotNet(t *testing.T) {
 	loaded := LoadQodanaYamlByFullPath(path)
 	assert.Equal(t, "test.sln", loaded.DotNet.Solution)
 	assert.Equal(t, "test.csproj", loaded.DotNet.Project)
+}
+
+func TestEdictConfigurationRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "qodana.yaml")
+	want := QodanaYaml{
+		Version: "1.0",
+		Edict: EdictConfig{
+			StatePath: "../edict-state",
+			CI: EdictCIConfig{URL: "https://github.com/JetBrains/qodana-cli"},
+			CalculatePrice: true,
+			Promotion: EdictPromotionConfig{
+				Reviewer: "reviewer", TargetBranch: "main", InspectionsDirectory: "quality/inspections",
+			},
+		},
+	}
+	if err := want.WriteConfig(path); err != nil {
+		t.Fatal(err)
+	}
+	got := LoadQodanaYamlByFullPath(path)
+	assert.Equal(t, want.Edict, got.Edict)
 }

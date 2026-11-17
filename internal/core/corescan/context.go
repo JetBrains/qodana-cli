@@ -108,6 +108,7 @@ type Context struct {
 	cleanup                   bool
 	fixesStrategy             string
 	noStatistics              bool
+	airGapped                 bool
 	cdnetSolution             string
 	cdnetProject              string
 	cdnetConfiguration        string
@@ -126,6 +127,7 @@ type QodanaYamlConfig struct {
 	Plugins    []qdyaml.Plugin
 	Properties map[string]string // values are in -Dproperty.name -> value format
 	DotNet     qdyaml.DotNet
+	AirGapped  bool
 }
 
 func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
@@ -134,6 +136,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 		Plugins:    yaml.Plugins,
 		Properties: normalizeYamlProperties(yaml.Properties),
 		DotNet:     yaml.DotNet,
+		AirGapped:  yaml.AirGapped,
 	}
 }
 
@@ -185,6 +188,7 @@ func (c Context) ApplyFixes() bool                   { return c.applyFixes }
 func (c Context) Cleanup() bool                      { return c.cleanup }
 func (c Context) FixesStrategy() string              { return c.fixesStrategy }
 func (c Context) NoStatistics() bool                 { return c.noStatistics }
+func (c Context) AirGapped() bool                    { return c.airGapped }
 func (c Context) CdnetSolution() string              { return c.cdnetSolution }
 func (c Context) CdnetProject() string               { return c.cdnetProject }
 func (c Context) CdnetConfiguration() string         { return c.cdnetConfiguration }
@@ -246,6 +250,7 @@ type ContextBuilder struct {
 	Cleanup                   bool
 	FixesStrategy             string
 	NoStatistics              bool
+	AirGapped                 bool
 	CdnetSolution             string
 	CdnetProject              string
 	CdnetConfiguration        string
@@ -310,6 +315,7 @@ func (b ContextBuilder) Build() Context {
 		cleanup:                   b.Cleanup,
 		fixesStrategy:             b.FixesStrategy,
 		noStatistics:              b.NoStatistics,
+		airGapped:                 b.AirGapped,
 		cdnetSolution:             b.CdnetSolution,
 		cdnetProject:              b.CdnetProject,
 		cdnetConfiguration:        b.CdnetConfiguration,

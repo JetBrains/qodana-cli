@@ -1,0 +1,104 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/edict%2Favoid-thread-sleep-9cc450caa078",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "ref": "refs/heads/edict/avoid-thread-sleep-9cc450caa078",
+          "url": "https://api.github.com/repos/JetBrains/kotlin/git/refs/heads/edict/avoid-thread-sleep-9cc450caa078",
+          "object": {
+            "sha": "7777777777777777777777777777777777777777",
+            "type": "commit",
+            "url": "https://api.github.com/repos/JetBrains/kotlin/git/commits/7777777777777777777777777777777777777777"
+          }
+        }
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/inspections/avoid-thread-sleep.inspection.kts",
+        "query": {
+          "ref": "edict/avoid-thread-sleep-9cc450caa078"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "type": "file",
+          "encoding": "base64",
+          "size": 920,
+          "name": "avoid-thread-sleep.inspection.kts",
+          "path": "inspections/avoid-thread-sleep.inspection.kts",
+          "sha": "3333333333333333333333333333333333333333",
+          "content": "aW1wb3J0IGNvbS5pbnRlbGxpai5wc2kuUHNpSmF2YUZpbGUKaW1wb3J0IGNv\nbS5pbnRlbGxpai5wc2kuUHNpTWV0aG9kQ2FsbEV4cHJlc3Npb24KaW1wb3J0\nIGNvbS5pbnRlbGxpai5wc2kudXRpbC5Qc2lUcmVlVXRpbAoKdmFsIGF2b2lk\nVGhyZWFkU2xlZXBJbnNwZWN0aW9uID0gbG9jYWxJbnNwZWN0aW9uIHsgcHNp\nRmlsZSwgaW5zcGVjdGlvbiAtPgogICAgdmFsIGphdmFGaWxlID0gcHNpRmls\nZSBhcz8gUHNpSmF2YUZpbGUgPzogcmV0dXJuQGxvY2FsSW5zcGVjdGlvbgog\nICAgUHNpVHJlZVV0aWwuY29sbGVjdEVsZW1lbnRzT2ZUeXBlKGphdmFGaWxl\nLCBQc2lNZXRob2RDYWxsRXhwcmVzc2lvbjo6Y2xhc3MuamF2YSkuZm9yRWFj\naCB7IGNhbGwgLT4KICAgICAgICB2YWwgbWV0aG9kID0gY2FsbC5tZXRob2RF\neHByZXNzaW9uCiAgICAgICAgaWYgKG1ldGhvZC5yZWZlcmVuY2VOYW1lID09\nICJzbGVlcCIgJiYgbWV0aG9kLnF1YWxpZmllckV4cHJlc3Npb24/LnRleHQg\nPT0gIlRocmVhZCIpIHsKICAgICAgICAgICAgaW5zcGVjdGlvbi5yZWdpc3Rl\nclByb2JsZW0oY2FsbCwgIlJlcGxhY2UgVGhyZWFkLnNsZWVwIHdpdGggZXhw\nbGljaXQgc3luY2hyb25pemF0aW9uIikKICAgICAgICB9CiAgICB9Cn0KCmxp\nc3RPZigKICAgIEluc3BlY3Rpb25LdHMoCiAgICAgICAgaWQgPSAiQXZvaWRU\naHJlYWRTbGVlcEZvclN5bmNocm9uaXphdGlvbiIsCiAgICAgICAgbG9jYWxU\nb29sID0gYXZvaWRUaHJlYWRTbGVlcEluc3BlY3Rpb24sCiAgICAgICAgbmFt\nZSA9ICJBdm9pZCBUaHJlYWQuc2xlZXAgZm9yIHN5bmNocm9uaXphdGlvbiIs\nCiAgICAgICAgaHRtbERlc2NyaXB0aW9uID0gIjxodG1sPjxib2R5PlJlcG9y\ndHMgVGhyZWFkLnNsZWVwIHVzZWQgYXMgc3luY2hyb25pemF0aW9uLjwvYm9k\neT48L2h0bWw+IiwKICAgICkKKQo=\n"
+        }
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls",
+        "query": {
+          "state": "all",
+          "head": "JetBrains:edict/avoid-thread-sleep-9cc450caa078",
+          "base": "1.3.70"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99998",
+            "html_url": "https://github.com/JetBrains/kotlin/pull/99998",
+            "number": 99998,
+            "state": "open",
+            "user": {
+              "login": "qodana-edict"
+            }
+          }
+        ]
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/99998/requested_reviewers",
+        "query": {},
+        "body": {
+          "reviewers": [
+            "reviewer"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "url": "https://api.github.com/repos/JetBrains/kotlin/pulls/99998",
+          "html_url": "https://github.com/JetBrains/kotlin/pull/99998",
+          "number": 99998,
+          "state": "open",
+          "user": {
+            "login": "qodana-edict"
+          }
+        }
+      },
+      "scripted": true
+    }
+  ],
+  "result": {
+    "provider": "github",
+    "owner": "JetBrains",
+    "repository": "kotlin",
+    "id": "99998",
+    "url": "https://github.com/JetBrains/kotlin/pull/99998"
+  }
+}

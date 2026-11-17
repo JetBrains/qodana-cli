@@ -1,0 +1,241 @@
+/*
+ * Copyright 2026 JetBrains s.r.o.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
+package cmd
+
+import (
+	"bytes"
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/spf13/cobra"
+)
+
+func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
+	project := prepareEdictProject(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	server := startEdictMCP(t, ctx)
+	session := connectEdictMCP(t, ctx, server.url)
+	defer func() { _ = session.Close() }()
+	if _, err := os.Stat(filepath.Join(project, ".edict")); err != nil {
+		t.Fatalf("default state directory was not created: %v", err)
+	}
+	created := createEdictPlan(t, ctx, session, "Check project history", []map[string]string{
+		{"skill": "edict-distribution", "title": "Process existing signals"},
+	})
+	if len(created.Plan.Tasks) != 1 {
+		t.Fatalf("plan has %d tasks, not the one requested", len(created.Plan.Tasks))
+	}
+	// The manager token that tokenless plan creation returned is accepted.
+	callEdictTool(t, ctx, session, "edict_delegate", map[string]any{
+		"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
+		"prompt": "$edict-distribution\nRead /skills/edict-distribution/SKILL.md. Process existing signals.",
+	})
+	result, err := session.CallTool(
+		ctx, &mcp.CallToolParams{
+			Name: "edict_plan_create",
+			Arguments: map[string]any{
+				"request": "Second manager",
+				"steps":   []map[string]string{{"skill": "edict-distribution", "title": "Duplicate"}},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatalf("second plan creation: %v", err)
+	}
+	if !result.IsError {
+		t.Fatalf("second plan creation was not rejected: %s", toolResultText(result))
+	}
+	_ = session.Close()
+	server.stop(t, cancel)
+	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer restartCancel()
+	startEdictMCP(t, restartContext).stop(t, restartCancel)
+
+	logData, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-mcp-system.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{" => ", "edict_plan_create", "Check project history", "already succeeded"} {
+		if !bytes.Contains(logData, []byte(want)) {
+			t.Errorf("server log is missing %q", want)
+		}
+	}
+	agents, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-agents.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"Task prompt assigned by edict_manager/-:",
+		"Check project history",
+		"edict_plan_create response:",
+	} {
+		if !bytes.Contains(agents, []byte(want)) {
+			t.Errorf("agent log is missing %q", want)
+		}
+	}
+	if bytes.Contains(agents, []byte(created.Token)) {
+		t.Fatal("agent log exposed capability")
+	}
+	if bytes.Contains(logData, []byte(created.Token)) {
+		t.Fatal("server log exposed the manager capability")
+	}
+	activity, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-mcp.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"edict_plan_create ok", "edict_delegate ok", "edict_plan_create failed"} {
+		if !bytes.Contains(activity, []byte(want)) {
+			t.Errorf("activity log is missing %q", want)
+		}
+	}
+	for _, unwanted := range []string{created.Token, `"msg":"request"`, "requestId", "structuredContent"} {
+		if bytes.Contains(activity, []byte(unwanted)) {
+			t.Errorf("activity log contains a capability or protocol details")
+		}
+	}
+	short, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-agent-short.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"edict_plan_create ok",
+		"Task delegated by edict_manager/-",
+		"edict_plan_create failed",
+	} {
+		if !bytes.Contains(short, []byte(want)) {
+			t.Errorf("short agent log is missing %q", want)
+		}
+	}
+	for _, unwanted := range []string{created.Token, "response:", "SKILL.md", "managerToken:"} {
+		if bytes.Contains(short, []byte(unwanted)) {
+			t.Errorf("short agent log contains %q", unwanted)
+		}
+	}
+}
+
+func TestEdictManagedMCPRequiresInstall(t *testing.T) {
+	t.Chdir(t.TempDir())
+	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
+	command.SetIn(strings.NewReader(""))
+	if output, err := executeEdictCommand(context.Background(), command); err == nil ||
+		!strings.Contains(output, "run `qodana edict install` first") {
+		t.Fatalf("startup without installation: %v, %s", err, output)
+	}
+}
+
+func TestEdictManagedMCPRequiresInstallationForConfiguredPort(t *testing.T) {
+	prepareEdictProject(t)
+	writeEdictPort(t, freePort(t))
+	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
+	command.SetIn(strings.NewReader(""))
+	if output, err := executeEdictCommand(context.Background(), command); err == nil ||
+		!strings.Contains(output, "re-run `qodana edict install`") {
+		t.Fatalf("startup with a changed port: %v, %s", err, output)
+	}
+}
+
+func TestEdictManagedMCPForwardsDefaultQodanaYamlPath(t *testing.T) {
+	project := t.TempDir()
+	t.Chdir(project)
+	config := `version: "1.0"
+edict:
+  ci:
+    url: https://github.com/JetBrains/qodana-cli
+  promotion:
+    reviewer: reviewer-login
+    targetBranch: main
+    inspectionsDirectory: quality/inspections
+`
+	if err := os.WriteFile(filepath.Join(project, "qodana.yaml"), []byte(config), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	command.SetArgs([]string{"--foreground"})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	expected := "--qodana-yaml\x00qodana.yaml"
+	if !strings.Contains(strings.Join(forwarded, "\x00"), expected) {
+		t.Errorf("forwarded arguments %q do not contain %q", forwarded, expected)
+	}
+}
+
+func TestEdictManagedMCPForwardsCustomQodanaYamlWithoutParsing(t *testing.T) {
+	project := t.TempDir()
+	custom := filepath.Join(project, "config", "custom.yaml")
+	if err := os.MkdirAll(filepath.Dir(custom), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(custom, []byte("edict:\n  ci:\n    url:\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	command.SetArgs([]string{"--foreground", "--config", custom})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(forwarded, "\x00"), "--qodana-yaml\x00"+custom) {
+		t.Fatalf("Go launcher parsed or rejected custom YAML instead of forwarding its path: %q", forwarded)
+	}
+}
+
+func TestEdictManagedMCPForwardsYamlWithoutEdictSection(t *testing.T) {
+	project := t.TempDir()
+	t.Chdir(project)
+	if err := os.WriteFile(filepath.Join(project, "qodana.yaml"), []byte("version: \"1.0\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	command.SetArgs([]string{"--foreground"})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(forwarded, "\x00"), "--qodana-yaml\x00qodana.yaml") {
+		t.Fatalf("Qodana YAML path was not forwarded: %q", forwarded)
+	}
+}
+
+func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
+	prepareEdictProject(t)
+	if err := os.WriteFile("not-a-directory", []byte("existing"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	appendEdictStatePath(t, "not-a-directory")
+	command := newEdictManagedMCPStartCommand()
+	command.SetArgs([]string{"--foreground"})
+	command.SetIn(strings.NewReader(""))
+	if output, err := executeEdictCommand(context.Background(), command); err == nil || !strings.Contains(output, "ERROR") {
+		t.Fatalf("startup with an invalid state directory: %v, %s", err, output)
+	}
+}
+
+func TestEdictIDEMCPCommandIsHidden(t *testing.T) {
+	for _, command := range NewCommand().Commands() {
+		if command.Name() == "ide-mcp" && !command.Hidden {
+			t.Fatal("ide-mcp is internal to the Kotlin Edict server and must stay hidden")
+		}
+	}
+}

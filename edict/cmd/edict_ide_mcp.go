@@ -1,0 +1,397 @@
+/*
+ * Copyright 2026 JetBrains s.r.o.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ */
+
+package cmd
+
+import (
+	"bufio"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"syscall"
+	"time"
+
+	"github.com/JetBrains/qodana-cli/internal/core"
+	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/core/startup"
+	foundationexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
+	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
+	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/spf13/cobra"
+)
+
+const (
+	// Qodana's mcp-server script opens the project as a Qodana run does, then serves MCP instead of analyzing.
+	mcpServerScript = "mcp-server"
+	// The IDE's own headless starter: it opens the project without Qodana's project configuration. It stays the default
+	// until the Qodana linters ship the mcp-server script.
+	mcpIDEStarter = "mcpServer"
+	// Set to "script" to start the Qodana mcp-server script instead of the headless starter.
+	ideMCPStarterEnv = "QODANA_EDICT_IDE_STARTER"
+	// The IDE gets this long to exit after SIGTERM before it is killed.
+	ideMCPStopTimeout = 10 * time.Second
+)
+
+// ideMCPTools are the IntelliJ tools the Kotlin Edict server calls or forwards; keep both sides in sync.
+var ideMCPTools = []string{
+	"generate_psi_tree",
+	"generate_inspection_kts_api",
+	"generate_inspection_kts_examples",
+	"run_inspection_kts",
+	"compile_inspection_kts",
+	"run_inspection_kts_examples",
+	"run_inspection_kts_project",
+}
+
+var (
+	streamableEndpointPattern = regexp.MustCompile(`Streamable HTTP endpoint:\s*(https?://[^\s\x1b]+)`)
+	ideSSEEndpointPattern     = regexp.MustCompile(`SSE URL:\s*(https?://[^\s\x1b]+)`)
+)
+
+// ideMCPOptions select a native IDE: a local distribution, a Qodana linter the CLI downloads, or QODANA_DIST.
+// Docker is not supported, since the IDE must read the host paths the Kotlin server passes to it.
+type ideMCPOptions struct {
+	ProjectDir  string
+	Dist        string
+	Linter      string
+	Property    []string
+	ResultsDir  string
+	WaitTimeout time.Duration
+	// QodanaScript starts Qodana's mcp-server script instead of the IDE's mcpServer starter.
+	QodanaScript bool
+}
+
+// newEdictIDEMCPCommand runs one IntelliJ MCP server for the lifetime of its caller, the Kotlin Edict server.
+func newEdictIDEMCPCommand() *cobra.Command {
+	options := ideMCPOptions{}
+	command := &cobra.Command{
+		Use:   "ide-mcp",
+		Short: "Run the IntelliJ MCP server for one Edict session (internal)",
+		Long: `Start the native IDE MCP server and keep it running until stdin closes or SIGTERM/SIGINT arrives.
+Stdout receives exactly one line, {"status":"ready","url":...,"pid":...}, once the IDE serves MCP.
+The caller stops the IDE by pid if this helper is killed before it can.
+IDE output is forwarded to stderr. The Kotlin Edict server runs this on its first inspection call.
+The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not supported.`,
+		Hidden:       true,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
+		// The root command prints the error once; the Kotlin server shows it from this command's stderr.
+		SilenceErrors: true,
+		RunE: func(command *cobra.Command, _ []string) error {
+			return runIDEMCP(
+				command.Context(),
+				options,
+				command.InOrStdin(),
+				command.OutOrStdout(),
+				command.ErrOrStderr(),
+			)
+		},
+	}
+	flags := command.Flags()
+	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project")
+	flags.StringVar(&options.Dist, "dist", "", "Local IDE or Qodana linter distribution (overrides QODANA_DIST)")
+	flags.StringVar(
+		&options.Linter,
+		"linter",
+		"",
+		"Qodana linter to download and run natively, e.g. qodana-jvm (overrides QODANA_DIST)",
+	)
+	flags.StringArrayVar(&options.Property, "property", nil, "Set a JVM property or option for the IDE")
+	flags.StringVar(
+		&options.ResultsDir,
+		"results-dir",
+		"",
+		"Directory for IDE results and logs, kept after exit (default: a temporary directory removed on exit)",
+	)
+	// Large projects take tens of minutes to import, and the IDE serves MCP only afterwards.
+	flags.DurationVar(&options.WaitTimeout, "wait-timeout", time.Hour, "Maximum time to wait for MCP readiness")
+	flags.BoolVar(
+		&options.QodanaScript,
+		"qodana-script",
+		os.Getenv(ideMCPStarterEnv) == "script",
+		"Start Qodana's mcp-server script, which configures the project as a Qodana run does, instead of the IDE's "+
+			"mcpServer starter; the linter must contain the script (default from "+ideMCPStarterEnv+"=script)",
+	)
+	command.MarkFlagsMutuallyExclusive("dist", "linter")
+	return command
+}
+
+func runIDEMCP(ctx context.Context, options ideMCPOptions, stdin io.Reader, stdout, stderr io.Writer) error {
+	if options.WaitTimeout <= 0 {
+		return errors.New("wait timeout must be positive")
+	}
+	projectDir, err := fs.Canonical(options.ProjectDir)
+	if err != nil {
+		return fmt.Errorf("resolving project directory: %w", err)
+	}
+	options.ProjectDir = projectDir
+	if options.ResultsDir != "" {
+		// The IDE runs in the project directory, so a relative path must not be resolved from there.
+		if options.ResultsDir, err = filepath.Abs(options.ResultsDir); err != nil {
+			return fmt.Errorf("resolving results directory: %w", err)
+		}
+	}
+	if err := selectIDEDistribution(options); err != nil {
+		return err
+	}
+
+	// Qodana's host preparation prints notices, such as the EAP token warning, to os.Stdout. Send them to stderr:
+	// stdout carries only the readiness line, and the caller already holds the real stdout writer.
+	processStdout := os.Stdout
+	os.Stdout = os.Stderr
+	arguments, cleanup, err := ideMCPCommand(options)
+	os.Stdout = processStdout
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	return serveIDEMCP(ctx, arguments, projectDir, options.WaitTimeout, stdin, stdout, stderr)
+}
+
+// selectIDEDistribution makes the chosen IDE authoritative for this process and the IDE it starts:
+// Qodana's analyzer lookup otherwise lets QODANA_DIST silently override an explicit linter.
+func selectIDEDistribution(options ideMCPOptions) error {
+	dist := options.Dist
+	switch {
+	case dist != "": // --dist wins over --linter and QODANA_DIST; it is resolved below.
+	case options.Linter != "":
+		return os.Unsetenv(qdenv.QodanaDistEnv)
+	case os.Getenv(qdenv.QodanaDistEnv) != "":
+		dist = os.Getenv(qdenv.QodanaDistEnv)
+	default:
+		return fmt.Errorf("IntelliJ for Edict inspections requires --dist, --linter, or %s", qdenv.QodanaDistEnv)
+	}
+	// The IDE runs in the project directory, so a relative distribution path must not be resolved from there.
+	absolute, err := filepath.Abs(dist)
+	if err != nil {
+		return fmt.Errorf("resolving IDE distribution %s: %w", dist, err)
+	}
+	return os.Setenv(qdenv.QodanaDistEnv, absolute)
+}
+
+// ideMCPCommand prepares the native IDE host and returns the MCP server command line.
+func ideMCPCommand(options ideMCPOptions) ([]string, func(), error) {
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+	scanContext, cleanup, err := prepareMCPScanContext(options)
+	if err != nil {
+		return nil, cleanup, err
+	}
+	// It also writes the vmoptions file and exports its environment variable for the IDE, which both entry points need.
+	qodanaRun := core.PrepareNativeServiceRunCommand(scanContext)
+	if options.QodanaScript {
+		return qodanaRun, cleanup, nil
+	}
+	return ideMCPArguments(scanContext.Prod().IdeScript, options.ProjectDir), cleanup, nil
+}
+
+// ideMCPArguments starts the IDE's headless MCP server; without --port it selects a free port.
+func ideMCPArguments(executable string, projectDir string) []string {
+	return []string{
+		executable, mcpIDEStarter, "--project=" + projectDir, "--invocation-mode=direct",
+		"--allowed-tools=" + strings.Join(ideMCPTools, ","),
+	}
+}
+
+// serveIDEMCP runs the IDE until stdin closes, ctx ends, or the IDE exits, and reports readiness once.
+func serveIDEMCP(
+	ctx context.Context,
+	arguments []string,
+	dir string,
+	waitTimeout time.Duration,
+	stdin io.Reader,
+	stdout, stderr io.Writer,
+) error {
+	output, outputWriter := io.Pipe()
+	ide := exec.Command(arguments[0], arguments[1:]...)
+	ide.Dir = dir
+	ide.Stdout, ide.Stderr = outputWriter, outputWriter
+	if err := ide.Start(); err != nil {
+		return fmt.Errorf("launching %s: %w", arguments[0], err)
+	}
+	// exited reports why the IDE exited on its own; stopped only tells stopIDE that a requested stop is done.
+	exited := make(chan error, 1)
+	stopped := make(chan struct{})
+	go func() {
+		err := ide.Wait()
+		_ = outputWriter.Close()
+		exited <- err
+		close(stopped)
+	}()
+	endpoints := make(chan string, 1)
+	go forwardIDEOutput(output, stderr, endpoints)
+	stdinClosed := make(chan struct{})
+	go func() {
+		_, _ = io.Copy(io.Discard, stdin)
+		close(stdinClosed)
+	}()
+
+	deadline := time.NewTimer(waitTimeout)
+	defer deadline.Stop()
+	ready := false
+	for {
+		select {
+		case url := <-endpoints:
+			ready, endpoints = true, nil
+			deadline.Stop()
+			readiness := map[string]any{"status": "ready", "url": url, "pid": ide.Process.Pid}
+			if err := json.NewEncoder(stdout).Encode(readiness); err != nil {
+				return errors.Join(fmt.Errorf("publishing MCP readiness: %w", err), stopIDE(ide, stopped))
+			}
+		case err := <-exited:
+			if err == nil {
+				err = errors.New("process exited")
+			}
+			if ready {
+				return fmt.Errorf("IntelliJ MCP server exited: %w", err)
+			}
+			return fmt.Errorf("IntelliJ MCP server exited before becoming ready: %w", err)
+		case <-deadline.C:
+			return errors.Join(
+				fmt.Errorf("IntelliJ MCP server did not become ready within %s", waitTimeout),
+				stopIDE(ide, stopped),
+			)
+		case <-stdinClosed:
+			return stopIDE(ide, stopped)
+		case <-ctx.Done():
+			return stopIDE(ide, stopped)
+		}
+	}
+}
+
+// stopIDE asks the IDE to terminate, kills it if it does not stop in time, and waits until it has exited. The exit
+// status of an IDE that was asked to stop is not a failure.
+func stopIDE(ide *exec.Cmd, stopped <-chan struct{}) error {
+	if err := foundationexec.RequestTermination(ide.Process); err != nil && !errors.Is(err, os.ErrProcessDone) {
+		_ = ide.Process.Kill()
+	}
+	select {
+	case <-stopped:
+		return nil
+	case <-time.After(ideMCPStopTimeout):
+		if err := ide.Process.Kill(); err != nil && !errors.Is(err, os.ErrProcessDone) {
+			return fmt.Errorf("killing IntelliJ MCP server: %w", err)
+		}
+		<-stopped
+		return nil
+	}
+}
+
+// forwardIDEOutput copies IDE output line by line to log and sends the first MCP endpoint it announces.
+func forwardIDEOutput(output io.Reader, log io.Writer, endpoints chan<- string) {
+	reader := bufio.NewReader(output)
+	reported := false
+	for {
+		line, err := reader.ReadString('\n')
+		_, _ = io.WriteString(log, line)
+		if url, ok := mcpEndpoint(line); ok && !reported {
+			reported = true
+			endpoints <- url
+		}
+		if err != nil {
+			return
+		}
+	}
+}
+
+func mcpEndpoint(line string) (string, bool) {
+	line = strings.TrimSpace(line)
+	if match := streamableEndpointPattern.FindStringSubmatch(line); match != nil {
+		return match[1], true
+	}
+	// IDE builds that only announce SSE also serve Streamable HTTP on the sibling /stream path.
+	if match := ideSSEEndpointPattern.FindStringSubmatch(line); match != nil {
+		return strings.TrimSuffix(match[1], "/sse") + "/stream", true
+	}
+	return "", false
+}
+
+func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), error) {
+	noCleanup := func() {}
+	commonCtx := computeNativeMCPContext(options)
+	if commonCtx.Analyzer.IsContainer() {
+		return corescan.Context{}, noCleanup, errors.New("edict inspections require a native IDE; Docker linters are not supported")
+	}
+	configDir, cleanup, err := fs.CreateTempDir("qodana-mcp-config")
+	if err != nil {
+		return corescan.Context{}, noCleanup, fmt.Errorf("creating MCP configuration directory: %w", err)
+	}
+	// Keep the service separate from scan caches and concurrent MCP instances.
+	commonCtx.CacheDir = filepath.Join(configDir, "cache")
+	commonCtx.ResultsDir = options.ResultsDir
+	if commonCtx.ResultsDir == "" {
+		commonCtx.ResultsDir = filepath.Join(configDir, "results")
+	}
+	preparedHost := startup.PrepareNativeServiceHost(commonCtx)
+	cliOptions := platformcmd.CliOptions{
+		ProjectDir:   options.ProjectDir,
+		Linter:       options.Linter,
+		WithinDocker: "false",
+		Script:       mcpServerScript,
+		Property:     ideMCPProperties(options.Property),
+	}
+	scanContext := corescan.CreateContext(cliOptions, commonCtx, preparedHost, corescan.QodanaYamlConfig{}, configDir)
+	return scanContext, cleanup, nil
+}
+
+// ideMCPDefaultProperties configure the IDE for an Edict session on any project.
+var ideMCPDefaultProperties = []string{
+	// Qodana mode, as a scan runs: its headless project setup, such as assigning the project JDK after a Maven import,
+	// runs only then. The mcp-server script runs in Qodana mode anyway; the headless starter needs it.
+	"qodana.application=true",
+	// 70% of the memory the JVM detects, cgroup limits included; with it, the launcher drops the distribution's -Xmx.
+	// The rest holds the build tool's daemon during the import, the Kotlin daemon and the agents. An explicit -Xmx wins.
+	"-XX:MaxRAMPercentage=70",
+	// Avoid repeated JSON schema lookups while the batch engine discovers injected code.
+	"idea.batch.inspections.inspect.injected.psi=false",
+	// Background work that a session without an editor does not need, as in Qodana's rules extraction builds.
+	"idea.enable.duplicates.online.calculation=false",
+	"vfs.health-check.enabled=false",
+	// The Kotlin daemon that compiles inspection scripts would otherwise inherit the IDE's heap limit.
+	"kotlin.daemon.jvm.options=-Xmx2g",
+	// The Gradle daemon that imported the project stays idle for three hours by default, holding its heap while agents
+	// run inspections. The IDE's own JVM properties override the project's gradle.properties for the daemons it starts.
+	"org.gradle.daemon.idletimeout=60000",
+}
+
+// ideMCPProperties are the default properties, except those the caller sets, followed by the caller's.
+func ideMCPProperties(properties []string) []string {
+	overridden := map[string]bool{}
+	for _, property := range properties {
+		overridden[ideMCPPropertyKey(property)] = true
+	}
+	var result []string
+	for _, property := range ideMCPDefaultProperties {
+		if !overridden[ideMCPPropertyKey(property)] {
+			result = append(result, property)
+		}
+	}
+	return append(result, properties...)
+}
+
+// ideMCPPropertyKey is the system property or JVM option a property sets: the part before "=", without "-D".
+func ideMCPPropertyKey(property string) string {
+	key, _, _ := strings.Cut(property, "=")
+	return strings.TrimPrefix(key, "-D")
+}
+
+func computeNativeMCPContext(options ideMCPOptions) commoncontext.Context {
+	return commoncontext.Compute(
+		options.Linter, "", "", "false",
+		"", "", "", qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken), false,
+		options.ProjectDir, options.ProjectDir, "",
+	)
+}

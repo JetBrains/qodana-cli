@@ -1,0 +1,201 @@
+package org.jetbrains.qodana.edict.setup
+
+import kotlinx.serialization.json.JsonPrimitive
+import org.jetbrains.qodana.edict.common.EdictLayout
+import org.junit.jupiter.api.Assumptions.assumeTrue
+import org.junit.jupiter.api.io.TempDir
+import org.junitpioneer.jupiter.ClearEnvironmentVariable
+import org.tomlj.Toml
+import java.nio.file.Path
+import kotlin.io.path.createFile
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+
+class CodexSetupTest {
+  @TempDir
+  lateinit var directory: Path
+
+  @TempDir
+  lateinit var codexHome: Path
+
+  @Test
+  fun `install writes skills and a sandboxed local config`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    val gold = project.root.resolve("gold.sarif.json").createFile()
+    trust(project.root)
+
+    val skills = CodexSetup.install(
+      project, listOf(Path.of("gold.sarif.json"), Path.of("missing/../benchmark")), EdictConfig(4321), codexHome,
+    )
+
+    assertTrue("edict_manager" in skills)
+    assertTrue(project.codexSkillsDirectory.resolve("edict_manager/SKILL.md").exists())
+    val config = Toml.parse(project.codexConfigPath)
+    assertTrue(config.errors().isEmpty(), config.errors().toString())
+    assertEquals("edict", config.getString("default_permissions"))
+    assertEquals(":read-only", config.getString(listOf("permissions", "edict", "extends")))
+    val filesystem = config.getTable(listOf("permissions", "edict", "filesystem"))!!
+    assertEquals(
+      mapOf(
+        ":tmpdir" to "write",
+        project.root.toString() to "read",
+        project.agentWorkRoot.toString() to "write",
+        project.processLogRoot.toString() to "deny",
+        codexHome.toRealPath().resolve("sessions").toString() to "deny",
+        codexHome.toRealPath().resolve("log").toString() to "deny",
+        gold.toString() to "deny",
+        project.root.resolve("benchmark").toString() to "deny",
+      ),
+      filesystem.keySet().associateWith { filesystem.getString(listOf(it)) },
+    )
+    assertEquals("http://127.0.0.1:4321/mcp", config.getString(listOf("mcp_servers", "edict-mcp", "url")))
+    CodexSetup.requireInstalled(project, EdictConfig(4321))
+  }
+
+  @Test
+  fun `reinstall follows the configured port and drops deny rules that are no longer requested`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    trust(project.root)
+    CodexSetup.install(project, listOf(Path.of("gold.sarif.json")), EdictConfig(4321), codexHome)
+
+    CodexSetup.install(project, emptyList(), EdictConfig(4322), codexHome)
+
+    CodexSetup.requireInstalled(project, EdictConfig(4322))
+    val filesystem = Toml.parse(project.codexConfigPath).getTable(listOf("permissions", "edict", "filesystem"))!!
+    assertNull(filesystem.getString(listOf(project.root.resolve("gold.sarif.json").toString())))
+  }
+
+  @Test
+  fun `server requires an installation for the configured port`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    assertFailsWith<IllegalStateException> { CodexSetup.requireInstalled(project, EdictConfig()) }
+    trust(project.root)
+    CodexSetup.install(project, emptyList(), EdictConfig(4321), codexHome)
+    val mismatch = assertFailsWith<IllegalStateException> { CodexSetup.requireInstalled(project, EdictConfig(4322)) }
+    assertTrue("re-run `qodana edict install`" in mismatch.message!!)
+  }
+
+  @Test
+  fun `install fails and removes the config when Codex does not load it`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    // The fake Codex from build.gradle.kts answers with this list.
+    codexHome.resolve("fake-mcp-list.json").writeText("[]")
+    val ignored = assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+    assertTrue("trust_level = \"trusted\"" in ignored.message!!, ignored.message)
+    assertFalse(project.codexConfigPath.exists())
+  }
+
+  @Test
+  fun `install keeps the user's config and adds Edict settings to its tables`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    trust(project.root)
+    val user = """
+      |# The team's settings
+      |[notice]
+      |fast_default_opt_out = true
+      |
+      |[mcp_servers.ijproxy]
+      |command = "node"
+      |
+      |# An implicit `permissions` table: Edict's tables must not go under this header.
+      |[permissions.team]
+      |extends = ":workspace"
+      |
+      |[features]
+      |multi_agent = true
+      |unified_exec = true
+      |""".trimMargin()
+    project.codexConfigPath.parent.toFile().mkdirs()
+    project.codexConfigPath.writeText(user)
+
+    CodexSetup.install(project, emptyList(), EdictConfig(4321), codexHome)
+    CodexSetup.install(project, listOf(Path.of("gold.sarif.json")), EdictConfig(4322), codexHome)
+
+    val merged = project.codexConfigPath.readText()
+    assertEquals(user.lines(), merged.lines().filterNot { it.endsWith("# qodana-edict") })
+    val config = Toml.parse(merged)
+    assertTrue(config.errors().isEmpty(), config.errors().toString())
+    assertEquals("never", config.getString("approval_policy"))
+    assertEquals(true, config.getBoolean(listOf("features", "unified_exec")))
+    assertEquals(1, merged.lines().count { it.trim() == "multi_agent = true" })
+    assertEquals("node", config.getString(listOf("mcp_servers", "ijproxy", "command")))
+    assertEquals(":workspace", config.getString(listOf("permissions", "team", "extends")))
+    assertEquals(":read-only", config.getString(listOf("permissions", "edict", "extends")))
+    CodexSetup.requireInstalled(project, EdictConfig(4322))
+    val filesystem = config.getTable(listOf("permissions", "edict", "filesystem"))!!
+    assertEquals("deny", filesystem.getString(listOf(project.root.resolve("gold.sarif.json").toString())))
+  }
+
+  @Test
+  fun `install fails without changes when the user's config sets a value Edict needs differently`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    trust(project.root)
+    val user = "approval_policy = \"on-request\"\n\n[agents]\nmax_depth = 5\n"
+    project.codexConfigPath.parent.toFile().mkdirs()
+    project.codexConfigPath.writeText(user)
+
+    val conflict = assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+
+    assertTrue("line 1: approval_policy = \"on-request\" (Edict needs approval_policy = \"never\")" in conflict.message!!, conflict.message)
+    assertFalse("max_depth" in conflict.message!!, conflict.message)
+    assertEquals(user, project.codexConfigPath.readText())
+    assertFalse(project.codexSkillsDirectory.exists())
+  }
+
+  @Test
+  fun `install restores the user's config when Codex does not load it`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    codexHome.resolve("fake-mcp-list.json").writeText("[]")
+    project.codexConfigPath.parent.toFile().mkdirs()
+    project.codexConfigPath.writeText("[features]\nunified_exec = true\n")
+
+    assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+
+    assertEquals("[features]\nunified_exec = true\n", project.codexConfigPath.readText())
+  }
+
+  /** The contract the fake stands in for: Codex loads `.codex/config.toml` only for a project trusted in `CODEX_HOME`. */
+  @Test
+  @ClearEnvironmentVariable(key = "CODEX_BIN")
+  fun `real Codex loads the local config only for a trusted project`() {
+    // CI must run this check; elsewhere it needs Codex on PATH.
+    assumeTrue(System.getenv("CI") != null || System.getenv("TEAMCITY_VERSION") != null || codexInstalled()) {
+      "codex is not on PATH"
+    }
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+    assertFalse(project.codexConfigPath.exists())
+
+    codexHome.resolve("config.toml").writeText("[projects.${quote(project.root)}]\ntrust_level = \"untrusted\"\n")
+    assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+    assertFalse(project.codexConfigPath.exists())
+
+    trust(project.root)
+    CodexSetup.install(project, emptyList(), EdictConfig(), codexHome)
+    CodexSetup.requireInstalled(project, EdictConfig())
+  }
+
+  private fun trust(path: Path) {
+    codexHome.resolve("config.toml").writeText("[projects.${quote(path)}]\ntrust_level = \"trusted\"\n")
+  }
+}
+
+private fun quote(path: Path): String = JsonPrimitive(path.toString()).toString()
+
+private fun codexInstalled(): Boolean =
+  runCatching { ProcessBuilder("codex", "--version").redirectErrorStream(true).start().waitFor() == 0 }.getOrDefault(false)
