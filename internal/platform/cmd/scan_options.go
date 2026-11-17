@@ -334,7 +334,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.AirGapped,
 		"air-gapped",
 		false,
-		"Run in a network with no access to the internet: the linter skips the network operations that cannot succeed there",
+		"Run in a network with no access to the internet: the linter does not update the statistics schema and does not upload statistics",
 	)
 	flags.StringVar(
 		&options.ClangCompileCommands,

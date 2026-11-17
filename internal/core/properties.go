@@ -66,6 +66,8 @@ func getScanPropertiesMap(
 		properties["-Dqodana.path.to.project.dir.from.project.root"] = str.QuoteIfSpace(repositoryRoot)
 	}
 	if airGapped {
+		// No upload can succeed there: the IDE does not upload FUS and starts no statistics-uploader on exit,
+		// so postAnalysis() has nothing to wait for.
 		properties["-Didea.suppress.statistics.report"] = "true"
 	}
 	if len(plugins) > 0 {
