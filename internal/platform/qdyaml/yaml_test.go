@@ -304,3 +304,23 @@ func TestSetQodanaDotNet(t *testing.T) {
 	assert.Equal(t, "test.sln", loaded.DotNet.Solution)
 	assert.Equal(t, "test.csproj", loaded.DotNet.Project)
 }
+
+func TestEdictConfigurationRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "qodana.yaml")
+	want := QodanaYaml{
+		Version: "1.0",
+		Edict: EdictConfig{
+			StatePath: "../edict-state",
+			CI: EdictCIConfig{URL: "https://github.com/JetBrains/qodana-cli"},
+			CalculatePrice: true,
+			Promotion: EdictPromotionConfig{
+				Reviewer: "reviewer", TargetBranch: "main", InspectionsDirectory: "quality/inspections",
+			},
+		},
+	}
+	if err := want.WriteConfig(path); err != nil {
+		t.Fatal(err)
+	}
+	got := LoadQodanaYamlByFullPath(path)
+	assert.Equal(t, want.Edict, got.Edict)
+}

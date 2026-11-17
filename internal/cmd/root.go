@@ -21,6 +21,7 @@ import (
 	"os"
 	"slices"
 
+	edictcmd "github.com/JetBrains/qodana-cli/edict/cmd"
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
@@ -79,10 +80,13 @@ func defaultCommandArgs(rootCmd *cobra.Command, args []string) []string {
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	if !qdenv.IsContainer() && os.Geteuid() == 0 {
+	edictServer := IsEdictServerCommand(os.Args[1:])
+	if !edictServer && !qdenv.IsContainer() && os.Geteuid() == 0 {
 		msg.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	go core.CheckForUpdates(version.Version)
+	if !edictServer {
+		go core.CheckForUpdates(version.Version)
+	}
 	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		msg.DisableColor()
 	}
@@ -92,7 +96,9 @@ func Execute() {
 
 	rootCommand.SetArgs(defaultCommandArgs(rootCommand, os.Args))
 	if err := rootCommand.Execute(); err != nil {
-		core.CheckForUpdates(version.Version)
+		if !edictServer {
+			core.CheckForUpdates(version.Version)
+		}
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
 		if err != nil {
 			return
@@ -100,7 +106,29 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	core.CheckForUpdates(version.Version)
+	if !edictServer {
+		core.CheckForUpdates(version.Version)
+	}
+}
+
+// IsEdictServerCommand identifies the Edict servers, `edict mcp start` and the internal `edict ide-mcp`,
+// before starting process-wide console output or interrupt handlers. They own their signal handling and stdout.
+// InitCli must be called first.
+func IsEdictServerCommand(args []string) bool {
+	return isEdictServerCommand(rootCommand, args)
+}
+
+func isEdictServerCommand(root *cobra.Command, args []string) bool {
+	command, _, _ := root.Find(args)
+	if command == nil || command.Parent() == nil {
+		return false
+	}
+	parent := command.Parent()
+	if command.Name() == "ide-mcp" {
+		return parent.Name() == "edict"
+	}
+	return command.Name() == "start" && parent.Name() == "mcp" &&
+		parent.Parent() != nil && parent.Parent().Name() == "edict"
 }
 
 // newRootCommand constructs root command.
@@ -157,6 +185,7 @@ func InitCli() {
 		newViewCommand(),
 		newContributorsCommand(),
 		newClocCommand(),
+		edictcmd.NewCommand(),
 	)
 }
 

@@ -1,0 +1,28 @@
+--- a/old.kt
++++ b/new.kt
+@@ -97,7 +97,7 @@
+ line 97
+ line 98
+ line 99
+-old 100
++new 100
+ line 101
+ line 102
+ line 103
+@@ -148,6 +148,7 @@
+ line 148
+ line 149
+ line 150
++inserted
+ line 151
+ line 152
+ line 153
+@@ -177,7 +178,7 @@
+ line 177
+ line 178
+ line 179
+-old 180
++new 180
+ line 181
+ line 182
+ line 183

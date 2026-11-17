@@ -85,6 +85,45 @@ jobs:
             container-engine: none
             engine: none
 
+  edict-kotlin-test:
+    # Required status checks match this name exactly.
+    name: "Edict Kotlin tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: edict/kotlin
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+          check-latest: true
+          cache: gradle
+          cache-dependency-path: |
+            edict/kotlin/**/*.gradle.kts
+            edict/kotlin/gradle/wrapper/gradle-wrapper.properties
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Codex
+        # CodexSetupTest checks Edict's trust check against the real Codex on CI.
+        run: npm install -g @openai/codex && codex --version
+      - name: Run tests except integration tests
+        # Integration tests (tagged "integration") need a real Codex, model providers and review API credentials.
+        run: ./gradlew --no-daemon --console=plain test -PexcludeIntegrationTests=true
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: edict-kotlin-test-reports
+          path: |
+            edict/kotlin/build/reports/tests
+            edict/kotlin/build/test-results
+
   code-quality:
     name: "Qodana"
     runs-on: ubuntu-latest

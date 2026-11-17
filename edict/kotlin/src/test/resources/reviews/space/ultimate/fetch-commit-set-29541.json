@@ -1,0 +1,32 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:29541",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "CommitSetReviewRecord",
+          "id": "VkjKG0ToHJ0",
+          "number": 29541,
+          "title": "[IDEA-CR-1500] use withAlternativeResolveEnabled",
+          "state": "Closed",
+          "timestamp": 0,
+          "feedChannelId": "2JA1SN0yC3Kf",
+          "description": null
+        }
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [],
+    "problems": [
+      "Space PR 29541: Space review is a review of commits, not a merge request"
+    ]
+  }
+}

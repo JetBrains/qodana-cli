@@ -1,0 +1,13 @@
+#!/bin/sh
+# Test stand-in for the one Codex call Edict makes, `codex mcp list --json`; Gradle points CODEX_BIN here.
+# It reports that Codex loads the project's edict-mcp server, unless a test writes another answer to
+# $CODEX_HOME/fake-mcp-list.json. Whether Codex trusts a project is checked against the real binary instead.
+if [ "$*" != "mcp list --json" ]; then
+  echo "fake codex supports only 'mcp list --json', got: $*" >&2
+  exit 2
+fi
+if [ -f "$CODEX_HOME/fake-mcp-list.json" ]; then
+  cat "$CODEX_HOME/fake-mcp-list.json"
+else
+  echo '[{"name":"edict-mcp"}]'
+fi

@@ -1,0 +1,31 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "2gCefs2ORyRU",
+          "name": "ultimate",
+          "description": "",
+          "latestActivity": null,
+          "proxyPushNotification": null,
+          "proxyPushNotificationBody": null,
+          "state": "READY",
+          "initProgress": null,
+          "readmeName": null,
+          "monthlyActivity": null,
+          "defaultBranch": {
+            "head": "refs/heads/master",
+            "ref": ""
+          }
+        }
+      }
+    }
+  ],
+  "result": "master"
+}

@@ -1,0 +1,5 @@
+--- a/old.kt
++++ b/new.kt
+@@ -3,1 +2,0 @@
+-c
+\ No newline at end of file

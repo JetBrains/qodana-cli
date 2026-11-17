@@ -1,0 +1,27 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/id:4Flp0T3ETMCh",
+        "query": {
+          "$fields": "state,branchPair(isMerged)"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "state": "Closed",
+          "branchPair": {
+            "isMerged": false
+          }
+        }
+      }
+    }
+  ],
+  "result": {
+    "state": "CLOSED_UNMERGED",
+    "evidence": ""
+  }
+}

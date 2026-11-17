@@ -1,0 +1,305 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2Fedict%2Fweak-w-cccccccccccccccccccccccc",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": null
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2F191",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "branchInfo": {
+            "head": "refs/heads/191",
+            "ref": "17795949cee5953ee3e18b810af8db74f641dc54"
+          },
+          "lastCommit": {
+            "id": "17795949cee5953ee3e18b810af8db74f641dc54",
+            "message": "set majorReleaseDate for RubyMine\n\nSpace-RevId: 0789542778d35e2bc9140e695ff123c67ec53f34",
+            "authorDate": 1587564855000,
+            "commitDate": 1587564902000,
+            "author": {
+              "name": "Andrey Vokin",
+              "email": "andrey.vokin@jetbrains.com"
+            },
+            "authorProfile": {
+              "id": "2DytII2KCztQ"
+            },
+            "committer": {
+              "name": "Andrey Vokin",
+              "email": "andrey.vokin@jetbrains.com"
+            },
+            "committerProfile": {
+              "id": "2DytII2KCztQ"
+            },
+            "parents": [
+              "941e1f00fa10c29eb2eb021ca6baa738dd915417"
+            ],
+            "heads": [
+              "refs/heads/191"
+            ],
+            "signature": null,
+            "committerIsSpace": null,
+            "treeId": "8e97c879683807159a4f8539ad64505016602f4d"
+          },
+          "stats": {
+            "ahead": 5496,
+            "isBehind": true
+          },
+          "default": false
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/files",
+        "query": {
+          "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
+          "path": "community/build.txt"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
+            "path": "community/build.txt",
+            "blob": "ee358d2380f97c7b56130fd5a7a13dc91e55cd66",
+            "type": "FILE",
+            "properties": {
+              "lfs": null,
+              "executable": null,
+              "attributes": [
+                {
+                  "name": "text",
+                  "value": "auto",
+                  "state": "Custom"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/content",
+        "query": {
+          "blobId": "ee358d2380f97c7b56130fd5a7a13dc91e55cd66",
+          "skip": "0",
+          "limit": "16777216"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "totalSize": 13,
+          "partBase64": "MTkxLlNOQVBTSE9UCg=="
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/files",
+        "query": {
+          "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
+          "path": "community/.gitignore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
+            "path": "community/.gitignore",
+            "blob": "51e317984fa34daa4ef77d3d0f84779c93de12dd",
+            "type": "FILE",
+            "properties": {
+              "lfs": null,
+              "executable": null,
+              "attributes": [
+                {
+                  "name": "text",
+                  "value": "auto",
+                  "state": "Custom"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/content",
+        "query": {
+          "blobId": "51e317984fa34daa4ef77d3d0f84779c93de12dd",
+          "skip": "0",
+          "limit": "16777216"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "totalSize": 290,
+          "partBase64": "YnVpbGQvZGVwZW5kZW5jaWVzLy5ncmFkbGUKYnVpbGQvZGVwZW5kZW5jaWVzL2J1aWxkCi9jb25maWcKL3N5c3RlbQouaWRlYS93b3Jrc3BhY2UueG1sCi9vdXQKLkRTX1N0b3JlCi90ZXN0LXN5c3RlbQovdGVzdC1jb25maWcKKi5weWMKLmlkZWEvbGlicmFyaWVzL0dyYWRsZV9fKi54bWwKLmlkZWEvZ3JhZGxlX2V4dGVuc2lvbnMueG1sCi5pZGVhL3VzYWdlLnN0YXRpc3RpY3MueG1sCmVkdS9kZXBlbmRlbmNpZXMvYnVpbGQKZWR1L2RlcGVuZGVuY2llcy8uZ3JhZGxlCi9weXRob24vaGVscGVycy8uaWRlYQo="
+        }
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/key:ij/repositories/ultimate/head",
+        "query": {},
+        "body": {
+          "head": "refs/heads/edict/weak-w-cccccccccccccccccccccccc",
+          "target": "17795949cee5953ee3e18b810af8db74f641dc54"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": null
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/ij/repositories/ultimate/commit",
+        "query": {},
+        "body": {
+          "baseCommit": "17795949cee5953ee3e18b810af8db74f641dc54",
+          "targetBranch": "refs/heads/edict/weak-w-cccccccccccccccccccccccc",
+          "commitMessage": "Fix issues found by Edict inspection avoid-thread-sleep",
+          "files": [
+            {
+              "path": "community/.gitignore",
+              "content": {
+                "className": "GitFileContent.Base64",
+                "value": "L291dC8K"
+              }
+            },
+            {
+              "path": "community/build.txt",
+              "content": {
+                "className": "GitFileContent.Base64",
+                "value": "MTkxLjcxNDIK"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": ""
+        }
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "repository": "ultimate",
+          "sourceBranch": "edict/weak-w-cccccccccccccccccccccccc",
+          "targetBranch": "191",
+          "state": "Opened",
+          "$skip": "0",
+          "$top": "100",
+          "$fields": "data(review(id,number,state,branchPair(repository,sourceBranch,targetBranch)))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": []
+        }
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "repository": "ultimate",
+          "sourceBranch": "edict/weak-w-cccccccccccccccccccccccc",
+          "targetBranch": "191",
+          "state": "Closed",
+          "$skip": "0",
+          "$top": "100",
+          "$fields": "data(review(id,number,state,branchPair(repository,sourceBranch,targetBranch)))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": []
+        }
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/key:ij/code-reviews/merge-requests",
+        "query": {},
+        "body": {
+          "title": "Fix issues found by Edict inspection avoid-thread-sleep",
+          "description": "Fixes the five places the inspection reports.",
+          "repository": "ultimate",
+          "sourceBranch": "edict/weak-w-cccccccccccccccccccccccc",
+          "targetBranch": "191"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "2EdIcT0ReVu1",
+          "number": 240001
+        }
+      },
+      "scripted": true
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/key:ij/code-reviews/2EdIcT0ReVu1/participants/reviewer",
+        "query": {},
+        "body": {
+          "role": "Reviewer"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": null
+      },
+      "scripted": true
+    }
+  ],
+  "result": {
+    "provider": "space",
+    "owner": "ij",
+    "repository": "ultimate",
+    "id": "2EdIcT0ReVu1",
+    "url": "https://jetbrains.team/p/ij/reviews/240001"
+  }
+}

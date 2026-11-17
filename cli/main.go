@@ -17,12 +17,18 @@
 package main
 
 import (
+	"os"
+
 	"github.com/JetBrains/qodana-cli/internal/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/process"
 )
 
 func main() {
-	process.Init()
 	cmd.InitCli()
+	// The Edict servers own their signal handling and must keep stdout
+	// exclusively for protocol traffic, including during shutdown.
+	if !cmd.IsEdictServerCommand(os.Args[1:]) {
+		process.Init()
+	}
 	cmd.Execute()
 }

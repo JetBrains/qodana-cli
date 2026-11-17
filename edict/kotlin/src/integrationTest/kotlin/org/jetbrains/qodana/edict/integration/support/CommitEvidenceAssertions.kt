@@ -1,0 +1,95 @@
+// Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
+package org.jetbrains.qodana.edict.integration.support
+
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.readText
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
+import org.jetbrains.qodana.edict.core.EdictSignalLabel
+import org.jetbrains.qodana.edict.core.EdictSignalSource
+import org.jetbrains.qodana.edict.common.GitRepository
+import org.jetbrains.qodana.edict.runtime.CodexRunner
+import org.jetbrains.qodana.edict.signals.SignalValidation
+
+internal const val threeCommitProject = "testExtractSignalsFromThreeCommits"
+internal const val threeCommitBaseline = "59ef095c288139bd009cb46c4b641b3bc540357f"
+internal const val threeCommitEquality = "952f1b8d8dc2e1e0d4f1f109512adc6c7a5a23b7"
+internal const val threeCommitLocale = "3fc14fa67e53ab8645539f5dac4d901da6feeacd"
+internal const val threeCommitHead = "0287c8b1b5a0235825650d73c85d7806beafaa96"
+
+internal data class CommitExpectation(
+    val parent: String,
+    val revision: String,
+    val path: String,
+    val positiveLine: Int = 5,
+    val negativeLine: Int = 5,
+)
+
+internal fun threeCommitExpectations(): List<CommitExpectation> = listOf(
+    Triple(threeCommitBaseline, threeCommitEquality, "RoleMatcher.java"),
+    Triple(threeCommitEquality, threeCommitLocale, "KeyNormalizer.java"),
+    Triple(threeCommitLocale, threeCommitHead, "TimeoutConverter.java"),
+).map { (parent, revision, name) ->
+    CommitExpectation(parent, revision, "$threeCommitProject/src/main/java/com/mycompany/app/$name")
+}
+
+internal fun signalFiles(directory: Path): List<Path> =
+    if (!Files.isDirectory(directory)) emptyList()
+    else Files.list(directory).use { paths -> paths.filter(Path::isRegularFile).sorted().toList() }
+
+/** Check the complete result set, including each evidence side and its original Git bytes. */
+internal fun verifyCommitSignals(repository: GitRepository, files: List<Path>, expected: List<CommitExpectation>) {
+    assertEquals(expected.size * 2, files.size, "Every selected commit must retain both evidence sides")
+    val signals = files.map { file ->
+        val relative = file.parent.parent.relativize(file).toString().replace('\\', '/')
+        val signal = SignalValidation.validate(relative, file.readText())
+        repository.validateEvidence(signal.copy(syntheticExampleId = null))
+        assertEquals("${signal.id}.json", file.fileName.toString())
+        assertTrue(signal.provenance.workItemId.isNotBlank())
+        signal
+    }
+    assertEquals(signals.size, signals.map { it.id }.distinct().size, "Signal IDs must be unique")
+    assertEquals(signals.size, signals.map { it.idempotencyKey }.distinct().size, "Evidence must not be duplicated")
+    assertEquals(
+        expected.map { it.revision }.toSet(),
+        signals.map { (it.source as EdictSignalSource.FromCommit).commitRevision }.toSet(),
+        "Commit selection differs",
+    )
+    expected.forEach { commit ->
+        val pair = signals.filter { (it.source as EdictSignalSource.FromCommit).commitRevision == commit.revision }
+        assertEquals(2, pair.size, "Signal count for ${commit.revision}")
+        assertEquals(EdictSignalLabel.entries.toSet(), pair.map { it.label }.toSet(), "Evidence labels for ${commit.revision}")
+        pair.forEach { signal ->
+            val source = signal.source as EdictSignalSource.FromCommit
+            assertEquals(EdictSignalSource.FromCommit(commit.revision), source)
+            assertEquals(commit.path, signal.fileRevision.path)
+            val positive = signal.label == EdictSignalLabel.POSITIVE
+            assertEquals(if (positive) commit.parent else commit.revision, signal.fileRevision.revision)
+            val line = if (positive) commit.positiveLine else commit.negativeLine
+            assertTrue(signal.fileRevision.expectedRanges.orEmpty().any { line in it.start..it.end }, "${signal.id} must cover corrected line $line")
+        }
+    }
+}
+
+internal fun verifyManagedRun(workspace: IntegrationWorkspace, runtime: CodexRunner, plan: Plan) {
+    assertTrue(plan.tasks.isNotEmpty(), "Manager must create its execution plan")
+    plan.tasks.forEach { task ->
+        assertEquals("completed", task.status, "Incomplete ${task.skill} task ${task.id}")
+        assertTrue(task.agentId.isNotBlank(), "Every managed task needs a native agent")
+        assertTrue(task.result.isNotBlank(), "Completed ${task.skill} task must retain its result")
+    }
+    assertEquals(plan.tasks.size, plan.tasks.map { it.agentId }.distinct().size, "Each task must use a distinct native worker")
+    val log = Files.readString(workspace.layout.mcpSystemLogPath)
+    val lifecycle = Regex("] edict_(?:plan_create|delegate|task_[a-z]+) ")
+    assertFalse(log.lineSequence().any { lifecycle.containsMatchIn(it) && it.contains("\"isError\":true") }, "Managed lifecycle failed; inspect ${workspace.logs}")
+    assertFalse(log.contains("] edict_task_cancel "), "Healthy runs must not hide failed workers behind cancellation")
+    assertFalse(log.lineSequence().any {
+        it.contains("] edict_task_finish ") && it.substringBefore(" => ").contains("\"status\":\"failed\"")
+    }, "Worker reported failure")
+    verifyRuntimeWorkers(runtime.home.resolve("sessions"), plan)
+    verifyAgentLogs(workspace.layout, plan)
+}

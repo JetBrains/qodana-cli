@@ -1,0 +1,229 @@
+package org.jetbrains.qodana.edict.skills
+
+import org.jetbrains.qodana.edict.skills.managed.Registry
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.test.*
+
+class SkillsTest {
+    @TempDir
+    lateinit var directory: Path
+
+    @Test
+    fun `install managed skills with matching registry and metadata`() {
+        val installed = Skills.install(directory)
+        assertEquals(21, installed.size)
+        assertEquals(Registry.policies.map { it.name }.sorted(), installed)
+        Registry.policies.forEach { policy ->
+            val name = policy.name
+            val text = Files.readString(directory.resolve("$name/SKILL.md"))
+            assertContains(text, "name: $name\n")
+            if (name != "edict_manager") {
+                assertContains(text, "description: Managed ")
+                // Leaves read only the task protocol; skills that delegate read the delegation protocol, which links it.
+                if (policy.delegates.isEmpty()) {
+                    assertContains(text, "[the managed task protocol](../edict_manager/references/task-protocol.md)")
+                }
+                else assertContains(text, "[the manager protocol](../edict_manager/references/protocol.md)")
+                assertContains(text, "Run only as a delegated managed subagent.")
+            }
+        }
+        assertTrue(Files.exists(directory.resolve("edict_manager/references/protocol.md")))
+        assertTrue(Files.exists(directory.resolve("edict_manager/references/task-protocol.md")))
+        assertTrue(Files.exists(directory.resolve("edict-cluster-generation/SKILL.md")))
+        assertFalse(Files.exists(directory.resolve("edict-generation/SKILL.md")))
+        assertTrue(Files.exists(directory.resolve("edict-git-history-signal-enrichment/SKILL.md")))
+        assertTrue(Files.exists(directory.resolve("edict-git-history-signal-enrichment/agents/openai.yaml")))
+        assertFalse(Files.exists(directory.resolve("edict-git-history-signal-analysis/SKILL.md")))
+        assertFalse(Files.exists(directory.resolve("generation")))
+        assertFalse(Files.exists(directory.resolve("signals-extraction")))
+        assertFalse(Files.exists(directory.resolve("edict-run/SKILL.md")))
+        assertFalse(Files.exists(directory.resolve("edict-prepare/SKILL.md")))
+        assertFalse(Files.exists(directory.resolve("edict-inspection-value-review/SKILL.md")))
+        assertFailsWith<IllegalArgumentException> { Skills.install(directory, "../edict_manager") }
+        assertFailsWith<IllegalArgumentException> { Skills.install(directory, "edict-prepare") }
+    }
+
+    @Test
+    fun `registry contains only installed skills and valid delegation edges`() {
+        assertTrue("edict-distribution" in Registry["edict_manager"].delegates)
+        assertTrue("edict-cluster-generation" in Registry["edict_manager"].delegates)
+        assertTrue("edict-git-history-signal-enrichment" in Registry["edict_manager"].delegates)
+        assertTrue("edict-retrospective-signal-analysis" in Registry["edict_manager"].delegates)
+        assertTrue("edict-promote" in Registry["edict_manager"].delegates)
+        assertTrue("edict-promote-weak-signal" in Registry["edict_manager"].delegates)
+        assertTrue("edict-check-weak-signal-promotion" in Registry["edict_manager"].delegates)
+        assertTrue(Registry["edict-check-weak-signal-promotion"].delegates.isEmpty())
+        assertTrue("edict-check-promotion" in Registry["edict_manager"].delegates)
+        assertEquals(listOf("edict-promotion-decision"), Registry["edict-check-promotion"].delegates)
+        listOf("edict-promote", "edict-check-promotion", "edict-promotion-decision").forEach {
+            assertFalse("worktree" in Skills.read(it).lowercase())
+        }
+        assertEquals(
+            emptyList(),
+            Registry["edict-git-history-signal-enrichment"].delegates,
+        )
+        assertEquals(
+            listOf("edict-signal-analysis"),
+            Registry["edict-retrospective-signal-analysis"].delegates,
+        )
+        assertEquals(
+            listOf("edict-code-example-overseer", "edict-generation-round"),
+            Registry["edict-cluster-generation"].delegates,
+        )
+        assertEquals(
+            listOf(
+                "edict-inspection-shallow-review",
+                "edict-weak-signal-review",
+                "edict-inspection-code-review",
+            ),
+            Registry["edict-generation-round"].delegates,
+        )
+        // Evidence reviews write their examples themselves.
+        assertEquals(emptyList(), Registry["edict-weak-signal-review"].delegates)
+        assertEquals(emptyList(), Registry["edict-inspection-code-review"].delegates)
+        Registry.policies.forEach { policy ->
+            policy.delegates.forEach { Registry[it] }
+        }
+        listOf(
+            "edict-run",
+            "edict-generation",
+            "edict-git-history-signal-analysis",
+            "edict-prepare",
+            "edict-inspection-value-review",
+        ).forEach { name -> assertFailsWith<IllegalStateException> { Registry[name] } }
+    }
+
+    @Test
+    fun `grouped resources install as flat discoverable skills`() {
+        val generation = directory.resolve("generation-only")
+        assertEquals(listOf("edict-cluster-generation"), Skills.install(generation, "edict-cluster-generation"))
+        assertTrue(Files.exists(generation.resolve("edict-cluster-generation/SKILL.md")))
+        assertFalse(Files.exists(generation.resolve("generation")))
+        assertContains(Skills.read("edict-cluster-generation"), "name: edict-cluster-generation\n")
+        assertFailsWith<IllegalArgumentException> { Skills.install(generation, "edict-generation") }
+
+        val extraction = directory.resolve("extraction-only")
+        assertEquals(
+            listOf("edict-signal-analysis"),
+            Skills.install(extraction, "edict-signal-analysis"),
+        )
+        assertTrue(Files.exists(extraction.resolve("edict-signal-analysis/SKILL.md")))
+        assertTrue(Files.exists(extraction.resolve("edict-signal-analysis/agents/openai.yaml")))
+        assertFalse(Files.exists(extraction.resolve("signals-extraction")))
+        assertContains(Skills.read("edict-signal-analysis"), "name: edict-signal-analysis\n")
+    }
+
+    @Test
+    fun `shallow review gates and evidence reviews only add weak examples before the final evaluation`() {
+        val compactGeneration = Skills.read("edict-cluster-generation").replace(Regex("\\s+"), " ")
+        val round = Skills.read("edict-generation-round").replace(Regex("\\s+"), " ")
+        val shallow = Skills.read("edict-inspection-shallow-review")
+        val compactShallow = shallow.replace(Regex("\\s+"), " ")
+        val weak = Skills.read("edict-weak-signal-review").replace(Regex("\\s+"), " ")
+        val review = Skills.read("edict-inspection-code-review").replace(Regex("\\s+"), " ")
+
+        val validation = round.indexOf("Submit the complete candidate with `edict_save_candidate_inspection`")
+        val shallowReview = round.indexOf("Launch a fresh shallow review worker")
+        assertTrue(validation in 0..<shallowReview)
+        assertContains(round, "Strong and weak failures never block a cycle or the Generated transition")
+        assertContains(compactGeneration, "`Pending` is only the input state, never a generation outcome")
+        assertContains(compactGeneration, "even when it fails every strong or weak example")
+        assertFalse("finalise `Pending` with" in compactGeneration)
+        assertContains(round, "its `remainingProjectAnalyses` says how many remain")
+        assertContains(compactGeneration, "call `edict_record_evaluation(token, clusterId)` as the last step")
+        assertContains(shallow, "Do not edit the candidate, inspected project, or repository")
+        assertContains(compactShallow, "Read only the candidate")
+        assertContains(compactShallow, "It does not decide whether the inspection is correct")
+        assertContains(shallow, "\"status\": \"ACCEPT|REJECT\"")
+        assertContains(shallow, "\"category\": \"HARDCODED|PERFORMANCE|IMPLEMENTATION|METADATA\"")
+        assertFalse(shallow.contains("COVERAGE"))
+        assertContains(weak, "Do not launch workers: write every example yourself")
+        assertContains(weak, "Do not read the candidate's implementation")
+        assertContains(weak, "Strong evidence always wins")
+        assertContains(review, "The output of this review is evidence")
+        assertContains(review, "keep at most five")
+        assertFalse(review.contains("\"status\": \"ACCEPT|REJECT\""))
+    }
+
+    @Test
+    fun `only enrichment skill instructs cluster signal publication`() {
+        val publishers = Registry.policies.filter {
+            "edict_publish_signal_to_cluster" in Skills.read(it.name)
+        }.map { it.name }
+
+        assertEquals(listOf("edict-git-history-signal-enrichment"), publishers)
+        val enrichment = Skills.read(publishers.single())
+        assertContains(enrichment, "Require exactly one `clusterId` as domain input")
+        assertFalse("clusterIds" in enrichment)
+        assertFalse("edict-signal-analysis" in enrichment)
+    }
+
+    @Test
+    fun `manager defines the default daily repository pipeline`() {
+        val manager = Skills.read("edict_manager")
+        val compact = manager.replace(Regex("\\s+"), " ")
+
+        assertContains(manager, "# Default repository pipeline")
+        assertContains(compact, "Use `defaultSignalCount` from `edict_context` as the extraction target")
+        assertContains(compact, "an explicit user-provided Signal count overrides it")
+        assertContains(compact, "Let generation use `edict.generation.defaultGenerationCount`")
+        assertContains(compact, "do not add a generation count to downstream instructions when the user did not provide one specifically for generation")
+        assertContains(compact, "Carry a user-provided Signal target into extraction")
+        assertContains(compact, "call `edict_fetch_pr_batch` without a selection")
+        assertContains(compact, "next complete uncovered UTC date")
+        assertContains(compact, "Zero-Signal days do not count toward the target but still advance coverage")
+        assertContains(compact, "result may exceed the target")
+        assertContains(compact, "`edict-pr-signal-analysis`")
+        assertContains(compact, "`edict-distribution`")
+        assertContains(compact, "`edict-cluster-generation`")
+        assertContains(compact, "`edict-promote`")
+        assertContains(compact, "never invent Signals")
+        assertContains(compact, "a user-provided generation count plus relevant completed-stage results into downstream task instructions")
+        assertContains(compact, "selection must omit `generationCount` so the configured default applies")
+        assertContains(compact, "prints the full cost breakdown directly to the CI task log")
+        assertContains(compact, "each individual cluster task when enrichment or generation splits across clusters")
+        assertContains(compact, "Include only the run's USD and token total in the final response")
+        val defaultStages = Regex("(?m)^\\d+\\. `([^`]+)`").findAll(manager.substringAfter("# Default repository pipeline"))
+            .map { it.groupValues[1] }.toList()
+        assertEquals(
+            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-feedback-signal-analysis", "edict-distribution", "edict-git-history-signal-enrichment", "edict-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
+            defaultStages,
+        )
+        assertFalse("edict-generation" in manager)
+        val prAnalysis = Skills.read("edict-pr-signal-analysis").replace(Regex("\\s+"), " ")
+        assertContains(prAnalysis, "partitions them into chunks of at most eight")
+        assertContains(prAnalysis, "retain only its `batchId` and `availableChunkCount`")
+        assertContains(prAnalysis, "Do not list work items or inspect provider details")
+        assertContains(prAnalysis, "same batch ID and chunk index")
+        assertContains(prAnalysis, "Retry each failed, cancelled, lost, or otherwise unfinished chunk exactly once")
+        assertContains(prAnalysis, "one failed chunk must not discard successful siblings")
+        assertContains(prAnalysis, "Explicit PR-number coverage still requires complete success")
+        assertContains(prAnalysis, "A zero-Signal complete date advances coverage but does not satisfy the target")
+        assertContains(prAnalysis, "always finishing the selected date even when it takes the total past the target")
+        assertContains(prAnalysis, "Output one line per processed UTC date")
+        assertContains(prAnalysis, "`YYYY-MM-DD: extracted=<published count>, failed=<failed Signal or chunk count>`")
+        assertContains(prAnalysis, "Add one `Problems:` line only when")
+        assertContains(prAnalysis, "including when exactly half failed")
+        assertContains(prAnalysis, "only when strictly more than half of all handled chunks remain failed")
+        assertContains(prAnalysis, "strictly more than half of the batch's known work items")
+        assertContains(prAnalysis, "exactly half is not enough")
+        assertContains(prAnalysis, "retain its managed task ID for cleanup")
+        assertContains(prAnalysis, "Once publication returns its durable receipt")
+        assertContains(prAnalysis, "`edict_task_cleanup_scratch` for every chunk task created for this batch")
+        assertContains(prAnalysis, "Never clean a chunk before publication")
+        val signalAnalysis = Skills.read("edict-signal-analysis").replace(Regex("\\s+"), " ")
+        assertContains(signalAnalysis, "Call `edict_get_pr_analysis_chunk`")
+        assertContains(signalAnalysis, "Process its ordered `workItemIds` strictly one by one")
+        assertContains(signalAnalysis, "append its ID to `failedWorkItemIds`")
+        assertContains(signalAnalysis, "call `edict_store_pr_signals` exactly once")
+        assertContains(signalAnalysis, "Do not call `edict_publish_signal` or `edict_publish_validated_pr_signals`")
+        assertContains(signalAnalysis, "Never return Signal payloads, diffs, source bodies, or capability tokens")
+        val defaultPipeline = compact.substringAfter("# Default repository pipeline")
+        assertFalse(defaultPipeline.contains("`edict-batch-signal-analysis`"))
+        assertFalse(defaultPipeline.contains("10-rule target"))
+        assertFalse(defaultPipeline.contains("all Pending generation targets"))
+    }
+}

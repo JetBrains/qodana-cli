@@ -1,0 +1,41 @@
+package org.jetbrains.qodana.edict.integration
+
+import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.verifyAgentLogs
+import org.jetbrains.qodana.edict.integration.support.verifyRuntimeWorkers
+import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+
+class LiveCodexManagementTest : IntegrationTest() {
+    override val fixtureProject: String = "."
+
+    @Test
+    fun `real manager delegates empty distribution to one managed worker`() {
+        workspace.withEdictCodex(
+            """
+            Use the edict_manager skill and its managed protocol.
+            Create exactly one top-level edict-distribution task.
+            Delegate it to a fresh native subagent and complete the managed lifecycle.
+            Use edict_context for run paths. Verify that the configured state has no Signals to distribute.
+            Do not create additional tasks or edit repository files.
+            """.trimIndent(),
+        ) { repositoryState, runtime, result ->
+            val plan = assertNotNull(repositoryState.plan())
+            assertEquals(1, plan.tasks.size, "The manager must create one bounded distribution task")
+            val task = plan.tasks.single()
+            assertEquals("edict-distribution", task.skill)
+            assertEquals("completed", task.status)
+            assertTrue(task.agentId.isNotBlank(), "Distribution must run in a native subagent")
+            assertTrue(task.result.isNotBlank(), "The worker must persist its outcome")
+            assertTrue(result.isNotBlank(), "The manager must return a final response")
+            verifyRuntimeWorkers(runtime.home.resolve("sessions"), plan)
+            verifyAgentLogs(workspace.layout, plan)
+            val price = runtime.writePriceReport(plan)
+            assertTrue(price.pipelineSteps.single().inclusivePrice.totalTokens > 0, "Worker receipt must be attributed")
+            assertEquals(0L, price.unattributedPrice.totalTokens, "Every managed session must be attributed")
+            assertTrue(price.totalPrice.priceUsd > 0.0, "Official OpenAI rates must produce a USD total")
+        }
+    }
+}

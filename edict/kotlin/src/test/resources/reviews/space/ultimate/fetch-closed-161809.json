@@ -1,0 +1,38 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:161809",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "id": "4Flp0T3ETMCh",
+          "number": 161809,
+          "title": "morgan.bartholomew/cherrtpick-PY-38169",
+          "state": "Closed",
+          "timestamp": 1746111503684,
+          "feedChannelId": "2Bxrei1vBtgQ",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "75ddcff9cca3209b93dc9b041e37b6726d264811",
+            "targetBranchInfo": {
+              "ref": "b700b1e5e7c077da7b61661d33c2a3aa135d9e21"
+            },
+            "isMerged": false
+          },
+          "description": null
+        }
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [],
+    "problems": []
+  }
+}

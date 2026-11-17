@@ -1,0 +1,142 @@
+// Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
+package org.jetbrains.qodana.edict.logging
+
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.flag
+import org.jetbrains.qodana.edict.common.json
+import org.jetbrains.qodana.edict.common.obj
+import org.jetbrains.qodana.edict.common.text
+import org.jetbrains.qodana.edict.core.EdictRepositoryState
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption.APPEND
+import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.attribute.PosixFilePermissions
+import java.time.Instant
+
+/** Human-readable assistant output and attributed MCP activity; private runtime events are excluded. */
+class AgentLogger internal constructor(private val store: EdictRepositoryState, private val layout: EdictLayout) {
+    data class Message(
+        val time: Instant, val agentId: String, val agentPath: String = "", val root: Boolean = false,
+        val phase: String = "message", val text: String,
+    )
+
+    private data class Identity(val skill: String, val task: String = "")
+
+    private val pending = mutableListOf<Message>()
+    private val identities = mutableMapOf<String, Identity>()
+    private val full = layout.agentsLogPath
+    private val short = layout.agentShortLogPath
+    private val tasks = layout.taskLogDirectory
+    private val directory = layout.processLogDirectory
+
+    init {
+        Files.createDirectories(directory)
+        if (Files.getFileStore(directory).supportsFileAttributeView("posix"))
+            Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("rwx------"))
+        Files.createDirectories(tasks)
+        if (Files.getFileStore(tasks).supportsFileAttributeView("posix"))
+            Files.setPosixFilePermissions(tasks, PosixFilePermissions.fromString("rwx------"))
+        listOf(full, short).forEach {
+            Files.writeString(it, "", CREATE, APPEND)
+            if (Files.getFileStore(it).supportsFileAttributeView("posix"))
+                Files.setPosixFilePermissions(it, PosixFilePermissions.fromString("rw-------"))
+        }
+    }
+
+    @Synchronized
+    fun record(message: Message) {
+        pending += message
+    }
+
+    /** Worker commentary can arrive before task_start provides the runtime identity. */
+    @Synchronized
+    fun flush(final: Boolean = false) {
+        store.plan()?.tasks?.filter { it.agentId.isNotBlank() }?.forEach {
+            identities[it.agentId] = Identity(it.skill, it.id)
+        }
+        val iterator = pending.sortedBy { it.time }.iterator()
+        val retained = mutableListOf<Message>()
+        while (iterator.hasNext()) {
+            val message = iterator.next()
+            val identity = if (message.root) Identity("edict_manager")
+            else identities[message.agentId] ?: identities[message.agentPath]
+            if (identity == null && !final) {
+                retained += message; continue
+            }
+            val phase = when (message.phase) {
+                "final_answer" -> "final"; "" -> "message"; else -> message.phase
+            }
+            write(message.time, identity ?: Identity("unassigned"), phase, message.text, message.text)
+        }
+        pending.clear()
+        pending += retained
+    }
+
+    @Synchronized
+    internal fun mcp(caller: String, tool: String, arguments: JsonObject, response: JsonObject) {
+        val at = Instant.now()
+        val result = response.obj("structuredContent")
+        val ok = response.flag("isError") != true
+        val callerIdentity = if (caller.startsWith("edict_manager/") || tool == "edict_plan_create" && ok)
+            Identity("edict_manager") else Identity(caller.substringBefore('/'), caller.substringAfter('/', ""))
+        val delegated = ok && tool in DELEGATING_TOOLS
+        val target = if (delegated) Identity(
+            result.text("skill"),
+            result.text("taskId")
+        ) else callerIdentity
+        val summary = if (!ok) "$tool failed" else when (tool) {
+            "edict_task_get" -> "Started task; assignment fetched"
+            "edict_task_finish" -> "Finished task: ${arguments.text("status")}"
+            "edict_task_cancel" -> "Cancelled task ${arguments.text("taskId").take(8)}"
+            "edict_task_add", "edict_delegate" -> "Task delegated by ${callerIdentity.skill}/${
+                callerIdentity.task.take(8).ifEmpty { "-" }
+            }"
+
+            "edict_publish_signal" -> "Published Signal ${arguments.obj("signal").text("id")}"
+            "edict_store_pr_signals" -> "Stored PR analysis chunk ${arguments.text("chunkIndex")} for batch ${arguments.text("batchId")}"
+            "edict_publish_validated_pr_signals" -> "Published validated PR Signal batch ${arguments.text("batchId")}"
+            "edict_state_delete" -> "Deleted ${arguments.text("path")}"
+            else -> "$tool ok"
+        }
+        val detail = if (delegated)
+            "Task prompt assigned by ${callerIdentity.skill}/${
+                callerIdentity.task.take(8).ifEmpty { "-" }
+            }:\n${arguments.text("prompt")}" else summary
+        write(at, target, "mcp", detail, summary)
+        val payload = response["structuredContent"] ?: response["content"] ?: JsonNull
+        write(at, target, "mcp", "$tool response:\n${json.encodeToString(JsonElement.serializer(), payload)}", null)
+        flush()
+    }
+
+    private fun write(at: Instant, identity: Identity, kind: String, text: String, shortText: String?) {
+        val prefix = "$at [${identity.skill}/${identity.task.take(8).ifEmpty { "-" }}] $kind: "
+        val record = format(prefix, store.redact(text))
+        Files.writeString(full, record, APPEND)
+        if (identity.task.isNotEmpty()) {
+            val task = layout.taskLogPath(identity.task)
+            Files.writeString(task, record, CREATE, APPEND)
+            if (Files.getFileStore(task).supportsFileAttributeView("posix"))
+                Files.setPosixFilePermissions(task, PosixFilePermissions.fromString("rw-------"))
+        }
+        if (shortText != null) Files.writeString(short, format(prefix, store.redact(shortText)), APPEND)
+    }
+
+    private fun format(initialPrefix: String, text: String): String = buildString {
+        var prefix = initialPrefix
+        for (line in text.replace("\t", "    ").trimEnd('\r', '\n').split('\n')) {
+            val points = line.trimEnd('\r').codePoints().toArray()
+            var offset = 0
+            do {
+                val length = minOf(points.size - offset, 120 - prefix.codePointCount(0, prefix.length))
+                append(prefix).append(String(points, offset, length)).append('\n')
+                offset += length
+                prefix = "    "
+            } while (offset < points.size)
+        }
+    }
+}
+
+private val DELEGATING_TOOLS = setOf("edict_task_add", "edict_delegate")

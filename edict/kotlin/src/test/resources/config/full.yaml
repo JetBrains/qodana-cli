@@ -1,0 +1,34 @@
+version: "1.0"
+profile:
+  name: qodana.recommended
+include:
+  - name: SomeInspection
+edict:
+  mcpPort: 27200
+  statePath: ../edict-state
+  stateBranch: edict/kotlin-state
+  calculatePrice: true
+  projectAnalysisTimeoutMinutes: 75
+  bots:
+    - KotlinBuild
+  ci:
+    url: https://github.com/JetBrains/kotlin
+  promotion:
+    reviewer: reviewer-login
+    targetBranch: release/2.3
+    inspectionsDirectory: quality/inspections
+    targetPrecision: 0.95
+    targetRecall: 0.7
+    targetF1: 0.85
+    minSourceFiles: 8
+    url: https://github.com/qodana/kotlin-edict
+  extraction:
+    defaultSignalCount: 250
+  distribution:
+    defaultSignalCount: 750
+  generation:
+    maxProjectAnalyses: 5
+    defaultGenerationCount: 10
+  feedback:
+    maxPerInspection: 20
+    maxPerPullRequest: 4

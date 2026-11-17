@@ -9,6 +9,7 @@
 qodana
 internal/tooling/qodana-jbrs
 internal/tooling/libs
+internal/tooling/edict/libs
 .cache/
 ### Go ###
 # Binaries for programs and plugins
@@ -218,3 +219,5 @@ CLAUDE.local.md
 __pycache__/
 *.py[cod]
 .pytest_cache/
+/edict/.idea/**
+/out/**
