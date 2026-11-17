@@ -120,7 +120,7 @@ func createPropertyMaps(c corescan.Context) propertyMaps {
 			c.AnalysisId(),
 			c.CoverageDir(),
 			c.ProjectDirPathRelativeToRepositoryRoot(),
-			c.AirGapped(),
+			c.AirGapped() || yaml.AirGapped,
 		),
 		yamlOverrides: yaml.Properties,
 		cliOverrides:  cliOverrides,

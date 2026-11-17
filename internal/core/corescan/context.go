@@ -127,6 +127,7 @@ type QodanaYamlConfig struct {
 	Plugins    []qdyaml.Plugin
 	Properties map[string]string // values are in -Dproperty.name -> value format
 	DotNet     qdyaml.DotNet
+	AirGapped  bool
 }
 
 func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
@@ -135,6 +136,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 		Plugins:    yaml.Plugins,
 		Properties: normalizeYamlProperties(yaml.Properties),
 		DotNet:     yaml.DotNet,
+		AirGapped:  yaml.AirGapped,
 	}
 }
 
