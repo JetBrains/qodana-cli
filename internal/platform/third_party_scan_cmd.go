@@ -44,7 +44,14 @@ But you can always override qodana.yaml options with the following command-line 
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
-			telemetry.Start("scan", func() string { return GetDeviceIdSalt(cliOptions.ProjectDir)[0] }, cliOptions.NoStatistics)
+			// goreleaser stamps the version of this binary into its main package only
+			telemetry.SetVersion(linterInfo.LinterVersion)
+			telemetry.Start(
+				"scan",
+				func() string { return GetDeviceIdSalt(cliOptions.ProjectDir)[0] },
+				cliOptions.NoStatistics,
+				cliOptions.Env_,
+			)
 			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
 			telemetry.Finish(exitCode, "")
 

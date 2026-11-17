@@ -174,7 +174,7 @@ func TestContainerHandsTheRunOver(t *testing.T) {
 	// the CLI in the container
 	fakeFus(t)
 	t.Setenv(handoverEnv, filepath.Join(cacheDir, handoverName))
-	Start("scan", func() string { return testDevice }, false)
+	Start("scan", func() string { return testDevice }, false, nil)
 	LicenseObtained("cloud", "ULTIMATE")
 	SetScenario(ScenarioStartCommitMissing)
 	Allow(false)
@@ -448,8 +448,12 @@ func TestExitReason(t *testing.T) {
 func TestRunIsSent(t *testing.T) {
 	received := fakeFus(t)
 	connected, fake := make(chan string, 1), connect
-	connect = func(device string) *sender { connected <- device; return fake(device) }
-	Start("scan", func() string { return testDevice }, false)
+	connect = func(device string, build string) *sender {
+		connected <- device + " " + build
+		return fake(device, build)
+	}
+	SetVersion("2026.2.3")
+	Start("scan", func() string { return testDevice }, false, nil)
 	SetCloudIds(testProject, testOrg)
 	LicenseObtained("cloud", "ULTIMATE")
 	BaselineResolved("cloud", "found", 0, time.Second)
@@ -468,12 +472,12 @@ func TestRunIsSent(t *testing.T) {
 	assert.Equal(t, analysisFinished, last["stage"])
 	assert.Equal(t, testProject, last["project_id"], "the ids of Qodana Cloud are sent as they are")
 	assert.Equal(t, testOrg, last["org_id"])
-	assert.Equal(t, testDevice, <-connected, "the device id of the linter")
+	assert.Equal(t, testDevice+" 2026.2.3", <-connected, "the device id of the linter, the version of the binary")
 }
 
 func TestRejectedLicenseFinishesRun(t *testing.T) {
 	received := fakeFus(t)
-	Start("scan", func() string { return "" }, false)
+	Start("scan", func() string { return "" }, false, nil)
 
 	SetTokenSource("prompt")
 	RejectLicense("token_invalid")
@@ -487,18 +491,23 @@ func TestRejectedLicenseFinishesRun(t *testing.T) {
 }
 
 func TestNothingIsCollectedWithoutPermission(t *testing.T) {
-	for name, setup := range map[string]func(t *testing.T){
-		"license-only token": func(t *testing.T) { t.Setenv(qdenv.QodanaLicenseOnlyToken, "token") },
-		"do not track":       func(t *testing.T) { t.Setenv(doNotTrackEnv, "1") },
+	licenseOnly := []string{qdenv.QodanaLicenseOnlyToken + "=token"}
+	for name, run := range map[string]struct {
+		setup func(t *testing.T)
+		env   []string
+	}{
+		"license-only token":            {func(t *testing.T) { t.Setenv(qdenv.QodanaLicenseOnlyToken, "token") }, nil},
+		"license-only token with --env": {func(*testing.T) {}, licenseOnly},
+		"do not track":                  {func(t *testing.T) { t.Setenv(doNotTrackEnv, "1") }, nil},
 	} {
 		t.Run(name, func(t *testing.T) {
 			fakeFus(t)
 			connected := false
-			connect = func(string) *sender { connected = true; return nil }
+			connect = func(string, string) *sender { connected = true; return nil }
 			t.Setenv(qdenv.QodanaToken, "")
-			setup(t)
+			run.setup(t)
 
-			Start("scan", func() string { return "" }, false)
+			Start("scan", func() string { return "" }, false, run.env)
 			Finish(0, "")
 
 			assert.False(t, connected, "JetBrains should not be contacted")
@@ -507,9 +516,19 @@ func TestNothingIsCollectedWithoutPermission(t *testing.T) {
 	}
 }
 
+func TestEnvOverridesTheTokensOfTheCli(t *testing.T) {
+	t.Setenv(qdenv.QodanaLicenseOnlyToken, "token")
+	t.Setenv(qdenv.QodanaToken, "")
+	assert.True(t, isLicenseOnly(nil))
+	assert.False(t, isLicenseOnly([]string{qdenv.QodanaToken + "=token"}), "the linter gets a Qodana Cloud token")
+	t.Setenv(qdenv.QodanaLicenseOnlyToken, "")
+	assert.False(t, isLicenseOnly(nil))
+	assert.False(t, isLicenseOnly([]string{qdenv.QodanaLicenseOnlyToken + "="}))
+}
+
 func TestDisallowedRunIsNotSent(t *testing.T) {
 	received := fakeFus(t)
-	Start("scan", func() string { return "" }, false)
+	Start("scan", func() string { return "" }, false, nil)
 	Allow(false)
 	Allow(true)
 
@@ -530,7 +549,7 @@ func TestWithIds(t *testing.T) {
 
 func TestDisabledInTestsOfOtherPackages(t *testing.T) {
 	reset(t)
-	Start("scan", func() string { return "" }, false)
+	Start("scan", func() string { return "" }, false, nil)
 	LicenseObtained("env", "")
 	Finish(0, "")
 
@@ -549,7 +568,7 @@ func fakeFus(t *testing.T) chan fus.Report {
 		received <- report
 	}))
 	t.Cleanup(server.Close)
-	connect = func(string) *sender {
+	connect = func(string, string) *sender {
 		return &sender{client: fus.NewClient(server.URL, sendTimeout, "test"), validator: newTestValidator(t)}
 	}
 	return received
@@ -566,7 +585,7 @@ func lastEvent(report fus.Report, id string) map[string]any {
 
 func reset(t *testing.T) {
 	clear := func() {
-		disabled, connect = true, newSender
+		disabled, connect, build = true, newSender, version.Version
 		enabled, allowed, analyzing = false, true, false
 		command, projectId, orgId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", ""
 		baselineFound = false
@@ -604,12 +623,9 @@ func TestOnlyReleasesAreSent(t *testing.T) {
 	for _, release := range []string{"2026.2", "2026.2.3"} {
 		assert.Regexp(t, releaseVersion, release)
 	}
-	built := version.Version
-	t.Cleanup(func() { version.Version = built })
 	// development, TeamCity snapshot, GitHub snapshot, nightly and TeamCity build number builds
 	for _, internal := range []string{"dev", "1234", "2026.2.4-next", "2027.1-nightly", "2026.2.3.45"} {
-		version.Version = internal
-		s, err := createSender(testDevice)
+		s, err := createSender(testDevice, internal)
 		assert.Nil(t, s, internal)
 		assert.ErrorContains(t, err, "is not a release", internal)
 	}

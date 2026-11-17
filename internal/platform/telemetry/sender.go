@@ -28,7 +28,6 @@ import (
 	"time"
 
 	fus "github.com/JetBrains/fus-reporting-api-go"
-	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -48,9 +47,10 @@ type sender struct {
 	base      fus.LogEvent
 }
 
-// newSender returns nil when statistics cannot be sent anywhere. device is the device id the CLI gives the linters.
-func newSender(device string) *sender {
-	s, err := createSender(device)
+// newSender returns nil when statistics cannot be sent anywhere. device is the device id the CLI gives the linters,
+// build the version of the binary.
+func newSender(device string, build string) *sender {
+	s, err := createSender(device, build)
 	if err != nil {
 		log.Debugf("Statistics are disabled: %v", err)
 	}
@@ -61,10 +61,10 @@ func newSender(device string) *sender {
 // are of internal use, which is not reported.
 var releaseVersion = regexp.MustCompile(`^\d{4}\.\d+(\.\d+)?$`)
 
-func createSender(device string) (*sender, error) {
+func createSender(device string, build string) (*sender, error) {
 	fusTest := isTruthy(os.Getenv(fusTestEnv))
-	if !fusTest && !releaseVersion.MatchString(version.Version) {
-		return nil, fmt.Errorf("%s is not a release", version.Version)
+	if !fusTest && !releaseVersion.MatchString(build) {
+		return nil, fmt.Errorf("%s is not a release", build)
 	}
 	cacheDir, err := os.UserCacheDir()
 	if err != nil {
@@ -77,7 +77,7 @@ func createSender(device string) (*sender, error) {
 	if fusTest {
 		config, err = fus.FetchTestConfig(recorderID, productCode)
 	} else {
-		config, err = fus.LoadOrFetchConfig(recorderID, productCode, version.Version, dataDir, fus.RegionAll)
+		config, err = fus.LoadOrFetchConfig(recorderID, productCode, build, dataDir, fus.RegionAll)
 	}
 	if err != nil {
 		return nil, err
@@ -95,14 +95,14 @@ func createSender(device string) (*sender, error) {
 		return nil, err
 	}
 	return &sender{
-		client:    fus.NewClient(config.SendEndpoint, sendTimeout, productCode+"/"+version.Version),
+		client:    fus.NewClient(config.SendEndpoint, sendTimeout, productCode+"/"+build),
 		postHog:   !fusTest,
 		validator: validator,
 		base: fus.LogEvent{
 			Recorder: fus.Recorder{ID: recorderID, Version: recorderVersion},
 			Product:  productCode,
 			IDs:      deviceIds,
-			Build:    version.Version,
+			Build:    build,
 			Session:  uuid.NewString(),
 			Bucket:   bucket,
 		},
@@ -166,7 +166,7 @@ func (s *sender) send(events []event) error {
 	var wg sync.WaitGroup
 	wg.Go(func() { _, fusErr = s.client.SendBatched(ctx, logEvents) })
 	if s.postHog {
-		wg.Go(func() { postHogErr = sendToPostHog(ctx, logEvents) })
+		wg.Go(func() { postHogErr = sendToPostHog(ctx, s.base.Build, logEvents) })
 	}
 	wg.Wait()
 	return errors.Join(fusErr, postHogErr)

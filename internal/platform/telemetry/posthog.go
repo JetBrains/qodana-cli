@@ -27,7 +27,6 @@ import (
 	"time"
 
 	fus "github.com/JetBrains/fus-reporting-api-go"
-	"github.com/JetBrains/qodana-cli/internal/platform/version"
 )
 
 // The PostHog project of Qodana Cloud, where CLI events join its organization and project groups. The project key
@@ -46,7 +45,7 @@ type postHogEvent struct {
 
 // sendToPostHog sends the events validated for FUS, named group.event as Qodana Cloud names them. The subject is the
 // device, stable per repository, without a person profile; Qodana Cloud's organizations and projects are groups.
-func sendToPostHog(ctx context.Context, logEvents []fus.LogEvent) error {
+func sendToPostHog(ctx context.Context, build string, logEvents []fus.LogEvent) error {
 	batch := make([]postHogEvent, 0, len(logEvents))
 	for _, e := range logEvents {
 		device := e.IDs["device"]
@@ -84,7 +83,7 @@ func sendToPostHog(ctx context.Context, logEvents []fus.LogEvent) error {
 		return err
 	}
 	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("User-Agent", productCode+"/"+version.Version)
+	request.Header.Set("User-Agent", productCode+"/"+build)
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return err

@@ -37,6 +37,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
 )
@@ -60,6 +61,8 @@ var (
 	disabled = testing.Testing()
 	// connect creates the sender, tests replace it
 	connect = newSender
+	// build is the version the statistics are sent with, see SetVersion
+	build = version.Version
 
 	mu        sync.Mutex
 	enabled   bool
@@ -90,9 +93,10 @@ func OptedOut(noStatistics bool) bool {
 }
 
 // Start begins collecting statistics for the command; nothing is collected when the user opted out. deviceId gives
-// the device id the CLI gives the linters it runs, it is computed only when statistics are on.
-func Start(cmd string, deviceId func() string, noStatistics bool) {
-	if disabled || OptedOut(noStatistics) || isLicenseOnly() {
+// the device id the CLI gives the linters it runs, it is computed only when statistics are on. env is given to the
+// linter with --env.
+func Start(cmd string, deviceId func() string, noStatistics bool, env []string) {
+	if disabled || OptedOut(noStatistics) || isLicenseOnly(env) {
 		return
 	}
 	now := time.Now()
@@ -107,6 +111,7 @@ func Start(cmd string, deviceId func() string, noStatistics bool) {
 	}
 	mu.Lock()
 	enabled, command, startedAt, senders, collected = true, cmd, now, ready, done
+	binaryVersion := build
 	mu.Unlock()
 	log.RegisterExitHandler(func() { Finish(1, ReasonFatal) })
 
@@ -116,7 +121,7 @@ func Start(cmd string, deviceId func() string, noStatistics bool) {
 			var s *sender
 			defer func() { ready <- s }()
 			defer recoverPanic()
-			s = connect(id)
+			s = connect(id, binaryVersion)
 		}()
 		go func() {
 			defer close(done)
@@ -164,8 +169,26 @@ func recoverPanic() {
 
 // isLicenseOnly reports whether the run uses a license-only token, which forbids sending statistics. It is known
 // from the environment before the license is checked, also on the host of a linter container which never checks it.
-func isLicenseOnly() bool {
-	return os.Getenv(qdenv.QodanaLicenseOnlyToken) != "" && os.Getenv(qdenv.QodanaToken) == ""
+// env is given to the linter with --env, overriding the environment of the CLI.
+func isLicenseOnly(env []string) bool {
+	token, licenseOnlyToken := os.Getenv(qdenv.QodanaToken), os.Getenv(qdenv.QodanaLicenseOnlyToken)
+	for _, variable := range env {
+		switch key, value, _ := strings.Cut(variable, "="); key {
+		case qdenv.QodanaToken:
+			token = value
+		case qdenv.QodanaLicenseOnlyToken:
+			licenseOnlyToken = value
+		}
+	}
+	return licenseOnlyToken != "" && token == ""
+}
+
+// SetVersion sets the version of a binary built without the one of the CLI, qodana-clang and qodana-cdnet. It must
+// be called before Start.
+func SetVersion(binaryVersion string) {
+	mu.Lock()
+	defer mu.Unlock()
+	build = binaryVersion
 }
 
 // Allow permits sending the statistics, it is forbidden for license-only tokens.

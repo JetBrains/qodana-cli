@@ -23,9 +23,7 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
-	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
@@ -55,12 +53,7 @@ type handover struct {
 // AllowContainer forbids sending the run of a linter container which gets a license-only token, also one given
 // with --env, which this CLI does not check: the container sends nothing then, nor hands anything over.
 func AllowContainer(env []string) {
-	values := map[string]string{}
-	for _, variable := range env {
-		key, value, _ := strings.Cut(variable, "=")
-		values[key] = value
-	}
-	Allow(values[qdenv.QodanaLicenseOnlyToken] == "" || values[qdenv.QodanaToken] != "")
+	Allow(!isLicenseOnly(env))
 }
 
 // ContainerEnv returns the environment variable for a linter container started by this run.
