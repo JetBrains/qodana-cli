@@ -29,12 +29,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	fexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
@@ -51,6 +53,7 @@ func downloadAndInstallIDE(
 
 	releaseDownloadInfo := getIde(analyser)
 	if releaseDownloadInfo == nil {
+		telemetry.Fail(telemetry.ReasonLinterDownload)
 		log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
 	} else {
 		ideUrl = releaseDownloadInfo.Link
@@ -72,12 +75,15 @@ func downloadAndInstallIDE(
 			}
 		}
 		log.Debugf("IDE already installed to %s, skipping download", installDir)
+		telemetry.LinterDownloaded("native", true, 0)
 		return installDir
 	}
 
+	downloadStart := time.Now()
 	downloadedIdePath := filepath.Join(baseDir, fileName)
 	err := utils.DownloadFile(downloadedIdePath, ideUrl, getInternalAuth(), spinner)
 	if err != nil {
+		telemetry.Fail(telemetry.ReasonLinterDownload)
 		log.Fatalf("Error while downloading linter: %v", err)
 	}
 
@@ -123,6 +129,7 @@ func downloadAndInstallIDE(
 		}
 	}
 
+	telemetry.LinterDownloaded("native", false, time.Since(downloadStart))
 	return installDir
 }
 

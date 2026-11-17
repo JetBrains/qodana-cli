@@ -352,19 +352,27 @@ func (c Context) StartHash() (string, error) {
 	}
 }
 
-func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
+// RequestedRunScenario is the scenario the options ask for, which a linter container runs itself.
+func (c Context) RequestedRunScenario(hasStartHash bool) RunScenario {
 	switch {
 	case c.FullHistory():
 		return RunScenarioFullHistory
 	case !hasStartHash:
-		return RunScenarioDefault
-	case c.analyser.IsContainer():
 		return RunScenarioDefault
 	case c.ReversePrAnalysis():
 		return RunScenarioReversedScoped
 	default:
 		return RunScenarioScoped
 	}
+}
+
+// DetermineRunScenario is the scenario this CLI runs: it leaves a diff to the linter container.
+func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
+	scenario := c.RequestedRunScenario(hasStartHash)
+	if c.analyser.IsContainer() && IsScopedScenario(scenario) {
+		return RunScenarioDefault
+	}
+	return scenario
 }
 
 func (c Context) VmOptionsPath() string {

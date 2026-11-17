@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -59,7 +60,7 @@ func sendFuserEvents(
 	linterInfo := c.LinterInfo()
 	wg.Wait()
 	close(ch)
-	if c.NoStatistics() {
+	if telemetry.OptedOut(c.NoStatistics()) {
 		println("Statistics disabled, skipping FUS")
 		return
 	}

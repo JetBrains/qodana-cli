@@ -146,6 +146,7 @@ qodana init [flags]
       --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
   -f, --force                Force initialization (overwrite existing valid qodana.yaml)
   -h, --help                 help for init
+      --no-statistics        Disable sending anonymous statistics
   -i, --project-dir string   Root directory of the project to configure (default ".")
 ```
 
@@ -218,7 +219,7 @@ qodana scan [flags]
       --diff-start string         Commit to start a diff run from. Only files changed between --diff-start and --diff-end will be analysed.
       --diff-end string           Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.
       --reverse                   Override the default run-scenario for diff runs to always use the reverse-scoped script
-      --no-statistics             [qodana-clang/qodana-dotnet] Disable sending anonymous statistics
+      --no-statistics             Disable sending anonymous statistics
       --air-gapped                Run in a network with no access to the internet: the linter does not update the statistics schema and does not upload statistics
       --compile-commands string   [qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory. (default "./build/compile_commands.json")
       --clang-args string         [qodana-clang specific] Additional arguments for clang

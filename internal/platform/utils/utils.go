@@ -32,6 +32,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/pterm/pterm"
 	"github.com/shirou/gopsutil/v3/process"
 
@@ -45,6 +46,7 @@ func Bootstrap(command string, project string) {
 	}
 	if res, err := fexec.RunShell(project, command); res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
+		telemetry.Finish(res, telemetry.ReasonBootstrapFailed)
 		os.Exit(res)
 	}
 }

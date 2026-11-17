@@ -328,7 +328,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.NoStatistics,
 		"no-statistics",
 		false,
-		"[qodana-clang/qodana-dotnet] Disable sending anonymous statistics",
+		"Disable sending anonymous statistics",
 	)
 	flags.BoolVar(
 		&options.AirGapped,

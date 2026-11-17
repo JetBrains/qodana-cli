@@ -34,6 +34,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
 	"github.com/codeclysm/extract/v4"
@@ -241,6 +242,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 	if analyzer == nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
+		telemetry.Finish(1, telemetry.ReasonUnsupportedProject)
 		os.Exit(1)
 	}
 	msg.SuccessMessage("Selected '%s'", analyzer.GetLinter().PresentableName)
@@ -353,6 +355,7 @@ func SaveReport(resultDir string, reportDir string, cacheDir string) {
 		"-o",
 		filepath.Join(reportDir, "results"),
 	); res > 0 || err != nil {
+		telemetry.Finish(res, telemetry.ReasonReportFailed)
 		os.Exit(res)
 	}
 	unpackWebUI(cacheDir, reportDir)

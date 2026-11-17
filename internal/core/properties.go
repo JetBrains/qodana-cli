@@ -34,12 +34,14 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 )
 
 func getScanPropertiesMap(
 	prefix string,
+	statistics bool,
 	dotNet qdyaml.DotNet,
 	deviceIdSalt []string,
 	plugins []string,
@@ -49,7 +51,7 @@ func getScanPropertiesMap(
 	airGapped bool,
 ) map[string]string {
 	properties := map[string]string{
-		"-Didea.headless.enable.statistics":            strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
+		"-Didea.headless.enable.statistics":            strconv.FormatBool(statistics),
 		"-Didea.headless.statistics.device.id":         deviceIdSalt[0],
 		"-Didea.headless.statistics.salt":              deviceIdSalt[1],
 		"-Dqodana.automation.guid":                     str.QuoteIfSpace(analysisId),
@@ -114,8 +116,9 @@ func createPropertyMaps(c corescan.Context) propertyMaps {
 		common: getCommonProperties(c),
 		scan: getScanPropertiesMap(
 			c.Prod().ParentPrefix(),
+			cloud.Token.IsAllowedToSendFUS() && !telemetry.OptedOut(c.NoStatistics()),
 			yaml.DotNet,
-			platform.GetDeviceIdSalt(),
+			platform.GetDeviceIdSalt(c.ProjectDir()),
 			getPluginIds(yaml.Plugins),
 			c.AnalysisId(),
 			c.CoverageDir(),

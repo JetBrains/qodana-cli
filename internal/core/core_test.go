@@ -739,7 +739,7 @@ func Test_setDeviceID(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	actualDeviceIdSalt := platform.GetDeviceIdSalt()
+	actualDeviceIdSalt := platform.GetDeviceIdSalt(tmpDir)
 	if _, err := os.Stat(filepath.Join(tmpDir, ".git", "config")); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("Case: %s: /tmp/entrypoint/.git/config got created, when it should not", tc)
 	}
@@ -762,7 +762,7 @@ func Test_setDeviceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	actualDeviceIdSalt = platform.GetDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt(tmpDir)
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
 		"e5c8900956f0df2f18f827245f47f04a",
@@ -774,7 +774,7 @@ func Test_setDeviceID(t *testing.T) {
 
 	tc = "FromQodanaRemoteUrlEnv"
 	t.Setenv("QODANA_REMOTE_URL", "ssh://git@git/repo")
-	actualDeviceIdSalt = platform.GetDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt(tmpDir)
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
 		"e5c8900956f0df2f18f827245f47f04a",
@@ -786,7 +786,7 @@ func Test_setDeviceID(t *testing.T) {
 	tc = "FromEnv"
 	t.Setenv("SALT", "salt")
 	t.Setenv("DEVICEID", "device")
-	actualDeviceIdSalt = platform.GetDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt(tmpDir)
 	expectedDeviceIdSalt = []string{
 		"device",
 		"salt",

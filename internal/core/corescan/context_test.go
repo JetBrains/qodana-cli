@@ -291,6 +291,14 @@ func TestContext_DetermineRunScenario(t *testing.T) {
 	}
 }
 
+func TestContext_RequestedRunScenarioOfContainer(t *testing.T) {
+	for reversePr, expected := range map[bool]RunScenario{false: RunScenarioScoped, true: RunScenarioReversedScoped} {
+		ctx := ContextBuilder{ReversePrAnalysis: reversePr, Analyser: product.JvmLinter.DockerAnalyzer()}.Build()
+		assert.Equal(t, expected, ctx.RequestedRunScenario(true), "the container runs the diff")
+		assert.Equal(t, RunScenarioDefault, ctx.DetermineRunScenario(true))
+	}
+}
+
 func TestContext_VmOptionsPath(t *testing.T) {
 	ctx := ContextBuilder{
 		ConfigDir: "/config",

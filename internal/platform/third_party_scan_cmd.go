@@ -23,6 +23,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -43,7 +44,9 @@ But you can always override qodana.yaml options with the following command-line 
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
+			telemetry.Start("scan", func() string { return GetDeviceIdSalt(cliOptions.ProjectDir)[0] }, cliOptions.NoStatistics)
 			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
+			telemetry.Finish(exitCode, "")
 
 			log.Debug("exitCode: ", exitCode)
 			if exitCode == exitcodes.QodanaFailThresholdExitCode {

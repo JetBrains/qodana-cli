@@ -21,11 +21,13 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
+	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -39,6 +41,7 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			telemetry.Start("init", func() string { return platform.GetDeviceIdSalt(cliOptions.ProjectDir)[0] }, cliOptions.NoStatistics)
 			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
 			localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
@@ -64,10 +67,12 @@ func newInitCommand() *cobra.Command {
 						msg.PrimaryBold(cliOptions.ProjectDir),
 					),
 				) {
+					telemetry.Finish(0, telemetry.ReasonCancelled)
 					return
 				}
 				token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken)
 				analyzer := commoncontext.SelectAnalyzerForPath(cliOptions.ProjectDir, token)
+				telemetry.LinterSelected(analyzer.GetLinter().ProductCode, false)
 
 				writeQodanaLinterToYamlFileWithWarning(
 					localQodanaYamlFullPath,
@@ -76,6 +81,15 @@ func newInitCommand() *cobra.Command {
 
 				checkToken(analyzer, cliOptions)
 			} else {
+				// ide: is a product code, linter: a name or, as before, an image
+				configured := product.FindLinterByProductCode(ide)
+				if linter != "" {
+					configured = product.FindLinterByName(linter)
+					if configured.ProductCode == "" {
+						configured = product.FindLinterByImage(linter)
+					}
+				}
+				telemetry.LinterSelected(configured.ProductCode, true)
 				msg.EmptyMessage()
 				var analyzer string
 				if ide != "" {
@@ -95,6 +109,7 @@ func newInitCommand() *cobra.Command {
 				}
 			}
 			msg.PrintFile(localQodanaYamlFullPath)
+			telemetry.Finish(0, "")
 		},
 	}
 	flags := cmd.Flags()
@@ -112,6 +127,7 @@ func newInitCommand() *cobra.Command {
 		"",
 		"Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.",
 	)
+	flags.BoolVar(&cliOptions.NoStatistics, "no-statistics", false, "Disable sending anonymous statistics")
 	return cmd
 }
 
@@ -141,7 +157,8 @@ func writeQodanaLinterToYamlFileWithWarning(qodanaYamlFullPath string, analyser 
 }
 
 type initOptions struct {
-	ProjectDir string
-	ConfigName string
-	Force      bool
+	ProjectDir   string
+	ConfigName   string
+	Force        bool
+	NoStatistics bool
 }

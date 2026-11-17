@@ -45,6 +45,9 @@ const (
 	baselineSarifFooter  = `]}]}`
 )
 
+// ErrInvalidBaseline is the error of a baseline response which is not the list of problems it should be.
+var ErrInvalidBaseline = errors.New("unexpected baseline response")
+
 // BaselineStatus tells how Qodana Cloud has answered the request of a baseline.
 type BaselineStatus int
 
@@ -102,6 +105,9 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineS
 			// a Qodana Cloud which doesn't serve baselines at all
 			log.Debugf("Qodana Cloud has no baseline endpoint: %v", err)
 			return BaselineUnsupported, nil
+		}
+		if request.lastError != nil && !errors.Is(err, request.lastError) {
+			err = fmt.Errorf("%w: %w", err, request.lastError)
 		}
 		return BaselineUnknown, fmt.Errorf("baseline request failed: %w", err)
 	}
@@ -177,13 +183,16 @@ func baselineQuery(toolName string) string {
 func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, error) {
 	decoder := json.NewDecoder(in)
 	if err := openBaselineArray(decoder); err != nil {
-		return false, fmt.Errorf("unexpected baseline response: %w", err)
+		return false, fmt.Errorf("%w: %w", ErrInvalidBaseline, err)
 	}
 	encoder := json.NewEncoder(out)
 	problems := 0
 	for decoder.More() {
 		var problem sarif.Result
 		if err := decoder.Decode(&problem); err != nil {
+			if errors.As(err, new(*json.SyntaxError)) || errors.As(err, new(*json.UnmarshalTypeError)) {
+				err = fmt.Errorf("%w: %w", ErrInvalidBaseline, err)
+			}
 			return false, fmt.Errorf("failed to read baseline problem #%d: %w", problems+1, err)
 		}
 		if problems == 0 {
@@ -208,7 +217,7 @@ func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, err
 	}
 	// the list of problems must be closed by the server, otherwise the response was cut short
 	if _, err := decoder.Token(); err != nil {
-		return false, fmt.Errorf("baseline response was truncated after %d problems: %w", problems, err)
+		return false, fmt.Errorf("%w: truncated after %d problems: %w", ErrInvalidBaseline, problems, err)
 	}
 	if problems == 0 {
 		return false, nil
