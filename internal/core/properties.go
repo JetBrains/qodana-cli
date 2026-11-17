@@ -46,6 +46,7 @@ func getScanPropertiesMap(
 	analysisId string,
 	coverageDir string,
 	repositoryRoot string,
+	airGapped bool,
 ) map[string]string {
 	properties := map[string]string{
 		"-Didea.headless.enable.statistics":            strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
@@ -63,6 +64,11 @@ func getScanPropertiesMap(
 	}
 	if repositoryRoot != "" && repositoryRoot != "." {
 		properties["-Dqodana.path.to.project.dir.from.project.root"] = str.QuoteIfSpace(repositoryRoot)
+	}
+	if airGapped {
+		// No upload can succeed there: the IDE does not upload FUS and starts no statistics-uploader on exit,
+		// so postAnalysis() has nothing to wait for.
+		properties["-Didea.suppress.statistics.report"] = "true"
 	}
 	if len(plugins) > 0 {
 		properties["-Didea.required.plugins.id"] = strings.Join(plugins, ",")
@@ -114,6 +120,7 @@ func createPropertyMaps(c corescan.Context) propertyMaps {
 			c.AnalysisId(),
 			c.CoverageDir(),
 			c.ProjectDirPathRelativeToRepositoryRoot(),
+			c.AirGapped() || yaml.AirGapped,
 		),
 		yamlOverrides: yaml.Properties,
 		cliOverrides:  cliOverrides,

@@ -74,6 +74,7 @@ type CliOptions struct {
 	Cleanup                   bool
 	FixesStrategy             string // note: deprecated option
 	NoStatistics              bool
+	AirGapped                 bool
 	CdnetSolution             string // cdnet specific options
 	CdnetProject              string
 	CdnetConfiguration        string
@@ -328,6 +329,12 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"no-statistics",
 		false,
 		"[qodana-clang/qodana-dotnet] Disable sending anonymous statistics",
+	)
+	flags.BoolVar(
+		&options.AirGapped,
+		"air-gapped",
+		false,
+		"Run in a network with no access to the internet: the linter does not update the statistics schema and does not upload statistics",
 	)
 	flags.StringVar(
 		&options.ClangCompileCommands,
