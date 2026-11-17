@@ -21,6 +21,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,4 +61,16 @@ func TestAirGappedKeepsTheStatisticsSetting(t *testing.T) {
 	}.Build()
 
 	assert.Contains(t, GetScanProperties(context), "-Didea.headless.enable.statistics=true")
+}
+
+// TestAirGappedFromQodanaYamlSuppressesTheStatisticsReport verifies that airGapped in qodana.yaml without --air-gapped
+// also adds idea.suppress.statistics.report to the vmoptions, so the IDE starts no FUS uploader on exit.
+func TestAirGappedFromQodanaYamlSuppressesTheStatisticsReport(t *testing.T) {
+	context := corescan.ContextBuilder{
+		ResultsDir:       t.TempDir(),
+		Prod:             product.Product{Version: "2026.2"},
+		QodanaYamlConfig: corescan.YamlConfig(qdyaml.QodanaYaml{AirGapped: true}),
+	}.Build()
+
+	assert.Contains(t, GetScanProperties(context), "-Didea.suppress.statistics.report=true")
 }
