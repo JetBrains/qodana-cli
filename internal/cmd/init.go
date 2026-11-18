@@ -67,7 +67,7 @@ func newInitCommand() *cobra.Command {
 					return
 				}
 				token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken)
-				analyzer := commoncontext.SelectAnalyzerForPath(cliOptions.ProjectDir, token)
+				analyzer := commoncontext.SelectAnalyzerForPath(cliOptions.ProjectDir, token, "")
 
 				writeQodanaLinterToYamlFileWithWarning(
 					localQodanaYamlFullPath,

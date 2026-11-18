@@ -21,13 +21,14 @@ import (
 )
 
 type TestCase struct {
-	name         string
-	ide          string
-	linter       string
-	image        string
-	withinDocker string
-	failure      bool
-	expected     product.Analyzer
+	name             string
+	ide              string
+	linter           string
+	image            string
+	withinDocker     string
+	yamlWithinDocker string
+	failure          bool
+	expected         product.Analyzer
 }
 
 //goland:noinspection ALL
@@ -49,6 +50,15 @@ var optionsTests = []TestCase{
 		withinDocker: "",
 		failure:      false,
 		expected:     &product.NativeAnalyzer{Linter: product.DotNetLinter, Eap: true},
+	},
+	{
+		name:         "--ide passed, --within-docker=true ignored",
+		ide:          "QDNET",
+		linter:       "",
+		image:        "",
+		withinDocker: "true",
+		failure:      false,
+		expected:     product.DotNetLinter.NativeAnalyzer(),
 	},
 	{
 		name:         "Image passed to --linter",
@@ -114,7 +124,19 @@ var optionsTests = []TestCase{
 		},
 	},
 	{
-		name:         "Known image passed --image, -within-docker=false ignored",
+		name:         "Known image passed --image, --within-docker=false ignored",
+		ide:          "",
+		linter:       "",
+		image:        "jetbrains/qodana-python:2023.3",
+		withinDocker: "false",
+		failure:      false,
+		expected: &product.DockerAnalyzer{
+			Linter: product.PythonLinter,
+			Image:  "jetbrains/qodana-python:2023.3",
+		},
+	},
+	{
+		name:         "Image passed to --linter, --within-docker=false ignored",
 		ide:          "",
 		linter:       "jetbrains/qodana-go:2025.2",
 		image:        "",
@@ -168,7 +190,10 @@ var optionsTests = []TestCase{
 		image:        "",
 		withinDocker: "false",
 		failure:      false,
-		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: !product.IsReleased || product.CppLinter.EapOnly},
+		expected: &product.NativeAnalyzer{
+			Linter: product.CppLinter,
+			Eap:    !product.IsReleased || product.CppLinter.EapOnly,
+		},
 	},
 	{
 		name:         "Known linter passed --linter, --within-docker=true",

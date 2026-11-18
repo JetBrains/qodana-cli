@@ -84,8 +84,10 @@ func TestSelectAnalyzer(t *testing.T) {
 		analyzers        []product.Linter
 		interactive      bool
 		preferNative     bool
+		withinDocker     string
 		selectFunc       func([]string) string
 		expectedAnalyzer product.Analyzer
+		expectFatal      bool
 	}{
 		{
 			name:             "Empty Analyzers Non-interactive",
@@ -173,6 +175,55 @@ func TestSelectAnalyzer(t *testing.T) {
 			selectFunc:       func(choices []string) string { return "" },
 			expectedAnalyzer: nil,
 		},
+		{
+			name:         "Within Docker False Interactive Proposes Only Native",
+			pathMaker:    nonNativePathMaker,
+			analyzers:    []product.Linter{product.AndroidLinter, product.JvmLinter, product.PythonLinter},
+			interactive:  true,
+			withinDocker: "FALSE",
+			selectFunc: func(choices []string) string {
+				if !reflect.DeepEqual(
+					choices,
+					[]string{
+						product.JvmLinter.PresentableName + " (Native)",
+						product.PythonLinter.PresentableName + " (Native)",
+					},
+				) {
+					return ""
+				}
+				return choices[1]
+			},
+			expectedAnalyzer: product.PythonLinter.NativeAnalyzer(),
+		},
+		{
+			name:             "Within Docker True Overrides Prefer Native",
+			pathMaker:        nonNativePathMaker,
+			analyzers:        []product.Linter{product.JvmCommunityLinter},
+			preferNative:     true,
+			withinDocker:     "true",
+			expectedAnalyzer: product.JvmCommunityLinter.DockerAnalyzer(),
+		},
+		{
+			name:         "Within Docker False Without Native Analyzers Fails",
+			pathMaker:    nonNativePathMaker,
+			analyzers:    []product.Linter{product.AndroidLinter},
+			withinDocker: "false",
+			expectFatal:  true,
+		},
+		{
+			name:         "Within Docker True For Native-only .NET Project Fails",
+			pathMaker:    nativePathMaker,
+			analyzers:    []product.Linter{product.DotNetLinter},
+			withinDocker: "true",
+			expectFatal:  true,
+		},
+		{
+			name:         "Invalid Within Docker Fails",
+			pathMaker:    nonNativePathMaker,
+			analyzers:    []product.Linter{product.JvmLinter},
+			withinDocker: "maybe",
+			expectFatal:  true,
+		},
 	}
 
 	for _, test := range tests {
@@ -189,7 +240,18 @@ func TestSelectAnalyzer(t *testing.T) {
 					}
 				}(dir)
 				_ = test.pathMaker(dir)
-				got := selectAnalyzer(dir, test.analyzers, test.interactive, test.preferNative, test.selectFunc)
+				fatal := false
+				logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
+				defer func() { logrus.StandardLogger().ExitFunc = nil }()
+				got := selectAnalyzer(
+					dir,
+					test.analyzers,
+					test.interactive,
+					test.preferNative,
+					test.withinDocker,
+					test.selectFunc,
+				)
+				assert.Equal(t, test.expectFatal, fatal)
 				assert.Equal(t, test.expectedAnalyzer, got)
 			},
 		)
@@ -210,7 +272,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesMostFrequentLanguage(t *testing.
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "")
+	analyzer := SelectAnalyzerForPath(dir, "", "")
 	assert.Equal(t, product.PythonLinter.Name, analyzer.GetLinter().Name)
 }
 
@@ -229,7 +291,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesNativeForDominantDart(t *testing
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "")
+	analyzer := SelectAnalyzerForPath(dir, "", "")
 	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
 	assert.IsType(t, &product.NativeAnalyzer{}, analyzer)
 }
@@ -249,7 +311,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesDockerForDominantLua(t *testing.
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "")
+	analyzer := SelectAnalyzerForPath(dir, "", "")
 	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
 	assert.IsType(t, &product.DockerAnalyzer{}, analyzer)
 }
@@ -267,7 +329,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesDockerForTiedDartAndLua(t *testi
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "")
+	analyzer := SelectAnalyzerForPath(dir, "", "")
 	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
 	assert.IsType(t, &product.DockerAnalyzer{}, analyzer)
 }
