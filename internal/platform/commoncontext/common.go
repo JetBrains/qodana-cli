@@ -183,8 +183,9 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 	}, nil
 }
 
-// SelectAnalyzerForPath gets linter for the given path
-func SelectAnalyzerForPath(path string, token string) product.Analyzer {
+// SelectAnalyzerForPath gets linter for the given path.
+// A non-empty withinDocker restricts the proposed analyzers to Docker ("true") or native ("false") ones.
+func SelectAnalyzerForPath(path string, token string, withinDocker string) product.Analyzer {
 	var linters []product.Linter
 	var dominantLanguage string
 	msg.PrintProcess(
@@ -237,7 +238,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 
 	interactive := msg.IsInteractive()
 	linters = filterByLicensePlan(linters, token)
-	analyzer := selectAnalyzer(path, linters, interactive, dominantLanguage == "Dart", selector)
+	analyzer := selectAnalyzer(path, linters, interactive, dominantLanguage == "Dart", withinDocker, selector)
 	if analyzer == nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
@@ -290,6 +291,7 @@ func selectAnalyzer(
 	linters []product.Linter,
 	interactive bool,
 	preferNative bool,
+	withinDocker string,
 	selectFunc func([]string) string,
 ) product.Analyzer {
 	var distribution product.Analyzer
@@ -299,6 +301,31 @@ func selectAnalyzer(
 
 	selection, choices := analyzerToSelect(linters, path)
 	log.Debugf("Detected products: %s", strings.Join(choices, ", "))
+
+	if withinDocker != "" {
+		withinDockerLower := strings.ToLower(withinDocker)
+		if withinDockerLower != "true" && withinDockerLower != "false" {
+			log.Fatalf("Wrong value for within-docker param: %s. Use true/false.", withinDocker)
+			return nil
+		}
+		inDocker := withinDockerLower == "true"
+		filtered := filterChoicesByWithinDocker(selection, choices, inDocker)
+		if len(filtered) == 0 && len(choices) > 0 {
+			mode := "natively"
+			if inDocker {
+				mode = "in Docker"
+			}
+			log.Fatalf(
+				"within-docker=%s is set, but none of the detected analyzers can run %s for this project. Detected: %s. Change within-docker or set the linter explicitly with --linter.",
+				withinDocker,
+				mode,
+				strings.Join(choices, ", "),
+			)
+			return nil
+		}
+		choices = filtered
+		preferNative = false
+	}
 
 	if len(choices) == 1 || !interactive {
 		distribution = selection[choices[0]]
@@ -314,6 +341,17 @@ func selectAnalyzer(
 		distribution = selection[choice]
 	}
 	return distribution
+}
+
+func filterChoicesByWithinDocker(selection map[string]product.Analyzer, choices []string, inDocker bool) []string {
+	filtered := make([]string, 0, len(choices))
+	for _, choice := range choices {
+		_, isDocker := selection[choice].(*product.DockerAnalyzer)
+		if isDocker == inDocker {
+			filtered = append(filtered, choice)
+		}
+	}
+	return filtered
 }
 
 func analyzerToSelect(linters []product.Linter, path string) (map[string]product.Analyzer, []string) {
