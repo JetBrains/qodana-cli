@@ -54,6 +54,7 @@ func Compute(
 			qodanaCloudToken,
 			projectDir,
 			localNotEffectiveQodanaYamlPathInProject,
+			overrideWithinDocker,
 		)
 	}
 
@@ -209,19 +210,24 @@ func getAnalyzerFromProject(
 	qodanaCloudToken string,
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
+	overrideWithinDocker string,
 ) product.Analyzer {
 	qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 		projectDir,
 		localNotEffectiveQodanaYamlPathInProject,
 	)
 	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
+	withinDocker := qodanaYaml.WithinDocker
+	if overrideWithinDocker != "" {
+		withinDocker = overrideWithinDocker
+	}
 	if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" && qodanaYaml.Image == "" {
 		msg.WarningMessage(
 			"No valid `linter:` or `image:` field found in %s. Have you run %s? Running that for you...",
 			msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
 			msg.PrimaryBold("qodana init"),
 		)
-		return SelectAnalyzerForPath(projectDir, qodanaCloudToken)
+		return SelectAnalyzerForPath(projectDir, qodanaCloudToken, withinDocker)
 	}
 	if qodanaYaml.Ide != "" {
 		msg.WarningMessage(
@@ -250,7 +256,7 @@ func getAnalyzerFromProject(
 		return nil
 	}
 
-	return guessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter, qodanaYaml.Image, qodanaYaml.WithinDocker)
+	return guessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter, qodanaYaml.Image, withinDocker)
 }
 
 func computeId(analyzer product.Analyzer, projectDir string) string {
