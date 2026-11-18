@@ -40,15 +40,20 @@ type baselineDownloaderStub struct {
 	asked    bool
 }
 
-func (s *baselineDownloaderStub) WriteBaseline(toolName string, file *os.File) (cloud.BaselineStatus, error) {
+func (s *baselineDownloaderStub) WriteBaseline(toolName string, path string) (cloud.BaselineStatus, error) {
 	s.asked = true
 	s.toolName = toolName
 	if s.err != nil {
-		return 0, s.err
+		return cloud.BaselineUnknown, s.err
 	}
 	if s.baseline == nil {
 		return s.status, nil
 	}
+	file, err := os.Create(path)
+	if err != nil {
+		return cloud.BaselineUnknown, err
+	}
+	defer func() { _ = file.Close() }()
 	return cloud.BaselineWritten, json.NewEncoder(file).Encode(s.baseline)
 }
 
@@ -76,7 +81,7 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		require.NoError(t, err)
 		defer downloaded.Cleanup()
 
-		assert.Equal(t, cloud.BaselineWritten, downloaded.cloudStatus)
+		require.IsType(t, CloudBaseline{}, downloaded)
 		assert.Equal(t, "QDNET", client.toolName)
 		baseline := downloaded.BaselinePath()
 		require.NotEmpty(t, baseline)
@@ -89,7 +94,7 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		assert.Equal(t, "QDNET", stored.Runs[0].Tool.Driver.Name)
 
 		downloaded.Cleanup()
-		assert.NoFileExists(t, baseline)
+		assert.NoDirExists(t, filepath.Dir(baseline))
 	})
 
 	for _, tc := range []struct {
@@ -103,9 +108,8 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cacheDir := t.TempDir()
 			downloaded, err := downloadCloudBaseline(&baselineDownloaderStub{status: tc.status}, "QDNET", cacheDir)
-			defer downloaded.Cleanup()
 			require.NoError(t, err)
-			assert.Equal(t, tc.status, downloaded.cloudStatus)
+			require.IsType(t, NoBaseline{}, downloaded)
 			assert.Empty(t, downloaded.BaselinePath())
 			left, err := os.ReadDir(cacheDir)
 			require.NoError(t, err)
@@ -115,11 +119,15 @@ func TestDownloadCloudBaseline(t *testing.T) {
 
 	t.Run("failed request", func(t *testing.T) {
 		client := &baselineDownloaderStub{err: errors.New("the cloud is unreachable")}
-		downloaded, err := downloadCloudBaseline(client, "QDNET", t.TempDir())
-		defer downloaded.Cleanup()
+		cacheDir := t.TempDir()
+
+		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+
 		assert.ErrorContains(t, err, "the cloud is unreachable")
-		assert.Equal(t, cloud.BaselineUnknown, downloaded.cloudStatus)
-		assert.Empty(t, downloaded.BaselinePath())
+		assert.Nil(t, downloaded)
+		left, readErr := os.ReadDir(cacheDir)
+		require.NoError(t, readErr)
+		assert.Empty(t, left, "no baseline dir should be left behind")
 	})
 
 	// the cache dir of a container run is created by the linter, not before it
@@ -128,9 +136,9 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		cacheDir := filepath.Join(t.TempDir(), "absent")
 
 		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+		require.NoError(t, err)
 		defer downloaded.Cleanup()
 
-		require.NoError(t, err)
 		assert.FileExists(t, downloaded.BaselinePath())
 		assert.True(t, strings.HasPrefix(downloaded.BaselinePath(), cacheDir))
 	})
@@ -145,7 +153,7 @@ func TestResolveBaseline(t *testing.T) {
 		defer baseline.Cleanup()
 
 		assert.False(t, client.asked)
-		assert.Equal(t, baselineFile, baseline.BaselinePath())
+		assert.Equal(t, LocalBaseline{path: baselineFile}, baseline)
 		assert.Equal(t, "The analysis used the baseline file "+baselineFile, baseline.UsedMessage())
 	})
 
@@ -153,7 +161,7 @@ func TestResolveBaseline(t *testing.T) {
 		baseline := ResolveBaseline("", "", "QDJVM", t.TempDir())
 		defer baseline.Cleanup()
 
-		assert.Empty(t, baseline.BaselinePath())
+		assert.Equal(t, NoBaseline{}, baseline)
 		assert.Contains(t, baseline.UsedMessage(), "The analysis used no baseline.")
 	})
 
@@ -164,8 +172,20 @@ func TestResolveBaseline(t *testing.T) {
 		defer baseline.Cleanup()
 
 		assert.Equal(t, "QDJVM", client.toolName)
-		assert.Equal(t, cloud.BaselineWritten, baseline.cloudStatus)
+		require.IsType(t, CloudBaseline{}, baseline)
 		assert.FileExists(t, baseline.BaselinePath())
+	})
+
+	t.Run("a failed download is no baseline which tells so", func(t *testing.T) {
+		client := &baselineDownloaderStub{err: errors.New("the cloud is unreachable")}
+
+		baseline := resolveBaseline("", true, "QDJVM", t.TempDir(), client.newClient)
+
+		assert.Equal(
+			t,
+			"The analysis used no baseline: the baseline of Qodana Cloud could not be downloaded.",
+			baseline.UsedMessage(),
+		)
 	})
 
 	for _, tc := range []struct {
@@ -197,24 +217,27 @@ func TestResolveBaseline(t *testing.T) {
 			baseline := resolveBaseline("", true, "QDJVM", t.TempDir(), client.newClient)
 			defer baseline.Cleanup()
 
-			assert.Empty(t, baseline.BaselinePath())
+			require.IsType(t, NoBaseline{}, baseline)
 			assert.Equal(t, tc.used, baseline.UsedMessage())
 		})
 	}
 }
 
 func TestUsedMessage(t *testing.T) {
-	cloudBaseline := Baseline{baselinePath: "/cache/cloud-baseline-1/qodana.sarif.json", cloudStatus: cloud.BaselineWritten}
-	assert.Equal(t, "The analysis used the baseline from Qodana Cloud", cloudBaseline.UsedMessage())
+	assert.Equal(
+		t,
+		"The analysis used the baseline from Qodana Cloud",
+		CloudBaseline{path: "/cache/cloud-baseline-1/qodana.sarif.json"}.UsedMessage(),
+	)
 	assert.Equal(
 		t,
 		"The analysis used the baseline file /project/baseline.sarif.json",
-		Baseline{baselinePath: "/project/baseline.sarif.json"}.UsedMessage(),
+		LocalBaseline{path: "/project/baseline.sarif.json"}.UsedMessage(),
 	)
 	assert.Equal(
 		t,
 		"The analysis used no baseline. Give a baseline file with --baseline, "+
 			"or turn on the cloud baseline of the project in Qodana Cloud.",
-		Baseline{}.UsedMessage(),
+		NoBaseline{}.UsedMessage(),
 	)
 }

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -269,14 +270,13 @@ func requestBaselineOf(t *testing.T, toolName string, handler http.HandlerFunc) 
 	t.Cleanup(server.Close)
 
 	path := filepath.Join(t.TempDir(), "baseline.sarif.json")
-	file, err := os.Create(path)
-	require.NoError(t, err)
-
 	endpoints := QdApiEndpoints{RootEndpoint: &QdRootEndpoint{Url: server.URL}, LintersApiUrl: server.URL}
-	status, requestErr := endpoints.NewLintersApiClient("token").WriteBaseline(toolName, file)
-	require.NoError(t, file.Close())
+	status, requestErr := endpoints.NewBaselineClient("token").WriteBaseline(toolName, path)
 
 	report, err := os.ReadFile(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return status, "", requestErr
+	}
 	require.NoError(t, err)
 	return status, string(report), requestErr
 }
@@ -508,6 +508,58 @@ func TestWriteBaselineWithoutEndpoint(t *testing.T) {
 
 	require.NoError(t, err)
 	assert.Equal(t, BaselineUnsupported, status)
+	assert.Empty(t, report)
+}
+
+// TestWriteBaselineRetriedOverFailedAttempt verifies that a request tried again after the connection
+// broke writes only the report of the answer which succeeds, over what the failed attempt has written.
+func TestWriteBaselineRetriedOverFailedAttempt(t *testing.T) {
+	t.Setenv(qdenv.QodanaCloudRequestRetriesEnv, "2")
+	t.Setenv(qdenv.QodanaCloudRequestCooldownEnv, "0")
+	attempts := 0
+
+	status, report, err := requestBaseline(
+		t, func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			if attempts > 1 {
+				_, _ = w.Write([]byte(baselineBody))
+				return
+			}
+			_, _ = io.WriteString(w, `{"baseline":[`)
+			for i := 0; i < 100; i++ {
+				_, _ = fmt.Fprintf(w, `{"ruleId":"Stale%d","message":{"text":"left by the failed attempt"}},`, i)
+			}
+			w.(http.Flusher).Flush()
+			// the connection breaks in the middle of the body
+			conn, _, hijackErr := w.(http.Hijacker).Hijack()
+			require.NoError(t, hijackErr)
+			_ = conn.Close()
+		},
+	)
+
+	require.NoError(t, err)
+	require.Equal(t, BaselineWritten, status)
+	assert.Equal(t, 2, attempts)
+	assert.NotContains(t, report, "Stale")
+	assert.Contains(t, report, "KDocUnresolvedReference")
+}
+
+// TestWriteBaselineForbidden verifies that a token which may not read the baseline is not tried again,
+// as a new attempt does not change the answer.
+func TestWriteBaselineForbidden(t *testing.T) {
+	t.Setenv(qdenv.QodanaCloudRequestCooldownEnv, "0")
+	attempts := 0
+
+	status, report, err := requestBaseline(
+		t, func(w http.ResponseWriter, r *http.Request) {
+			attempts++
+			w.WriteHeader(http.StatusForbidden)
+		},
+	)
+
+	assert.ErrorContains(t, err, "baseline request failed")
+	assert.Equal(t, BaselineUnknown, status)
+	assert.Equal(t, 1, attempts)
 	assert.Empty(t, report)
 }
 
