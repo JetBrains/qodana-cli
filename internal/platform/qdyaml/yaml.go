@@ -94,6 +94,9 @@ type QodanaYaml struct {
 	// Php is the configuration for PHP projects.
 	Php Php `yaml:"php,omitempty"`
 
+	// AirGapped tells that the network of the analysis has no access to the internet.
+	AirGapped bool `yaml:"airGapped,omitempty"`
+
 	// DisableSanityInspections property to disable sanity inspections.
 	DisableSanityInspections string `yaml:"disableSanityInspections,omitempty"`
 

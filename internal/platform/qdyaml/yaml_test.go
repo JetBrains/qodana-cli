@@ -231,6 +231,14 @@ func TestLoadQodanaYamlByFullPath(t *testing.T) {
 		assert.Equal(t, "1.0", result.Version)
 		assert.Equal(t, "jetbrains/qodana-jvm", result.Linter)
 	})
+
+	t.Run("airGapped", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "qodana.yaml")
+		if err := os.WriteFile(path, []byte("version: \"1.0\"\nairGapped: true"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, LoadQodanaYamlByFullPath(path).AirGapped)
+	})
 }
 
 func TestQodanaYaml_Sort(t *testing.T) {
