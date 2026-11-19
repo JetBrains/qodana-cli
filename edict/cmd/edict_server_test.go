@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 const fakeServerReady = `echo "edict-mcp listening at http://127.0.0.1:27182/mcp"`
