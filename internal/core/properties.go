@@ -19,6 +19,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"sort"
@@ -35,7 +36,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/maps"
 )
 
 func getScanPropertiesMap(
