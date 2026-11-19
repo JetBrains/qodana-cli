@@ -84,7 +84,7 @@ func TestSelectAnalyzer(t *testing.T) {
 		analyzers        []product.Linter
 		interactive      bool
 		preferNative     bool
-		withinDocker     string
+		executionMode    ExecutionMode
 		selectFunc       func([]string) string
 		expectedAnalyzer product.Analyzer
 		expectFatal      bool
@@ -176,11 +176,11 @@ func TestSelectAnalyzer(t *testing.T) {
 			expectedAnalyzer: nil,
 		},
 		{
-			name:         "Within Docker False Interactive Proposes Only Native",
-			pathMaker:    nonNativePathMaker,
-			analyzers:    []product.Linter{product.AndroidLinter, product.JvmLinter, product.PythonLinter},
-			interactive:  true,
-			withinDocker: "FALSE",
+			name:          "Native Execution Interactive Proposes Only Native",
+			pathMaker:     nonNativePathMaker,
+			analyzers:     []product.Linter{product.AndroidLinter, product.JvmLinter, product.PythonLinter},
+			interactive:   true,
+			executionMode: ExecutionModeNative,
 			selectFunc: func(choices []string) string {
 				if !reflect.DeepEqual(
 					choices,
@@ -196,33 +196,26 @@ func TestSelectAnalyzer(t *testing.T) {
 			expectedAnalyzer: product.PythonLinter.NativeAnalyzer(),
 		},
 		{
-			name:             "Within Docker True Overrides Prefer Native",
+			name:             "Docker Execution Overrides Prefer Native",
 			pathMaker:        nonNativePathMaker,
 			analyzers:        []product.Linter{product.JvmCommunityLinter},
 			preferNative:     true,
-			withinDocker:     "true",
+			executionMode:    ExecutionModeDocker,
 			expectedAnalyzer: product.JvmCommunityLinter.DockerAnalyzer(),
 		},
 		{
-			name:         "Within Docker False Without Native Analyzers Fails",
-			pathMaker:    nonNativePathMaker,
-			analyzers:    []product.Linter{product.AndroidLinter},
-			withinDocker: "false",
-			expectFatal:  true,
+			name:          "Native Execution Without Native Analyzers Fails",
+			pathMaker:     nonNativePathMaker,
+			analyzers:     []product.Linter{product.AndroidLinter},
+			executionMode: ExecutionModeNative,
+			expectFatal:   true,
 		},
 		{
-			name:         "Within Docker True For Native-only .NET Project Fails",
-			pathMaker:    nativePathMaker,
-			analyzers:    []product.Linter{product.DotNetLinter},
-			withinDocker: "true",
-			expectFatal:  true,
-		},
-		{
-			name:         "Invalid Within Docker Fails",
-			pathMaker:    nonNativePathMaker,
-			analyzers:    []product.Linter{product.JvmLinter},
-			withinDocker: "maybe",
-			expectFatal:  true,
+			name:          "Docker Execution For Native-only .NET Project Fails",
+			pathMaker:     nativePathMaker,
+			analyzers:     []product.Linter{product.DotNetLinter},
+			executionMode: ExecutionModeDocker,
+			expectFatal:   true,
 		},
 	}
 
@@ -248,7 +241,7 @@ func TestSelectAnalyzer(t *testing.T) {
 					test.analyzers,
 					test.interactive,
 					test.preferNative,
-					test.withinDocker,
+					test.executionMode,
 					test.selectFunc,
 				)
 				assert.Equal(t, test.expectFatal, fatal)
@@ -272,7 +265,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesMostFrequentLanguage(t *testing.
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "", "")
+	analyzer := SelectAnalyzerForPath(dir, "", ExecutionModeNotSpecified)
 	assert.Equal(t, product.PythonLinter.Name, analyzer.GetLinter().Name)
 }
 
@@ -291,7 +284,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesNativeForDominantDart(t *testing
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "", "")
+	analyzer := SelectAnalyzerForPath(dir, "", ExecutionModeNotSpecified)
 	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
 	assert.IsType(t, &product.NativeAnalyzer{}, analyzer)
 }
@@ -311,7 +304,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesDockerForDominantLua(t *testing.
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "", "")
+	analyzer := SelectAnalyzerForPath(dir, "", ExecutionModeNotSpecified)
 	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
 	assert.IsType(t, &product.DockerAnalyzer{}, analyzer)
 }
@@ -329,7 +322,7 @@ func TestSelectAnalyzerForPathNonInteractiveUsesDockerForTiedDartAndLua(t *testi
 		}
 	}
 
-	analyzer := SelectAnalyzerForPath(dir, "", "")
+	analyzer := SelectAnalyzerForPath(dir, "", ExecutionModeNotSpecified)
 	assert.Equal(t, product.PolyLinter.Name, analyzer.GetLinter().Name)
 	assert.IsType(t, &product.DockerAnalyzer{}, analyzer)
 }

@@ -44,7 +44,7 @@ func TestAnalyzerCliOptions(t *testing.T) {
 					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
 				}
 
-				analyzer := GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, tt.image, tt.withinDocker)
+				analyzer := GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, tt.image, tt.executionMode)
 				if tt.failure && !fatal {
 					t.Errorf("Expected failure case, got %v", analyzer.Name())
 					return
@@ -153,7 +153,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 					defer func() { logrus.StandardLogger().ExitFunc = nil }()
 					var fatal bool
 					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
-					GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, "", "")
+					GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, "", ExecutionModeNotSpecified)
 					if !fatal {
 						t.FailNow()
 					}
@@ -165,7 +165,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 					Path:   distPath,
 					IsEap:  false,
 				}
-				analyzer := GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, "", "")
+				analyzer := GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, "", ExecutionModeNotSpecified)
 
 				pathNativeAnalyzer, ok := analyzer.(*product.PathNativeAnalyzer)
 				if !ok {
