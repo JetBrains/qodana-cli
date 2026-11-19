@@ -5,15 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
 
-	"github.com/docker/docker/api/types/backend"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
@@ -312,12 +314,12 @@ func TestExtractDockerVolumes(t *testing.T) {
 func TestGenerateDebugDockerRunCommand(t *testing.T) {
 	tests := []struct {
 		name     string
-		cfg      *backend.ContainerCreateConfig
+		cfg      *client.ContainerCreateOptions
 		contains []string
 	}{
 		{
 			name: "basic config",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -328,7 +330,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with user",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -340,7 +342,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with environment variables",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -352,7 +354,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with auto remove",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -366,7 +368,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with mounts",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -382,7 +384,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with capabilities",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -396,7 +398,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with security opts",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -410,7 +412,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with attach stdout/stderr and tty",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image:        "jetbrains/qodana-jvm:latest",
@@ -434,8 +436,21 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 	}
 }
 
+func TestGetDockerOptionsJvmDebugPort(t *testing.T) {
+	builder := containerBuilder(t)
+	builder.JvmDebugPort = 5006
+
+	options := getDockerOptions(builder.Build(), "jetbrains/qodana-jvm:latest")
+	debugPort := network.MustParsePort("5005")
+
+	assert.Equal(t, network.PortSet{debugPort: struct{}{}}, options.Config.ExposedPorts)
+	assert.Equal(t, network.PortMap{
+		debugPort: {{HostIP: netip.IPv4Unspecified(), HostPort: "5006"}},
+	}, options.HostConfig.PortBindings)
+}
+
 func TestGenerateDebugDockerRunCommand_FiltersTokens(t *testing.T) {
-	cfg := &backend.ContainerCreateConfig{
+	cfg := &client.ContainerCreateOptions{
 		Name: "test-container",
 		Config: &container.Config{
 			Image: "jetbrains/qodana-jvm:latest",
