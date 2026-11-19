@@ -6,7 +6,7 @@ FROM jvm-community
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.39.5"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="11.28.11"
+ENV PNPM_VERSION="12.20.0"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0

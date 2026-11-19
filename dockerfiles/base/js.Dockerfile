@@ -4,7 +4,7 @@ FROM dhi.io/node:$NODE_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.39.5"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="11.28.11"
+ENV PNPM_VERSION="12.20.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
