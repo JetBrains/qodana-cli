@@ -211,7 +211,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser-pro
-          version: v2.18.2
+          version: v2.20.2
           args: build --snapshot --clean --id cli
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
@@ -224,7 +224,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser-pro
-          version: v2.18.2
+          version: v2.20.2
           args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
