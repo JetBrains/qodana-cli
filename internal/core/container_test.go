@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/mount"
@@ -466,4 +468,63 @@ func TestGenerateDebugDockerRunCommand_FiltersTokens(t *testing.T) {
 	assert.Contains(t, result, "-e SAFE_VAR=value")
 	// QODANA_TOKEN should be filtered out
 	assert.NotContains(t, result, "secret_token")
+}
+
+type immediateExitDockerClient struct {
+	client.APIClient
+	calls      []string
+	waitResult chan container.WaitResponse
+	exited     bool
+}
+
+func (c *immediateExitDockerClient) ContainerCreate(
+	context.Context,
+	client.ContainerCreateOptions,
+) (client.ContainerCreateResult, error) {
+	c.calls = append(c.calls, "create")
+	return client.ContainerCreateResult{ID: "container-id"}, nil
+}
+
+func (c *immediateExitDockerClient) ContainerWait(
+	context.Context,
+	string,
+	client.ContainerWaitOptions,
+) client.ContainerWaitResult {
+	c.calls = append(c.calls, "wait")
+	result := make(chan container.WaitResponse, 1)
+	if !c.exited {
+		c.waitResult = result
+	}
+	return client.ContainerWaitResult{Result: result, Error: make(chan error)}
+}
+
+func (c *immediateExitDockerClient) ContainerStart(
+	context.Context,
+	string,
+	client.ContainerStartOptions,
+) (client.ContainerStartResult, error) {
+	c.calls = append(c.calls, "start")
+	c.exited = true
+	if c.waitResult != nil {
+		c.waitResult <- container.WaitResponse{StatusCode: 3}
+	}
+	return client.ContainerStartResult{}, nil
+}
+
+func TestRunContainerCatchesImmediateExit(t *testing.T) {
+	dockerClient := &immediateExitDockerClient{}
+	waitResult := runContainer(context.Background(), dockerClient, &client.ContainerCreateOptions{})
+
+	exitCode := make(chan int64, 1)
+	go func() {
+		exitCode <- getContainerExitCode(waitResult)
+	}()
+
+	select {
+	case code := <-exitCode:
+		assert.Equal(t, int64(3), code)
+		assert.Equal(t, []string{"create", "wait", "start"}, dockerClient.calls)
+	case <-time.After(time.Second):
+		t.Fatal("ContainerWait missed the container's immediate exit")
+	}
 }

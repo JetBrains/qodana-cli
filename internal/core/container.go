@@ -106,10 +106,10 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 
 	msg.UpdateText(progress, scanStages[1])
 
-	runContainer(ctx, docker, dockerConfig)
+	waitResult := runContainer(ctx, docker, dockerConfig)
 	go followLinter(docker, dockerConfig.Name, progress, scanStages)
 
-	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
+	exitCode := getContainerExitCode(waitResult)
 
 	fixDarwinCaches(c.CacheDir())
 
@@ -414,7 +414,10 @@ func getDockerOptions(c corescan.Context, image string) *client.ContainerCreateO
 
 	if c.JvmDebugPort() > 0 {
 		log.Infof("Enabling JVM debug on port %d", c.JvmDebugPort())
-		debugPort := network.MustParsePort(containerJvmDebugPort)
+		debugPort, err := network.ParsePort(containerJvmDebugPort)
+		if err != nil {
+			log.Fatal(err)
+		}
 		portBindings = network.PortMap{
 			debugPort: []network.PortBinding{
 				{
@@ -529,8 +532,7 @@ func generateDebugDockerRunCommand(cfg *client.ContainerCreateOptions) string {
 }
 
 // getContainerExitCode returns the exit code of the docker container.
-func getContainerExitCode(ctx context.Context, dockerClient client.APIClient, id string) int64 {
-	waitResult := dockerClient.ContainerWait(ctx, id, client.ContainerWaitOptions{Condition: container.WaitConditionNextExit})
+func getContainerExitCode(waitResult client.ContainerWaitResult) int64 {
 	select {
 	case err := <-waitResult.Error:
 		if err != nil {
@@ -543,14 +545,16 @@ func getContainerExitCode(ctx context.Context, dockerClient client.APIClient, id
 }
 
 // runContainer runs the container.
-func runContainer(ctx context.Context, dockerClient client.APIClient, opts *client.ContainerCreateOptions) {
+func runContainer(ctx context.Context, dockerClient client.APIClient, opts *client.ContainerCreateOptions) client.ContainerWaitResult {
 	createResp, err := dockerClient.ContainerCreate(ctx, *opts)
 	if err != nil {
 		log.Fatal("couldn't create the container ", err)
 	}
+	waitResult := dockerClient.ContainerWait(ctx, createResp.ID, client.ContainerWaitOptions{Condition: container.WaitConditionNextExit})
 	if _, err = dockerClient.ContainerStart(ctx, createResp.ID, client.ContainerStartOptions{}); err != nil {
 		log.Fatal("couldn't bootstrap the container ", err)
 	}
+	return waitResult
 }
 
 // extractDockerVolumes extracts the source and target of the volume to mount.
