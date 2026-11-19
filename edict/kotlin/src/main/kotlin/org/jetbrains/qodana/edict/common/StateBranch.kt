@@ -60,9 +60,14 @@ internal class StateBranch(layout: EdictLayout, private val branch: String) {
     return Worktree()
   }
 
-  /** Whether origin has [branch]; false when the project has no origin. */
-  fun onOrigin(): Boolean =
-    "origin" in git(project, "remote").lines() && git(project, "ls-remote", "origin", "refs/heads/$branch").isNotBlank()
+  /**
+   * Whether origin has [branch]; false when there is no origin. Once checked out, origin is the state directory's: a state that
+   * CI checked out as a repository of its own has an origin other than the project's.
+   */
+  fun onOrigin(): Boolean {
+    val repository = if (checkedOut) stateDirectory else project
+    return "origin" in git(repository, "remote").lines() && git(repository, "ls-remote", "origin", "refs/heads/$branch").isNotBlank()
+  }
 
   /**
    * Removes the worktree of the state directory and the local [branch], dropping what origin does not have; does nothing when

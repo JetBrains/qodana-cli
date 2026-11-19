@@ -47,6 +47,12 @@ internal val PROJECT = ReviewRepository(CiProviderId.GITHUB, "github.com", "owne
 /** Pull request [number] of [PROJECT]. */
 internal fun pullRequest(number: Int): ReviewReference = PROJECT.reference("$number", "https://github.com/owner/project/pull/$number")
 
+/** The Space repository of the fixture SafePushes. */
+internal val SPACE_PROJECT = ReviewRepository(CiProviderId.SPACE, "code.jetbrains.team", "ij", "ultimate")
+
+/** The merge request a fixture SafePush is of. */
+internal val SPACE_REVIEW: ReviewReference = SPACE_PROJECT.reference("J0wB60npRC0", "https://code.jetbrains.team/p/ij/reviews/236641")
+
 /** The pull request the fixture workflows run for. */
 internal val PULL_REQUEST = pullRequest(7)
 
@@ -115,20 +121,19 @@ internal val PULL_REQUEST_FILES = ProviderRequest("GET", "$PULL_REQUEST_ENDPOINT
 /** When the fixture routine collects the answers: the records it keeps waiting are of pull requests updated since a week. */
 internal val COLLECTED_AT: Instant = Instant.parse("2026-11-10T12:00:00Z")
 
-/** Page [page] of the pull requests of [PROJECT], the most recently updated first. */
-internal fun recentPullRequests(page: Int = 1): ProviderRequest = ProviderRequest(
-  "GET",
-  PULLS_ENDPOINT,
-  mapOf("state" to "all", "sort" to "updated", "direction" to "desc", "per_page" to "100", "page" to "$page"),
-)
+/** The read of [pullRequest] itself. */
+internal fun stateOf(pullRequest: ReviewReference): ProviderRequest = ProviderRequest("GET", "$PULLS_ENDPOINT/${pullRequest.id}")
 
-/** Pull request [number] of [PROJECT] as GitHub lists it in [state], `open` or `closed`, last updated at [updatedAt]. */
-internal fun listedPullRequest(number: Int, state: String, updatedAt: String = "2026-11-09T08:00:00Z"): String = buildJsonObject {
-  put("number", number)
-  put("state", state)
-  put("updated_at", updatedAt)
-  put("html_url", pullRequest(number).url)
-}.toString()
+/** The answer that has pull request [number] of [PROJECT] in [state], `open` or `closed`, last updated at [updatedAt]. */
+internal fun pullRequestAnswer(number: Int, state: String, updatedAt: String = "2026-11-09T08:00:00Z"): CiHttpResponse = answer(
+  200,
+  buildJsonObject {
+    put("number", number)
+    put("state", state)
+    put("updated_at", updatedAt)
+    put("html_url", pullRequest(number).url)
+  }.toString(),
+)
 
 /** The first page of the review comments of [pullRequest]. */
 internal fun commentsOf(pullRequest: ReviewReference): ProviderRequest = ProviderRequest(
@@ -170,4 +175,4 @@ internal fun listAnswer(vararg items: String): CiHttpResponse = answer(200, item
 
 /** A call of the feedback client that sends exactly [exchanges], answered as a script has them: no real pull request yet. */
 internal fun feedbackScripted(vararg exchanges: Exchange): Recording<GitHubFeedbackApi> =
-  Recording(exchanges.toList(), JsonNull, ::GitHubFeedbackApi, scripted = true)
+  Recording(exchanges.toList(), JsonNull, { GitHubFeedbackApi(lazyOf(it)) }, scripted = true)

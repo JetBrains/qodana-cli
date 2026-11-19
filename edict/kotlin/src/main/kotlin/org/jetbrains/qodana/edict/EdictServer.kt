@@ -22,10 +22,10 @@ import org.jetbrains.qodana.edict.core.EdictRepository
 import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.core.EdictSourceFileService
 import org.jetbrains.qodana.edict.core.IntellijMcpServerService
+import org.jetbrains.qodana.edict.feedback.FeedbackApi
 import org.jetbrains.qodana.edict.feedback.FeedbackSignals
 import org.jetbrains.qodana.edict.feedback.FeedbackMcpToolset
 import org.jetbrains.qodana.edict.feedback.FeedbackRecords
-import org.jetbrains.qodana.edict.feedback.GitHubFeedbackApi
 import org.jetbrains.qodana.edict.history.enrichment.EdictEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
@@ -67,7 +67,7 @@ internal class EdictServer private constructor(
       configuration: EdictConfiguration,
       ciReviews: ReviewApi?,
       promotionReviews: ReviewApi?,
-      feedbackApi: GitHubFeedbackApi?,
+      feedbackApi: FeedbackApi?,
     ): EdictServer {
       val store = EdictRepositoryState.open(layout.stateDirectory)
       try {

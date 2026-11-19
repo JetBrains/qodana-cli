@@ -18,7 +18,6 @@ import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.feedback.support.FEEDBACK_CLUSTER
 import org.jetbrains.qodana.edict.feedback.support.FINDING_MESSAGE
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
-import org.jetbrains.qodana.edict.feedback.support.OWN_PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_FILES
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
@@ -127,7 +126,7 @@ class FeedbackPostingTest {
   }
 
   /**
-   * A CI run of [OWN_PULL_REQUEST] after `prepare` selected cluster `rule`, in [layout]: its state checked out outside the
+   * A CI run of [PULL_REQUEST] after `prepare` selected cluster `rule`, in [layout]: its state checked out outside the
    * project, and its scan of [HEAD_REVISION] wrote [sarif].
    */
   private class Run(val layout: EdictLayout, val sarif: Path) {
@@ -135,7 +134,7 @@ class FeedbackPostingTest {
     fun post(vararg exchanges: Exchange) {
       val clock = Clock.fixed(CREATED_AT, ZoneOffset.UTC)
       feedbackScripted(*exchanges).replay {
-        postFeedback(layout, DEFAULT_EDICT_STATE_BRANCH, OWN_PULL_REQUEST, sarif, this, clock, FeedbackConfiguration())
+        postFeedback(layout, DEFAULT_EDICT_STATE_BRANCH, PULL_REQUEST, this, sarif, clock, FeedbackConfiguration())
       }
     }
   }

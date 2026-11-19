@@ -6,7 +6,7 @@ import org.jetbrains.qodana.edict.common.FeedbackConfiguration
 import org.jetbrains.qodana.edict.common.sha256
 import java.time.Instant
 
-/** A [finding] that a pull request touches, with [line], the first of its lines the pull request adds, to comment on. */
+/** A [finding] that a review may show, with [line], the one of its lines to show it at, which the feedback API chooses. */
 internal data class FeedbackCandidate(val finding: InternalFinding, val line: Int)
 
 /**

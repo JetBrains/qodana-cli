@@ -12,17 +12,16 @@ import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_COMMENTS
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_FILES
 import org.jetbrains.qodana.edict.feedback.support.commentUrl
 import org.jetbrains.qodana.edict.feedback.support.edictComment
-import org.jetbrains.qodana.edict.feedback.support.COLLECTED_AT
-import org.jetbrains.qodana.edict.feedback.support.PROJECT
 import org.jetbrains.qodana.edict.feedback.support.listAnswer
-import org.jetbrains.qodana.edict.feedback.support.listedPullRequest
-import org.jetbrains.qodana.edict.feedback.support.recentPullRequests
+import org.jetbrains.qodana.edict.feedback.support.pullRequestAnswer
 import org.jetbrains.qodana.edict.feedback.support.reply
+import org.jetbrains.qodana.edict.feedback.support.stateOf
 import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
 import org.jetbrains.qodana.edict.core.EdictReply
 import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -68,42 +67,21 @@ class GitHubFeedbackApiTest {
   }
 
   @Test
-  fun `the recent pull requests are those updated since the given time, open or closed`() {
-    val recording = feedbackScripted(
-      recentPullRequests() answeredWith listAnswer(
-        listedPullRequest(9, "open", updatedAt = "2026-11-09T08:00:00Z"),
-        listedPullRequest(8, "closed", updatedAt = "2026-11-08T08:00:00Z"),
-        listedPullRequest(7, "open", updatedAt = "2026-11-01T08:00:00Z"),
-      ),
-    )
+  fun `a pull request has its state and when it was last updated`() {
+    val recording = feedbackScripted(stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "closed", updatedAt = "2026-11-08T08:00:00Z"))
 
-    val recent = recording.replay { recentPullRequests(PROJECT, SINCE, limit = 200) }.getOrThrow()
+    val state = recording.replay { state(PULL_REQUEST) }.getOrThrow()
 
-    assertEquals(mapOf("9" to true, "8" to false), recent)
+    assertEquals(PullRequestState(open = false, Instant.parse("2026-11-08T08:00:00Z")), state)
   }
 
   @Test
-  fun `the recent pull requests are at most the limit, the most recently updated`() {
-    val recording = feedbackScripted(
-      recentPullRequests() answeredWith listAnswer(listedPullRequest(9, "open"), listedPullRequest(8, "closed")),
-    )
+  fun `a pull request in a state GitHub does not document cannot be read`() {
+    val recording = feedbackScripted(stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "merged"))
 
-    val recent = recording.replay { recentPullRequests(PROJECT, SINCE, limit = 1) }.getOrThrow()
+    val failure = recording.replay { state(PULL_REQUEST) }.exceptionOrNull()
 
-    assertEquals(mapOf("9" to true), recent)
-  }
-
-  @Test
-  fun `a full page of recent pull requests reads the next one`() {
-    val full = (200 downTo 101).map { listedPullRequest(it, "open") }
-    val recording = feedbackScripted(
-      recentPullRequests(page = 1) answeredWith listAnswer(*full.toTypedArray()),
-      recentPullRequests(page = 2) answeredWith listAnswer(listedPullRequest(100, "closed")),
-    )
-
-    val recent = recording.replay { recentPullRequests(PROJECT, SINCE, limit = 200) }.getOrThrow()
-
-    assertEquals((200 downTo 101).associate { "$it" to true } + ("100" to false), recent)
+    assertEquals("GitHub has ${PULL_REQUEST.url} in the unknown state 'merged'", failure?.message)
   }
 
   @Test
@@ -147,9 +125,6 @@ class GitHubFeedbackApiTest {
     assertEquals("GitHub answered a review comment on ${PULL_REQUEST.url} with HTTP 502: Server Error", failure.message)
   }
 }
-
-/** Since when the fixture routine waits for answers. */
-private val SINCE = COLLECTED_AT.minus(FEEDBACK_ANSWER_WINDOW)
 
 /** The request that comments [body] on line 3 of `src/Main.kt` of [PULL_REQUEST]. */
 private fun comment(body: String) = ProviderRequest(
