@@ -34,7 +34,7 @@ type Linter struct {
 const (
 	ReleaseVersion = "2026.3"
 	ShortVersion   = "263"
-	IsReleased     = false
+	IsReleased     = true
 
 	EapSuffix  = "-EAP"
 	ReleaseVer = "release"
