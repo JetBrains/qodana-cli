@@ -38,14 +38,14 @@ var yamlOnlyOptionsTests = []TestCase{
 	{
 		name:             "Known linter, withinDocker: false in yaml, --within-docker=true",
 		linter:           "qodana-js",
-		withinDocker:     "true",
+		executionMode:    ExecutionModeDocker,
 		yamlWithinDocker: "false",
 		expected:         &product.DockerAnalyzer{Linter: product.JsLinter, Image: product.JsLinter.Image()},
 	},
 	{
 		name:             "Known linter, withinDocker: true in yaml, --within-docker=false",
 		linter:           "qodana-js",
-		withinDocker:     "false",
+		executionMode:    ExecutionModeNative,
 		yamlWithinDocker: "true",
 		expected:         &product.NativeAnalyzer{Linter: product.JsLinter, Eap: !product.IsReleased},
 	},
@@ -76,7 +76,7 @@ func TestAnalyzerQodanaYamlOptions(t *testing.T) {
 				if err != nil {
 					t.Errorf("%v", err)
 				}
-				analyzer := getAnalyzerFromProject("token", projDir, "", tt.withinDocker)
+				analyzer := getAnalyzerFromProject("token", projDir, "", tt.executionMode)
 				if tt.failure && !fatal {
 					t.Errorf("Expected failure case, got %v", analyzer.Name())
 					return
