@@ -22,7 +22,7 @@ internal class FeedbackMcpToolset(
             name = "edict_collect_feedback_answers",
             description = "Return the active feedback records whose review comment got only 👍 (label POSITIVE: the finding " +
                 "is a real problem) or only 👎 (label NEGATIVE: it is not), with the comment's URL and replies, and the pull " +
-                "requests GitHub could not read, whose records stay active. Moves to history the other records of closed pull " +
+                "requests whose answers could not be read, whose records stay active. Moves to history the other records of closed pull " +
                 "requests and of pull requests no longer recently updated; the rest stay active until they get an answer.",
             inputSchema = stringArguments("token" to "Your managed feedback-analysis task token"),
         ) { request ->

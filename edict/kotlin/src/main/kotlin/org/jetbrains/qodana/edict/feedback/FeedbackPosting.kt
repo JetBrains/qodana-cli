@@ -17,25 +17,24 @@ private val logger = KotlinLogging.logger {}
 private const val MAX_RESERVATION_ATTEMPTS = 5
 
 /**
- * Comments on the workflow's [event] with the findings of the SARIF report at [sarif] that the inspections of `prepare` reported
- * on lines the pull request adds, at the commit the report names as analysed, as many as [limits] allow. First reserves the
- * findings: records them in the
- * state directory of [layout], which `prepare` checked out, and pushes them to [stateBranch]; then posts them through [api]. A
- * comment GitHub refuses leaves its record, which the routine later finds unanswered. Finally removes the checkout of the
- * state, which the next run takes from origin again.
+ * Shows [review] the findings of the SARIF report at [sarif] that the inspections of `prepare` reported in what it changes, at
+ * the commit the report names as analysed, as many as [limits] allow. First reserves the findings that [api] lets the review
+ * show: records them in the state directory of [layout], which `prepare` checked out, and pushes them to [stateBranch]; then
+ * shows them through [api]. Without a review, the run gets no feedback. Finally removes the checkout of the state, if it is a
+ * worktree of the project, which the next run takes from origin again.
  */
 internal fun postFeedback(
     layout: EdictLayout,
     stateBranch: String,
-    event: ActionsPullRequest,
+    review: ReviewReference?,
+    api: FeedbackApi,
     sarif: Path,
-    api: GitHubFeedbackApi,
     clock: Clock,
     limits: FeedbackConfiguration,
 ) {
     val branch = StateBranch(layout, stateBranch)
     try {
-        reserveAndComment(layout, branch, event, sarif, api, clock, limits)
+        if (review != null) reserveAndShow(layout, branch, review, api, sarif, clock, limits)
     }
     catch (e: Throwable) {
         runCatching { branch.remove() }.exceptionOrNull()?.let(e::addSuppressed)
@@ -44,66 +43,58 @@ internal fun postFeedback(
     branch.remove()
 }
 
-private fun reserveAndComment(
+private fun reserveAndShow(
     layout: EdictLayout,
     branch: StateBranch,
-    event: ActionsPullRequest,
+    review: ReviewReference,
+    api: FeedbackApi,
     sarif: Path,
-    api: GitHubFeedbackApi,
     clock: Clock,
     limits: FeedbackConfiguration,
 ) {
-    val pullRequest = event.feedbackPullRequest() ?: return
     val (revision, findings) = feedbackReport(sarif)
     if (findings.isEmpty()) {
-        logger.info { "No Edict feedback inspection found a problem on ${pullRequest.url}" }
+        logger.info { "No Edict feedback inspection found a problem on ${review.url}" }
         return
     }
     check(validRevision(revision)) { "$sarif names no full commit SHA as the analysed revision: '$revision'" }
-    val candidates = onAddedLines(findings, api.addedLines(pullRequest))
-    if (candidates.isEmpty()) {
-        logger.info { "No Edict feedback finding is on a line ${pullRequest.url} adds" }
-        return
-    }
-    val worktree = branch.worktree()
-    val reserved = reserve(worktree, EdictRepositoryDirectory(layout.stateDirectory), pullRequest, revision, candidates, clock, limits)
-    reserved.forEach { record ->
-        val comment = api.comment(pullRequest, record.revision, record.path, record.commentLine, feedbackComment(record))
-        when (comment) {
-            is PostedComment.Posted -> logger.info { "Posted Edict feedback ${record.id} of ${record.clusterId} at ${comment.url}" }
-            is PostedComment.Refused -> logger.warn {
-                "$FEEDBACK_UNAVAILABLE: GitHub refused feedback ${record.id} " +
-                    "with HTTP ${comment.status}: ${comment.message}"
-            }
-        }
-    }
+    val paths = EdictRepositoryDirectory(layout.stateDirectory)
+    reserve(branch.worktree(), paths, review, revision, findings, api, clock, limits).forEach(api::show)
 }
 
 /**
- * Reserves the records of [candidates] on the state as origin has it, selecting again whenever another run pushed first,
- * and returns them.
+ * Reserves the records of the [findings] that [api] lets [review] show on the state as origin has it, selecting again whenever
+ * another run pushed first, and returns them.
  */
 private fun reserve(
     worktree: StateBranch.Worktree,
     paths: EdictRepositoryDirectory,
-    pullRequest: ReviewReference,
+    review: ReviewReference,
     revision: String,
-    candidates: List<FeedbackCandidate>,
+    findings: List<InternalFinding>,
+    api: FeedbackApi,
     clock: Clock,
     limits: FeedbackConfiguration,
 ): List<FeedbackRecord> {
     repeat(MAX_RESERVATION_ATTEMPTS) {
-        // Drops the reservation of an attempt that lost, which is committed but not pushed.
+        // The records as origin has them now, which other runs pushed during the scan or since the last attempt; drops the
+        // reservation of an attempt that lost, which is committed but not pushed.
         val base = worktree.resetToOrigin()
         val records = FeedbackRecords(paths)
+        // The records decide which findings the review may show: those another run reserved meanwhile may be kept from it.
+        val candidates = api.candidates(review, findings, records, clock.instant())
+        if (candidates.isEmpty()) {
+            logger.info { "No Edict feedback finding in what ${review.url} changes is left to show" }
+            return emptyList()
+        }
         val inspections = FeedbackInspections(paths).load()
-        val reserved = reserveFeedback(inspections, records, pullRequest, revision, candidates, clock.instant(), limits)
+        val reserved = reserveFeedback(inspections, records, review, revision, candidates, clock.instant(), limits)
         if (reserved.isEmpty()) {
-            logger.info { "${pullRequest.url} gets no more Edict feedback" }
+            logger.info { "${review.url} gets no more Edict feedback" }
             return reserved
         }
         reserved.forEach(records::addActive)
-        if (worktree.publish("Reserve Edict feedback on ${pullRequest.url}", base)) return reserved
+        if (worktree.publish("Reserve Edict feedback on ${review.url}", base)) return reserved
         logger.info { "Another run pushed the Edict state meanwhile; selecting the feedback again" }
     }
     error("Could not reserve Edict feedback: other runs kept pushing the state")

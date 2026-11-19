@@ -116,7 +116,7 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    coverage. Stop with a reported shortfall when repository history is exhausted or a provider problem leaves the next
    date uncovered; an empty selection after exhaustion is a successful no-op.
 3. `edict-feedback-signal-analysis`: turn users' 👍/👎 answers to Edict's review comments into inbox Signals, only
-   when your tools include `edict_collect_feedback_answers`, which the server offers where `edict.ci` is on GitHub. Run
+   when your tools include `edict_collect_feedback_answers`, which the server offers where `edict.ci` is set. Run
    concurrently with steps 1 and 2; it needs no input. Report its failure without blocking independent stages.
 4. `edict-distribution`: assign the resulting inbox Signals to clusters. Each task assigns a bounded share of the
    run's batch; while a completed task reports remaining Signals, delegate another distribution task, one at a time.

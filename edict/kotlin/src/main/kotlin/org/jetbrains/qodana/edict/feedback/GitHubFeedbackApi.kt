@@ -9,10 +9,9 @@ import org.jetbrains.qodana.edict.ci.CiHttpTransport
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.DefaultCiHttpTransport
 import org.jetbrains.qodana.edict.ci.ReviewReference
-import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.github.expectObject
 import org.jetbrains.qodana.edict.ci.github.gitHubPages
 import org.jetbrains.qodana.edict.ci.github.gitHubToken
-import org.jetbrains.qodana.edict.ci.github.gitHubTransport
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.ci.feedbackRecordId
 import org.jetbrains.qodana.edict.common.number
@@ -22,9 +21,13 @@ import org.jetbrains.qodana.edict.core.EdictReply
 import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import java.time.DateTimeException
+import java.time.Duration
 import java.time.Instant
 
 private val logger = KotlinLogging.logger {}
+
+/** How long after its pull request was last updated a record still waits for an answer. */
+internal val FEEDBACK_ANSWER_WINDOW: Duration = Duration.ofDays(7)
 
 /** What GitHub did with a review comment. */
 internal sealed interface PostedComment {
@@ -38,6 +41,9 @@ internal sealed interface PostedComment {
     data class Refused(val status: Int, val message: String) : PostedComment
 }
 
+/** A pull request that is [open] or closed, last updated at [updatedAt]. */
+internal data class PullRequestState(val open: Boolean, val updatedAt: Instant)
+
 /** A review comment of Edict, with the answers it got. */
 internal data class FeedbackThread(
     /** The web page of the comment. */
@@ -47,22 +53,60 @@ internal data class FeedbackThread(
     val replies: List<EdictReply>,
 )
 
-/** The GitHub client of the workflow run, with the API URL and the token GitHub Actions gives it. */
-internal fun actionsFeedbackApi(): GitHubFeedbackApi {
+/** The API of GitHub for the workflow run, at the URL and with the token GitHub Actions gives it. */
+internal fun actionsTransport(): CiHttpTransport {
     val apiUrl = System.getenv("GITHUB_API_URL")?.takeIf(String::isNotBlank)
         ?: error("GITHUB_API_URL is not set; Edict feedback runs in GitHub Actions")
     val token = gitHubToken().getOrElse { throw IllegalStateException("Edict feedback requires a token to comment: ${it.message}", it) }
-    return GitHubFeedbackApi(DefaultCiHttpTransport(CiProviderId.GITHUB, apiUrl, token))
+    return DefaultCiHttpTransport(CiProviderId.GITHUB, apiUrl, token)
 }
 
-/** The GitHub client of the Edict server for [repository]; none on a provider other than GitHub. */
-internal fun serverFeedbackApi(repository: ReviewRepository): GitHubFeedbackApi? = when (repository.provider) {
-    CiProviderId.GITHUB -> GitHubFeedbackApi(gitHubTransport(repository))
-    CiProviderId.SPACE -> null
-}
+/**
+ * The feedback on GitHub pull requests through [http], made once first used, as `prepare` runs without a token: review comments
+ * on the lines a pull request of the repository itself adds, answered by their thumbs and replies.
+ */
+internal class GitHubFeedbackApi(http: Lazy<CiHttpTransport>) : FeedbackApi {
+    private val http by http
 
-/** Reads what pull requests change and comments on their lines, on GitHub only, where Edict feedback runs. */
-internal class GitHubFeedbackApi(private val http: CiHttpTransport) {
+    /** The lines each pull request adds, which stay the same while the run selects its findings again. */
+    private val addedLinesByPullRequest = HashMap<ReviewReference, Map<String, Set<Int>>>()
+
+    /** The pull request of the workflow run, which gets feedback only when it is between branches of the repository itself. */
+    override fun analysedReview(): ReviewReference? = actionsPullRequest(actionsEventPath()).feedbackPullRequest()
+
+    override fun candidates(
+        review: ReviewReference,
+        findings: List<InternalFinding>,
+        records: FeedbackRecords,
+        now: Instant,
+    ): List<FeedbackCandidate> = onAddedLines(findings, addedLinesByPullRequest.getOrPut(review) { addedLines(review) })
+
+    override fun show(record: FeedbackRecord) {
+        when (val comment = comment(record.pullRequest, record.revision, record.path, record.commentLine, feedbackComment(record))) {
+            is PostedComment.Posted -> logger.info { "Posted Edict feedback ${record.id} of ${record.clusterId} at ${comment.url}" }
+            is PostedComment.Refused -> logger.warn {
+                "$FEEDBACK_UNAVAILABLE: GitHub refused feedback ${record.id} with HTTP ${comment.status}: ${comment.message}"
+            }
+        }
+    }
+
+    /**
+     * The answers of the records on each of their pull requests updated in the [FEEDBACK_ANSWER_WINDOW] before [now]; the
+     * other records of a closed one, and every record of one updated earlier, retire.
+     */
+    override fun outcomes(records: List<FeedbackRecord>, now: Instant): List<RecordOutcome> =
+        records.groupBy(FeedbackRecord::pullRequest).flatMap { (pullRequest, recordsOfPullRequest) ->
+            pullRequestOutcomes(pullRequest, recordsOfPullRequest, now.minus(FEEDBACK_ANSWER_WINDOW))
+        }
+
+    /** What becomes of the [recordsOfPullRequest] on [pullRequest], whose answers are read when it was updated at [since] or later. */
+    private fun pullRequestOutcomes(pullRequest: ReviewReference, recordsOfPullRequest: List<FeedbackRecord>, since: Instant): List<RecordOutcome> {
+        val state = state(pullRequest).getOrElse { return listOf(RecordOutcome.Unread(pullRequest, it)) }
+        if (state.updatedAt < since) return recordsOfPullRequest.map(RecordOutcome::Retired)
+        val threads = threads(pullRequest).getOrElse { return listOf(RecordOutcome.Unread(pullRequest, it)) }
+        return recordsOfPullRequest.map { record -> outcome(record, threads[record.id], state.open) }
+    }
+
     /**
      * The lines [pullRequest] adds, by repository-relative path. A file whose patch GitHub leaves out, a binary or a very
      * large one, adds none, and GitHub lists at most the first 3000 files.
@@ -90,21 +134,14 @@ internal class GitHubFeedbackApi(private val http: CiHttpTransport) {
         }
     }
 
-    /**
-     * The pull requests of [repository] updated at [since] or later, by number, true for an open one: the [limit] most
-     * recently updated at most. Pages are read only as far as the pull requests are recent enough.
-     */
-    fun recentPullRequests(repository: ReviewRepository, since: Instant, limit: Int): Result<Map<String, Boolean>> = gitHubRead {
-        val endpoint = "/repos/${urlPart(repository.owner)}/${urlPart(repository.repository)}/pulls"
-        http.gitHubPages(endpoint, mapOf("state" to "all", "sort" to "updated", "direction" to "desc"))
-            .takeWhile { Instant.parse(it.text("updated_at")) >= since }
-            .take(limit)
-            .associate { pullRequest ->
-                val state = pullRequest.text("state")
-                // GitHub documents only these two states; another one must not count as closed.
-                require(state == "open" || state == "closed") { "GitHub listed ${pullRequest.text("html_url")} in the unknown state '$state'" }
-                pullRequest.number("number").toString() to (state == "open")
-            }
+    /** Whether [pullRequest] is open, and when it was last updated. */
+    fun state(pullRequest: ReviewReference): Result<PullRequestState> = gitHubRead {
+        val endpoint = pullRequestEndpoint(pullRequest)
+        val read = expectObject(http.send("GET", endpoint), "GitHub read of $endpoint", 200)
+        val state = read.text("state")
+        // GitHub documents only these two states; another one must not count as closed.
+        require(state == "open" || state == "closed") { "GitHub has ${pullRequest.url} in the unknown state '$state'" }
+        PullRequestState(state == "open", Instant.parse(read.text("updated_at")))
     }
 
     /** The review comments of Edict on [pullRequest] with their answers, by the record id their marker names. */
@@ -132,6 +169,15 @@ private fun feedbackThread(comment: JsonObject, replies: List<JsonObject>): Feed
         else -> null
     }
     return FeedbackThread(comment.text("html_url"), label, replies.map { EdictReply(it.obj("user").text("login"), it.text("body")) })
+}
+
+private fun outcome(record: FeedbackRecord, thread: FeedbackThread?, open: Boolean): RecordOutcome {
+    val answer = thread?.let { answered -> answered.label?.let { FeedbackAnswer(record, it, answered.url, answered.replies) } }
+    return when {
+        answer != null -> RecordOutcome.Answered(answer)
+        open -> RecordOutcome.Waiting
+        else -> RecordOutcome.Retired(record)
+    }
 }
 
 /**
