@@ -95,6 +95,11 @@ func (o CliOptions) Env() []string {
 	return env
 }
 
+// NoCliStatistics reports whether the CLI sends no statistics of its own.
+func (o CliOptions) NoCliStatistics() bool {
+	return o.NoStatistics || o.AirGapped
+}
+
 func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	flags := cmd.Flags()
 	flags.SortFlags = false

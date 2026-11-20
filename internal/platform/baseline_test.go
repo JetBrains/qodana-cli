@@ -17,8 +17,13 @@
 package platform
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -362,4 +367,25 @@ func TestUsedMessage(t *testing.T) {
 			"or turn on the cloud baseline of the project in Qodana Cloud.",
 		Baseline{}.UsedMessage(),
 	)
+}
+
+func TestCloudBaselineFailure(t *testing.T) {
+	for name, failure := range map[string]struct {
+		err        error
+		status     string
+		httpStatus int
+	}{
+		"cache dir":        {&fs.PathError{Op: "mkdir", Err: fs.ErrPermission}, "io_error", 0},
+		"network timeout":  {&net.DNSError{IsTimeout: true}, "timeout", 0},
+		"stalled download": {fmt.Errorf("download: %w", context.Canceled), "timeout", 0},
+		"deadline":         {context.DeadlineExceeded, "timeout", 0},
+		"invalid":          {cloud.ErrInvalidBaseline, "invalid_response", 0},
+		"truncated":        {io.ErrUnexpectedEOF, "invalid_response", 0},
+		"http":             {fmt.Errorf("request: %w", &cloud.APIError{StatusCode: 503}), "request_failed", 503},
+		"other":            {errors.New("connection refused"), "request_failed", 0},
+	} {
+		status, httpStatus := cloudBaselineFailure(failure.err)
+		assert.Equal(t, failure.status, status, name)
+		assert.Equal(t, failure.httpStatus, httpStatus, name)
+	}
 }

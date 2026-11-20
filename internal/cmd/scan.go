@@ -55,7 +55,12 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			telemetry.Start("scan", func() string { return platform.GetDeviceIdSalt(cliOptions.ProjectDir)[0] }, cliOptions.NoStatistics, cliOptions.Env_)
+			telemetry.Start(
+				"scan",
+				func() string { return platform.GetDeviceIdSalt(cliOptions.ProjectDir)[0] },
+				cliOptions.NoCliStatistics(),
+				cliOptions.Env_,
+			)
 			tokenloader.InitializeQodanaGlobalEnv(cliOptions)
 			// QODANA_ORG_TOKEN is resolved: drop it so it never reaches the scan context and its debug output
 			cliOptions.Env_ = qdenv.WithoutEnv(cliOptions.Env_, qdenv.QodanaOrgToken)
@@ -111,6 +116,7 @@ But you can always override qodana.yaml options with the following command-line 
 				if effectiveConfigFiles.EffectiveQodanaYamlPath != "" {
 					yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
 					qodanaYamlConfig = corescan.YamlConfig(yaml)
+					telemetry.Allow(!yaml.AirGapped)
 				}
 			}
 			scanContext := corescan.CreateContext(

@@ -49,7 +49,7 @@ But you can always override qodana.yaml options with the following command-line 
 			telemetry.Start(
 				"scan",
 				func() string { return GetDeviceIdSalt(cliOptions.ProjectDir)[0] },
-				cliOptions.NoStatistics,
+				cliOptions.NoCliStatistics(),
 				cliOptions.Env_,
 			)
 			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)

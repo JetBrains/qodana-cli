@@ -644,12 +644,14 @@ func TestRejectedLicenseFinishesRun(t *testing.T) {
 func TestNothingIsCollectedWithoutPermission(t *testing.T) {
 	licenseOnly := []string{qdenv.QodanaLicenseOnlyToken + "=token"}
 	for name, run := range map[string]struct {
-		setup func(t *testing.T)
-		env   []string
+		setup        func(t *testing.T)
+		env          []string
+		noStatistics bool
 	}{
-		"license-only token":            {func(t *testing.T) { t.Setenv(qdenv.QodanaLicenseOnlyToken, "token") }, nil},
-		"license-only token with --env": {func(*testing.T) {}, licenseOnly},
-		"do not track":                  {func(t *testing.T) { t.Setenv(doNotTrackEnv, "1") }, nil},
+		"license-only token":            {func(t *testing.T) { t.Setenv(qdenv.QodanaLicenseOnlyToken, "token") }, nil, false},
+		"license-only token with --env": {func(*testing.T) {}, licenseOnly, false},
+		"do not track":                  {func(t *testing.T) { t.Setenv(doNotTrackEnv, "1") }, nil, false},
+		"no statistics or air-gapped":   {func(*testing.T) {}, nil, true},
 	} {
 		t.Run(
 			name, func(t *testing.T) {
@@ -659,7 +661,7 @@ func TestNothingIsCollectedWithoutPermission(t *testing.T) {
 				t.Setenv(qdenv.QodanaToken, "")
 				run.setup(t)
 
-				Start("scan", func() string { return "" }, false, run.env)
+				Start("scan", func() string { return "" }, run.noStatistics, run.env)
 				Finish(0, "")
 
 				assert.False(t, connected, "JetBrains should not be contacted")
@@ -794,4 +796,43 @@ func TestOnlyReleasesAreSent(t *testing.T) {
 		assert.Nil(t, s, internal)
 		assert.ErrorContains(t, err, "is not a release", internal)
 	}
+}
+
+func TestReleaseIsSentToFusAndPostHog(t *testing.T) {
+	cacheDir := t.TempDir()
+	for _, env := range []string{"HOME", "XDG_CACHE_HOME", "LocalAppData"} {
+		t.Setenv(env, cacheDir)
+	}
+	userAgents := make(chan string, 2)
+	server := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { userAgents <- r.URL.Path + " " + r.UserAgent() }),
+	)
+	defer server.Close()
+	host := postHogHost
+	postHogHost = server.URL
+	t.Cleanup(func() { postHogHost = host })
+	// a fresh cached config is not fetched
+	userCacheDir, err := os.UserCacheDir()
+	require.NoError(t, err)
+	config, err := json.Marshal(fus.FUSConfig{SendEndpoint: server.URL + "/fus", FetchedAt: time.Now().Unix()})
+	require.NoError(t, err)
+	dataDir := filepath.Join(userCacheDir, "JetBrains", "Qodana", "fus")
+	require.NoError(t, os.MkdirAll(dataDir, 0o700))
+	require.NoError(t, os.WriteFile(filepath.Join(dataDir, "fus_config.json"), config, 0o600))
+
+	s := newSender(testDevice, "2026.2")
+	require.NotNil(t, s)
+	require.NoError(t, s.send([]event{{groupRun, licenseObtained, time.Now().UnixMilli(), map[string]any{"kind": "env"}}}))
+
+	assert.ElementsMatch(t, []string{"/fus QDCLI/2026.2", "/batch/ QDCLI/2026.2"}, []string{<-userAgents, <-userAgents})
+}
+
+func TestPanicOfTheSenderSendsNothing(t *testing.T) {
+	received := fakeFus(t)
+	connect = func(string, string) *sender { panic("boom") }
+	Start("scan", func() string { return "" }, false, nil)
+
+	Finish(0, "")
+
+	assert.Empty(t, received)
 }

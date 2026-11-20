@@ -109,6 +109,7 @@ func RunThirdPartyLinterAnalysis(
 	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
 		yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath)
 		qodanaYamlConfig = thirdpartyscan.YamlConfig(yaml)
+		telemetry.Allow(!yaml.AirGapped)
 	}
 
 	context := thirdpartyscan.ComputeContext(
