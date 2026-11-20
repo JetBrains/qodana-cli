@@ -3,6 +3,8 @@
   "extends": [
     "config:recommended"
   ],
+  "platformAutomerge": false,
+  "automergeStrategy": "squash",
   "postUpdateOptions": [
     "gomodUpdateImportPaths"
   ],
@@ -94,11 +96,13 @@
     },
     {
       "matchManagers": ["gomod"],
+      "constraintsFiltering": "strict",
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "Go modules"
     },
     {
       "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "GitHub Actions"
     },
@@ -106,6 +110,46 @@
       "matchManagers": ["maven"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "Maven dependencies"
+    },
+    {
+      "matchManagers": ["gomod", "github-actions", "maven"],
+      "separateMinorPatch": true
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Go modules (patch)",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["gomod"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "matchUpdateTypes": ["minor"],
+      "groupName": "Go modules (minor)",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["maven"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Maven dependencies (patch)",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["maven"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "matchUpdateTypes": ["minor"],
+      "groupName": "Maven dependencies (minor)",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action"],
+      "matchCurrentVersion": "!/^v?0\\./",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "GitHub Actions (non-major)",
+      "automerge": true
     },
     {
       "matchManagers": ["dockerfile"],
@@ -139,7 +183,12 @@
     {
       "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
       "matchDepNames": ["java-jdk"],
-      "allowedVersions": "<22"
+      "allowedVersions": "/^21(\\.|$)/"
+    },
+    {
+      "matchDepNames": ["java-jdk"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true
     },
     {
       "description": "ruby.Dockerfile's RUBY_TAG is only a default; the built Ruby versions come from the ruby3x matrix in dockerfiles/base/docker-bake.hcl, which Renovate can't update.",
@@ -164,7 +213,8 @@
   ],
   "labels": ["dependencies"],
   "vulnerabilityAlerts": {
-    "addLabels": ["security"]
+    "addLabels": ["security"],
+    "automerge": false
   },
   "commitMessagePrefix": ":arrow_up: QD-8148",
   "schedule": ["* * * * 1"],
