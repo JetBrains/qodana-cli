@@ -34,6 +34,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/moby/moby/client"
@@ -126,6 +127,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	platform.LogContext(&c)
 
 	if !utils.IsInstalled("git") && (c.FullHistory() || c.Commit() != "" || c.DiffStart() != "" || c.DiffEnd() != "") {
+		telemetry.Fail(telemetry.ReasonGitMissing)
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
@@ -140,9 +142,13 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 			startHash,
 		)
 		scenario = corescan.RunScenarioDefault
+		telemetry.SetScenario(telemetry.ScenarioStartCommitMissing)
 
 		// backoff to regular analysis
 		c = c.BackoffToDefaultAnalysisBecauseOfMissingCommit()
+	} else {
+		// in Docker mode the container checks the start commit of a diff and hands over a missing one
+		telemetry.SetScenario(c.RequestedRunScenario(startHash != ""))
 	}
 
 	if err := installPlugins(c); err != nil {

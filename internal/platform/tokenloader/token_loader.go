@@ -17,7 +17,9 @@
 package tokenloader
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
@@ -25,6 +27,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -62,6 +65,7 @@ func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresTo
 		func(_ bool) string { return tokenLoader.GetQodanaToken() },
 		func(refresh bool) string { return getTokenFromKeychain(refresh, tokenLoader.GetId()) },
 	}
+	tokenSources := []string{"env", "keychain", "prompt"}
 	if interactive && requiresToken {
 		fetcherFromUserInput := func(_ bool) string {
 			return getTokenFromUserInput(
@@ -74,8 +78,9 @@ func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresTo
 		tokenFetchers = append(tokenFetchers, fetcherFromUserInput)
 	}
 
-	for _, fetcher := range tokenFetchers {
+	for i, fetcher := range tokenFetchers {
 		if token := fetcher(refresh); token != "" {
+			telemetry.SetTokenSource(tokenSources[i])
 			return token
 		}
 	}
@@ -95,6 +100,13 @@ func ValidateTokenPrintProject(token string) {
 	client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
 	if projectName, err := client.RequestProjectName(); err != nil {
 		msg.ErrorMessage(cloud.InvalidTokenMessage)
+		reason := "request_failed"
+		if apiError := (*cloud.APIError)(nil); errors.As(err, &apiError) &&
+			(apiError.StatusCode == http.StatusUnauthorized || apiError.StatusCode == http.StatusForbidden) {
+			reason = "token_invalid"
+		}
+		telemetry.RejectLicense(reason)
+		telemetry.Finish(1, "")
 		os.Exit(1)
 	} else if !qdenv.IsContainer() {
 		msg.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Url, projectName)

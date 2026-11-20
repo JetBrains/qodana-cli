@@ -30,6 +30,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 
@@ -40,6 +41,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	"github.com/moby/moby/api/types/container"
@@ -79,14 +81,18 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	}
 	docker, err := qdcontainer.NewContainerClient(ctx)
 	if err != nil {
+		telemetry.Fail(telemetry.ReasonDockerUnavailable)
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
 	}
 
 	info, err := docker.Info(ctx, client.InfoOptions{})
 	if err != nil {
+		telemetry.Fail(telemetry.ReasonDockerUnavailable)
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
 	}
+	telemetry.DockerReady(info.Info.NCPU, info.Info.MemTotal, info.Info.ServerVersion)
 	if info.Info.OSType != "linux" {
+		telemetry.Fail(telemetry.ReasonDockerUnavailable)
 		msg.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
@@ -110,6 +116,7 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	go followLinter(docker, dockerConfig.Name, progress, scanStages)
 
 	exitCode := getContainerExitCode(waitResult)
+	telemetry.CollectFromContainer(c.CacheDir())
 
 	fixDarwinCaches(c.CacheDir())
 
@@ -204,6 +211,9 @@ func encodeAuthToBase64(authConfig registry.AuthConfig) (string, error) {
 func PullImage(dockerClient client.APIClient, image string) {
 	ctx := context.Background()
 	var pullErr error
+	// an up-to-date image is pulled quickly and keeps its id
+	local, _ := dockerClient.ImageInspect(ctx, image)
+	pullStart := time.Now()
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullErr = pullImage(ctx, dockerClient, image)
@@ -220,8 +230,11 @@ func PullImage(dockerClient client.APIClient, image string) {
 			)
 			return
 		}
+		telemetry.Fail(telemetry.ReasonImagePull)
 		log.Fatal(pullErr)
 	}
+	pulled, _ := dockerClient.ImageInspect(ctx, image)
+	telemetry.LinterDownloaded("docker", local.ID != "" && local.ID == pulled.ID, time.Since(pullStart))
 	msg.SuccessMessage("Finished pulling the latest version of linter")
 }
 
@@ -316,6 +329,8 @@ func getDockerOptions(c corescan.Context, image string) *client.ContainerCreateO
 	if qodanaLicenseOnlyToken != "" && qodanaCloudUploadToken == "" {
 		dockerEnv = append(dockerEnv, fmt.Sprintf("%s=%s", qdenv.QodanaLicenseOnlyToken, qodanaLicenseOnlyToken))
 	}
+	telemetry.AllowContainer(dockerEnv)
+	dockerEnv = append(dockerEnv, telemetry.ContainerEnv(qdcontainer.DataCacheDir))
 
 	cachePath, err := fs.Canonical(c.CacheDir())
 	if err != nil {

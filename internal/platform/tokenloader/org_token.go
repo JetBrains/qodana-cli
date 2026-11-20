@@ -26,6 +26,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -108,6 +109,7 @@ func resolveOrgToken() error {
 		return fmt.Errorf("token exchange for project '%s' failed: %w", projectSlug, err)
 	}
 	qdenv.SetQodanaGlobalEnv(qdenv.QodanaToken, projectToken)
+	telemetry.SetTokenSource("org_token")
 	// child processes (linter, git, bootstrap, publisher) inherit the env: they must never see the org token
 	if err := os.Unsetenv(qdenv.QodanaOrgToken); err != nil {
 		return err

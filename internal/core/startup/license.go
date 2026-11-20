@@ -26,6 +26,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 )
 
 func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndpoints, token string) {
@@ -48,11 +49,13 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 	}
 	_, exists := os.LookupEnv(qdenv.QodanaLicense)
 	if exists {
+		telemetry.LicenseObtained("env", licenseData.LicensePlan)
 		return
 	}
 
 	// community versions works without any license and can't check any license
 	if !prod.Analyzer.GetLinter().IsPaid {
+		telemetry.LicenseObtained("community", licenseData.LicensePlan)
 		return
 	}
 
@@ -63,25 +66,27 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 			fmt.Println()
 			fmt.Println()
 		}
+		telemetry.LicenseObtained("eap", licenseData.LicensePlan)
 		return
 	}
 
 	// usual builds should have token and LicenseData for execution
 	if token == "" {
-		log.Fatalf(cloud.EmptyTokenMessage, endpoints.RootEndpoint.Url)
+		rejectLicense("no_token", cloud.EmptyTokenMessage, endpoints.RootEndpoint.Url)
 	}
 
 	licenseDataResponse, err := endpoints.RequestLicenseData(token)
 	if errors.Is(err, cloud.ErrTokenDeclined) {
-		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
+		rejectLicense("token_declined", "License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
 	}
 	if err != nil {
 		errMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.Url)
-		log.Fatalf("License request: %v\n%s", err, errMessage)
+		rejectLicense("request_failed", "License request: %v\n%s", err, errMessage)
 	}
 	licenseData = cloud.DeserializeLicenseData(licenseDataResponse)
 	if strings.ToLower(licenseData.LicensePlan) == "community" {
-		log.Fatalf(
+		rejectLicense(
+			"community_plan",
 			"Your Qodana Cloud organization has Community license that doesn’t support \"%s\" linter, "+
 				"please try one of the community linters instead: %s or obtain Ultimate "+
 				"or Ultimate Plus license. Read more about licenses and plans at "+
@@ -91,12 +96,13 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 		)
 	}
 	if licenseData.LicenseKey == "" {
-		log.Fatalf("License key should not be empty\n")
+		rejectLicense("empty_key", "License key should not be empty\n")
 	}
 	err = os.Setenv(qdenv.QodanaLicense, licenseData.LicenseKey)
 	if err != nil {
 		log.Fatal(err)
 	}
+	telemetry.LicenseObtained("cloud", licenseData.LicensePlan)
 }
 
 func allCommunityNames() string {
@@ -105,4 +111,12 @@ func allCommunityNames() string {
 		nameList = append(nameList, "\""+linter.PresentableName+"\"")
 	}
 	return strings.Join(nameList, ", ")
+}
+
+// rejectLicense prints the message and exits like log.Fatalf, after the statistics of the run are sent.
+func rejectLicense(reason string, format string, v ...any) {
+	log.Printf(format, v...)
+	telemetry.RejectLicense(reason)
+	telemetry.Finish(1, "")
+	os.Exit(1)
 }

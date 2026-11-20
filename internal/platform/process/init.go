@@ -11,6 +11,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 )
 
@@ -24,10 +25,16 @@ func Init() {
 	go func() {
 		<-commoncontext.InterruptChannel
 		msg.WarningMessage("Interrupting Qodana...")
+		go func() {
+			// a second interrupt doesn't wait for the cleanup
+			<-commoncontext.InterruptChannel
+			os.Exit(1)
+		}()
 		log.SetOutput(io.Discard)
 		core.CheckForUpdates(version.Version)
 		core.ContainerCleanup()
 		_ = msg.QodanaSpinner.Stop()
+		telemetry.Finish(0, telemetry.ReasonInterrupted)
 		// Sleep for a second to allow other functions monitoring signals elsewhere to do their thing.
 		// A future rewrite of the subprocess API should incorporate a more structured signal handling.
 		time.Sleep(1 * time.Second)

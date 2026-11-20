@@ -140,6 +140,8 @@ type QdCloudRequest struct {
 	Retries          int
 	Cooldown         int
 	ReadResponse     func(statusCode int, body io.Reader) error
+	// lastError is the error of the last failed attempt, which the error of the exhausted retries doesn't tell
+	lastError error
 }
 
 func NewCloudRequest(path string) QdCloudRequest {
@@ -160,6 +162,7 @@ func (client *QdClient) doRequest(request *QdCloudRequest) ([]byte, error) {
 		if err == nil {
 			return response, nil
 		}
+		request.lastError = err
 		var versionError *APIError
 		if errors.As(err, &versionError) {
 			if slices.Contains(request.AcceptedStatuses, versionError.StatusCode) {

@@ -3,6 +3,7 @@ module github.com/JetBrains/qodana-cli
 go 1.27.3
 
 require (
+	github.com/JetBrains/fus-reporting-api-go v0.2.0
 	github.com/boyter/scc/v4 v4.1.0
 	github.com/briandowns/spinner v1.23.2
 	github.com/codeclysm/extract/v4 v4.0.2

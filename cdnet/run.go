@@ -101,7 +101,7 @@ func patchReport(c thirdpartyscan.Context) error {
 	}
 	patchReportRuns(finalReport)
 
-	platform.SetVersionControlParams(c, platform.GetDeviceIdSalt()[0], finalReport)
+	platform.SetVersionControlParams(c, platform.GetDeviceIdSalt(c.ProjectDir())[0], finalReport)
 
 	// serialize object skipping empty fields
 	fatBytes, err := json.MarshalIndent(finalReport, "", " ")

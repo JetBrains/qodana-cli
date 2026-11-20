@@ -27,6 +27,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 	"github.com/google/uuid"
@@ -39,6 +40,7 @@ const (
 	baselineStateEmpty     = ""          // baselineStateEmpty default baseline state (not set)
 	baselineStateNew       = "new"       // baselineStateNew new baseline state
 	baselineStateUnchanged = "unchanged" // baselineStateUnchanged unchanged baseline state
+	baselineStateAbsent    = "absent"    // baselineStateAbsent absent baseline state
 	extension              = ".sarif.json"
 	qodanaCritical         = "Critical"
 	qodanaHigh             = "High"
@@ -343,8 +345,10 @@ func getRuleDescription(report *sarif.Report, ruleId string) string {
 // - can submit problems to BitBucket Code Insights
 func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeClimate, codeInsights bool) {
 	newProblems := 0
+	baselineStates := map[string]int{}
 	s, err := ReadReport(sarifPath)
 	if err != nil {
+		telemetry.Fail(telemetry.ReasonReportFailed)
 		log.Fatal(err)
 	}
 	var codeClimateIssues = make([]CCIssue, 0)
@@ -364,6 +368,7 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 			if baselineState == baselineStateNew || baselineState == baselineStateEmpty {
 				newProblems++
 			}
+			baselineStates[baselineState]++
 			if len(r.Locations) > 0 && baselineState != baselineStateUnchanged {
 				if codeClimate {
 					codeClimateIssues = append(codeClimateIssues, sarifResultToCodeClimate(&r))
@@ -385,6 +390,7 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 			}
 		}
 	}
+	telemetry.ProblemsFound(baselineStates)
 	if codeClimate {
 		err = writeGlCodeQualityReport(codeClimateIssues, sarifPath)
 		if err != nil {

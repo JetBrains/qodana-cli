@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -223,18 +224,23 @@ func SetupLicenseToken(cloudUploadToken string) {
 			LicenseOnly: false,
 		}
 	}
+	telemetry.Allow(Token.IsAllowedToSendFUS())
 }
 
 func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
 	licenseDataResponse, err := endpoints.RequestLicenseData(token)
 	if errors.Is(err, ErrTokenDeclined) {
+		telemetry.RejectLicense("token_declined")
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
+		telemetry.RejectLicense("request_failed")
 		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.Url)
 		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
-	return DeserializeLicenseData(licenseDataResponse)
+	licenseData := DeserializeLicenseData(licenseDataResponse)
+	telemetry.SetCloudIds(licenseData.ProjectIdHash, licenseData.OrganisationIdHash)
+	return licenseData
 }
 
 func (endpoints *QdApiEndpoints) GetLicensePlan(token string) string {

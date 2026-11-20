@@ -17,6 +17,7 @@
 package platformcmd
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -72,5 +73,11 @@ func TestGetShowReportPortParsing(t *testing.T) {
 				assert.Equal(t, tc.expected, options.GetShowReportPort())
 			},
 		)
+	}
+}
+
+func TestNoCliStatistics(t *testing.T) {
+	for args, expected := range map[string]bool{"": false, "--no-statistics": true, "--air-gapped": true} {
+		assert.Equal(t, expected, parseScanOptionsForTest(t, strings.Fields(args)...).NoCliStatistics(), args)
 	}
 }

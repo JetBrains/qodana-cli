@@ -27,6 +27,7 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
     * [Prepare your project](#prepare-your-project)
     * [Analyze your project](#analyze-your-project)
     * [View the report](#view-the-report)
+  * [Usage statistics](#usage-statistics)
   * [Configuration](#configuration)
   * [Why](#why)
 <!-- TOC -->
@@ -115,6 +116,22 @@ qodana show
 
 You can serve any Qodana HTML report regardless of the project if you provide the correct report path.
 
+## Usage statistics
+
+The CLI sends anonymous usage statistics to JetBrains: the steps of `qodana init` and `qodana scan`, the reason of a failure, and the environment, like the OS and the CI.
+The statistics contain no source code, file paths or problem texts.
+The CLI sends counts and sizes as ranges, like `100+`.
+
+- Only release builds send statistics. The CLI sends them once, when the command finishes.
+- The events go to JetBrains Feature Usage Statistics (FUS) and to the PostHog project of Qodana Cloud.
+
+To turn the statistics off, use `--no-statistics` or set `DO_NOT_TRACK=1`. This also turns off the statistics of the linter that the CLI starts.
+A run with a license-only token (`QODANA_LICENSE_ONLY_TOKEN` without `QODANA_TOKEN`) sends nothing.
+
+The [events scheme in FUS](https://resources.jetbrains.com/storage/ap/fus/metadata/tiger/QD/groups/QDCLI.json) lists every event and field that FUS accepts from the CLI. It is the source of truth.
+The CLI generates the same scheme, with a description of each event and field, in [`events-scheme.json`](internal/platform/telemetry/fus/events-scheme.json).
+A test fails when this file differs from the code.
+
 ## Configuration
 
 To find more CLI options run `qodana ...` commands with the `--help` flag.
@@ -146,6 +163,7 @@ qodana init [flags]
       --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
   -f, --force                Force initialization (overwrite existing valid qodana.yaml)
   -h, --help                 help for init
+      --no-statistics        Disable sending anonymous statistics
   -i, --project-dir string   Root directory of the project to configure (default ".")
 ```
 
@@ -218,7 +236,7 @@ qodana scan [flags]
       --diff-start string         Commit to start a diff run from. Only files changed between --diff-start and --diff-end will be analysed.
       --diff-end string           Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.
       --reverse                   Override the default run-scenario for diff runs to always use the reverse-scoped script
-      --no-statistics             [qodana-clang/qodana-dotnet] Disable sending anonymous statistics
+      --no-statistics             Disable sending anonymous statistics
       --air-gapped                Run in a network with no access to the internet: the linter does not update the statistics schema and does not upload statistics
       --compile-commands string   [qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory. (default "./build/compile_commands.json")
       --clang-args string         [qodana-clang specific] Additional arguments for clang

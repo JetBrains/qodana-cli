@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"slices"
@@ -34,6 +35,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
@@ -131,6 +133,10 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 		)
 	}
 
+	if dockerAnalyzer, ok := commonCtx.Analyzer.(*product.DockerAnalyzer); ok {
+		_, tag, _ := strings.Cut(path.Base(dockerAnalyzer.Image), ":")
+		telemetry.LinterReady(dockerAnalyzer.Linter.ProductCode, tag, dockerAnalyzer.Linter.IsPaid, dockerAnalyzer.IsEAP(), "docker")
+	}
 	if commonCtx.Analyzer.IsContainer() {
 		qdcontainer.PrepareContainerEnvSettings()
 	} else {
@@ -157,6 +163,7 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	ideDir string,
 ) (product.Product, string) {
 	prod := product.GuessProduct(ideDir, commonCtx.Analyzer)
+	telemetry.LinterReady(prod.Code, prod.Version, commonCtx.Analyzer.GetLinter().IsPaid, prod.IsEap, "native")
 
 	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
 	isTokenRequired := tokenloader.IsCloudTokenRequired(commonCtx)
