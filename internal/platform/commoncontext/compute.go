@@ -47,13 +47,18 @@ func Compute(
 	repositoryRoot string,
 	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
-	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter, overrideImage, overrideWithinDocker)
+	overrideExecutionMode, err := ParseExecutionMode(overrideWithinDocker)
+	if err != nil {
+		log.Fatalf("Wrong --within-docker option: %s", err)
+	}
+	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter, overrideImage, overrideExecutionMode)
 
 	if analyzer == nil {
 		analyzer = getAnalyzerFromProject(
 			qodanaCloudToken,
 			projectDir,
 			localNotEffectiveQodanaYamlPathInProject,
+			overrideExecutionMode,
 		)
 	}
 
@@ -209,19 +214,29 @@ func getAnalyzerFromProject(
 	qodanaCloudToken string,
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
+	overrideExecutionMode ExecutionMode,
 ) product.Analyzer {
 	qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 		projectDir,
 		localNotEffectiveQodanaYamlPathInProject,
 	)
 	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
+	executionMode := overrideExecutionMode
+	if executionMode == ExecutionModeNotSpecified {
+		var err error
+		executionMode, err = ParseExecutionMode(qodanaYaml.WithinDocker)
+		if err != nil {
+			log.Fatalf("Wrong `withinDocker:` value in %s: %s", qodanaYamlPath, err)
+			return nil
+		}
+	}
 	if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" && qodanaYaml.Image == "" {
 		msg.WarningMessage(
 			"No valid `linter:` or `image:` field found in %s. Have you run %s? Running that for you...",
 			msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
 			msg.PrimaryBold("qodana init"),
 		)
-		return SelectAnalyzerForPath(projectDir, qodanaCloudToken)
+		return SelectAnalyzerForPath(projectDir, qodanaCloudToken, executionMode)
 	}
 	if qodanaYaml.Ide != "" {
 		msg.WarningMessage(
@@ -250,7 +265,7 @@ func getAnalyzerFromProject(
 		return nil
 	}
 
-	return guessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter, qodanaYaml.Image, qodanaYaml.WithinDocker)
+	return guessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter, qodanaYaml.Image, executionMode)
 }
 
 func computeId(analyzer product.Analyzer, projectDir string) string {

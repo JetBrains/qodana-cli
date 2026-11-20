@@ -3,6 +3,9 @@
   "extends": [
     "config:recommended"
   ],
+  "postUpdateOptions": [
+    "gomodUpdateImportPaths"
+  ],
   "ignorePaths": [
     "**/node_modules/**",
     "**/bower_components/**",

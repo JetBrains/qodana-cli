@@ -15,7 +15,7 @@
 #
 # This Dockerfile is for https://github.com/jetbrains/qodana-cli dev container.
 
-FROM dhi.io/golang:1.27.3-debian13-dev
+FROM dhi.io/golang:1.27.4-debian13-dev
 ARG TARGETARCH
 ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \
@@ -26,7 +26,7 @@ ENV CHOCO_VERSION=2.7.5
 # renovate: datasource=github-releases depName=cli/cli
 ENV GH_VERSION=2.103.3
 # renovate: datasource=github-releases depName=goreleaser/goreleaser-pro
-ENV GORELEASER_VERSION=2.20.0
+ENV GORELEASER_VERSION=2.20.2
 ENV MONO_REPO="https://download.mono-project.com/repo/debian"
 
 RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \

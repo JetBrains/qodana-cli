@@ -38,7 +38,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
-	imagetypes "github.com/docker/docker/api/types/image"
+	"github.com/moby/moby/client"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -369,7 +369,7 @@ func TestPullSucceedsWhenImagePresentOnlyLocally(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reader, err := docker.ImagePull(ctx, "hello-world", imagetypes.PullOptions{})
+	reader, err := docker.ImagePull(ctx, "hello-world", client.ImagePullOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -384,7 +384,7 @@ func TestPullSucceedsWhenImagePresentOnlyLocally(t *testing.T) {
 	}
 
 	localImage := fmt.Sprintf("qodana-cli-pull-skip-test:%d", time.Now().UnixNano())
-	if err = docker.ImageTag(ctx, "hello-world", localImage); err != nil {
+	if _, err = docker.ImageTag(ctx, client.ImageTagOptions{Source: "hello-world", Target: localImage}); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(
@@ -392,7 +392,7 @@ func TestPullSucceedsWhenImagePresentOnlyLocally(t *testing.T) {
 			if _, err = docker.ImageRemove(
 				context.Background(),
 				localImage,
-				imagetypes.RemoveOptions{Force: true, PruneChildren: false},
+				client.ImageRemoveOptions{Force: true, PruneChildren: false},
 			); err != nil {
 				t.Logf("failed to remove test image %s: %s", localImage, err)
 			}

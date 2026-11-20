@@ -21,13 +21,38 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
+//goland:noinspection GoBoolExpressions
+var yamlOnlyOptionsTests = []TestCase{
+	{
+		name:             "Known linter, withinDocker: false in yaml",
+		linter:           "qodana-js",
+		yamlWithinDocker: "false",
+		expected:         &product.NativeAnalyzer{Linter: product.JsLinter, Eap: !product.IsReleased},
+	},
+	{
+		name:             "Known linter, withinDocker: false in yaml, --within-docker=true",
+		linter:           "qodana-js",
+		executionMode:    ExecutionModeDocker,
+		yamlWithinDocker: "false",
+		expected:         &product.DockerAnalyzer{Linter: product.JsLinter, Image: product.JsLinter.Image()},
+	},
+	{
+		name:             "Known linter, withinDocker: true in yaml, --within-docker=false",
+		linter:           "qodana-js",
+		executionMode:    ExecutionModeNative,
+		yamlWithinDocker: "true",
+		expected:         &product.NativeAnalyzer{Linter: product.JsLinter, Eap: !product.IsReleased},
+	},
+}
+
 func TestAnalyzerQodanaYamlOptions(t *testing.T) {
-	for _, tt := range optionsTests {
+	for _, tt := range append(optionsTests, yamlOnlyOptionsTests...) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				var fatal bool
@@ -40,7 +65,7 @@ func TestAnalyzerQodanaYamlOptions(t *testing.T) {
 					qdyaml.QodanaYaml{
 						Ide:          tt.ide,
 						Linter:       tt.linter,
-						WithinDocker: tt.withinDocker,
+						WithinDocker: tt.yamlWithinDocker,
 						Image:        tt.image,
 					},
 				)
@@ -51,7 +76,7 @@ func TestAnalyzerQodanaYamlOptions(t *testing.T) {
 				if err != nil {
 					t.Errorf("%v", err)
 				}
-				analyzer := getAnalyzerFromProject("token", projDir, "")
+				analyzer := getAnalyzerFromProject("token", projDir, "", tt.executionMode)
 				if tt.failure && !fatal {
 					t.Errorf("Expected failure case, got %v", analyzer.Name())
 					return

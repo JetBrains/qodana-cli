@@ -46,7 +46,7 @@ func GuessAnalyzerFromEnvAndCLI(
 	ide string,
 	linter string,
 	image string,
-	withinDocker string,
+	executionMode ExecutionMode,
 ) product.Analyzer {
 	dist, exists := os.LookupEnv(qdenv.QodanaDistEnv)
 	if exists && dist != "" {
@@ -74,14 +74,14 @@ func GuessAnalyzerFromEnvAndCLI(
 		return nil
 	}
 
-	return guessAnalyzerFromParams(ide, linter, image, withinDocker)
+	return guessAnalyzerFromParams(ide, linter, image, executionMode)
 }
 
 func guessAnalyzerFromParams(
 	ide string,
 	linterParam string,
 	image string,
-	withinDocker string,
+	executionMode ExecutionMode,
 ) product.Analyzer {
 	if ide != "" {
 		linter := product.FindLinterByProductCode(ide)
@@ -112,13 +112,13 @@ func guessAnalyzerFromParams(
 	}
 
 	if linterParam != "" {
-		return GuessAnalyzerByLinterParam(linterParam, withinDocker)
+		return GuessAnalyzerByLinterParam(linterParam, executionMode)
 	}
 
 	return nil
 }
 
-func GuessAnalyzerByLinterParam(linterParam string, withinDocker string) product.Analyzer {
+func GuessAnalyzerByLinterParam(linterParam string, executionMode ExecutionMode) product.Analyzer {
 	linter := product.FindLinterByName(linterParam)
 	if linter == product.UnknownLinter {
 		//legacy support - linter param with image values
@@ -137,21 +137,19 @@ func GuessAnalyzerByLinterParam(linterParam string, withinDocker string) product
 		return nil
 	}
 
-	withinContainerLower := strings.ToLower(withinDocker)
-	if withinDocker == "" || withinContainerLower == "true" {
-		return &product.DockerAnalyzer{
-			Linter: linter,
-			Image:  linter.Image(),
-		}
-	} else if withinContainerLower == "false" {
+	switch executionMode {
+	case ExecutionModeNative:
 		//goland:noinspection GoBoolExpressions
 		return &product.NativeAnalyzer{
 			Linter: linter,
 			Eap:    !product.IsReleased || linter.EapOnly,
 		}
+	default: // ExecutionModeNotSpecified, ExecutionModeDocker
+		return &product.DockerAnalyzer{
+			Linter: linter,
+			Image:  linter.Image(),
+		}
 	}
-	log.Fatalf("Wrong value for within-docker param: %s. Use true/false.", withinDocker)
-	return nil
 }
 
 func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
@@ -184,8 +182,9 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 	}, nil
 }
 
-// SelectAnalyzerForPath gets linter for the given path
-func SelectAnalyzerForPath(path string, token string) product.Analyzer {
+// SelectAnalyzerForPath gets linter for the given path.
+// A specified executionMode restricts the proposed analyzers to Docker or native ones.
+func SelectAnalyzerForPath(path string, token string, executionMode ExecutionMode) product.Analyzer {
 	var linters []product.Linter
 	var dominantLanguage string
 	msg.PrintProcess(
@@ -238,7 +237,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 
 	interactive := msg.IsInteractive()
 	linters = filterByLicensePlan(linters, token)
-	analyzer := selectAnalyzer(path, linters, interactive, dominantLanguage == "Dart", selector)
+	analyzer := selectAnalyzer(path, linters, interactive, dominantLanguage == "Dart", executionMode, selector)
 	if analyzer == nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
@@ -292,6 +291,7 @@ func selectAnalyzer(
 	linters []product.Linter,
 	interactive bool,
 	preferNative bool,
+	executionMode ExecutionMode,
 	selectFunc func([]string) string,
 ) product.Analyzer {
 	var distribution product.Analyzer
@@ -301,6 +301,14 @@ func selectAnalyzer(
 
 	selection, choices := analyzerToSelect(linters, path)
 	log.Debugf("Detected products: %s", strings.Join(choices, ", "))
+
+	if executionMode != ExecutionModeNotSpecified {
+		choices = choicesForExecutionMode(selection, choices, executionMode)
+		if len(choices) == 0 {
+			return nil
+		}
+		preferNative = false
+	}
 
 	if len(choices) == 1 || !interactive {
 		distribution = selection[choices[0]]
@@ -316,6 +324,29 @@ func selectAnalyzer(
 		distribution = selection[choice]
 	}
 	return distribution
+}
+
+// choicesForExecutionMode keeps the choices that run in executionMode, failing if there were choices but none of them does.
+func choicesForExecutionMode(
+	selection map[string]product.Analyzer,
+	choices []string,
+	executionMode ExecutionMode,
+) []string {
+	filtered := make([]string, 0, len(choices))
+	for _, choice := range choices {
+		_, isDocker := selection[choice].(*product.DockerAnalyzer)
+		if isDocker == (executionMode == ExecutionModeDocker) {
+			filtered = append(filtered, choice)
+		}
+	}
+	if len(filtered) == 0 && len(choices) > 0 {
+		log.Fatalf(
+			"None of the detected analyzers can run %s for this project. Detected: %s. Change within-docker or set the linter explicitly with --linter.",
+			executionMode.description(),
+			strings.Join(choices, ", "),
+		)
+	}
+	return filtered
 }
 
 func analyzerToSelect(linters []product.Linter, path string) (map[string]product.Analyzer, []string) {

@@ -26,9 +26,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shirou/gopsutil/v3/disk"
-	"github.com/shirou/gopsutil/v3/host"
-	"github.com/shirou/gopsutil/v3/mem"
+	"github.com/shirou/gopsutil/v4/disk"
+	"github.com/shirou/gopsutil/v4/host"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 const gb = 1 << 30

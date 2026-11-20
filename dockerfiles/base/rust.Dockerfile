@@ -3,7 +3,7 @@ ARG BASE_TAG="trixie-debian13-dev"
 FROM dhi.io/debian-base:$BASE_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.39.5"
+ENV ESLINT_VERSION="10.14.0"
 
 ARG TARGETPLATFORM
 # renovate: datasource=docker depName=rust versioning=docker

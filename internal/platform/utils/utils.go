@@ -34,7 +34,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/pterm/pterm"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 
 	log "github.com/sirupsen/logrus"
 )

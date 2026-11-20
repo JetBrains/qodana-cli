@@ -1,10 +1,10 @@
 ARG BASE_TAG="trixie-debian13-dev"
-ARG NODE_TAG="22-debian13-dev@sha256:50e98c244814769b94e2d2594edd2dcee91742ec943570ead23be7a411632301"
+ARG NODE_TAG="22-debian13-dev@sha256:c30ecc2499a6aa77b95d9fc890b10fe8ac46340bd45177b0256ecd7f7eb1956c"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM dotnet-community
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.39.5"
+ENV ESLINT_VERSION="10.14.0"
 
 ENV PATH="/opt/yarn/bin:$PATH" RIDER_UNREAL_ROOT="/data/unrealEngine"
 ENV SKIP_YARN_COREPACK_CHECK=0
