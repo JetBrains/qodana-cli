@@ -167,6 +167,7 @@
       "matchDepNames": ["astral-sh/uv", "uv-script-python"],
       "groupName": "uv and its script Python",
       "separateMajorMinor": false,
+      "separateMinorPatch": false,
       "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
