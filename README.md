@@ -27,6 +27,7 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
     * [Prepare your project](#prepare-your-project)
     * [Analyze your project](#analyze-your-project)
     * [View the report](#view-the-report)
+  * [Usage statistics](#usage-statistics)
   * [Configuration](#configuration)
   * [Why](#why)
 <!-- TOC -->
@@ -114,6 +115,22 @@ qodana show
 ```
 
 You can serve any Qodana HTML report regardless of the project if you provide the correct report path.
+
+## Usage statistics
+
+The CLI sends anonymous usage statistics to JetBrains: the steps of `qodana init` and `qodana scan`, the reason of a failure, and the environment, like the OS and the CI.
+The statistics contain no source code, file paths or problem texts.
+The CLI sends counts and sizes as ranges, like `100+`.
+
+- Only release builds send statistics. The CLI sends them once, when the command finishes.
+- The events go to JetBrains Feature Usage Statistics (FUS) and to the PostHog project of Qodana Cloud.
+
+To turn the statistics off, use `--no-statistics` or set `DO_NOT_TRACK=1`. This also turns off the statistics of the linter that the CLI starts.
+A run with a license-only token (`QODANA_LICENSE_ONLY_TOKEN` without `QODANA_TOKEN`) sends nothing.
+
+The [events scheme in FUS](https://resources.jetbrains.com/storage/ap/fus/metadata/tiger/QD/groups/QDCLI.json) lists every event and field that FUS accepts from the CLI. It is the source of truth.
+The CLI generates the same scheme, with a description of each event and field, in [`events-scheme.json`](internal/platform/telemetry/fus/events-scheme.json).
+A test fails when this file differs from the code.
 
 ## Configuration
 
