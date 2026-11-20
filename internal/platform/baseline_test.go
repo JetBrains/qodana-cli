@@ -25,7 +25,6 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -41,15 +40,20 @@ type baselineDownloaderStub struct {
 	asked    bool
 }
 
-func (s *baselineDownloaderStub) WriteBaseline(toolName string, file *os.File) (cloud.BaselineStatus, error) {
+func (s *baselineDownloaderStub) WriteBaseline(toolName string, path string) (cloud.BaselineStatus, error) {
 	s.asked = true
 	s.toolName = toolName
 	if s.err != nil {
-		return 0, s.err
+		return cloud.BaselineUnknown, s.err
 	}
 	if s.baseline == nil {
 		return s.status, nil
 	}
+	file, err := os.Create(path)
+	if err != nil {
+		return cloud.BaselineUnknown, err
+	}
+	defer func() { _ = file.Close() }()
 	return cloud.BaselineWritten, json.NewEncoder(file).Encode(s.baseline)
 }
 
@@ -77,8 +81,7 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		require.NoError(t, err)
 		defer downloaded.Cleanup()
 
-		assert.True(t, downloaded.IsFromCloud())
-		assert.Equal(t, cloud.BaselineWritten, downloaded.cloudStatus)
+		require.IsType(t, CloudBaseline{}, downloaded)
 		assert.Equal(t, "QDNET", client.toolName)
 		baseline := downloaded.BaselinePath()
 		require.NotEmpty(t, baseline)
@@ -90,30 +93,8 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "QDNET", stored.Runs[0].Tool.Driver.Name)
 
-		// the linter of a container run reads it as another user. Only the bits which let one in
-		// are asserted: Windows reports 0777 for a directory whatever it was created with.
-		const openToOthers = os.FileMode(0o055)
-		dir, err := os.Stat(filepath.Dir(baseline))
-		require.NoError(t, err)
-		assert.Equal(
-			t,
-			openToOthers,
-			dir.Mode().Perm()&openToOthers,
-			"the baseline dir should be readable by the linter",
-		)
-		// os.Create obeys the umask, which a container user reading the file doesn't share
-		const readableByOthers = os.FileMode(0o044)
-		report, err := os.Stat(baseline)
-		require.NoError(t, err)
-		assert.Equal(
-			t,
-			readableByOthers,
-			report.Mode().Perm()&readableByOthers,
-			"the baseline file should be readable by the linter",
-		)
-
 		downloaded.Cleanup()
-		assert.NoFileExists(t, baseline)
+		assert.NoDirExists(t, filepath.Dir(baseline))
 	})
 
 	for _, tc := range []struct {
@@ -127,10 +108,8 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cacheDir := t.TempDir()
 			downloaded, err := downloadCloudBaseline(&baselineDownloaderStub{status: tc.status}, "QDNET", cacheDir)
-			defer downloaded.Cleanup()
 			require.NoError(t, err)
-			assert.Equal(t, tc.status, downloaded.cloudStatus)
-			assert.Equal(t, qdenv.BaselineSourceNone, downloaded.Source())
+			require.IsType(t, NoBaseline{}, downloaded)
 			assert.Empty(t, downloaded.BaselinePath())
 			left, err := os.ReadDir(cacheDir)
 			require.NoError(t, err)
@@ -140,11 +119,15 @@ func TestDownloadCloudBaseline(t *testing.T) {
 
 	t.Run("failed request", func(t *testing.T) {
 		client := &baselineDownloaderStub{err: errors.New("the cloud is unreachable")}
-		downloaded, err := downloadCloudBaseline(client, "QDNET", t.TempDir())
-		defer downloaded.Cleanup()
+		cacheDir := t.TempDir()
+
+		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+
 		assert.ErrorContains(t, err, "the cloud is unreachable")
-		assert.Equal(t, cloud.BaselineUnknown, downloaded.cloudStatus)
-		assert.Empty(t, downloaded.BaselinePath())
+		assert.Nil(t, downloaded)
+		left, readErr := os.ReadDir(cacheDir)
+		require.NoError(t, readErr)
+		assert.Empty(t, left, "no baseline dir should be left behind")
 	})
 
 	// the cache dir of a container run is created by the linter, not before it
@@ -153,9 +136,9 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		cacheDir := filepath.Join(t.TempDir(), "absent")
 
 		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+		require.NoError(t, err)
 		defer downloaded.Cleanup()
 
-		require.NoError(t, err)
 		assert.FileExists(t, downloaded.BaselinePath())
 		assert.True(t, strings.HasPrefix(downloaded.BaselinePath(), cacheDir))
 	})
@@ -163,89 +146,46 @@ func TestDownloadCloudBaseline(t *testing.T) {
 
 func TestResolveBaseline(t *testing.T) {
 	t.Run("baseline file wins over the cloud baseline", func(t *testing.T) {
-		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
-		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
-
-		baseline := ResolveBaseline(baselineFile, "", "token", "QDJVM", t.TempDir())
-		defer baseline.Cleanup()
-
-		assert.Equal(t, baselineFile, baseline.BaselinePath())
-		assert.False(t, baseline.IsFromCloud())
-		assert.Equal(t, "The analysis used the baseline file "+baselineFile, baseline.UsedMessage())
-	})
-
-	// the CLI downloads the baseline and passes it as a file, saying where it comes from
-	t.Run("baseline file of the launching CLI is the cloud baseline", func(t *testing.T) {
-		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
-		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
-
-		baseline := ResolveBaseline(baselineFile, qdenv.BaselineSourceCloud, "token", "QDJVM", t.TempDir())
-		defer baseline.Cleanup()
-
-		assert.Equal(t, baselineFile, baseline.BaselinePath())
-		assert.True(t, baseline.IsFromCloud())
-		assert.Equal(t, qdenv.BaselineSourceCloud, baseline.Source())
-		assert.Equal(t, "The analysis used the baseline from Qodana Cloud", baseline.UsedMessage())
-	})
-
-	// the source of a linter which the CLI told nothing is its own command line
-	t.Run("baseline file of a run without a source is a local one", func(t *testing.T) {
-		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
-		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
-
-		baseline := ResolveBaseline(baselineFile, "", "token", "QDJVM", t.TempDir())
-		defer baseline.Cleanup()
-
-		assert.False(t, baseline.IsFromCloud())
-		assert.Equal(t, qdenv.BaselineSourceLocal, baseline.Source())
-	})
-
-	// the outer CLI of a linter in an image has asked Qodana Cloud already
-	t.Run("no second ask when a CLI has resolved the baseline", func(t *testing.T) {
 		client := &baselineDownloaderStub{baseline: reportWithToolName("QDJVM")}
+		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
 
-		baseline := resolveBaseline("", qdenv.BaselineSourceNone, true, "QDJVM", t.TempDir(), client.newClient)
+		baseline := resolveBaseline(baselineFile, true, "QDJVM", t.TempDir(), client.newClient)
 		defer baseline.Cleanup()
 
 		assert.False(t, client.asked)
-		assert.Empty(t, baseline.BaselinePath())
-		assert.Equal(t, qdenv.BaselineSourceNone, baseline.Source())
-	})
-
-	// a CLI which has resolved a baseline passes its file, so a source without one is not that
-	t.Run("source of a baseline without its file is ignored", func(t *testing.T) {
-		for _, source := range []string{qdenv.BaselineSourceLocal, qdenv.BaselineSourceCloud, "UNKNOWN"} {
-			t.Run(source, func(t *testing.T) {
-				client := &baselineDownloaderStub{baseline: reportWithToolName("QDJVM")}
-
-				baseline := resolveBaseline("", source, true, "QDJVM", t.TempDir(), client.newClient)
-				defer baseline.Cleanup()
-
-				assert.True(t, client.asked, "Qodana Cloud should be asked for the baseline")
-				assert.True(t, baseline.IsFromCloud())
-				assert.FileExists(t, baseline.BaselinePath())
-			})
-		}
+		assert.Equal(t, LocalBaseline{path: baselineFile}, baseline)
+		assert.Equal(t, "The analysis used the baseline file "+baselineFile, baseline.UsedMessage())
 	})
 
 	t.Run("no baseline without a cloud token", func(t *testing.T) {
-		baseline := ResolveBaseline("", "", "", "QDJVM", t.TempDir())
+		baseline := ResolveBaseline("", "", "QDJVM", t.TempDir())
 		defer baseline.Cleanup()
 
-		assert.Empty(t, baseline.BaselinePath())
-		assert.Equal(t, qdenv.BaselineSourceNone, baseline.Source())
+		assert.Equal(t, NoBaseline{}, baseline)
 		assert.Contains(t, baseline.UsedMessage(), "The analysis used no baseline.")
 	})
 
 	t.Run("baseline from the cloud", func(t *testing.T) {
 		client := &baselineDownloaderStub{baseline: reportWithToolName("QDJVM")}
 
-		baseline := resolveBaseline("", "", true, "QDJVMC", t.TempDir(), client.newClient)
+		baseline := resolveBaseline("", true, "QDJVMC", t.TempDir(), client.newClient)
 		defer baseline.Cleanup()
 
 		assert.Equal(t, "QDJVM", client.toolName)
-		assert.True(t, baseline.IsFromCloud())
+		require.IsType(t, CloudBaseline{}, baseline)
 		assert.FileExists(t, baseline.BaselinePath())
+	})
+
+	t.Run("a failed download is no baseline which tells so", func(t *testing.T) {
+		client := &baselineDownloaderStub{err: errors.New("the cloud is unreachable")}
+
+		baseline := resolveBaseline("", true, "QDJVM", t.TempDir(), client.newClient)
+
+		assert.Equal(
+			t,
+			"The analysis used no baseline: the baseline of Qodana Cloud could not be downloaded.",
+			baseline.UsedMessage(),
+		)
 	})
 
 	for _, tc := range []struct {
@@ -274,92 +214,30 @@ func TestResolveBaseline(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			client := &baselineDownloaderStub{status: tc.status}
 
-			baseline := resolveBaseline("", "", true, "QDJVM", t.TempDir(), client.newClient)
+			baseline := resolveBaseline("", true, "QDJVM", t.TempDir(), client.newClient)
 			defer baseline.Cleanup()
 
-			assert.Empty(t, baseline.BaselinePath())
-			assert.Equal(t, qdenv.BaselineSourceNone, baseline.Source())
+			require.IsType(t, NoBaseline{}, baseline)
 			assert.Equal(t, tc.used, baseline.UsedMessage())
 		})
 	}
 }
 
-// TestLauncherBaselineSource verifies that only a CLI in a Qodana image takes the baseline source
-// of the CLI which launched it: on a host the variable is a leftover of another run.
-func TestLauncherBaselineSource(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
-		container bool
-		source    string
-		expected  string
-	}{
-		{"container, cloud baseline", true, qdenv.BaselineSourceCloud, qdenv.BaselineSourceCloud},
-		{"container, no baseline", true, qdenv.BaselineSourceNone, qdenv.BaselineSourceNone},
-		{"container launched without a CLI", true, "", ""},
-		{"host, leftover cloud baseline", false, qdenv.BaselineSourceCloud, ""},
-		{"host, leftover no baseline", false, qdenv.BaselineSourceNone, ""},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			docker := ""
-			if tc.container {
-				docker = "true"
-			}
-			t.Setenv(qdenv.QodanaDockerEnv, docker)
-			t.Setenv(qdenv.QodanaBaselineSource, tc.source)
-
-			assert.Equal(t, tc.expected, LauncherBaselineSource())
-		})
-	}
-}
-
-// TestReportsUsed verifies that a run reports the baseline it has used once: the host reports it,
-// except for a local baseline, which the CLI in the container reports with its path.
-func TestReportsUsed(t *testing.T) {
-	baselineFile := filepath.Join(t.TempDir(), "qodana.sarif.json")
-	cloudClient := func() baselineDownloader {
-		return &baselineDownloaderStub{baseline: reportWithToolName("QDJVM")}
-	}
-	emptyClient := func() baselineDownloader { return &baselineDownloaderStub{status: cloud.BaselineEmpty} }
-	for _, tc := range []struct {
-		name              string
-		baselineFile      string
-		launcherSource    string
-		newClient         func() baselineDownloader
-		linterInContainer bool
-		expected          bool
-	}{
-		{"host, native linter, no baseline", "", "", emptyClient, false, true},
-		{"host, native linter, local baseline", baselineFile, "", emptyClient, false, true},
-		{"host, cloud baseline for a container", "", "", cloudClient, true, true},
-		{"host, no baseline for a container", "", "", emptyClient, true, true},
-		{"host, local baseline for a container", baselineFile, "", emptyClient, true, false},
-		{"container, cloud baseline from the host", baselineFile, qdenv.BaselineSourceCloud, emptyClient, false, false},
-		{"container, no baseline from the host", "", qdenv.BaselineSourceNone, emptyClient, false, false},
-		{"container, local baseline from the host", baselineFile, qdenv.BaselineSourceLocal, emptyClient, false, true},
-		// the source is ignored, so the CLI resolves the baseline itself, like one which has no launcher
-		{"container, source without a file", "", qdenv.BaselineSourceCloud, emptyClient, false, true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			baseline := resolveBaseline(tc.baselineFile, tc.launcherSource, true, "QDJVM", t.TempDir(), tc.newClient)
-			defer baseline.Cleanup()
-
-			assert.Equal(t, tc.expected, baseline.ReportsUsed(tc.linterInContainer))
-		})
-	}
-}
-
 func TestUsedMessage(t *testing.T) {
-	cloudBaseline := Baseline{baselinePath: "/cache/cloud-baseline-1/qodana.sarif.json", source: qdenv.BaselineSourceCloud}
-	assert.Equal(t, "The analysis used the baseline from Qodana Cloud", cloudBaseline.UsedMessage())
+	assert.Equal(
+		t,
+		"The analysis used the baseline from Qodana Cloud",
+		CloudBaseline{path: "/cache/cloud-baseline-1/qodana.sarif.json"}.UsedMessage(),
+	)
 	assert.Equal(
 		t,
 		"The analysis used the baseline file /project/baseline.sarif.json",
-		Baseline{baselinePath: "/project/baseline.sarif.json"}.UsedMessage(),
+		LocalBaseline{path: "/project/baseline.sarif.json"}.UsedMessage(),
 	)
 	assert.Equal(
 		t,
 		"The analysis used no baseline. Give a baseline file with --baseline, "+
 			"or turn on the cloud baseline of the project in Qodana Cloud.",
-		Baseline{}.UsedMessage(),
+		NoBaseline{}.UsedMessage(),
 	)
 }

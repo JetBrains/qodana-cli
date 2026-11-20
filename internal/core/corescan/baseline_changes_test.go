@@ -20,40 +20,30 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestWithCloudBaseline(t *testing.T) {
-	context := ContextBuilder{ResultsDir: t.TempDir()}.Build().WithCloudBaseline("/data/cache/baseline.sarif.json")
-
-	assert.Equal(t, "/data/cache/baseline.sarif.json", context.Baseline())
-	assert.Contains(t, context.Env(), qdenv.QodanaBaselineSource+"="+qdenv.BaselineSourceCloud)
-}
 
 // TestFirstStageOfScopedScriptWithoutBaseline verifies that the stage which deliberately runs
 // without a baseline doesn't let the linter get one from Qodana Cloud instead.
 func TestFirstStageOfScopedScriptWithoutBaseline(t *testing.T) {
 	resultsDir := t.TempDir()
-	context := ContextBuilder{ResultsDir: resultsDir, LogDir: filepath.Join(resultsDir, "log")}.
+	context := ContextBuilder{ResultsDir: resultsDir, LogDir: filepath.Join(resultsDir, "log"), Baseline: "baseline.sarif.json"}.
 		Build().
-		WithCloudBaseline("/data/cache/baseline.sarif.json").
 		FirstStageOfScopedScript(filepath.Join(resultsDir, "scope.json"))
 
 	assert.Empty(t, context.Baseline(), "the first stage runs without a baseline")
-	assert.Contains(t, context.Env(), qdenv.QodanaBaselineSource+"="+qdenv.BaselineSourceNone)
-	assert.NotContains(t, context.Env(), qdenv.QodanaBaselineSource+"="+qdenv.BaselineSourceCloud)
+	// a native linter gets the properties, not the environment of the context
+	assert.Contains(t, context.Property(), "-Dqodana.skip.cloud.baseline=true")
 }
 
 // TestSecondStageOfScopedScriptKeepsBaseline verifies that the stage which reports the problems
-// keeps the baseline the CLI has resolved.
+// keeps the baseline file and lets the linter get its cloud baseline.
 func TestSecondStageOfScopedScriptKeepsBaseline(t *testing.T) {
 	resultsDir := t.TempDir()
-	context := ContextBuilder{ResultsDir: resultsDir, LogDir: filepath.Join(resultsDir, "log")}.
+	context := ContextBuilder{ResultsDir: resultsDir, LogDir: filepath.Join(resultsDir, "log"), Baseline: "baseline.sarif.json"}.
 		Build().
-		WithCloudBaseline("/data/cache/baseline.sarif.json").
 		SecondStageOfScopedScript(filepath.Join(resultsDir, "scope.json"), filepath.Join(resultsDir, "start.json"))
 
-	assert.Equal(t, "/data/cache/baseline.sarif.json", context.Baseline())
-	assert.Contains(t, context.Env(), qdenv.QodanaBaselineSource+"="+qdenv.BaselineSourceCloud)
+	assert.Equal(t, "baseline.sarif.json", context.Baseline())
+	assert.NotContains(t, context.Property(), "-Dqodana.skip.cloud.baseline=true")
 }
