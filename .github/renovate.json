@@ -96,7 +96,10 @@
     },
     {
       "matchManagers": ["gomod"],
-      "constraintsFiltering": "strict",
+      "constraintsFiltering": "strict"
+    },
+    {
+      "matchManagers": ["gomod"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "Go modules"
     },
@@ -118,29 +121,15 @@
     {
       "matchManagers": ["gomod"],
       "matchCurrentVersion": "!/^v?0\\./",
-      "matchUpdateTypes": ["patch"],
-      "groupName": "Go modules (patch)",
-      "automerge": true
-    },
-    {
-      "matchManagers": ["gomod"],
-      "matchCurrentVersion": "!/^v?0\\./",
-      "matchUpdateTypes": ["minor"],
-      "groupName": "Go modules (minor)",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Go modules (automerge)",
       "automerge": true
     },
     {
       "matchManagers": ["maven"],
       "matchCurrentVersion": "!/^v?0\\./",
-      "matchUpdateTypes": ["patch"],
-      "groupName": "Maven dependencies (patch)",
-      "automerge": true
-    },
-    {
-      "matchManagers": ["maven"],
-      "matchCurrentVersion": "!/^v?0\\./",
-      "matchUpdateTypes": ["minor"],
-      "groupName": "Maven dependencies (minor)",
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Maven dependencies (automerge)",
       "automerge": true
     },
     {
@@ -148,7 +137,7 @@
       "matchDepTypes": ["action"],
       "matchCurrentVersion": "!/^v?0\\./",
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "GitHub Actions (non-major)",
+      "groupName": "GitHub Actions (automerge)",
       "automerge": true
     },
     {
