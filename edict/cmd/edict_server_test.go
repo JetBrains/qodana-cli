@@ -106,7 +106,8 @@ func TestStopEdictServerTerminatesTheRecordedServer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if output.String() != fmt.Sprintf("Stopped the Edict server (pid %d)\n", pid) || processAlive(pid) {
+	if output.String() != fmt.Sprintf("Stopped the Edict server (pid %d)\n", pid) ||
+		holdsAfterWaiting(func() bool { return processAlive(pid) }) {
 		t.Fatalf("stop output %q; server alive: %v", output.String(), processAlive(pid))
 	}
 	if _, err := os.Stat(files.record); !errors.Is(err, os.ErrNotExist) {
