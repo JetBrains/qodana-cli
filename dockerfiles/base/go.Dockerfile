@@ -4,7 +4,7 @@ FROM dhi.io/node:$NODE_TAG AS node_base
 FROM dhi.io/golang:$GO_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.39.5"
+ENV ESLINT_VERSION="10.14.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
