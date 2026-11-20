@@ -21,7 +21,7 @@ import (
 	"time"
 
 	foundationexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
-	"github.com/shirou/gopsutil/v3/process"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 const (
