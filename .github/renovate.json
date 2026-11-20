@@ -207,7 +207,7 @@
     "automerge": false
   },
   "commitMessagePrefix": ":arrow_up: QD-8148",
-  "schedule": ["* * * * 1"],
+  "schedule": ["* * * * 6"],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 20
 }
