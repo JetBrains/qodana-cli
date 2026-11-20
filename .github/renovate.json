@@ -91,7 +91,7 @@
   },
   "packageRules": [
     {
-      "matchManagers": ["gomod", "github-actions", "maven"],
+      "matchManagers": ["gomod", "github-actions", "maven", "gradle", "gradle-wrapper"],
       "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
@@ -110,12 +110,12 @@
       "groupName": "GitHub Actions"
     },
     {
-      "matchManagers": ["maven"],
+      "matchManagers": ["maven", "gradle", "gradle-wrapper"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "Maven dependencies"
     },
     {
-      "matchManagers": ["gomod", "github-actions", "maven"],
+      "matchManagers": ["gomod", "github-actions", "maven", "gradle", "gradle-wrapper"],
       "separateMinorPatch": true
     },
     {
@@ -126,11 +126,42 @@
       "automerge": true
     },
     {
-      "matchManagers": ["maven"],
+      "description": "In 0.y.z a minor may break, but a patch is compatible by convention. 0.0.z and pseudo-versions stay manual.",
+      "matchManagers": ["gomod"],
+      "matchCurrentVersion": "/^v?0\\.[1-9]\\d*\\.\\d+$/",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Go modules (automerge)",
+      "automerge": true
+    },
+    {
+      "matchManagers": ["maven", "gradle", "gradle-wrapper"],
       "matchCurrentVersion": "!/^v?0\\./",
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Maven dependencies (automerge)",
       "automerge": true
+    },
+    {
+      "description": "In 0.y.z a minor may break, but a patch is compatible by convention. 0.0.z stays manual.",
+      "matchManagers": ["maven", "gradle"],
+      "matchCurrentVersion": "/^v?0\\.[1-9]\\d*\\.\\d+$/",
+      "matchUpdateTypes": ["patch"],
+      "groupName": "Maven dependencies (automerge)",
+      "automerge": true
+    },
+    {
+      "description": "Kotlin plugins, the serialization runtime that must match them, and the Gradle wrapper. Minors and majors are reviewed; patches join the automerge group above.",
+      "matchManagers": ["gradle", "gradle-wrapper"],
+      "matchDepNames": ["org.jetbrains.kotlin.jvm", "org.jetbrains.kotlin.plugin.*", "org.jetbrains.kotlinx:kotlinx-serialization-json", "gradle"],
+      "matchUpdateTypes": ["minor", "major"],
+      "groupName": "Kotlin toolchain",
+      "automerge": false
+    },
+    {
+      "description": "Local embeddings load ONNX Runtime natives; CI never loads the model, so a green build proves nothing here.",
+      "matchManagers": ["gradle"],
+      "matchDepNames": ["com.microsoft.onnxruntime:*", "ai.djl:*"],
+      "groupName": "Edict embeddings",
+      "automerge": false
     },
     {
       "matchManagers": ["github-actions"],
@@ -151,6 +182,20 @@
       "matchFileNames": ["dockerfiles/**"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "Dockerfile tool versions"
+    },
+    {
+      "description": "Track the GoReleaser Pro action input against the Pro release stream.",
+      "matchManagers": ["github-actions"],
+      "matchDepNames": ["goreleaser/goreleaser"],
+      "overrideDepName": "goreleaser/goreleaser-pro",
+      "overridePackageName": "goreleaser/goreleaser-pro"
+    },
+    {
+      "description": "Keep the GoReleaser Pro action input and devcontainer tool on one update branch.",
+      "matchPackageNames": ["goreleaser/goreleaser-pro"],
+      "groupName": "GoReleaser Pro",
+      "separateMinorPatch": false,
+      "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
       "description": "Qodana artifacts are only on packages.jetbrains.team. Also querying Central lets a Central 429 abort the run whenever packages.jetbrains.team fails.",
@@ -188,6 +233,7 @@
     {
       "matchDatasources": ["github-releases"],
       "matchPackageNames": ["mgoltzsche/podman-static", "goreleaser/goreleaser-pro", "cli/cli"],
+      "matchManagers": ["custom.regex"],
       "extractVersion": "^v(?<version>.*)$"
     },
     {
