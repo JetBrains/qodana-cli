@@ -32,7 +32,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
-    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
+    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.16.0")
     implementation("io.ktor:ktor-server-cio:3.6.1")
     implementation("ai.djl:api:0.38.0")
     implementation("com.microsoft.onnxruntime:onnxruntime:1.22.0")
