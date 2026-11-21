@@ -70,7 +70,7 @@ jobs:
             container-tests: true
           - os: ubuntu-latest
             # renovate: datasource=github-releases depName=mgoltzsche/podman-static
-            container-engine: podman@6.1.4
+            container-engine: podman@6.2.0
             engine: podman
           - os: ubuntu-latest
             container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
