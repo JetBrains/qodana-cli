@@ -2,9 +2,9 @@ ARG NODE_TAG="22-debian13-dev@sha256:c30ecc2499a6aa77b95d9fc890b10fe8ac46340bd45
 FROM dhi.io/node:$NODE_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="10.14.0"
+ENV ESLINT_VERSION="10.15.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="12.20.0"
+ENV PNPM_VERSION="12.21.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
