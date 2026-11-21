@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.3.20"
-    kotlin("plugin.serialization") version "2.3.20"
+    kotlin("jvm") version "2.3.21"
+    kotlin("plugin.serialization") version "2.3.21"
     application
 }
 
@@ -18,12 +18,12 @@ allprojects {
 
 dependencies {
     implementation("org.jetbrains.qodana:publisher:3.0.13")
-    implementation("org.jetbrains.qodana:qodana-cloud-kotlin-client:0.2.12")
-    implementation("com.jetbrains.qodana:qodana-sarif:1.0.38")
+    implementation("org.jetbrains.qodana:qodana-cloud-kotlin-client:0.2.17")
+    implementation("com.jetbrains.qodana:qodana-sarif:1.0.57")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("org.tomlj:tomlj:1.1.1")
-    implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
-    runtimeOnly("ch.qos.logback:logback-classic:1.6.3")
+    implementation("io.github.oshai:kotlin-logging-jvm:8.0.7")
+    runtimeOnly("ch.qos.logback:logback-classic:1.6.6")
     implementation("org.yaml:snakeyaml:2.4")
     implementation("org.eclipse.jgit:org.eclipse.jgit:7.3.0.202506031305-r")
     testImplementation(kotlin("test-junit5"))
@@ -33,7 +33,7 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
-    implementation("io.ktor:ktor-server-cio:3.5.1")
+    implementation("io.ktor:ktor-server-cio:3.5.2")
     implementation("ai.djl:api:0.38.0")
     implementation("com.microsoft.onnxruntime:onnxruntime:1.22.0")
 }
