@@ -19,8 +19,8 @@ Start the task.
 
 1. Call `edict_collect_feedback_answers` once. It returns the answered records, each with the label its thumbs give, the
    record (inspection, problem message, path, revision and lines), and the comment's URL and replies, and the pull
-   requests GitHub could not read. It moves records that get no more answers to history itself; never retry it to find
-   more answers.
+   requests whose answers could not be read. It moves records that get no more answers to history itself; never retry it
+   to find more answers.
 2. For each answer, read the record's lines with `edict_file_at_ref` at the record's path and revision, anchored at its
    lines, and read the replies. Write its `description`: one line, at most 1000 characters, saying what the lines
    demonstrate under the label: for POSITIVE, the problem the code has; for NEGATIVE, why the code is fine although the
@@ -29,4 +29,4 @@ Start the task.
    comment's thumbs, builds the Signal and moves the record to history. Report a refused record and continue.
 
 Complete the task with the number of published Signals per label, the record ids that failed, with their errors, and
-the pull requests GitHub could not read, with their failures.
+the pull requests whose answers could not be read, with their failures.

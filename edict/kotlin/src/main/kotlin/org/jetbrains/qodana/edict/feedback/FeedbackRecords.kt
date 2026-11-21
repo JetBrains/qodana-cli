@@ -33,7 +33,7 @@ internal data class FeedbackRecord(
     /** The repository-relative path of the file the finding is in. */
     val path: String,
     val lines: EdictLineRange,
-    /** The line the review comment is on: the first of [lines] that the pull request adds. */
+    /** The one of [lines] the finding is shown at, which the feedback API chose. */
     val commentLine: Int,
     val inspectionName: String,
     val inspectionDescription: String,

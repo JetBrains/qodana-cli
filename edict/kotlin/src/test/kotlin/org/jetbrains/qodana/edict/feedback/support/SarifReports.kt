@@ -6,9 +6,15 @@ internal const val FINDING_MESSAGE = "Blocking call on the worker thread"
 
 /**
  * The SARIF report of a scan of [revision] of the project in [projectDirectory] of the repository, as Qodana's base ids name
- * it, whose inspections run for feedback reported [results], as [internalResult] makes them.
+ * it, whose inspections run for feedback reported [results], as [internalResult] makes them, and the profile's own
+ * inspections reported [regularResults], as [regularResult] makes them.
  */
-internal fun sarifReport(vararg results: String, projectDirectory: String = "", revision: String = HEAD_REVISION): String = """
+internal fun sarifReport(
+  vararg results: String,
+  projectDirectory: String = "",
+  revision: String = HEAD_REVISION,
+  regularResults: List<String> = listOf(regularResult()),
+): String = """
   {
     "runs": [{
       "versionControlProvenance": [{"repositoryUri": "https://github.com/owner/project.git", "revisionId": "$revision", "branch": "feature"}],
@@ -16,7 +22,7 @@ internal fun sarifReport(vararg results: String, projectDirectory: String = "", 
         "PROJECTROOT": {"description": {"text": "The root directory of the repository"}},
         "SRCROOT": {"uri": "$projectDirectory", "uriBaseId": "PROJECTROOT"}
       },
-      "results": [${regularResult()}],
+      "results": [${regularResults.joinToString(",")}],
       "properties": {"qodana.internal.results": [${results.joinToString(",")}]}
     }]
   }
@@ -39,11 +45,14 @@ internal fun internalResult(clusterId: String, uri: String, startLine: Int?, end
     """.trimIndent()
 }
 
-/** A result of the profile's own inspections, which feedback leaves alone. */
-private fun regularResult(): String = """
-  {
-    "ruleId": "UNUSED_IMPORT",
-    "message": {"text": "Unused import directive"},
-    "locations": [{"physicalLocation": {"artifactLocation": {"uri": "src/Main.kt", "uriBaseId": "SRCROOT"}, "region": {"startLine": 1}}}]
-  }
-""".trimIndent()
+/** A result of the profile's own inspection [ruleId] at [uri], relative to the analysed project, on lines [startLine] to [endLine]. */
+internal fun regularResult(ruleId: String = "UNUSED_IMPORT", uri: String = "src/Main.kt", startLine: Int = 1, endLine: Int? = null): String {
+  val end = endLine?.let { ", \"endLine\": $it" }.orEmpty()
+  return """
+    {
+      "ruleId": "$ruleId",
+      "message": {"text": "Unused import directive"},
+      "locations": [{"physicalLocation": {"artifactLocation": {"uri": "$uri", "uriBaseId": "SRCROOT"}, "region": {"startLine": $startLine$end}}}]
+    }
+  """.trimIndent()
+}
