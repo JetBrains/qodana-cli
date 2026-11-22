@@ -7,7 +7,7 @@ import kotlin.test.assertNotNull
 import org.jetbrains.qodana.edict.integration.support.*
 import org.junit.jupiter.api.Test
 
-class LiveThreeCommitExtractionTest : IntegrationTest() {
+class LiveThreeCommitExtractionTest : LiveIntegrationTest() {
     override val fixtureRevision = threeCommitHead
     override val fixtureProject = threeCommitProject
 

@@ -274,7 +274,8 @@ func writeProperties(c corescan.Context) { // opts.confDirPath(Prod().version)  
 	writeVmOptions(c, GetScanProperties(c))
 }
 
-func writeNativeServiceProperties(c corescan.Context) {
+// WriteNativeServiceVMOptions writes the IDE service's options and sets the launcher environment variable.
+func WriteNativeServiceVMOptions(c corescan.Context) {
 	writeVmOptions(c, GetNativeServiceProperties(c))
 }
 

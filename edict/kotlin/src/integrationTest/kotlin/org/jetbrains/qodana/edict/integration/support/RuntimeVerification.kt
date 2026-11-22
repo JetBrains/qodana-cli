@@ -6,12 +6,33 @@ import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.core.EdictJson
 import org.jetbrains.qodana.edict.core.EdictRepositoryState.Plan
 import org.jetbrains.qodana.edict.core.EdictRepositoryState.TaskAssignment
+import org.jetbrains.qodana.edict.skills.Skills
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.*
+
+/** MCP receipts from the Codex session logs. */
+internal fun recordedMcpCalls(sessions: Path, toolName: String? = null): List<JsonObject> =
+    Files.walk(sessions).use { paths ->
+        buildList {
+            paths.filter { it.toString().endsWith(".jsonl") }.forEach { path ->
+                Files.newBufferedReader(path).useLines { lines ->
+                    lines.filter(String::isNotBlank)
+                        .map { wireJson.parseToJsonElement(it).jsonObject }
+                        .filter { it.text("type") == "event_msg" }
+                        .map { it.obj("payload") }
+                        .filter { it.text("type") == "item_completed" }
+                        .map { it.obj("item") }
+                        .filter { it.text("server") == "edict-mcp" && (toolName == null || it.text("tool") == toolName) }
+                        .forEach { add(it) }
+                }
+            }
+        }
+    }
 
 internal fun verifyAgentLogs(layout: EdictLayout, plan: Plan) {
     val full = Files.readString(layout.agentsLogPath)
@@ -47,7 +68,8 @@ internal fun verifyAgentLogs(layout: EdictLayout, plan: Plan) {
 
 /** Inspect actual runtime receipts rather than trusting task declarations or text in parent prompts. */
 internal fun verifyRuntimeWorkers(sessions: Path, plan: Plan) {
-    data class Worker(val skillsAtStart: Set<String>, val assignment: TaskAssignment?, val skills: Set<String>)
+    data class AssignmentReceipt(val assignment: TaskAssignment, val skillInstructions: String)
+    data class Worker(val receipt: AssignmentReceipt?, val skills: Set<String>)
 
     val workers = mutableMapOf<String, Worker>()
     val spawned = mutableSetOf<String>()
@@ -56,10 +78,7 @@ internal fun verifyRuntimeWorkers(sessions: Path, plan: Plan) {
         paths.filter { it.toString().endsWith(".jsonl") }.forEach { file ->
             var id = ""
             var agentPath = ""
-            var started = false
-            var assignment: TaskAssignment? = null
-            var assignmentAtStart: TaskAssignment? = null
-            var skillsAtStart = emptySet<String>()
+            var receipt: AssignmentReceipt? = null
             val skills = mutableSetOf<String>()
             val calls = mutableMapOf<String, List<String>>()
             val spawnCalls = mutableSetOf<String>()
@@ -82,15 +101,14 @@ internal fun verifyRuntimeWorkers(sessions: Path, plan: Plan) {
                     if (item.text("type").contains("collab", true) && item.text("tool") == "spawn_agent") {
                         (item["receiver_thread_ids"] as? JsonArray)?.forEach { spawned += it.jsonPrimitive.content }
                     }
-                    if (item.text("server") == "edict-mcp") {
-                        if (item.text("tool") == "edict_task_get" && !started && item.obj("result")
-                                .flag("isError") != true
-                        )
-                            assignment = wireJson.decodeFromJsonElement<TaskAssignment>(
-                                item.obj("result").getValue("structuredContent")
+                    if (item.text("server") == "edict-mcp" && item.text("tool") == "edict_task_get" && receipt == null) {
+                        val result = item.obj("result")
+                        if (result.flag("isError") != true) {
+                            val assignment = result.getValue("structuredContent").jsonObject
+                            receipt = AssignmentReceipt(
+                                EdictJson.decodeFromJsonElement<TaskAssignment>(assignment),
+                                assignment.text("skillInstructions"),
                             )
-                        if (item.text("tool") == "edict_task_start" && !started) {
-                            started = true; skillsAtStart = skills.toSet(); assignmentAtStart = assignment
                         }
                     }
                 }
@@ -116,23 +134,25 @@ internal fun verifyRuntimeWorkers(sessions: Path, plan: Plan) {
                     }
                 }
             }
-            if (id.isNotEmpty()) workers[id] = Worker(skillsAtStart, assignmentAtStart, skills)
-            if (agentPath.isNotEmpty()) workers[agentPath] = Worker(skillsAtStart, assignmentAtStart, skills)
+            if (id.isNotEmpty()) workers[id] = Worker(receipt, skills)
+            if (agentPath.isNotEmpty()) workers[agentPath] = Worker(receipt, skills)
         }
     }
     plan.tasks.forEach { task ->
         assertTrue(task.agentId in spawned, "Task ${task.id} did not use a native spawned worker")
         val worker = assertNotNull(workers[task.agentId], "Missing runtime session for ${task.skill}")
-        assertTrue(
-            Registry.installedName(task.skill) in worker.skillsAtStart,
-            "Worker must read its assigned skill before startup"
-        )
         assertFalse("edict_manager" in worker.skills, "Worker must not execute the root manager skill")
-        val assignment = assertNotNull(worker.assignment, "Worker must fetch its assignment before startup")
+        val receipt = assertNotNull(worker.receipt, "Worker must claim its assignment in its own session")
+        val assignment = receipt.assignment
         assertEquals(
             TaskAssignment(task.id, task.skill, Registry.skillPath(task.skill), task.prompt),
             assignment.copy(scratchDirectory = ""),
-            "Worker must fetch its exact assignment in its own session before startup"
+            "Worker must receive its exact assignment when it claims the task"
+        )
+        assertEquals(
+            Skills.read(Registry.installedName(task.skill)),
+            receipt.skillInstructions,
+            "Worker must receive its assigned skill instructions when it claims the task"
         )
         val scratch = Path.of(assignment.scratchDirectory)
         assertEquals(task.id, scratch.fileName.toString(), "Worker scratch must be owned by its managed task")

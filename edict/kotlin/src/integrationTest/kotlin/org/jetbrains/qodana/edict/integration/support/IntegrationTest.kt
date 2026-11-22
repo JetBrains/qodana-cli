@@ -17,17 +17,13 @@ abstract class IntegrationTest {
     protected open val fixtureProject: String = historyProject
     protected open val fixtureSource: String = IntegrationWorkspace.defaultSource()
     protected open val fixtureStatePath: String? = null
+    protected open fun checkPrerequisites() = Unit
 
     @BeforeEach
     fun prepareIntegration(test: TestInfo) {
+        checkPrerequisites()
         val configured = System.getProperty("edict.integrationOutput")
-        val output = if (configured != null) Path.of(configured) else {
-            val cwd = Path.of("").toAbsolutePath()
-            val project = generateSequence(cwd) { it.parent }.flatMap { sequenceOf(it, it.resolve("edict/kotlin")) }
-                .firstOrNull { Files.isRegularFile(it.resolve("build.gradle.kts")) && Files.isDirectory(it.resolve("src/main/resources/skills")) }
-                ?: error("Cannot locate Kotlin subproject; set edict.integrationOutput")
-            project.resolve("out/integration")
-        }
+        val output = configured?.let(Path::of) ?: kotlinProjectDirectory().resolve("out/integration")
         workspace = IntegrationWorkspace.open(
             output, test.testClass.orElseThrow().simpleName, test.testMethod.orElseThrow().name,
             source = fixtureSource, revision = fixtureRevision, projectPath = fixtureProject,
@@ -45,3 +41,23 @@ abstract class IntegrationTest {
         }
     }
 }
+
+abstract class LiveIntegrationTest : IntegrationTest() {
+    protected lateinit var qodanaCli: Path
+        private set
+
+    override fun checkPrerequisites() {
+        val executableName = if (System.getProperty("os.name").startsWith("Windows")) "qodana.exe" else "qodana"
+        val executable = System.getProperty("edict.qodanaCli")?.let(Path::of)
+            ?: kotlinProjectDirectory().resolve("../../$executableName").normalize()
+        check(Files.isRegularFile(executable) && Files.isExecutable(executable)) {
+            "Missing assembled Qodana CLI at $executable. Run ./gradlew assembleQodanaCli from edict/kotlin."
+        }
+        qodanaCli = executable.toAbsolutePath()
+    }
+}
+
+private fun kotlinProjectDirectory(): Path = generateSequence(Path.of("").toAbsolutePath()) { it.parent }
+    .flatMap { sequenceOf(it, it.resolve("edict/kotlin")) }
+    .firstOrNull { Files.isRegularFile(it.resolve("build.gradle.kts")) && Files.isDirectory(it.resolve("src/main/resources/skills")) }
+    ?: error("Cannot locate the edict/kotlin project directory")

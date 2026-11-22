@@ -14,8 +14,6 @@ import java.nio.file.StandardOpenOption.APPEND
 import java.nio.file.StandardOpenOption.CREATE
 import java.util.concurrent.Executors
 
-internal val inspectionToolNames = INSPECTION_KTS_UPSTREAM_TOOL_NAMES
-
 /** Restrict external IDE access to generic compiler tools and redirect all execution to the disposable copy. */
 internal class InspectionToolProxy(
     availableTools: List<JsonObject>,
@@ -23,15 +21,15 @@ internal class InspectionToolProxy(
     private val audit: Path,
     private val call: (String, JsonObject) -> JsonObject,
 ) : AutoCloseable {
-    private val tools = availableTools.filter { it.text("name") in inspectionToolNames }
+    private val tools = availableTools.filter { it.text("name") in INSPECTION_KTS_UPSTREAM_TOOL_NAMES }
     private val server: HttpServer
     private val executor = Executors.newCachedThreadPool()
     private val auditLock = Any()
     val url: String
 
     init {
-        check(tools.map { it.text("name") }
-            .toSet() == inspectionToolNames) { "External inspection MCP must expose every required compiler/documentation tool" }
+        val missingTools = INSPECTION_KTS_UPSTREAM_TOOL_NAMES - tools.map { it.text("name") }.toSet()
+        check(missingTools.isEmpty()) { "External inspection MCP is missing tools: $missingTools" }
         Files.createDirectories(audit.parent)
         server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.executor = executor
@@ -79,7 +77,7 @@ internal class InspectionToolProxy(
 
     private fun callTool(params: JsonObject): JsonObject {
         val name = params.text("name")
-        require(name in inspectionToolNames) { "Only generic inspection tools are exposed" }
+        require(name in INSPECTION_KTS_UPSTREAM_TOOL_NAMES) { "Only generic inspection tools are exposed" }
         val requested = params.obj("arguments")
         val arguments = JsonObject(requested + ("projectPath" to JsonPrimitive(source.toString())))
         var response: JsonObject? = null

@@ -202,7 +202,8 @@ func FindProcess(processName string) bool {
 	}
 	p, err := process.Processes()
 	if err != nil {
-		log.Fatal(err)
+		log.Warnf("Cannot check whether %s is running: %v", processName, err)
+		return false
 	}
 	for _, proc := range p {
 		name, err := proc.Name()

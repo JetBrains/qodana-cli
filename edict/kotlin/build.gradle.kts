@@ -63,6 +63,25 @@ val bundledJar by tasks.registering(Jar::class) {
     )
 }
 
+val qodanaCliRoot = layout.projectDirectory.dir("../..")
+val qodanaCli = qodanaCliRoot.file(if (System.getProperty("os.name").startsWith("Windows")) "qodana.exe" else "qodana")
+
+val prepareQodanaCli by tasks.registering(Exec::class) {
+    dependsOn(bundledJar)
+    workingDir(qodanaCliRoot.asFile)
+    commandLine("go", "generate", "./internal/tooling/...")
+    // Reuse this build's JAR instead of starting another Gradle build in the same checkout.
+    environment("QODANA_EDICT_BUNDLED_JAR", bundledJar.get().archiveFile.get().asFile.absolutePath)
+}
+
+val assembleQodanaCli by tasks.registering(Exec::class) {
+    group = "build"
+    description = "Assemble the parent Qodana CLI for Edict live tests"
+    dependsOn(prepareQodanaCli)
+    workingDir(qodanaCliRoot.asFile)
+    commandLine("go", "build", "-o", qodanaCli.asFile.absolutePath, "./cli")
+}
+
 val managedSkills = layout.projectDirectory.dir("src/main/resources/skills")
 val skillIndex = layout.buildDirectory.file("generated/skill-index/index.txt")
 val generateSkillIndex by tasks.registering {
@@ -94,6 +113,8 @@ tasks.test {
     environment("CODEX_BIN", layout.projectDirectory.file("src/test/fake-codex/codex").asFile.absolutePath)
     environment("EDICT_REAL_CODEX", System.getenv("CODEX_BIN") ?: "codex")
     if (!excludeIntegrationTests) {
+        dependsOn(assembleQodanaCli)
+        systemProperty("edict.qodanaCli", qodanaCli.asFile.absolutePath)
         // Clone/runtime/provider state is external to Gradle's input snapshot.
         outputs.upToDateWhen { false }
         testLogging { showStandardStreams = true }

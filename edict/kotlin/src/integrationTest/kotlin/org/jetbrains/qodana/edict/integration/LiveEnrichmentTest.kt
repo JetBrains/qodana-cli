@@ -1,10 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
-import java.nio.file.Files
-import java.nio.file.Path
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
@@ -13,7 +10,8 @@ import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.core.*
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
+import org.jetbrains.qodana.edict.integration.support.recordedMcpCalls
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.junit.jupiter.api.Test
@@ -25,7 +23,7 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class LiveEnrichmentTest : IntegrationTest() {
+class LiveEnrichmentTest : LiveIntegrationTest() {
     override val fixtureRevision = "ef6c6e2061172498387c7c98cd1b10b7b65d1b09"
     override val fixtureProject = "testEnrichSignalFromGitHistory"
     override val fixtureStatePath = "$fixtureProject/.edict"
@@ -84,7 +82,6 @@ class LiveEnrichmentTest : IntegrationTest() {
             assertTrue(calls.any { it.text("tool") == "edict_get_cluster_signals" })
             calls.filter { it.text("tool") in setOf("edict_get_history_context", "edict_publish_signal_to_cluster", "edict_get_cluster_signals") }
                 .forEach { call -> assertEquals(enrichmentCluster, call.obj("arguments").text("clusterId")) }
-            assertFalse(calls.any { it.text("tool") == "edict_record_history_analysis" })
             val context = calls.first { it.text("tool") == "edict_get_history_context" }
                 .obj("result").obj("structuredContent")
             assertEquals(enrichmentCluster, context.text("clusterId"))
@@ -92,26 +89,13 @@ class LiveEnrichmentTest : IntegrationTest() {
             val revisions = context.obj("range").getValue("commitRevisions").jsonArray.map { it.jsonPrimitive.content }
             assertTrue(enrichmentCorrection in revisions)
             assertTrue(enriched.all { (it.source as EdictSignalSource.FromCommit).commitRevision in revisions })
-            val allowedDomainTools = setOf(
+            val allowedTools = setOf(
+                "edict_registry", "edict_context", "edict_plan_create", "edict_plan_get",
+                "edict_task_add", "edict_delegate", "edict_task_get", "edict_task_finish", "edict_task_cleanup_scratch",
                 "edict_get_history_context", "edict_publish_signal_to_cluster", "edict_get_cluster_signals",
             )
-            assertFalse(calls.any { it.text("tool").startsWith("edict_") && it.text("tool") !in allowedDomainTools })
-            assertFalse(calls.any { it.text("tool") in setOf(
-                "edict_publish_signal", "compile_inspection_kts", "run_inspection_kts", "generate_psi_tree",
-                "generate_inspection_kts_api", "generate_inspection_kts_examples", "edict_start_intellij",
-            ) })
+            assertEquals(emptySet(), calls.map { it.text("tool") }.toSet() - allowedTools, "Unexpected enrichment tools")
             verifyManagedRun(workspace, runtime, plan)
         }
-    }
-
-    /** Actual MCP receipts, not tool names merely included in assignments/results. */
-    private fun recordedMcpCalls(sessions: Path): List<JsonObject> = Files.walk(sessions).use { paths ->
-        paths.filter { it.toString().endsWith(".jsonl") }.toList()
-            .flatMap { Files.readAllLines(it).filter(String::isNotBlank).map { line -> wireJson.parseToJsonElement(line).jsonObject } }
-            .filter { event ->
-                event.text("type") == "event_msg" && event.obj("payload").text("type") == "item_completed" &&
-                    event.obj("payload").obj("item").text("server") == "edict-mcp"
-            }
-            .map { it.obj("payload").obj("item") }
     }
 }

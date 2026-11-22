@@ -3,7 +3,7 @@ package org.jetbrains.qodana.edict.integration
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
 import org.jetbrains.qodana.edict.integration.support.historyPath
@@ -12,7 +12,7 @@ import org.jetbrains.qodana.edict.integration.support.verifyCommitSignals
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.junit.jupiter.api.Test
 
-class LiveCommitExtractionTest : IntegrationTest() {
+class LiveCommitExtractionTest : LiveIntegrationTest() {
     @Test
     fun `managed skills extract signals from one Distillery commit with real native workers`() {
         workspace.withEdictCodex("Extract signal from last commit") { store, runtime, _ ->

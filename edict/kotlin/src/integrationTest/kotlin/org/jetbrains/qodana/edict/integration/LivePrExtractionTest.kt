@@ -10,7 +10,7 @@ import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.jetbrains.qodana.edict.core.EdictSignalSource
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
 import org.jetbrains.qodana.edict.integration.support.historyPath
@@ -28,7 +28,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class LivePrExtractionTest : IntegrationTest() {
+class LivePrExtractionTest : LiveIntegrationTest() {
     @Test
     fun `managed skills extract a Space review evidence pair with real native workers`() {
         val fixture = MergedReviewFixture(CiProviderId.SPACE, workspace.repository)

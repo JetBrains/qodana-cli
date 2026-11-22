@@ -13,32 +13,29 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.integration.support.CommitExpectation
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
 import org.jetbrains.qodana.edict.integration.support.historyPath
+import org.jetbrains.qodana.edict.integration.support.inspection.liveQodanaLinter
 import org.jetbrains.qodana.edict.integration.support.signalFiles
 import org.jetbrains.qodana.edict.integration.support.verifyCommitSignals
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
-import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 private const val retrospectiveFixtureHead = "a7fa96f48394b6e1e0d2d46e45403f0b3e3e18c3"
-private const val retrospectiveFixtureSource = "ssh://git@git.jetbrains.team/sa/distillery-test.git"
 private const val retrospectiveCluster = "avoid-thread-sleep-for-synchronization"
 private const val retrospectiveInspection = "AvoidThreadSleepForSynchronization"
 
-class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
+class LiveRetrospectiveSignalAnalysisTest : LiveIntegrationTest() {
     override val fixtureRevision = retrospectiveFixtureHead
-    override val fixtureSource = retrospectiveFixtureSource
+
+    @TempDir
+    lateinit var qodanaRuntime: Path
 
     @Test
     fun `managed retrospective skill extracts a fix from real Qodana absent results`() {
-        val ultimate = System.getenv("ULTIMATE_EDICT_REPO")?.takeIf(String::isNotBlank)?.let(Path::of)
-        assumeTrue(ultimate != null && Files.isRegularFile(ultimate.resolve("bazel.cmd")),
-            "ULTIMATE_EDICT_REPO with bazel.cmd is required")
-        ultimate!!
-
         val legacyState = workspace.project.resolve(".edict")
         val sourceCluster = legacyState.resolve("clusters/$retrospectiveCluster/description.json")
         val sourceInspection = legacyState.resolve("inspections/$retrospectiveCluster.inspection.kts")
@@ -55,14 +52,10 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
 
         val runner = workspace.output.resolve("scratch/qodana-history-runner")
         Files.createDirectories(runner.parent)
+        // The fixture only runs its scripted inspection, so it does not need OpenGrep's external process.
+        Files.writeString(qodanaRuntime.resolve("disabled_plugins.txt"), "intellij.opengrep\n")
         Files.writeString(runner, qodanaRunnerScript())
-        runner.toFile().setExecutable(true, true)
-
-        val cache = Path.of(System.getProperty("user.home"), "Library/Caches/JetBrains/MonorepoBazel")
-        val diskCache = Path.of(System.getProperty("user.home"), "Library/Caches/JetBrains/monorepo-bazel-cache")
-        val devData = Path.of(System.getProperty("user.home"), "Library/Caches/JetBrains/MonorepoDevData")
-        val daemon = Path.of(System.getProperty("user.home"), "Library/Application Support/kotlin/daemon")
-        val writable = listOf(workspace.repository.root, ultimate, cache, diskCache, devData, daemon).filter(Files::exists)
+        check(runner.toFile().setExecutable(true, true)) { "Cannot make $runner executable" }
         workspace.withEdictCodex(
             prompt = """
                 Use edict_manager and the managed protocol to perform one retrospective Signal analysis.
@@ -77,12 +70,13 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
                 Runner contract:
                   snapshot: $runner --project <project> --results <empty-result-directory>
                   comparison: $runner --project <project> --results <empty-result-directory> --baseline <snapshot-sarif> --include-absent
-                The runner prints the absolute qodana.sarif.json path after a successful run. Use the captured inspection
-                in both temporary worktrees. Do not change the caller's checkout or managed Edict inputs. Publish every
+                The runner prints the absolute qodana.sarif.json path after a successful run. Install the captured inspection
+                at <project>/inspections/$retrospectiveCluster.inspection.kts in both temporary worktrees.
+                Do not change the caller's checkout or managed Edict inputs. Publish every
                 independently verified Signal through edict_publish_signal.
             """.trimIndent(),
             timeoutMinutes = 30,
-            additionalWritableRoots = writable,
+            additionalWritableRoots = listOf(workspace.repository.root.resolve(".git"), qodanaRuntime),
         ) { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
             val coordinator = plan.tasks.single { it.skill == "edict-retrospective-signal-analysis" }
@@ -96,9 +90,13 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
             assertEquals(clusterBytes, targetCluster.readText(), "Managed cluster input changed")
             assertEquals(inspectionBytes, targetInspection.readText(), "Managed inspection input changed")
 
-            val reports = Files.walk(runtime.scratch).use { paths ->
-                paths.filter { it.fileName.toString() == "qodana.sarif.json" && it.isRegularFile() }.toList()
-            }
+            val reports = listOf(runtime.scratch, workspace.layout.scratchDirectory)
+                .filter(Files::isDirectory)
+                .flatMap { scratch ->
+                    Files.walk(scratch).use { paths ->
+                        paths.filter { it.fileName.toString() == "qodana.sarif.json" && it.isRegularFile() }.toList()
+                    }
+                }
             assertTrue(reports.size >= 2, "Expected snapshot and comparison SARIF reports")
             val absent = reports.sumOf(::absentInspectionResults)
             assertEquals(1, absent, "Expected exactly one absent fixture result")
@@ -138,21 +136,24 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
         done
         test -n "${'$'}project"
         test -n "${'$'}results"
-        mkdir -p "${'$'}results"
-        cd "${'$'}ULTIMATE_EDICT_REPO"
-        run_qodana() {
-          IJ_PRIVATE_PACKAGES_AUTHORIZER_SKIP=true /bin/sh ./bazel.cmd run --config=ci \
-            --action_env=TMPDIR="${'$'}TMPDIR" --host_action_env=TMPDIR="${'$'}TMPDIR" \
-            //build:qodana_for_jvm -- qodana "${'$'}@"
-        }
+        unset QODANA_DIST
+        export TMPDIR=${shellQuote(qodanaRuntime.toRealPath())}
+        set -- scan --linter $liveQodanaLinter --within-docker=false --save-report=false \
+          --profile-name "qodana.single:$retrospectiveInspection" --property=idea.headless.enable.statistics=false \
+          --property=java.io.tmpdir="${'$'}TMPDIR" \
+          --property=kotlin.daemon.options="runFilesPath=${'$'}TMPDIR/kotlin-daemon,autoshutdownIdleSeconds=30" \
+          --property=disabled.plugins.file.path="${'$'}TMPDIR/disabled_plugins.txt" \
+          --project-dir "${'$'}project" --results-dir "${'$'}results" --cache-dir "${'$'}TMPDIR/run/cache"
         if [ -n "${'$'}baseline" ] && [ "${'$'}include_absent" = true ]; then
-          run_qodana --baseline "${'$'}baseline" --baseline-include-absent "${'$'}project" "${'$'}results"
+          set -- "${'$'}@" --baseline "${'$'}baseline" --baseline-include-absent
         else
           test -z "${'$'}baseline"
-          run_qodana "${'$'}project" "${'$'}results"
         fi
+        ${shellQuote(qodanaCli)} "${'$'}@" >&2
         report="${'$'}results/qodana.sarif.json"
         test -f "${'$'}report"
         printf '%s\n' "${'$'}report"
     """.trimIndent() + "\n"
+
+    private fun shellQuote(path: Path): String = "'" + path.toString().replace("'", "'\"'\"'") + "'"
 }

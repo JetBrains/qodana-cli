@@ -4,7 +4,7 @@ package org.jetbrains.qodana.edict.integration
 import org.jetbrains.qodana.edict.ci.*
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.core.*
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.jetbrains.qodana.edict.support.FakeReviewApi
 import org.junit.jupiter.api.Test
@@ -15,7 +15,7 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.*
 
-class LivePromotionReviewResolutionTest : IntegrationTest() {
+class LivePromotionReviewResolutionTest : LiveIntegrationTest() {
     override val fixtureProject: String = "."
 
     @Test

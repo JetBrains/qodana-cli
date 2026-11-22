@@ -128,19 +128,22 @@ They need no model, Distillery checkout, or IDE.
 - Integration tests and their shared harness are in `src/integrationTest/kotlin`, under
   `org.jetbrains.qodana.edict.integration` and its `support` subpackages.
 
-The standard `test` task runs both. Integration tests run by default and use a real model.
+The standard `test` task runs both and assembles the parent repository's `qodana` executable
+(`qodana.exe` on Windows). Put the Go version from the parent `go.mod` on `PATH`. To run a live
+test directly from the IDE, run `./gradlew assembleQodanaCli` from this directory first.
+The managed-skill live tests also use a real model.
 
 ```sh
 # Unit tests only: no Distillery checkout or model access needed.
 ./gradlew test -PexcludeIntegrationTests=true
 # All tests.
-ULTIMATE_EDICT_REPO=/path/to/ultimate.edict.master ./gradlew test --console=plain
+./gradlew test --console=plain
 # A single integration test (also runnable from the IDE).
-./gradlew test --tests '*LiveCommitExtractionTest' --console=plain
-./gradlew test --tests '*LiveThreeCommitExtractionTest' --tests '*LivePrExtractionTest' --console=plain
-CODEX_MODEL=gpt-5.6-terra ULTIMATE_EDICT_REPO=/path/to/ultimate.edict.master \
-  ./gradlew test --tests '*LivePipelineTest' --console=plain
-./gradlew test --tests '*LiveEnrichmentTest' --console=plain
+./gradlew :test --tests '*LiveCommitExtractionTest' --console=plain
+./gradlew :test --tests '*LiveThreeCommitExtractionTest' --tests '*LivePrExtractionTest' --console=plain
+./gradlew :test --tests '*LiveEnrichmentTest' --console=plain
+# Run the longer pipeline after the focused live tests.
+CODEX_MODEL=gpt-5.6-terra ./gradlew :test --tests '*LivePipelineTest' --console=plain
 ```
 
 Run Gradle tests one at a time in each checkout, including runs started from the IDE. Overlapping builds share
@@ -172,6 +175,10 @@ The tests install Edict into the fixture the same way `qodana edict install` doe
 - **Test settings.** Settings that only tests need (the server URL, enabled tools, extra writable roots) are passed as
   `codex -c` overrides.
 - **Server.** The Kotlin MCP server runs outside the agent sandbox.
+- **Native inspections.** The assembled CLI starts the IntelliJ MCP server with `qodana edict ide-mcp --linter=qodana-jvm`
+  and runs retrospective scans with `qodana scan --linter=qodana-jvm --within-docker=false`. The CLI provisions
+  the matching native linter. Paid releases require a Qodana license. For a nightly linter, set the CLI's
+  `QD_PRODUCT_INTERNAL_FEED` and `QD_PRODUCT_INTERNAL_AUTH` when needed.
 - **Model.** `CODEX_BIN` overrides the Codex executable, and `CODEX_MODEL` overrides the default model
   (`gpt-6.2-sol`, high reasoning effort).
 
@@ -182,7 +189,9 @@ A test fails if the provider or the fixture is not accessible.
 | `LiveCommitExtractionTest` | Asks only "Extract signals from the latest commit." and checks the `PollingWaiter.java` correction (`Thread.sleep(1_000)` becomes `workerFinished.await(1, TimeUnit.SECONDS)`). Verifies both Signals, exact revisions, canonical diff bytes, and changed-line evidence. Requires a completed batch and a separate native evidence worker. |
 | `LiveThreeCommitExtractionTest` | Six Signals from three corrections: string equality, locale-independent normalization, and integer multiplication overflow. |
 | `LivePrExtractionTest` | GitHub and Space extraction through local authenticated HTTP fixtures, using the real provider clients. Each provider must produce both sides of the correction with complete provenance. |
-| `LivePipelineTest` | Extracts, clusters, and generates an accepted inspection. Starts Ultimate's inspection MCP from `ULTIMATE_EDICT_REPO` with Bazel and records compiler calls in `log/inspection-mcp.jsonl`. Recompiles the accepted bytes against the original evidence and checks that the reviews accepted that exact hash. The time limit is 60 minutes; extraction tests have 20. |
+| `LiveIntellijMcpSessionTest` | Checks native IntelliJ MCP session keepalive. Also checks that project analysis can run again after a timeout when the linter advertises the `timeoutMinutes` argument. |
+| `LiveRetrospectiveSignalAnalysisTest` | Uses two native Qodana scans and an absent SARIF baseline finding to verify retrospective Signal extraction. |
+| `LivePipelineTest` | Extracts, clusters, and generates an accepted inspection. Records native IntelliJ compiler calls in `log/inspection-mcp.jsonl`. Recompiles the accepted bytes against the original evidence and checks that the reviews accepted that exact hash. The management run has a 180-minute limit. |
 | `LiveEnrichmentTest` | Enriches a prepared cluster from `testEnrichSignalFromGitHistory`. The history range is the intersection of the latest 100 commits and the last 90 days, anchored to HEAD. Verifies the Git evidence and that every analyzed commit is inside the range. Doesn't distribute, generate, or start IntelliJ. |
 
 Each test writes logs to `log/process-log/<run-id>/`:

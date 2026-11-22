@@ -17,6 +17,8 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.ExtractionConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
+import org.jetbrains.qodana.edict.common.flag
+import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.core.EdictClusterStatus
@@ -31,11 +33,11 @@ import org.jetbrains.qodana.edict.integration.support.reviews.MergedReviewFixtur
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.junit.jupiter.api.Test
 
-class LivePipelineTest : IntegrationTest() {
+class LivePipelineTest : LiveIntegrationTest() {
     @Test
     fun `short daily request runs the default pipeline`() {
         val reviews = MergedReviewFixture(CiProviderId.GITHUB, workspace.repository)
-        InspectionServer.start(workspace.project, workspace.output).use { inspection ->
+        InspectionServer.start(qodanaCli, workspace.project, workspace.output).use { inspection ->
             workspace.withCodex(
                 "Run the daily repository routine.",
                 provider = reviews.client,
@@ -153,10 +155,17 @@ class LivePipelineTest : IntegrationTest() {
         }
 
         assertEquals(EdictClusterStatus.Generated, cluster.manifest.status)
-        assertTrue(
-            plan.tasks.any { it.skill == "edict-weak-signal-review" && it.status == "completed" },
-            "Generated transition requires weak-signal review",
-        )
+        val analyses = recordedMcpCalls(runtime.home.resolve("sessions"), "edict_get_new_inspection_results")
+            .map { it.obj("result") }
+            .filter { it.flag("isError") != true }
+            .map { it.obj("structuredContent") }
+        assertTrue(analyses.isNotEmpty(), "Generated transition requires a successful project analysis")
+        if (analyses.any { it.flag("findingsUnchanged") != true && it.flag("weakReviewNeeded") != false }) {
+            assertTrue(
+                plan.tasks.any { it.skill == "edict-weak-signal-review" && it.status == "completed" },
+                "New findings that require review must have a completed weak-signal review",
+            )
+        }
         assertTrue(
             plan.tasks.any { it.skill == "edict-inspection-code-review" && it.status == "completed" },
             "Generated transition requires inspection code review",

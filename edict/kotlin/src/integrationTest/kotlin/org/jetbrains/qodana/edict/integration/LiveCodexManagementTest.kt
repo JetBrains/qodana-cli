@@ -1,6 +1,6 @@
 package org.jetbrains.qodana.edict.integration
 
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
 import org.jetbrains.qodana.edict.integration.support.verifyAgentLogs
 import org.jetbrains.qodana.edict.integration.support.verifyRuntimeWorkers
 import org.junit.jupiter.api.Test
@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class LiveCodexManagementTest : IntegrationTest() {
+class LiveCodexManagementTest : LiveIntegrationTest() {
     override val fixtureProject: String = "."
 
     @Test

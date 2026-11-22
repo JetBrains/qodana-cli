@@ -2,15 +2,19 @@ package org.jetbrains.qodana.edict.integration
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.qodana.edict.common.obj
+import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.core.HttpInspectionKtsClient
 import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.core.IntellijMcpServerService
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.LiveIntegrationTest
+import org.jetbrains.qodana.edict.integration.support.historyBefore
+import org.jetbrains.qodana.edict.integration.support.historyPath
+import org.jetbrains.qodana.edict.integration.support.historyProject
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
+import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.test.assertContains
@@ -18,7 +22,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
-class LiveIntellijMcpSessionTest : IntegrationTest() {
+class LiveIntellijMcpSessionTest : LiveIntegrationTest() {
 
     /**
      * Agents call the IDE minutes apart, while some IDE builds drop a Streamable HTTP session after 15 idle seconds
@@ -26,7 +30,10 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
      */
     @Test
     fun `production client keeps its IDE session across idle pauses without restarting the IDE`() = runBlocking {
-        InspectionServer.start(workspace.project, workspace.output).use { ide ->
+        InspectionServer.start(qodanaCli, workspace.project, workspace.output).use { ide ->
+            val original = workspace.repository.fileAt(historyBefore, historyPath)
+            val inspection = ide.run(INSPECTION, historyPath.removePrefix("$historyProject/"), original)
+            assertContains(inspection.problemLines, 5, "The IDE fixture must resolve Thread.sleep against its project JDK")
             // The surrounding test owns the IDE.
             val lifecycle = FakeIntellijMcpServerLifecycle(ide.streamableEndpoint)
             val service = IntellijMcpServerService(ide.source, serverLifecycle = lifecycle)
@@ -47,7 +54,12 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
     @Test
     @Timeout(value = 15, unit = TimeUnit.MINUTES)
     fun `project analysis can be submitted after the previous analysis times out`() = runBlocking {
-        InspectionServer.start(workspace.project, workspace.output, ::prepareProjectForAnalysis).use { ide ->
+        InspectionServer.start(qodanaCli, workspace.project, workspace.output).use { ide ->
+            val supportsTimeout = ide.tools.any { tool ->
+                tool.text("name") == "run_inspection_kts_project" &&
+                    "timeoutMinutes" in tool.obj("inputSchema").obj("properties")
+            }
+            assumeTrue(supportsTimeout, "The installed Qodana linter does not support IDE-side project analysis timeouts")
             HttpInspectionKtsClient(
                 endpoint = ide.streamableEndpoint,
                 projectPath = ide.source.toString(),
@@ -73,47 +85,6 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
     }
 
     private companion object {
-        /** The Bazel MCP runner has an isolated IDE config, so give this copied fixture an explicit SDK and module. */
-        fun prepareProjectForAnalysis(source: Path) {
-            val idea = source.resolve(".idea")
-            Files.createDirectories(idea)
-            Files.writeString(
-                idea.resolve("misc.xml"),
-                """<?xml version="1.0" encoding="UTF-8"?>
-                    |<project version="4">
-                    |  <component name="ProjectRootManager" version="2" project-jdk-name="25" project-jdk-type="JavaSDK" />
-                    |</project>
-                    |""".trimMargin(),
-            )
-            Files.writeString(
-                idea.resolve("modules.xml"),
-                """<?xml version="1.0" encoding="UTF-8"?>
-                    |<project version="4">
-                    |  <component name="ProjectModuleManager">
-                    |    <modules>
-                    |      <module fileurl="file://${'$'}PROJECT_DIR${'$'}/inspection-project.iml" filepath="${'$'}PROJECT_DIR${'$'}/inspection-project.iml" />
-                    |    </modules>
-                    |  </component>
-                    |</project>
-                    |""".trimMargin(),
-            )
-            Files.writeString(
-                source.resolve("inspection-project.iml"),
-                """<?xml version="1.0" encoding="UTF-8"?>
-                    |<module type="JAVA_MODULE" version="4">
-                    |  <component name="NewModuleRootManager" inherit-compiler-output="true">
-                    |    <exclude-output />
-                    |    <content url="file://${'$'}MODULE_DIR${'$'}">
-                    |      <sourceFolder url="file://${'$'}MODULE_DIR${'$'}/src/main/java" isTestSource="false" />
-                    |    </content>
-                    |    <orderEntry type="inheritedJdk" />
-                    |    <orderEntry type="sourceFolder" forTests="false" />
-                    |  </component>
-                    |</module>
-                    |""".trimMargin(),
-            )
-        }
-
         val HANGING_INSPECTION = """
             import com.intellij.openapi.progress.ProgressManager
 
@@ -138,23 +109,26 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
         val INSPECTION = """
             import org.intellij.lang.annotations.Language
             import com.intellij.psi.PsiJavaFile
-            import com.intellij.psi.PsiLiteralExpression
+            import com.intellij.psi.PsiMethodCallExpression
 
             @Language("HTML")
-            val htmlDescription = "<html><body>Reports octal integer literals.</body></html>"
+            val htmlDescription = "<html><body>Reports calls to Thread.sleep.</body></html>"
 
-            val octalLiteralInspection = localInspection { psiFile, inspection ->
+            val threadSleepInspection = localInspection { psiFile, inspection ->
                 if (psiFile !is PsiJavaFile) return@localInspection
-                psiFile.descendantsOfType<PsiLiteralExpression>()
-                    .filter { literal -> Regex("0(?:_*[0-7])+[lL]?").matches(literal.text) }
-                    .forEach { literal -> inspection.registerProblem(literal, "Octal integer literal") }
+                psiFile.descendantsOfType<PsiMethodCallExpression>()
+                    .filter { call ->
+                        call.methodExpression.referenceName == "sleep" &&
+                            call.resolveMethod()?.containingClass?.qualifiedName == "java.lang.Thread"
+                    }
+                    .forEach { call -> inspection.registerProblem(call, "Thread.sleep call") }
             }
 
             listOf(
                 InspectionKts(
-                    id = "octal-literal",
-                    localTool = octalLiteralInspection,
-                    name = "Octal integer literal",
+                    id = "thread-sleep",
+                    localTool = threadSleepInspection,
+                    name = "Thread sleep call",
                     htmlDescription = htmlDescription,
                     level = HighlightDisplayLevel.WARNING,
                 )

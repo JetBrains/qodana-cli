@@ -36,20 +36,15 @@ func main() {
 }
 
 func buildEdict(root string) error {
-	project := filepath.Join(root, "edict", "kotlin")
-	args := []string{"--no-daemon", "--console=plain", "bundledJar"}
-	command := exec.Command(filepath.Join(project, "gradlew"), args...)
-	if runtime.GOOS == "windows" {
-		// Batch files need cmd.exe; the working directory avoids quoting a script
-		// path containing spaces using cmd.exe's different argument rules.
-		command = exec.Command("cmd.exe", append([]string{"/d", "/c", "gradlew.bat"}, args...)...)
+	jar := os.Getenv("QODANA_EDICT_BUNDLED_JAR")
+	if jar == "" {
+		var err error
+		jar, err = buildBundledJar(root)
+		if err != nil {
+			return err
+		}
 	}
-	command.Dir = project
-	command.Stdout, command.Stderr = os.Stdout, os.Stderr
-	if err := command.Run(); err != nil {
-		return fmt.Errorf("build bundled Edict JAR (requires JDK 21): %w", err)
-	}
-	data, err := os.ReadFile(filepath.Join(project, "build", "libs", "edict-cli.jar"))
+	data, err := os.ReadFile(jar)
 	if err != nil {
 		return err
 	}
@@ -71,6 +66,23 @@ func buildEdict(root string) error {
 		}
 	}
 	return nil
+}
+
+func buildBundledJar(root string) (string, error) {
+	project := filepath.Join(root, "edict", "kotlin")
+	args := []string{"--no-daemon", "--console=plain", "bundledJar"}
+	command := exec.Command(filepath.Join(project, "gradlew"), args...)
+	if runtime.GOOS == "windows" {
+		// Batch files need cmd.exe; the working directory avoids quoting a script
+		// path containing spaces using cmd.exe's different argument rules.
+		command = exec.Command("cmd.exe", append([]string{"/d", "/c", "gradlew.bat"}, args...)...)
+	}
+	command.Dir = project
+	command.Stdout, command.Stderr = os.Stdout, os.Stderr
+	if err := command.Run(); err != nil {
+		return "", fmt.Errorf("build bundled Edict JAR (requires JDK 21): %w", err)
+	}
+	return filepath.Join(project, "build", "libs", "edict-cli.jar"), nil
 }
 
 // ONNX Runtime 1.22.0 does not ship Windows ARM64 libraries. That target keeps

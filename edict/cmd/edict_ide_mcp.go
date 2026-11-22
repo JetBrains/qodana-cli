@@ -32,17 +32,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const (
-	// Qodana's mcp-server script opens the project as a Qodana run does, then serves MCP instead of analyzing.
-	mcpServerScript = "mcp-server"
-	// The IDE's own headless starter: it opens the project without Qodana's project configuration. It stays the default
-	// until the Qodana linters ship the mcp-server script.
-	mcpIDEStarter = "mcpServer"
-	// Set to "script" to start the Qodana mcp-server script instead of the headless starter.
-	ideMCPStarterEnv = "QODANA_EDICT_IDE_STARTER"
-	// The IDE gets this long to exit after SIGTERM before it is killed.
-	ideMCPStopTimeout = 10 * time.Second
-)
+// The IDE gets this long to exit after SIGTERM before it is killed.
+const ideMCPStopTimeout = 10 * time.Second
 
 // ideMCPTools are the IntelliJ tools the Kotlin Edict server calls or forwards; keep both sides in sync.
 var ideMCPTools = []string{
@@ -69,8 +60,6 @@ type ideMCPOptions struct {
 	Property    []string
 	ResultsDir  string
 	WaitTimeout time.Duration
-	// QodanaScript starts Qodana's mcp-server script instead of the IDE's mcpServer starter.
-	QodanaScript bool
 }
 
 // newEdictIDEMCPCommand runs one IntelliJ MCP server for the lifetime of its caller, the Kotlin Edict server.
@@ -117,13 +106,6 @@ The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not suppor
 	)
 	// Large projects take tens of minutes to import, and the IDE serves MCP only afterwards.
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", time.Hour, "Maximum time to wait for MCP readiness")
-	flags.BoolVar(
-		&options.QodanaScript,
-		"qodana-script",
-		os.Getenv(ideMCPStarterEnv) == "script",
-		"Start Qodana's mcp-server script, which configures the project as a Qodana run does, instead of the IDE's "+
-			"mcpServer starter; the linter must contain the script (default from "+ideMCPStarterEnv+"=script)",
-	)
 	command.MarkFlagsMutuallyExclusive("dist", "linter")
 	return command
 }
@@ -190,18 +172,14 @@ func ideMCPCommand(options ideMCPOptions) ([]string, func(), error) {
 	if err != nil {
 		return nil, cleanup, err
 	}
-	// It also writes the vmoptions file and exports its environment variable for the IDE, which both entry points need.
-	qodanaRun := core.PrepareNativeServiceRunCommand(scanContext)
-	if options.QodanaScript {
-		return qodanaRun, cleanup, nil
-	}
+	core.WriteNativeServiceVMOptions(scanContext)
 	return ideMCPArguments(scanContext.Prod().IdeScript, options.ProjectDir), cleanup, nil
 }
 
 // ideMCPArguments starts the IDE's headless MCP server; without --port it selects a free port.
 func ideMCPArguments(executable string, projectDir string) []string {
 	return []string{
-		executable, mcpIDEStarter, "--project=" + projectDir, "--invocation-mode=direct",
+		executable, "mcpServer", "--project=" + projectDir, "--invocation-mode=direct",
 		"--allowed-tools=" + strings.Join(ideMCPTools, ","),
 	}
 }
@@ -340,7 +318,6 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 		ProjectDir:   options.ProjectDir,
 		Linter:       options.Linter,
 		WithinDocker: "false",
-		Script:       mcpServerScript,
 		Property:     ideMCPProperties(options.Property),
 	}
 	scanContext := corescan.CreateContext(cliOptions, commonCtx, preparedHost, corescan.QodanaYamlConfig{}, configDir)
@@ -349,8 +326,7 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 
 // ideMCPDefaultProperties configure the IDE for an Edict session on any project.
 var ideMCPDefaultProperties = []string{
-	// Qodana mode, as a scan runs: its headless project setup, such as assigning the project JDK after a Maven import,
-	// runs only then. The mcp-server script runs in Qodana mode anyway; the headless starter needs it.
+	// Enable Qodana's headless project setup, such as assigning the project JDK after a Maven import.
 	"qodana.application=true",
 	// 70% of the memory the JVM detects, cgroup limits included; with it, the launcher drops the distribution's -Xmx.
 	// The rest holds the build tool's daemon during the import, the Kotlin daemon and the agents. An explicit -Xmx wins.

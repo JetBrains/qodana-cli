@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -178,6 +179,9 @@ internal class HttpInspectionKtsClient(
     )
 
   override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = callTool(name, arguments, requestTimeout)
+
+  suspend fun listTools(): List<JsonObject> =
+    request("tools/list", JsonObject(emptyMap())).getValue("tools").jsonArray.map { it.jsonObject }
 
   private suspend fun callTool(name: String, arguments: JsonObject, timeout: Duration): JsonObject = request(
       "tools/call",
