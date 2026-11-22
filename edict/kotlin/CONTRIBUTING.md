@@ -173,7 +173,7 @@ The tests install Edict into the fixture the same way `qodana edict install` doe
   `codex -c` overrides.
 - **Server.** The Kotlin MCP server runs outside the agent sandbox.
 - **Model.** `CODEX_BIN` overrides the Codex executable, and `CODEX_MODEL` overrides the default model
-  (`gpt-5.6-sol`, high reasoning effort).
+  (`gpt-6.2-sol`, high reasoning effort).
 
 A test fails if the provider or the fixture is not accessible.
 

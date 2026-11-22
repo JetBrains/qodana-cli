@@ -28,7 +28,7 @@ class CodexRunner internal constructor(
     private val mcpUrl: String,
     // The real Codex: under Gradle, CODEX_BIN is the fake that only answers Edict's trust check.
     private val executable: String = System.getenv("EDICT_REAL_CODEX") ?: System.getenv("CODEX_BIN") ?: "codex",
-    val model: String = System.getenv("CODEX_MODEL") ?: "gpt-5.6-sol",
+    val model: String = System.getenv("CODEX_MODEL") ?: "gpt-6.2-sol",
     private val agentLogger: AgentLogger? = null,
     private val enabledTools: List<String>? = null,
     private val additionalWritableRoots: List<Path> = emptyList(),
