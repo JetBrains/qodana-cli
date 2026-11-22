@@ -2,7 +2,6 @@ package org.jetbrains.qodana.edict.promotion
 
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
 import org.jetbrains.qodana.edict.ci.ReviewApi
-import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
@@ -11,8 +10,6 @@ import org.jetbrains.qodana.edict.core.EdictRepository
 import org.jetbrains.qodana.edict.core.InspectionPromotion
 import org.jetbrains.qodana.edict.core.PromotionPrState
 import org.jetbrains.qodana.edict.core.TokenRedactor
-import org.jetbrains.qodana.edict.core.WeakSignalPromotion
-import org.jetbrains.qodana.edict.core.EdictSignal
 import org.jetbrains.qodana.edict.core.EdictStoredCluster
 import org.jetbrains.qodana.edict.core.EvaluatedInspection
 import org.jetbrains.qodana.edict.core.StoredInspection
@@ -32,28 +29,7 @@ internal class PromotionService(
   /** Review text and review failures reach agents, so they are redacted before they are cut to their bounds. */
   private val redactor: TokenRedactor,
   private val clock: Clock = Clock.systemUTC(),
-  executionBranch: () -> String = { error("The project execution branch is unavailable") },
 ) {
-  // TODO: Is signle promotion service which delegates weak signals to other service right architecture? Why not have dedicated services for inpsectins and weak signals?
-  private val weakSignals = WeakSignalPromotionService(repository, configuration, promotionReviews, redactor, executionBranch)
-
-  fun prepareWeakSignals(clusterIds: List<String>? = null): WeakSignalPreparationResponse = weakSignals.prepare(clusterIds)
-
-  fun promoteWeakSignals(clusterId: String, inspectionDigest: String, fixes: List<WeakSignalFix>, validation: String): WeakSignalPromotion =
-    weakSignals.publish(clusterId, inspectionDigest, fixes, validation)
-
-  fun checkWeakSignalReviews(): WeakSignalPromotionCheckReviewsResponse = weakSignals.checkReviews()
-
-  fun recordWeakSignalPromotionSignals(
-    clusterId: String,
-    pullRequest: ReviewReference,
-    inspectionDigest: String,
-    signals: List<EdictSignal>,
-  ): List<EdictSignal> = weakSignals.recordSignals(clusterId, pullRequest, inspectionDigest, signals)
-
-  fun completeWeakSignalReview(clusterId: String, pullRequest: ReviewReference) =
-    weakSignals.completeReview(clusterId, pullRequest)
-
   fun select(count: Int? = null): PromotionSelectionResponse {
     require(count == null || count > 0) { "count must be positive when provided" }
     val reviews = reviews()

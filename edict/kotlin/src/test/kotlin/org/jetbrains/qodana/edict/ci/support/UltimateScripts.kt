@@ -90,28 +90,6 @@ internal object UltimateScripts {
     space.reviewerAssignment(ULTIMATE_NEW_REVIEW_ID, "username:$ULTIMATE_REVIEWER") answeredWith PROFILE_NOT_FOUND,
   )
 
-  /** The source-fix branch exists at the base without the fix: a run stopped before committing. */
-  fun sourceFixBranchLeftAtBase() = ultimateScripted(
-    space.branchRead(ULTIMATE_SOURCE_FIX_BRANCH) answeredWith space.branch(ULTIMATE_SOURCE_FIX_BRANCH, RELEASE_191_HEAD),
-    *withoutBranchCreation(sourceFixReviewOpened),
-  )
-
-  /** The source-fix branch exists at a commit with the fix, from which a review was opened. */
-  fun sourceFixAlreadyCommitted() = ultimateScripted(
-    space.branchRead(ULTIMATE_SOURCE_FIX_BRANCH) answeredWith space.branch(ULTIMATE_SOURCE_FIX_BRANCH, SOURCE_FIX_COMMIT),
-    *ULTIMATE_SOURCE_FIX.files.entries.flatMap { (path, content) -> fileRead(SOURCE_FIX_COMMIT, path, content).asList() }.toTypedArray(),
-    space.reviewSearch(ULTIMATE_SOURCE_FIX_BRANCH, RELEASE_191, "Opened") answeredWith space.reviews(
-      space.review(ULTIMATE_EXISTING_REVIEW.id, EXISTING_REVIEW_NUMBER, ULTIMATE_SOURCE_FIX_BRANCH, RELEASE_191),
-    ),
-    space.reviewerAssignment(ULTIMATE_EXISTING_REVIEW.id, ULTIMATE_REVIEWER) answeredWith spaceEmpty(),
-  )
-
-  /** The source-fix branch exists at another commit, whose [ULTIMATE_BUILD_TXT] isn't the fixed one. */
-  fun sourceFixBranchWithOtherContent() = ultimateScripted(
-    space.branchRead(ULTIMATE_SOURCE_FIX_BRANCH) answeredWith space.branch(ULTIMATE_SOURCE_FIX_BRANCH, SOURCE_FIX_COMMIT),
-    *fileRead(SOURCE_FIX_COMMIT, ULTIMATE_BUILD_TXT, ULTIMATE_BUILD_TXT_AT_191),
-  )
-
   /** Review 222772 with its discussion's one message repeated 51 times, in a page of 50 and a page of 1. */
   fun discussionInTwoPages() = oneDiscussion.answering("GET", "/chats/messages") { page ->
     val message = page.response.body.arrayAt("messages").single().jsonObject
@@ -173,9 +151,6 @@ internal object UltimateScripts {
   // ULTIMATE_INSPECTION_REQUEST opened from a new branch at the real head of RELEASE_191; scripted from the first write on.
   private val inspectionReviewOpened = ultimateRecording("inspection-review-opened")
 
-  // ULTIMATE_SOURCE_FIX_REQUEST opened from a new branch at the real head of RELEASE_191; scripted from the first write on.
-  private val sourceFixReviewOpened = ultimateRecording("source-fix-review-opened")
-
   private val openReviewSearch = space.reviewSearch(INSPECTION_BRANCH, RELEASE_191, "Opened")
 
   private val newReviewerAssignment = space.reviewerAssignment(ULTIMATE_NEW_REVIEW_ID, ULTIMATE_REVIEWER)
@@ -211,7 +186,6 @@ private const val EXISTING_REVIEW_NUMBER = 239999
 
 /** Made-up commits on the request branches. */
 private const val INSPECTION_COMMIT = "4d1c7e0ba5e0f1e5a9d3c2b1a0f9e8d7c6b5a4f3"
-private const val SOURCE_FIX_COMMIT = "5f1e0d9c8b7a69584736251403f2e1d0c9b8a796"
 
 /** The id Git gives a blob of [content]: the SHA-1 hex of its header and bytes. */
 private fun gitBlob(content: String): String {

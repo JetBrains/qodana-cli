@@ -15,7 +15,6 @@ import org.jetbrains.qodana.edict.core.PromotionPrState
 import org.jetbrains.qodana.edict.core.TokenRedactor
 import org.jetbrains.qodana.edict.core.sha256Hex
 import org.jetbrains.qodana.edict.promotion.PromotionService
-import org.jetbrains.qodana.edict.promotion.WeakSignalPromotionService
 import org.jetbrains.qodana.edict.support.NoRedaction
 import java.time.Clock
 import java.time.Instant
@@ -26,9 +25,6 @@ internal val PROMOTION_REPOSITORY = ReviewRepository(CiProviderId.GITHUB, "githu
 
 
 internal val PROMOTION = PromotionConfiguration("reviewer", "main")
-
-/** The project branch the run checked out, which source fixes target. */
-internal const val EXECUTION_BRANCH = "main"
 
 /** When a stored promotion was created, before the tests run. */
 internal const val CREATED_AT = "2026-10-01T00:00:00Z"
@@ -100,19 +96,7 @@ internal fun promotionService(
   reviews,
   redactor,
   Clock.fixed(Instant.parse(NOW), ZoneOffset.UTC),
-  executionBranch = { EXECUTION_BRANCH },
 )
-
-/** The weak-signal promotion service of [PROMOTION_REPOSITORY]. */
-internal fun weakSignalService(
-  repository: EdictRepository,
-  reviews: ReviewApi?,
-  promotion: PromotionConfiguration? = PROMOTION,
-  redactor: TokenRedactor = NoRedaction,
-): WeakSignalPromotionService =
-  WeakSignalPromotionService(
-    repository, EdictConfiguration(ci = PROMOTION_REPOSITORY, promotion = promotion), reviews, redactor, executionBranch = { EXECUTION_BRANCH },
-  )
 
 /** An expected text from the `promotion` test resources, by its file [name]. */
 internal fun expectedText(name: String): String = resourceText("promotion/$name")

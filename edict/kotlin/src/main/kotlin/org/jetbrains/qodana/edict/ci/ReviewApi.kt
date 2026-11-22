@@ -34,8 +34,6 @@ interface ReviewApi {
     UnifiedDiff.between(fileOrNull(before, beforePath), fileOrNull(after, afterPath), beforePath, afterPath, context)
 
   fun reviewWithEvidence(reference: ReviewReference): ReviewStatus
-  fun mergedReview(reference: ReviewReference): MergedReview =
-    error("Exact merged-change evidence is unavailable for ${reference.url}")
 }
 
 /**

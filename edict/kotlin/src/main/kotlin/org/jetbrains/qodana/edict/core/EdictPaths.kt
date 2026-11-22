@@ -7,8 +7,6 @@ internal data class EdictRepositoryDirectory(val root: Path) {
   val clustersDirectory: Path = root.resolve("clusters")
   val inboxDirectory: Path = root.resolve("inbox")
   val inspectionsDirectory: Path = root.resolve("inspections")
-  val promotionsDirectory: Path = root.resolve("promotions")
-  val activeWeakSignalPromotionsPath: Path = promotionsDirectory.resolve("active.json")
 
   /** Findings reserved for review comments that await an answer, one `<record id>.json` each. */
   val activeFeedbackDirectory: Path = root.resolve("feedback").resolve("active")
@@ -18,11 +16,6 @@ internal data class EdictRepositoryDirectory(val root: Path) {
 
   /** The inspections whose findings may become review comments, as the last push of the state chose them. */
   val feedbackInspectionsPath: Path = root.resolve("feedback").resolve("inspections.json")
-
-  fun weakSignalPromotionHistoryPath(clusterId: String): Path {
-    require(EDICT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
-    return promotionsDirectory.resolve("history").resolve("$clusterId.json")
-  }
 
   val embeddingsDirectory: Path = root.resolve("embeddings")
   val gteEmbeddingCacheDirectory: Path = embeddingsDirectory.resolve("gte-large-$EMBEDDING_MODEL_REVISION")

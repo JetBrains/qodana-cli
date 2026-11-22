@@ -49,7 +49,6 @@ class LivePipelineTest : IntegrationTest() {
             ) { store, runtime, _ ->
                 val plan = assertNotNull(store.plan())
                 val required = setOf(
-                    "edict-check-weak-signal-promotion",
                     "edict-signal-analysis",
                     "edict-pr-signal-analysis",
                     "edict-distribution",
@@ -58,7 +57,6 @@ class LivePipelineTest : IntegrationTest() {
                     "edict-code-example-overseer",
                     "edict-inspection-shallow-review",
                     "edict-promote",
-                    "edict-promote-weak-signal",
                 )
                 assertTrue(
                     plan.tasks.map { it.skill }.toSet().containsAll(required),
@@ -77,7 +75,13 @@ class LivePipelineTest : IntegrationTest() {
     private fun verifyStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-distribution", "edict-git-history-signal-enrichment", "edict-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
+            listOf(
+                "edict-pr-signal-analysis",
+                "edict-distribution",
+                "edict-git-history-signal-enrichment",
+                "edict-cluster-generation",
+                "edict-promote",
+            ),
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
@@ -89,7 +93,7 @@ class LivePipelineTest : IntegrationTest() {
             val finished = events.indexOfFirst { it.startsWith("[-:$displayId] ") && it.endsWith(" finished [completed]") }
             assertTrue(started >= 0, "Stage $id has no recorded running state")
             assertTrue(finished > started, "Stage $id did not finish after it started")
-            if (index > 1) {
+            if (index > 0) {
                 val previous = ids[index - 1].take(8)
                 val previousFinished = events.indexOfFirst { it.startsWith("[-:$previous] ") && it.endsWith(" finished [completed]") }
                 assertTrue(previousFinished >= 0, "Previous stage $previous has no recorded completion")

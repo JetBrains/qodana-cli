@@ -22,7 +22,7 @@ class GitRepository(directory: Path) {
 
     fun currentBranch(): String = git("rev-parse", "--abbrev-ref", "HEAD").trim().also {
         require(it.isNotBlank() && it != "HEAD") {
-            "Cannot publish source fixes from detached HEAD; check out the project branch before running the skills"
+            "The repository has no checked-out branch"
         }
     }
 

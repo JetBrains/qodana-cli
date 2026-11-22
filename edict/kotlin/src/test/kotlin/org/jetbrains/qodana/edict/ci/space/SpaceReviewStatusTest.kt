@@ -109,12 +109,4 @@ internal class SpaceReviewStatusTest {
       error.message,
     )
   }
-
-  @Test
-  fun `the change a review merged is unavailable on Space`() {
-    val error = assertFailsWith<IllegalStateException> {
-      ultimateScripted().replay { mergedReview(ULTIMATE_MERGED_REVIEW) }
-    }
-    assertEquals("Exact merged-change evidence is unavailable for https://jetbrains.team/p/ij/reviews/224837", error.message)
-  }
 }

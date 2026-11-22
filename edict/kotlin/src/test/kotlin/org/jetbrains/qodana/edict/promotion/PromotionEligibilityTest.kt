@@ -1,7 +1,6 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.promotion
 
-import org.jetbrains.qodana.edict.core.EdictClusterStatus
 import org.jetbrains.qodana.edict.core.EdictSignal
 import org.jetbrains.qodana.edict.core.EdictSignalSource
 import org.jetbrains.qodana.edict.core.EdictStoredCluster
@@ -35,17 +34,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(referencedCluster())
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
-      cluster.eligibility(),
-    )
-  }
-
-  @Test
-  fun `a cluster that is not generated is not eligible`() {
-    val cluster = repository.store(referencedCluster().copy(status = EdictClusterStatus.Pending))
-
-    assertEquals(
-      PromotionEligibility(generated = false, strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
       cluster.eligibility(),
     )
   }
@@ -55,7 +44,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(oneFileAtEightRevisions())
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 1, referencedSourceFiles = 1),
+      PromotionEligibility(strongPositiveSourceFiles = 1, referencedSourceFiles = 1),
       cluster.eligibility(),
     )
   }
@@ -65,7 +54,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(sameNameInFiveDirectories())
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
       cluster.eligibility(),
     )
   }
@@ -75,7 +64,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(fourFilesWithWeakAndNegativeSignals())
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 4, referencedSourceFiles = 4),
+      PromotionEligibility(strongPositiveSourceFiles = 4, referencedSourceFiles = 4),
       cluster.eligibility(),
     )
   }
@@ -85,7 +74,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(clusterWithSource(EdictSignalSource.FromCommit(COMMIT_REVISION)))
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 5),
       cluster.eligibility(),
     )
   }
@@ -95,7 +84,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(referencedCluster().copy(evaluation = EvaluationFixture(missed = setOf(signalId(0)))))
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 4),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 4),
       cluster.eligibility(),
     )
   }
@@ -105,7 +94,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(referencedCluster().copy(evaluation = null))
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 0),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 0),
       cluster.eligibility(),
     )
   }
@@ -115,7 +104,7 @@ internal class PromotionEligibilityTest {
     val cluster = referencedCluster().let { it.copy(signals = it.signals.dropLast(1) + it.signals.last().withoutLines()) }
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 4),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 4),
       repository.store(cluster).eligibility(),
     )
   }
@@ -126,7 +115,7 @@ internal class PromotionEligibilityTest {
     val cluster = repository.store(clusterWithSource(source.source))
 
     assertEquals(
-      PromotionEligibility(generated = true, strongPositiveSourceFiles = 5, referencedSourceFiles = 4),
+      PromotionEligibility(strongPositiveSourceFiles = 5, referencedSourceFiles = 4),
       cluster.eligibility(),
     )
   }

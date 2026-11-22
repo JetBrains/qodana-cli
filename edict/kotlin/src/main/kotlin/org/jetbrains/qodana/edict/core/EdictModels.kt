@@ -11,6 +11,7 @@ import kotlinx.serialization.encoding.Decoder
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import org.jetbrains.qodana.edict.common.sha256
 import java.security.MessageDigest
 
@@ -201,19 +202,6 @@ internal data class InspectionPromotion(
   val updatedAt: String,
 )
 
-/** A source-fix PR requests feedback on weak evidence */
-@Serializable
-internal data class WeakSignalPromotion(
-  val pullRequest: ReviewReference,
-  val state: PromotionPrState = PromotionPrState.ON_REVIEW,
-)
-
-@Serializable
-internal data class WeakSignalPromotionIndex(
-  @EncodeDefault
-  val activePromotions: Map<String, List<WeakSignalPromotion>> = emptyMap(),
-)
-
 @Serializable
 internal data class EdictClusterManifest(
   val id: String,
@@ -223,6 +211,9 @@ internal data class EdictClusterManifest(
   val promotions: List<InspectionPromotion> = emptyList(),
   /** Signals covered by the last successful generation or predecessor reuse; replacements are removed. */
   val processedSignalIds: Set<String> = emptySet(),
+  /** Preserves source-fix review records embedded in older manifests. */
+  @EncodeDefault(EncodeDefault.Mode.NEVER)
+  val weakSignalPromotions: JsonElement? = null,
 )
 
 // --- Neighbour retrieval ------------------------------------------------------------------------
@@ -487,7 +478,8 @@ internal data class EdictProjectReview(
   val projectRevision: String,
   val totalFindings: Int,
   val reviewedFindings: Int,
-  /** Exact locations classified TP for these inspection bytes, retained across server restarts. */
+  /** True-positive locations stored by older evaluations for source-fix promotion. */
+  @EncodeDefault(EncodeDefault.Mode.NEVER)
   val truePositiveFindings: List<EdictProjectFinding> = emptyList(),
   val reportUrl: String? = null,
 )

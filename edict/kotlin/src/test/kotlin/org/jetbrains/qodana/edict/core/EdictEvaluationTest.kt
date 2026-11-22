@@ -24,6 +24,29 @@ class EdictEvaluationTest {
   }
 
   @Test
+  fun `reads and preserves older evaluations with true positive locations`() {
+    val revision = "c".repeat(40)
+    val projectReview = """
+      {
+        "projectRevision": "$revision",
+        "totalFindings": 3,
+        "reviewedFindings": 1,
+        "truePositiveFindings": [
+          {"fileRevision": {"path": "src/Sample.kt", "revision": "$revision", "expectedRanges": [{"start": 4, "end": 4}]}}
+        ]
+      }
+    """.trimIndent()
+    val legacy = EVALUATION_JSON.replace("\"projectReview\": null", "\"projectReview\": $projectReview")
+
+    val read = EdictJson.decodeFromString(EdictEvaluation.serializer(), legacy)
+
+    assertEquals(
+      EdictJson.parseToJsonElement(legacy),
+      EdictJson.encodeToJsonElement(EdictEvaluation.serializer(), read),
+    )
+  }
+
+  @Test
   fun `scores 0 when no finding counts`() {
     val evaluation = EVALUATION.copy(examples = mapOf("allowed" to EdictExampleEvaluation(EdictSignalLabel.NEGATIVE, true, 0)))
 

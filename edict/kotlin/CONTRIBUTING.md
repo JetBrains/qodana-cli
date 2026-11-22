@@ -63,7 +63,7 @@ Production code is under `src/main/kotlin/org/jetbrains/qodana/edict`:
 | `extraction` | Commit Signal extraction (`git`) and prepared PR analysis (`reviews`) |
 | `history` | Git-history enrichment of a cluster |
 | `ci` | GitHub and Space review clients and models |
-| `promotion` | Inspection and weak-signal promotion PRs |
+| `promotion` | Inspection promotion PRs |
 | `setup` | Project-local Codex setup: skills, `.codex/config.toml`, server port |
 | `runtime` | Codex price analysis and reports |
 | `logging` | Redacted, correlated agent activity logs |
@@ -184,7 +184,6 @@ A test fails if the provider or the fixture is not accessible.
 | `LivePrExtractionTest` | GitHub and Space extraction through local authenticated HTTP fixtures, using the real provider clients. Each provider must produce both sides of the correction with complete provenance. |
 | `LivePipelineTest` | Extracts, clusters, and generates an accepted inspection. Starts Ultimate's inspection MCP from `ULTIMATE_EDICT_REPO` with Bazel and records compiler calls in `log/inspection-mcp.jsonl`. Recompiles the accepted bytes against the original evidence and checks that the reviews accepted that exact hash. The time limit is 60 minutes; extraction tests have 20. |
 | `LiveEnrichmentTest` | Enriches a prepared cluster from `testEnrichSignalFromGitHistory`. The history range is the intersection of the latest 100 commits and the last 90 days, anchored to HEAD. Verifies the Git evidence and that every analyzed commit is inside the range. Doesn't distribute, generate, or start IntelliJ. |
-| `WeakSignalPromotionIntegrationTest`, `WeakSignalPromotionReviewIntegrationTest` | "Promote weak signals" and "Check weak signal promotion reviews" on `testPromoteWeakSignals`, with a deterministic review provider. Verifies the proposed fix and its PR, then the merged Signals saved in the originating cluster. |
 
 Each test writes logs to `log/process-log/<run-id>/`:
 

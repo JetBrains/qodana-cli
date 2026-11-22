@@ -1,7 +1,6 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict
 
-import org.jetbrains.qodana.edict.common.GitRepository
 import io.ktor.server.cio.CIO
 import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
@@ -77,8 +76,7 @@ internal class EdictServer private constructor(
         val paths = EdictRepositoryDirectory(layout.stateDirectory)
         val repository = EdictRepository(paths)
         // TODO: a changed edict.promotion.url leaves active promotions in the earlier repository, which the promotion
-        //  client cannot read: inspections on review, closed ones of generated clusters that checkReviews still reads, and
-        //  weak-signal reviews in promotions/active.json. Their checks fail on every run; decide how to handle the change.
+        //  client cannot read, including closed reviews of generated clusters that checkReviews still reads.
         val management = EdictManagementService(
           store,
           layout,
@@ -104,9 +102,7 @@ internal class EdictServer private constructor(
           EdictEnrichmentMcpToolset(management, EdictEnrichmentService(repository, layout.root)),
           EdictSourceFileService(layout.root, ciReviews),
           configuration,
-          PromotionService(repository, configuration, promotionReviews, store, executionBranch = {
-            GitRepository(layout.root).currentBranch()
-          }),
+          PromotionService(repository, configuration, promotionReviews, store),
           feedbackApi?.let { FeedbackMcpToolset(management, FeedbackSignals(FeedbackRecords(paths), it, store, Clock.systemUTC())) },
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {

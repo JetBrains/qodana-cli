@@ -14,7 +14,6 @@ import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_MERGED_REVIEW_BASE
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_OPEN_REVIEW
 import org.jetbrains.qodana.edict.ci.support.ULTIMATE_STARLARK_FILE
-import org.jetbrains.qodana.edict.ci.support.ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.ultimateRecording
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
@@ -237,16 +236,5 @@ internal class SpaceReviewApiIntegrationTest {
     val recording = ultimateRecording("evidence-open")
 
     assertEquals(recording.result<ReviewStatus>(), recording.replay(space) { reviewWithEvidence(ULTIMATE_OPEN_REVIEW) })
-  }
-
-  @Test
-  fun `a source fix leaving a real file as it is stops before any write`() {
-    // The source fix whose ULTIMATE_BUILD_TXT is the file's real text at its base.
-    val recording = ultimateRecording("source-fix-unchanged-file")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(space) { findOrCreateReview(ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals("Source fix for 'community/build.txt' has no changes", error.message)
   }
 }

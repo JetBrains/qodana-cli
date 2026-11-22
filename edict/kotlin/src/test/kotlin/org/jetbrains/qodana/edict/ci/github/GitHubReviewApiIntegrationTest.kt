@@ -3,7 +3,6 @@ package org.jetbrains.qodana.edict.ci.github
 
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.DefaultCiHttpTransport
-import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewStatus
@@ -22,19 +21,13 @@ import org.jetbrains.qodana.edict.ci.support.MISSING_PULL_REQUEST
 import org.jetbrains.qodana.edict.ci.support.MISSING_REVIEW
 import org.jetbrains.qodana.edict.ci.support.MISSING_REVISION
 import org.jetbrains.qodana.edict.ci.support.MISSING_TARGET_REQUEST
-import org.jetbrains.qodana.edict.ci.support.NEW_FILE
-import org.jetbrains.qodana.edict.ci.support.NEW_FILE_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.PATH_6007
 import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_1393
 import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_5976
 import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_6007
-import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_7091
-import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_7832
-import org.jetbrains.qodana.edict.ci.support.PULL_REQUEST_917
 import org.jetbrains.qodana.edict.ci.support.RELEASE_BRANCH
 import org.jetbrains.qodana.edict.ci.support.RELEASE_HEAD
 import org.jetbrains.qodana.edict.ci.support.SEVERAL_NUMBERS_SELECTION
-import org.jetbrains.qodana.edict.ci.support.UNCHANGED_SOURCE_FIX_REQUEST
 import org.jetbrains.qodana.edict.ci.support.TWO_DISCOVERY_PAGES_SELECTION
 import org.jetbrains.qodana.edict.ci.support.WEEKEND_SELECTION
 import org.jetbrains.qodana.edict.ci.support.kotlinRecording
@@ -302,52 +295,6 @@ internal class GitHubReviewApiIntegrationTest {
   }
 
   @Test
-  fun `a single rebased commit is the merged change, from its parent`() {
-    // PR 6007: one commit rebased onto its target, with the discussion of evidence-merged-6007.
-    val recording = kotlinRecording("merged-review-6007")
-
-    assertEquals(recording.result<MergedReview>(), recording.replay(github) { mergedReview(PULL_REQUEST_6007) })
-  }
-
-  @Test
-  fun `a merge commit is the merged change, from its first parent`() {
-    // PR 917: three commits merged by a merge commit.
-    val recording = kotlinRecording("merged-review-merge-commit-917")
-
-    assertEquals(recording.result<MergedReview>(), recording.replay(github) { mergedReview(PULL_REQUEST_917) })
-  }
-
-  @Test
-  fun `a merged change lists the files of every page with their previous paths`() {
-    // PR 7091: its merge commit lists 128 files on two pages and renames 7 of them.
-    val recording = kotlinRecording("merged-review-paged-renames-7091")
-
-    assertEquals(recording.result<MergedReview>(), recording.replay(github) { mergedReview(PULL_REQUEST_7091) })
-  }
-
-  @Test
-  fun `several commits rebased onto the target are no merged change`() {
-    // PR 7832: four commits rebased onto its target, so no single commit is the change.
-    val recording = kotlinRecording("merged-review-rebased-7832")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(github) { mergedReview(PULL_REQUEST_7832) }
-    }
-    assertEquals("Cannot unambiguously identify the complete merged change for this single-parent, multi-commit PR", error.message)
-  }
-
-  @Test
-  fun `a pull request closed without merging has no merged change`() {
-    // PR 5976, closed without merging.
-    val recording = kotlinRecording("merged-review-closed-5976")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(github) { mergedReview(PULL_REQUEST_5976) }
-    }
-    assertEquals("Review has not merged", error.message)
-  }
-
-  @Test
   fun `a missing target branch stops before creating the inspection branch`() {
     // MISSING_TARGET_REQUEST, against a branch the repository doesn't have.
     val recording = kotlinRecording("inspection-review-missing-target")
@@ -356,28 +303,6 @@ internal class GitHubReviewApiIntegrationTest {
       recording.replay(github) { findOrCreateReview(MISSING_TARGET_REQUEST) }
     }
     assertEquals("GitHub target branch lookup returned HTTP 404: Not Found", error.message)
-  }
-
-  @Test
-  fun `a fix that leaves a file as it is stops before any write`() {
-    // UNCHANGED_SOURCE_FIX_REQUEST, which leaves `.bunch` as it is.
-    val recording = kotlinRecording("source-fix-review-unchanged")
-
-    val error = assertFailsWith<IllegalArgumentException> {
-      recording.replay(github) { findOrCreateReview(UNCHANGED_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals("Source fix for '.bunch' has no changes", error.message)
-  }
-
-  @Test
-  fun `a fix that creates a file fails as a missing file`() {
-    // NEW_FILE_SOURCE_FIX_REQUEST, which creates a file.
-    val recording = kotlinRecording("source-fix-review-new-file")
-
-    val error = assertFailsWith<NoSuchFileException> {
-      recording.replay(github) { findOrCreateReview(NEW_FILE_SOURCE_FIX_REQUEST) }
-    }
-    assertEquals(NEW_FILE, error.message)
   }
 }
 

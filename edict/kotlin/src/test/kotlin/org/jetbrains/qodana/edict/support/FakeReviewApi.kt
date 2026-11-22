@@ -3,7 +3,6 @@ package org.jetbrains.qodana.edict.support
 
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
-import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
@@ -14,11 +13,7 @@ import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import java.nio.file.NoSuchFileException
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Callable
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 /**
  * An in-memory [repository] behind the review API. Tests put in what the code under test should find and read back
@@ -41,9 +36,6 @@ internal class FakeReviewApi(
 
   /** The state and discussion of each review; a review opened here starts [ReviewState.OPEN]. */
   val statuses = ConcurrentHashMap<ReviewReference, ReviewStatus>()
-
-  /** The changes that landed with each merged review. */
-  val merges = ConcurrentHashMap<ReviewReference, MergedReview>()
 
   /** Runs at its step of every call, so a test can make the call fail or wait. */
   val interruptions = ConcurrentHashMap<ReviewStep, () -> Unit>()
@@ -103,43 +95,9 @@ internal class FakeReviewApi(
     interruptions[step] = { error(message) }
   }
 
-  /**
-   * Runs [inFlight] until it waits at [step], runs [meanwhile] then, and only afterwards lets [inFlight] finish.
-   * Returns what [inFlight] returned; fails when [meanwhile] waits for it.
-   */
-  fun <T> whileWaitingAt(step: ReviewStep, inFlight: () -> T, meanwhile: () -> Unit): T {
-    val reached = CountDownLatch(1)
-    val released = CountDownLatch(1)
-    interruptions[step] = {
-      reached.countDown()
-      check(released.await(WAIT_SECONDS * 2, TimeUnit.SECONDS)) { "The call waiting at $step was not released" }
-    }
-    val executor = Executors.newFixedThreadPool(2)
-    try {
-      val call = executor.submit(Callable { inFlight() })
-      check(reached.await(WAIT_SECONDS, TimeUnit.SECONDS)) { "No call reached $step" }
-      executor.submit(Runnable { meanwhile() }).get(WAIT_SECONDS, TimeUnit.SECONDS)
-      check(!call.isDone) { "The call waiting at $step finished before it was released" }
-      released.countDown()
-      return call.get(WAIT_SECONDS, TimeUnit.SECONDS)
-    }
-    finally {
-      released.countDown()
-      interruptions.remove(step)
-      executor.shutdownNow()
-    }
-  }
-
   override fun review(reference: ReviewReference): ReviewStatus = ReviewStatus(status(reference).state)
 
   override fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = status(reference)
-
-  override fun mergedReview(reference: ReviewReference): MergedReview {
-    repository.requireOwns(reference)
-    interrupt(ReviewStep.MERGE)
-    require(statuses[reference]?.state == ReviewState.MERGED) { "Review has not merged" }
-    return merges[reference] ?: error("Exact merged-change evidence is unavailable for ${reference.url}")
-  }
 
   private fun status(reference: ReviewReference): ReviewStatus {
     repository.requireOwns(reference)
@@ -153,9 +111,6 @@ internal class FakeReviewApi(
   }
 }
 
-/** How long [FakeReviewApi.whileWaitingAt] waits for each thread before it fails. */
-private const val WAIT_SECONDS = 5L
-
 /** A step of a [FakeReviewApi] call where a test can interrupt it. */
 internal enum class ReviewStep {
   /** Before a review is found or opened. */
@@ -163,7 +118,4 @@ internal enum class ReviewStep {
 
   /** Before a review's status is read. */
   STATUS,
-
-  /** Before a merged review's changes are read. */
-  MERGE,
 }

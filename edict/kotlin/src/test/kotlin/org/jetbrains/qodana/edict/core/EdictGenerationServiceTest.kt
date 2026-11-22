@@ -876,7 +876,7 @@ class EdictGenerationServiceTest {
     assertEquals(listOf(2, 3, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     val review = checkNotNull(evaluation.projectReview)
     assertEquals(listOf(25, 6), listOf(review.totalFindings, review.reviewedFindings))
-    assertEquals(listOf(1, 2), review.truePositiveFindings.map { it.fileRevision.expectedRanges!!.first().start })
+    assertFalse("truePositiveFindings" in repository.loadCluster("busy-wait").directory.evaluationPath.readText())
     assertEquals(evaluation, repository.loadEvaluation(repository.loadCluster("busy-wait")))
 
     // Findings of a deleted example no longer weigh anything.
@@ -945,7 +945,7 @@ class EdictGenerationServiceTest {
 
     val review = checkNotNull(generation.recordEvaluation("busy-wait").evaluation?.projectReview)
 
-    assertEquals(listOf(1, 1, 1), listOf(review.totalFindings, review.reviewedFindings, review.truePositiveFindings.size))
+    assertEquals(listOf(1, 1), listOf(review.totalFindings, review.reviewedFindings))
   }
 
   @Test

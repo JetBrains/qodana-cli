@@ -9,7 +9,6 @@ import org.jetbrains.qodana.edict.ci.CreateReviewRequest
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
-import org.jetbrains.qodana.edict.ci.SourceFixChanges
 
 /** JetBrains/kotlin, which the integration tests read through the real API and the other tests replay. */
 internal val KOTLIN = ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "kotlin")
@@ -26,15 +25,6 @@ internal val PULL_REQUEST_5976 = kotlinPullRequest(5976)
 /** A pull request open since 2017. */
 internal val PULL_REQUEST_1393 = kotlinPullRequest(1393)
 
-/** A pull request merged as one rebased commit of its four. */
-internal val PULL_REQUEST_7832 = kotlinPullRequest(7832)
-
-/** A pull request of three commits merged by a merge commit. */
-internal val PULL_REQUEST_917 = kotlinPullRequest(917)
-
-/** A pull request of one commit that changes 128 files and renames 7 of them. */
-internal val PULL_REQUEST_7091 = kotlinPullRequest(7091)
-
 /** A merged pull request that Copilot reviewed. */
 internal val PULL_REQUEST_7185 = kotlinPullRequest(7185)
 
@@ -45,32 +35,6 @@ internal val MISSING_REVIEW = kotlinPullRequest(MISSING_PULL_REQUEST)
 
 /** The same pull request number in a fork, which a client of [KOTLIN] must not read. */
 internal val FORK_REVIEW = ReviewReference(CiProviderId.GITHUB, "fork", "kotlin", "6007", "https://github.com/fork/kotlin/pull/6007")
-
-/** The code-owner table that the deleted account `ghost` posted on pull request 6007. */
-internal const val CODE_OWNERS_6007 =
-  "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr>" +
-    "<td><code>/\u200bcore/\u200bdescriptors/\u200b</code></td>" +
-    "<td><details><summary><a href=\"https://github.com/orgs/JetBrains/teams/kotlin-frontend\">kotlin-frontend</a></summary>" +
-    "<ul><li><a href=\"https://github.com/ligee\"><b><code>@ligee</code></b></a></li>" +
-    "<li><a href=\"https://github.com/dzharkov\"><b><code>@dzharkov</code></b></a></li>" +
-    "<li><a href=\"https://github.com/bnorm\"><b><code>@bnorm</code></b></a></li>" +
-    "<li><a href=\"https://github.com/mglukhikh\"><b><code>@mglukhikh</code></b></a></li>" +
-    "<li><a href=\"https://github.com/KvanTTT\"><b><code>@KvanTTT</code></b></a></li>" +
-    "<li><a href=\"https://github.com/cypressious\"><b><code>@cypressious</code></b></a></li>" +
-    "<li><a href=\"https://github.com/demiurg906\"><b><code>@demiurg906</code></b></a></li>" +
-    "<li><a href=\"https://github.com/FenstonSingel\"><b><code>@FenstonSingel</code></b></a></li>" +
-    "<li><a href=\"https://github.com/lunakoly\"><b><code>@lunakoly</code></b></a></li>" +
-    "<li><a href=\"https://github.com/agamzikova\"><b><code>@agamzikova</code></b></a></li>" +
-    "<li><a href=\"https://github.com/GrigoriiSolnyshkin\"><b><code>@GrigoriiSolnyshkin</code></b></a></li>" +
-    "<li><a href=\"https://github.com/Aleksandra-Arsenteva\"><b><code>@Aleksandra-Arsenteva</code></b></a></li></ul></details></td>" +
-    "<td align=\"center\">\u274c<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->"
-
-/**
- * The first messages of the discussion of pull request 6007 without bots, in GitHub's order: [CODE_OWNERS_6007] of
- * `ghost`, a person's `/safe-merge` command and the first review comment. Between them on GitHub are the code-owner
- * table of `kotlin-safemerge[bot]` and the quality-gate report of the build server `KotlinBuild`.
- */
-internal val DISCUSSION_6007_START = listOf(CODE_OWNERS_6007, "/safe-merge", "Does it affect memory consumption?")
 
 /** The commit that merged pull request 6007, and its parent. */
 internal const val MERGE_6007 = "a8fd1e07347489fee69d9d5dfa6e49afa0856886"
@@ -150,44 +114,6 @@ internal val CREATED_REVIEW = kotlinPullRequest(CREATED_PULL_REQUEST)
 internal const val EXISTING_PULL_REQUEST = 99998
 internal const val OLDER_PULL_REQUEST = 99997
 internal val EXISTING_REVIEW = kotlinPullRequest(EXISTING_PULL_REQUEST)
-
-/** A regular file and an executable one at [RELEASE_HEAD], fixed by [SOURCE_FIX_REQUEST]. */
-internal const val FIXED_FILE = "libraries/stdlib/src/kotlin/util/Lazy.kt"
-internal const val FIXED_SCRIPT = "gradlew"
-internal val SOURCE_FIX = SourceFixChanges(
-  RELEASE_HEAD,
-  mapOf(FIXED_SCRIPT to "#!/usr/bin/env sh\n# Fixed by Edict\n", FIXED_FILE to "package kotlin\n// Fixed by Edict\n"),
-)
-
-/** The source fix's branch, named after its operation. */
-internal const val SOURCE_FIX_BRANCH = "edict/weak-w-cccccccccccccccccccccccc"
-internal const val SOURCE_FIX_TITLE = "Fix issues found by Edict inspection avoid-thread-sleep"
-internal const val SOURCE_FIX_DESCRIPTION = "Replaces Thread.sleep with explicit synchronization where the inspection reports it."
-
-internal val SOURCE_FIX_REQUEST = CreateReviewRequest(
-  operationId = "w-cccccccccccccccccccccccc",
-  clusterId = "avoid-thread-sleep",
-  targetBranch = RELEASE_BRANCH,
-  reviewer = REVIEWER,
-  targetPath = "",
-  inspectionDigest = INSPECTION_DIGEST,
-  inspectionContent = "",
-  description = SOURCE_FIX_DESCRIPTION,
-  sourceFix = SOURCE_FIX,
-)
-
-/** `.bunch` at [RELEASE_HEAD], byte for byte, so a fix to it changes nothing. */
-internal const val BUNCH_CONTENT = "193\n201\n192\n191_192\n183_191_192\nas34_183_191_192\nas35_191_192\nas36_192\nas40\nas41_201"
-internal val UNCHANGED_SOURCE_FIX_REQUEST =
-  SOURCE_FIX_REQUEST.copy(sourceFix = SourceFixChanges(RELEASE_HEAD, mapOf(".bunch" to BUNCH_CONTENT)))
-
-/** A source fix that creates a file [RELEASE_HEAD] doesn't have. */
-internal const val NEW_FILE = "libraries/stdlib/src/kotlin/util/Edict.kt"
-internal val NEW_FILE_SOURCE_FIX_REQUEST =
-  SOURCE_FIX_REQUEST.copy(sourceFix = SourceFixChanges(RELEASE_HEAD, mapOf(NEW_FILE to "package kotlin\n")))
-
-/** The commit a scripted earlier run created on [SOURCE_FIX_BRANCH]. */
-internal const val FIXED_COMMIT = "1111111111111111111111111111111111111111"
 
 private fun kotlinPullRequest(number: Int): ReviewReference =
   KOTLIN.reference("$number", "https://github.com/JetBrains/kotlin/pull/$number")

@@ -572,18 +572,14 @@ internal class EdictGenerationService(
 }
 
 /**
- * The review of this analysis by the [reviewed] findings of the run: of those, it counts and keeps only the findings this
- * analysis reports, not those of earlier candidates.
+ * Summarizes how many findings of this analysis were classified during the run.
  */
 private fun EdictInspectionFindings.review(reviewed: Collection<EdictReviewedFinding>): EdictProjectReview {
   val locations = locations()
-  val current = reviewed.filter { it.location() in locations }
-  val truePositives = current.filter { it.classification == EdictFindingClassification.TP }.map { it.location() }.toSet()
   return EdictProjectReview(
     projectRevision = projectRevision,
     totalFindings = findings.size,
-    reviewedFindings = current.size,
-    truePositiveFindings = findings.filter { it.location() in truePositives },
+    reviewedFindings = reviewed.count { it.location() in locations },
   )
 }
 

@@ -290,9 +290,6 @@ internal class EdictRepositoryState(
     require(capability.skill != "edict-pr-signal-analysis" || signal.source is EdictSignalSource.FromPR) {
       "PR extraction can publish only FromPR Signals"
     }
-    require(capability.skill != "edict-check-weak-signal-promotion" || signal.source is EdictSignalSource.FromPR) {
-      "Weak-promotion checking can publish only FromPR Signals"
-    }
     validateEvidence(signal)
 
     val target = safePath(path)
@@ -339,7 +336,7 @@ internal class EdictRepositoryState(
 
   @Synchronized
   internal fun requireDirectSignalPublisher(token: String) {
-    requireSkill(token, COMMIT_SIGNAL_PUBLISHERS + "edict-check-weak-signal-promotion")
+    requireSkill(token, COMMIT_SIGNAL_PUBLISHERS)
   }
 
   @Synchronized
@@ -586,7 +583,7 @@ internal class EdictRepositoryState(
       "edict-retrospective-signal-analysis",
     )
     private val SIGNAL_PUBLISHERS =
-      COMMIT_SIGNAL_PUBLISHERS + setOf("edict-pr-signal-analysis", "edict-check-weak-signal-promotion", "edict-feedback-signal-analysis")
+      COMMIT_SIGNAL_PUBLISHERS + setOf("edict-pr-signal-analysis", "edict-feedback-signal-analysis")
     /** Statuses a worker may finish its own task with. */
     private val TERMINAL_STATUSES = setOf("completed", "failed")
 

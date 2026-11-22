@@ -4,7 +4,6 @@ package org.jetbrains.qodana.edict.ci.support
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
 import org.jetbrains.qodana.edict.ci.ReviewRepository
-import org.jetbrains.qodana.edict.ci.SourceFixChanges
 
 /** IJ/ultimate on Space, which the integration tests read through the real API and the other tests replay. */
 internal val ULTIMATE = ReviewRepository(CiProviderId.SPACE, "jetbrains.team", "ij", "ultimate")
@@ -46,37 +45,8 @@ internal val ULTIMATE_INSPECTION_REQUEST = CreateReviewRequest(
   description = INSPECTION_DESCRIPTION,
 )
 
-/** Two small files of [RELEASE_191], each replaced by the source fix, and the text of the first one at the release. */
-internal const val ULTIMATE_BUILD_TXT = "community/build.txt"
-internal const val ULTIMATE_GITIGNORE = "community/.gitignore"
-internal const val ULTIMATE_BUILD_TXT_AT_191 = "191.SNAPSHOT\n"
-internal val ULTIMATE_SOURCE_FIX =
-  SourceFixChanges(RELEASE_191_HEAD, mapOf(ULTIMATE_BUILD_TXT to "191.7142\n", ULTIMATE_GITIGNORE to "/out/\n"))
-internal const val ULTIMATE_SOURCE_FIX_TITLE = "Fix issues found by Edict inspection avoid-thread-sleep"
-internal const val ULTIMATE_SOURCE_FIX_DESCRIPTION = "Fixes the five places the inspection reports."
-
-/** The source fix's branch, named for its operation. */
-internal const val ULTIMATE_SOURCE_FIX_BRANCH = "edict/weak-w-cccccccccccccccccccccccc"
-
-internal val ULTIMATE_SOURCE_FIX_REQUEST = CreateReviewRequest(
-  operationId = "w-cccccccccccccccccccccccc",
-  clusterId = "avoid-thread-sleep",
-  targetBranch = RELEASE_191,
-  reviewer = ULTIMATE_REVIEWER,
-  targetPath = "",
-  inspectionDigest = INSPECTION_DIGEST,
-  inspectionContent = "",
-  description = ULTIMATE_SOURCE_FIX_DESCRIPTION,
-  sourceFix = ULTIMATE_SOURCE_FIX,
-)
-
 /** The review Space opens for a request: its id and number are made up, as the tests never create a real one. */
 internal const val ULTIMATE_NEW_REVIEW_ID = "2EdIcT0ReVu1"
 internal const val ULTIMATE_NEW_REVIEW_NUMBER = 240001
 internal val ULTIMATE_NEW_REVIEW =
   ULTIMATE.reference(ULTIMATE_NEW_REVIEW_ID, "https://jetbrains.team/p/ij/reviews/$ULTIMATE_NEW_REVIEW_NUMBER")
-
-/** [ULTIMATE_SOURCE_FIX_REQUEST] whose [ULTIMATE_BUILD_TXT] is the file's text at its base. */
-internal val ULTIMATE_UNCHANGED_SOURCE_FIX_REQUEST = ULTIMATE_SOURCE_FIX_REQUEST.copy(
-  sourceFix = ULTIMATE_SOURCE_FIX.copy(files = ULTIMATE_SOURCE_FIX.files + (ULTIMATE_BUILD_TXT to ULTIMATE_BUILD_TXT_AT_191)),
-)

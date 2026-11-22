@@ -6,7 +6,6 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
 import java.net.URI
 import java.time.LocalDate
@@ -57,19 +56,9 @@ data class ReviewRepository(
   }
 }
 
-/** Files of a weak-signal source fix, by repository-relative path, applied on top of the full [baseRevision] SHA. */
-data class SourceFixChanges(val baseRevision: String, val files: Map<String, String>) {
-  init {
-    require(validRevision(baseRevision)) { "Source fixes require an exact base revision" }
-    require(files.isNotEmpty() && files.keys.all(::validSourcePath)) { "Source fixes require repository-relative file paths" }
-  }
-}
-
-// TODO: am I correct that both weak signals PR creation and inspection one mixed here? If yes, we need to split them, maybe in later refactoring
 /**
  * A review to open against [targetBranch]. [targetPath] is the repository-relative path the inspection is written to,
- * [inspectionDigest] the SHA-256 hex of the cluster's inspection, and [reviewer] the provider login to request. A
- * source-fix request leaves [targetPath] and [inspectionContent] empty.
+ * [inspectionDigest] the SHA-256 hex of the cluster's inspection, and [reviewer] the provider login to request.
  */
 data class CreateReviewRequest(
   val operationId: String,
@@ -80,10 +69,9 @@ data class CreateReviewRequest(
   val inspectionDigest: String,
   val inspectionContent: String,
   val description: String,
-  val sourceFix: SourceFixChanges? = null,
 ) {
-  val branch: String = if (sourceFix == null) "edict/$clusterId-${inspectionDigest.take(12)}" else "edict/weak-$operationId"
-  val title: String = if (sourceFix == null) "Add Edict inspection $clusterId" else "Fix issues found by Edict inspection $clusterId"
+  val branch: String = "edict/$clusterId-${inspectionDigest.take(12)}"
+  val title: String = "Add Edict inspection $clusterId"
 }
 
 @Serializable
@@ -196,16 +184,3 @@ data class ReviewStatus(
   /** The reviewers' discussion without bots, from [ReviewApi.reviewWithEvidence]; empty from [ReviewApi.review]. */
   val evidence: String = "",
 )
-
-/** Immutable revisions of the change that actually landed, not the proposed PR head. */
-@Serializable
-data class MergedReview(
-  val title: String,
-  val discussionMessages: List<String>,
-  val beforeRevision: String,
-  val mergedRevision: String,
-  val changes: List<ReviewFileChange>,
-)
-
-@Serializable
-data class ReviewFileChange(val beforePath: String, val afterPath: String)

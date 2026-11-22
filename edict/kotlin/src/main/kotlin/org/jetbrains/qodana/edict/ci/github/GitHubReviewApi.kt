@@ -5,8 +5,6 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.buildJsonArray
-import kotlinx.serialization.json.add
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -26,8 +24,6 @@ import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
-import org.jetbrains.qodana.edict.ci.MergedReview
-import org.jetbrains.qodana.edict.ci.ReviewFileChange
 import org.jetbrains.qodana.edict.ci.feedbackRecordId
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.signals.validRevision
@@ -231,8 +227,7 @@ internal class GitHubReviewApi(
 
   override fun findOrCreateReview(request: CreateReviewRequest): ReviewReference {
     val branch = request.branch
-    if (request.sourceFix != null) ensureSourceFixBranch(request, branch)
-    else ensureInspectionBranch(request, branch)
+    ensureInspectionBranch(request, branch)
 
     val found = http.send(
       "GET",
@@ -294,109 +289,9 @@ internal class GitHubReviewApi(
     }
   }
 
-  /** Commit all source files atomically, retaining the target tree's file modes. */
-  private fun ensureSourceFixBranch(request: CreateReviewRequest, branch: String) {
-    val changes = requireNotNull(request.sourceFix)
-    val existing = http.send("GET", "$root/git/ref/heads/${urlPart(branch)}")
-    if (existing.status == 200) {
-      val revision = existing.body.jsonObject.obj("object").text("sha")
-      require(changes.files.all { (path, content) -> readFile(revision, path) == content }) {
-        "GitHub source-fix branch already exists with different content"
-      }
-      return
-    }
-    expectStatus(existing, "GitHub branch lookup", 404)
-    targetHead(request.targetBranch)
-    changes.files.forEach { (path, content) ->
-      require(readFile(changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
-    }
-    val commit = expectObject(http.send("GET", "$root/git/commits/${changes.baseRevision}"), "GitHub commit read", 200)
-    val treeSha = commit.obj("tree").text("sha")
-    val trees = mutableMapOf<String, JsonArray>()
-    val modes = changes.files.keys.associateWith { fileMode(treeSha, it, trees) }
-    val tree = expectObject(http.send("POST", "$root/git/trees", body = buildJsonObject {
-      put("base_tree", treeSha)
-      put("tree", buildJsonArray {
-        changes.files.toSortedMap().forEach { (path, content) -> add(buildJsonObject {
-          put("path", path)
-          put("type", "blob")
-          put("mode", modes.getValue(path))
-          put("content", content)
-        }) }
-      })
-    }), "GitHub tree creation", 201)
-    val created = expectObject(http.send("POST", "$root/git/commits", body = buildJsonObject {
-      put("message", request.title)
-      put("tree", tree.text("sha"))
-      put("parents", buildJsonArray { add(changes.baseRevision) })
-    }), "GitHub commit creation", 201)
-    expectObject(http.send("POST", "$root/git/refs", body = buildJsonObject {
-      put("ref", "refs/heads/$branch")
-      put("sha", created.text("sha"))
-    }), "GitHub branch creation", 201)
-  }
-
-  /** The mode of the regular file at [path] in tree [treeSha], reading each tree once through [trees]. */
-  private fun fileMode(treeSha: String, path: String, trees: MutableMap<String, JsonArray>): String {
-    var currentTree = treeSha
-    val parts = path.split('/')
-    for ((index, part) in parts.withIndex()) {
-      val entries = trees.getOrPut(currentTree) {
-        expectObject(http.send("GET", "$root/git/trees/$currentTree"), "GitHub tree read", 200)
-          .getValue("tree").jsonArray
-      }
-      val entry = entries.singleOrNull { it.jsonObject.text("path") == part }?.jsonObject
-        ?: error("Source fix path '$path' does not exist in the target tree")
-      if (index == parts.lastIndex) {
-        return entry.text("mode").also {
-          require(entry.text("type") == "blob" && it in setOf("100644", "100755")) { "Source fixes require regular files" }
-        }
-      }
-      require(entry.text("type") == "tree") { "Source fix path '$path' traverses a non-directory" }
-      currentTree = entry.text("sha")
-    }
-    error("Invalid source fix path")
-  }
-
   override fun review(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = false)
 
   override fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = true)
-
-  // TODO(R11): file pages are appended to `changes` in a loop; express the paging as a sequence of pages mapped to changes.
-  override fun mergedReview(reference: ReviewReference): MergedReview {
-    repository.requireOwns(reference)
-    val pull = expectObject(http.send("GET", "$root/pulls/${urlPart(reference.id)}"), "GitHub pull-request read", 200)
-    require(pull.text("merged_at").isNotBlank()) { "Review has not merged" }
-    val merged = pull.text("merge_commit_sha")
-    require(validRevision(merged)) { "Review has no exact merge revision" }
-    val changes = mutableListOf<ReviewFileChange>()
-    var before = ""
-    for (page in 1..MAX_PAGES) {
-      val response = get("$root/commits/$merged", mapOf("per_page" to "$PAGE_SIZE", "page" to "$page"))
-      val commit = response.body.jsonObject
-      require(commit.text("sha") == merged) { "Wrong merge revision returned" }
-      val parents = commit.getValue("parents").jsonArray.map { it.jsonObject.text("sha") }
-      require(parents.size in 1..2) { "Unsupported merge parent count" }
-      // For multi-commit rebase merges merge_commit_sha names only the last commit. Do not treat it as the whole PR.
-      require(parents.size == 2 || pull.number("commits").toInt() == 1) {
-        "Cannot unambiguously identify the complete merged change for this single-parent, multi-commit PR"
-      }
-      if (page == 1) before = parents.first()
-      require(before == parents.first()) { "Merge parent changed during pagination" }
-      val files = commit.getValue("files").jsonArray.map { it.jsonObject }
-      changes += files.map { ReviewFileChange(it.text("previous_filename").ifBlank { it.text("filename") }, it.text("filename")) }
-      if (files.size < PAGE_SIZE) break
-      require(page < MAX_PAGES) { "Incomplete merged-change file list" }
-    }
-    require(validRevision(before) && changes.isNotEmpty() && changes.distinct().size == changes.size) {
-      "Invalid merged-change evidence"
-    }
-    val messages = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews",
-      "$root/pulls/${urlPart(reference.id)}/comments").flatMap { http.gitHubPages(it, emptyMap()) }
-      .filterNot { it.isBot() }
-      .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
-    return MergedReview(pull.text("title"), messages, before, merged, changes)
-  }
 
   private fun readReview(reference: ReviewReference, includeEvidence: Boolean): ReviewStatus {
     repository.requireOwns(reference)

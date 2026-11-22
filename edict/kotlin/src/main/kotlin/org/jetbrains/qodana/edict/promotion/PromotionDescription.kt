@@ -1,6 +1,5 @@
 package org.jetbrains.qodana.edict.promotion
 
-import org.jetbrains.qodana.edict.core.EdictClusterStatus
 import org.jetbrains.qodana.edict.core.EdictSignal
 import org.jetbrains.qodana.edict.core.EdictEvaluation
 import org.jetbrains.qodana.edict.core.isCurrentEvaluation
@@ -19,13 +18,8 @@ import java.util.Locale
 
 private const val MAX_DESCRIPTION_SOURCE_FILES = 5
 
-/**
- * What decides how a cluster's inspection is promoted. An inspection PR needs `edict.promotion.minSourceFiles` source files
- * of both kinds; a weak-signal source-fix review is for an inspection with fewer [referencedSourceFiles].
- */
+/** Counts the source files that support publishing a generated inspection. */
 internal data class PromotionEligibility(
-  /** The inspection is generated and awaits review; other statuses are pending, decided or discontinued. */
-  val generated: Boolean,
   /** Distinct source files with a strong positive Signal: how widely the problem was observed. */
   val strongPositiveSourceFiles: Int,
   /** Distinct source files with a strong positive Signal that the evaluation satisfies and that links to its lines: what a PR can cite. */
@@ -35,7 +29,6 @@ internal data class PromotionEligibility(
 /** Eligibility under the [evaluation] of the cluster's inspection, with commit Signals without a URL linked in the [ci] repository. */
 internal fun EdictStoredCluster.promotionEligibility(ci: ReviewRepository?, evaluation: EdictEvaluation?): PromotionEligibility =
   PromotionEligibility(
-    generated = manifest.status == EdictClusterStatus.Generated,
     strongPositiveSourceFiles = signals.filter(EdictSignal::isStrongPositive).distinctBy { it.fileRevision.path }.size,
     referencedSourceFiles = promotionEvidence(ci, evaluation).size,
   )

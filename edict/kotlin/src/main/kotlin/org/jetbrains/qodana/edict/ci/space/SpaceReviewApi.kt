@@ -209,8 +209,7 @@ internal class SpaceReviewApi(
   override fun findOrCreateReview(request: CreateReviewRequest): ReviewReference {
     val branch = request.branch
     val branchHead = "refs/heads/$branch"
-    if (request.sourceFix != null) ensureSourceFixBranch(request, branchHead)
-    else ensureInspectionBranch(request, branchHead)
+    ensureInspectionBranch(request, branchHead)
 
     val review = findReview(request, branch) ?: expectObject(http.send(
       "POST",
@@ -285,44 +284,6 @@ internal class SpaceReviewApi(
       }), 200, 201)
       require(commit.flag("success") == true) { "Space inspection commit failed: ${commit.text("message").take(1000)}" }
     }
-  }
-
-  private fun ensureSourceFixBranch(request: CreateReviewRequest, branchHead: String) {
-    val changes = requireNotNull(request.sourceFix)
-    val existing = readBranch(branchHead)
-    val revision = existing?.obj("branchInfo")?.text("ref")
-    if (revision != null && revision != changes.baseRevision) {
-      require(changes.files.all { (path, content) -> readFile(revision, path) == content }) {
-        "Space source-fix branch already exists with different content"
-      }
-      return
-    }
-    requireNotNull(readBranch(request.targetBranch)) { "Space target branch does not exist" }
-    changes.files.forEach { (path, content) ->
-      require(readFile(changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
-    }
-    if (existing == null) {
-      expectStatus(http.send("POST", "$repositoryRoot/head", body = buildJsonObject {
-        put("head", branchHead)
-        put("target", changes.baseRevision)
-      }), "Space source-fix branch creation", 200, 201)
-    }
-    val commitEndpoint = "/projects/${urlPart(repository.owner)}/repositories/${urlPart(repository.repository)}/commit"
-    val result = expectObject(http.send("POST", commitEndpoint, body = buildJsonObject {
-      put("baseCommit", changes.baseRevision)
-      put("targetBranch", branchHead)
-      put("commitMessage", request.title)
-      put("files", buildJsonArray {
-        changes.files.toSortedMap().forEach { (path, content) -> add(buildJsonObject {
-          put("path", path)
-          put("content", buildJsonObject {
-            put("className", "GitFileContent.Base64")
-            put("value", Base64.getEncoder().encodeToString(content.encodeToByteArray()))
-          })
-        }) }
-      })
-    }), 200, 201)
-    require(result.flag("success") == true) { "Space source-fix commit failed: ${result.text("message").take(1000)}" }
   }
 
   private fun readBranch(branch: String): JsonObject? {

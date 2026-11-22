@@ -80,8 +80,6 @@ internal class EdictManagementService(
   )
 
   val agents: AgentLogger = AgentLogger(store, layout)
-  internal lateinit var signalSchema: JsonObject
-    private set
 
   // Only commit Signals need Git, so a project without it still serves every other tool.
   private val signalRepository by lazy { GitRepository(layout.root) }
@@ -196,7 +194,6 @@ internal class EdictManagementService(
       put("type", "array")
       put("items", signalObject)
     }
-    signalSchema = signalObject
     val signalDraftArray = buildJsonObject {
       put("type", "array")
       put(
@@ -445,7 +442,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_signal",
-      description = "Validate and publish one regular Signal model to the managed inbox. Available to commit extraction and weak-promotion checking; PR-analysis coordinators use edict_publish_validated_pr_signals.",
+      description = "Validate and publish a commit Signal to the managed inbox. PR-analysis coordinators use edict_publish_validated_pr_signals.",
       required = listOf("token", "signal"),
       properties = mapOf("signal" to signalObject),
     ) { arguments ->
@@ -663,8 +660,6 @@ internal class EdictManagementService(
   internal fun requireTokenFree(content: String) {
     store.requireTokenFree(content)
   }
-
-  internal fun redact(content: String): String = store.redact(content)
 
   private fun configuredReviewRepository(): ReviewRepository = requireNotNull(ciReviews) {
     "PR extraction requires complete edict.ci configuration"
