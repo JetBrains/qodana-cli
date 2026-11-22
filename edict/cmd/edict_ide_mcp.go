@@ -35,21 +35,21 @@ import (
 // The IDE gets this long to exit after SIGTERM before it is killed.
 const ideMCPStopTimeout = 10 * time.Second
 
-// ideMCPTools are the IntelliJ tools the Kotlin Edict server calls or forwards; keep both sides in sync.
-var ideMCPTools = []string{
-	"generate_psi_tree",
-	"generate_inspection_kts_api",
-	"generate_inspection_kts_examples",
-	"run_inspection_kts",
-	"compile_inspection_kts",
-	"run_inspection_kts_examples",
-	"run_inspection_kts_project",
-}
-
 var (
 	streamableEndpointPattern = regexp.MustCompile(`Streamable HTTP endpoint:\s*(https?://[^\s\x1b]+)`)
-	ideSSEEndpointPattern     = regexp.MustCompile(`SSE URL:\s*(https?://[^\s\x1b]+)`)
+	mcpAuthTokenFilePattern   = regexp.MustCompile(`Send the header IJ_MCP_AUTH_TOKEN with the token in ([^\x1b\r\n]+)`)
 )
+
+type ideMCPEndpoint struct {
+	URL           string `json:"url"`
+	AuthTokenFile string `json:"authTokenFile,omitempty"`
+}
+
+type ideMCPReady struct {
+	ideMCPEndpoint
+	Status string `json:"status"`
+	PID    int    `json:"pid"`
+}
 
 // ideMCPOptions select a native IDE: a local distribution, a Qodana linter the CLI downloads, or QODANA_DIST.
 // Docker is not supported, since the IDE must read the host paths the Kotlin server passes to it.
@@ -69,10 +69,10 @@ func newEdictIDEMCPCommand() *cobra.Command {
 		Use:   "ide-mcp",
 		Short: "Run the IntelliJ MCP server for one Edict session (internal)",
 		Long: `Start the native IDE MCP server and keep it running until stdin closes or SIGTERM/SIGINT arrives.
-Stdout receives exactly one line, {"status":"ready","url":...,"pid":...}, once the IDE serves MCP.
+Stdout receives one JSON readiness line with the URL, IDE PID, and the auth token file if announced.
 The caller stops the IDE by pid if this helper is killed before it can.
 IDE output is forwarded to stderr. The Kotlin Edict server runs this on its first inspection call.
-The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not supported.`,
+The linter kind are defined by --linter, else QODANA_DIST.`,
 		Hidden:       true,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
@@ -90,7 +90,7 @@ The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not suppor
 	}
 	flags := command.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project")
-	flags.StringVar(&options.Dist, "dist", "", "Local IDE or Qodana linter distribution (overrides QODANA_DIST)")
+	flags.StringVar(&options.Dist, "dist", "", "Local Qodana linter distribution (overrides QODANA_DIST)")
 	flags.StringVar(
 		&options.Linter,
 		"linter",
@@ -172,16 +172,7 @@ func ideMCPCommand(options ideMCPOptions) ([]string, func(), error) {
 	if err != nil {
 		return nil, cleanup, err
 	}
-	core.WriteNativeServiceVMOptions(scanContext)
-	return ideMCPArguments(scanContext.Prod().IdeScript, options.ProjectDir), cleanup, nil
-}
-
-// ideMCPArguments starts the IDE's headless MCP server; without --port it selects a free port.
-func ideMCPArguments(executable string, projectDir string) []string {
-	return []string{
-		executable, "mcpServer", "--project=" + projectDir, "--invocation-mode=direct",
-		"--allowed-tools=" + strings.Join(ideMCPTools, ","),
-	}
+	return core.PrepareNativeServiceRunCommand(scanContext), cleanup, nil
 }
 
 // serveIDEMCP runs the IDE until stdin closes, ctx ends, or the IDE exits, and reports readiness once.
@@ -209,7 +200,7 @@ func serveIDEMCP(
 		exited <- err
 		close(stopped)
 	}()
-	endpoints := make(chan string, 1)
+	endpoints := make(chan ideMCPEndpoint, 1)
 	go forwardIDEOutput(output, stderr, endpoints)
 	stdinClosed := make(chan struct{})
 	go func() {
@@ -222,10 +213,10 @@ func serveIDEMCP(
 	ready := false
 	for {
 		select {
-		case url := <-endpoints:
+		case endpoint := <-endpoints:
 			ready, endpoints = true, nil
 			deadline.Stop()
-			readiness := map[string]any{"status": "ready", "url": url, "pid": ide.Process.Pid}
+			readiness := ideMCPReady{ideMCPEndpoint: endpoint, Status: "ready", PID: ide.Process.Pid}
 			if err := json.NewEncoder(stdout).Encode(readiness); err != nil {
 				return errors.Join(fmt.Errorf("publishing MCP readiness: %w", err), stopIDE(ide, stopped))
 			}
@@ -236,7 +227,7 @@ func serveIDEMCP(
 			if ready {
 				return fmt.Errorf("IntelliJ MCP server exited: %w", err)
 			}
-			return fmt.Errorf("IntelliJ MCP server exited before becoming ready: %w", err)
+			return fmt.Errorf("IntelliJ MCP server exited before becoming ready (the linter must support the mcp-server script): %w", err)
 		case <-deadline.C:
 			return errors.Join(
 				fmt.Errorf("IntelliJ MCP server did not become ready within %s", waitTimeout),
@@ -268,33 +259,30 @@ func stopIDE(ide *exec.Cmd, stopped <-chan struct{}) error {
 	}
 }
 
-// forwardIDEOutput copies IDE output line by line to log and sends the first MCP endpoint it announces.
-func forwardIDEOutput(output io.Reader, log io.Writer, endpoints chan<- string) {
+// forwardIDEOutput forwards the script output and publishes the endpoint after the startup banner.
+func forwardIDEOutput(output io.Reader, log io.Writer, endpoints chan<- ideMCPEndpoint) {
 	reader := bufio.NewReader(output)
+	var endpoint ideMCPEndpoint
 	reported := false
 	for {
 		line, err := reader.ReadString('\n')
 		_, _ = io.WriteString(log, line)
-		if url, ok := mcpEndpoint(line); ok && !reported {
-			reported = true
-			endpoints <- url
+		if !reported {
+			if match := streamableEndpointPattern.FindStringSubmatch(line); match != nil {
+				endpoint.URL = match[1]
+			}
+			if match := mcpAuthTokenFilePattern.FindStringSubmatch(line); match != nil {
+				endpoint.AuthTokenFile = strings.TrimSpace(match[1])
+			}
+			if endpoint.URL != "" && strings.Contains(line, "Terminate the process to stop the server and close the project") {
+				reported = true
+				endpoints <- endpoint
+			}
 		}
 		if err != nil {
 			return
 		}
 	}
-}
-
-func mcpEndpoint(line string) (string, bool) {
-	line = strings.TrimSpace(line)
-	if match := streamableEndpointPattern.FindStringSubmatch(line); match != nil {
-		return match[1], true
-	}
-	// IDE builds that only announce SSE also serve Streamable HTTP on the sibling /stream path.
-	if match := ideSSEEndpointPattern.FindStringSubmatch(line); match != nil {
-		return strings.TrimSuffix(match[1], "/sse") + "/stream", true
-	}
-	return "", false
 }
 
 func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), error) {
@@ -318,6 +306,7 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 		ProjectDir:   options.ProjectDir,
 		Linter:       options.Linter,
 		WithinDocker: "false",
+		Script:       "mcp-server",
 		Property:     ideMCPProperties(options.Property),
 	}
 	scanContext := corescan.CreateContext(cliOptions, commonCtx, preparedHost, corescan.QodanaYamlConfig{}, configDir)
@@ -326,8 +315,6 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 
 // ideMCPDefaultProperties configure the IDE for an Edict session on any project.
 var ideMCPDefaultProperties = []string{
-	// Enable Qodana's headless project setup, such as assigning the project JDK after a Maven import.
-	"qodana.application=true",
 	// 70% of the memory the JVM detects, cgroup limits included; with it, the launcher drops the distribution's -Xmx.
 	// The rest holds the build tool's daemon during the import, the Kotlin daemon and the agents. An explicit -Xmx wins.
 	"-XX:MaxRAMPercentage=70",

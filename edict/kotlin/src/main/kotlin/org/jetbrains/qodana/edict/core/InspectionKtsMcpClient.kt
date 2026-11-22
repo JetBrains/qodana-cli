@@ -98,6 +98,7 @@ internal class HttpInspectionKtsClient(
   private val projectPath: String? = null,
   private val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
   private val requestTimeout: Duration = Duration.ofHours(1),
+  private val authToken: String? = null,
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
   private val sequence = AtomicLong()
@@ -133,7 +134,7 @@ internal class HttpInspectionKtsClient(
 
   /** Edict reads no server-to-client messages; the stream only keeps the session alive, and a server without one is fine. */
   private fun openEvents(session: String): CompletableFuture<HttpResponse<Void>> = client.sendAsync(
-    HttpRequest.newBuilder(endpoint)
+    requestBuilder()
       .header("Accept", "text/event-stream")
       .header("MCP-Protocol-Version", protocolVersion)
       .header("Mcp-Session-Id", session)
@@ -286,13 +287,17 @@ internal class HttpInspectionKtsClient(
   }
 
   private fun post(message: JsonObject, requestSessionId: String?, timeout: Duration = requestTimeout): HttpRequest {
-    val builder = HttpRequest.newBuilder(endpoint)
+    val builder = requestBuilder()
       .timeout(timeout)
       .header("Content-Type", "application/json")
       .header("Accept", "application/json, text/event-stream")
       .header("MCP-Protocol-Version", protocolVersion)
     requestSessionId?.let { builder.header("Mcp-Session-Id", it) }
     return builder.POST(HttpRequest.BodyPublishers.ofString(EdictJson.encodeToString(message))).build()
+  }
+
+  private fun requestBuilder(): HttpRequest.Builder = HttpRequest.newBuilder(endpoint).apply {
+    authToken?.let { header("IJ_MCP_AUTH_TOKEN", it) }
   }
 
   private fun parse(message: JsonObject, response: HttpResponse<String>): JsonObject? {

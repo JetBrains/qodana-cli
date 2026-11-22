@@ -30,6 +30,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -148,12 +149,17 @@ func getProductByLinterName(linterName string) (*Product, error) {
 }
 
 func selectLatestCompatibleRelease(prod *Product, reqType string) *ReleaseInfo {
+	requestedVersion := strings.TrimSpace(os.Getenv("QD_PRODUCT_INTERNAL_VERSION"))
+	if requestedVersion == "" {
+		requestedVersion = product.ReleaseVersion
+	}
+
 	var latestRelease *ReleaseInfo
 	latestDate := ""
 
 	for i := 0; i < len(prod.Releases); i++ {
 		release := &prod.Releases[i]
-		if *release.MajorVersion == product.ReleaseVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == requestedVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}

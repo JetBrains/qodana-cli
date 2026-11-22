@@ -26,10 +26,12 @@ class IntellijMcpServerServiceTest {
 
   @Test
   fun `starts the helper once and stops it by closing its stdin`() = runBlocking {
+    val tokenFile = project.resolve("MCP auth token.txt")
+    Files.writeString(tokenFile, "test-token\n")
     val qodana = fakeQodana(
       """
       echo "Downloading IDE"
-      echo '{"status":"ready","url":"http://127.0.0.1:9876/mcp"}'
+      echo '{"status":"ready","url":"http://127.0.0.1:9876/mcp","authTokenFile":${EdictJson.encodeToString(tokenFile.toString())}}'
       echo "IDE log line" >&2
       cat > /dev/null
       echo stopped > "${'$'}(dirname "${'$'}0")/stopped"
@@ -37,19 +39,20 @@ class IntellijMcpServerServiceTest {
     )
     val log = project.resolve("logs/intellij-mcp.log")
     val client = FakeInspectionKtsClient()
-    var endpoint: URI? = null
+    var endpoint: IntellijMcpEndpoint? = null
     val service = IntellijMcpServerService(
       projectPath = project,
       qodanaExecutable = qodana.toString(),
       ideArguments = listOf("--dist=/opt/idea", "--property=-Xmx8g"),
       log = log,
       resultsDirectory = project.resolve("logs/intellij-mcp"),
-      clientFactory = InspectionKtsClientFactory { uri -> endpoint = uri; client },
+      clientFactory = InspectionKtsClientFactory { ready -> endpoint = ready; client },
     )
 
     assertSame(client, service.start())
     assertSame(client, service.start())
-    assertEquals(URI("http://127.0.0.1:9876/mcp"), endpoint)
+    assertEquals(URI("http://127.0.0.1:9876/mcp"), endpoint?.uri)
+    assertEquals("test-token", endpoint?.authToken)
     assertEquals(
       listOf(
         "edict", "ide-mcp", "--project-dir", project.toAbsolutePath().normalize().toString(),

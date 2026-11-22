@@ -176,9 +176,13 @@ The tests install Edict into the fixture the same way `qodana edict install` doe
   `codex -c` overrides.
 - **Server.** The Kotlin MCP server runs outside the agent sandbox.
 - **Native inspections.** The assembled CLI starts the IntelliJ MCP server with `qodana edict ide-mcp --linter=qodana-jvm`
-  and runs retrospective scans with `qodana scan --linter=qodana-jvm --within-docker=false`. The CLI provisions
-  the matching native linter. Paid releases require a Qodana license. For a nightly linter, set the CLI's
-  `QD_PRODUCT_INTERNAL_FEED` and `QD_PRODUCT_INTERNAL_AUTH` when needed.
+  and runs retrospective scans with `qodana scan --linter=qodana-jvm --within-docker=false`. The native linter
+  must ship Qodana's `mcp-server` script, which imports the project before starting MCP. Paid releases require
+  a Qodana license. Gradle live tests default to the 2027.1 native linter branch and the nightly feed at
+  `https://packages.jetbrains.team/files/p/sa/qdist`. Set `QD_PRODUCT_INTERNAL_FEED` to override the feed.
+  Gradle also reads `QD_PRODUCT_INTERNAL_AUTH` from this directory's `local.properties` when the environment
+  variable is unset. For direct IDE test runs, set the feed, version, and auth variables as needed. Pass
+  `-PqodanaLinterVersion=<version>` to override the version for a Gradle run.
 - **Model.** `CODEX_BIN` overrides the Codex executable, and `CODEX_MODEL` overrides the default model
   (`gpt-6.2-sol`, high reasoning effort).
 

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     kotlin("jvm") version "2.3.21"
     kotlin("plugin.serialization") version "2.3.21"
@@ -115,6 +117,23 @@ tasks.test {
     if (!excludeIntegrationTests) {
         dependsOn(assembleQodanaCli)
         systemProperty("edict.qodanaCli", qodanaCli.asFile.absolutePath)
+        val linterFeed = providers.environmentVariable("QD_PRODUCT_INTERNAL_FEED")
+            .getOrElse("https://packages.jetbrains.team/files/p/sa/qdist")
+        environment("QD_PRODUCT_INTERNAL_FEED", linterFeed)
+        val linterVersion = providers.gradleProperty("qodanaLinterVersion")
+            .orElse(providers.environmentVariable("QD_PRODUCT_INTERNAL_VERSION"))
+            .getOrElse("2027.1")
+        environment("QD_PRODUCT_INTERNAL_VERSION", linterVersion)
+        val localPropertiesFile = layout.projectDirectory.file("local.properties").asFile
+        doFirst {
+            val authVariable = "QD_PRODUCT_INTERNAL_AUTH"
+            if (System.getenv(authVariable).isNullOrBlank() && localPropertiesFile.isFile) {
+                val properties = Properties().apply { localPropertiesFile.inputStream().use(::load) }
+                properties.getProperty(authVariable)?.trim()?.takeIf(String::isNotEmpty)?.let {
+                    (this as Test).environment(authVariable, it)
+                }
+            }
+        }
         // Clone/runtime/provider state is external to Gradle's input snapshot.
         outputs.upToDateWhen { false }
         testLogging { showStandardStreams = true }

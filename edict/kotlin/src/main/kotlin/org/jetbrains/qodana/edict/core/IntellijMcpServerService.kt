@@ -15,12 +15,14 @@ import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
 
 internal fun interface InspectionKtsClientFactory {
-  fun create(endpoint: URI): InspectionKtsClient
+  fun create(endpoint: IntellijMcpEndpoint): InspectionKtsClient
 }
+
+internal class IntellijMcpEndpoint(val uri: URI, val authToken: String? = null)
 
 /** Starts and stops the IntelliJ MCP endpoint used by one Edict run. */
 internal interface IntellijMcpServerLifecycle {
-  suspend fun start(): URI
+  suspend fun start(): IntellijMcpEndpoint
 
   /** False once a started server has died, so its clients must not be reused. */
   val running: Boolean get() = true
@@ -45,7 +47,7 @@ internal class QodanaIntellijMcpServerLifecycle(
 
   override val running: Boolean get() = helper?.isAlive == true
 
-  override suspend fun start(): URI = withContext(Dispatchers.IO) {
+  override suspend fun start(): IntellijMcpEndpoint = withContext(Dispatchers.IO) {
     check(helper == null) { "IntelliJ MCP is already running" }
     val command = buildList {
         addAll(
@@ -67,7 +69,8 @@ internal class QodanaIntellijMcpServerLifecycle(
       // Captured now: the handle tracks this exact process, so a reused pid is never signalled.
       val ide = ready.pid?.let { ProcessHandle.of(it).orElse(null) }
       if (ide != null) process.onExit().thenRun { stopIde(ide) }
-      URI.create(ready.url)
+      val token = ready.authTokenFile?.let { Files.readString(Path.of(it)).trim() }
+      IntellijMcpEndpoint(URI.create(ready.url), token)
     }
     catch (e: Throwable) {
       stop(process)
@@ -117,7 +120,7 @@ internal class QodanaIntellijMcpServerLifecycle(
   }
 
   @Serializable
-  private data class McpReady(val status: String, val url: String, val pid: Long? = null)
+  private data class McpReady(val status: String, val url: String, val pid: Long? = null, val authTokenFile: String? = null)
 
   private companion object {
     // The helper itself allows the IDE ten seconds to exit before killing it.
@@ -139,9 +142,10 @@ internal class IntellijMcpServerService(
   // The helper opens the project by its canonical path, so name it the same way in tool calls.
   private val clientFactory: InspectionKtsClientFactory = InspectionKtsClientFactory { endpoint ->
     HttpInspectionKtsClient(
-      endpoint,
+      endpoint.uri,
       runCatching { projectPath.toRealPath() }.getOrElse { projectPath.toAbsolutePath().normalize() }.toString(),
       projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes,
+      authToken = endpoint.authToken,
     )
   },
   private val serverLifecycle: IntellijMcpServerLifecycle = QodanaIntellijMcpServerLifecycle(

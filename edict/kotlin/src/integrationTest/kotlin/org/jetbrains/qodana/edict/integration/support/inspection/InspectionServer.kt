@@ -7,8 +7,8 @@ import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.core.HttpInspectionKtsClient
+import org.jetbrains.qodana.edict.core.IntellijMcpEndpoint
 import org.jetbrains.qodana.edict.core.QodanaIntellijMcpServerLifecycle
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -22,7 +22,7 @@ internal class InspectionServer private constructor(
     val source: Path,
     private val proxy: InspectionToolProxy,
     /** The IDE's own Streamable HTTP endpoint, which production Edict talks to directly, unlike [url]. */
-    val streamableEndpoint: URI,
+    val streamableEndpoint: IntellijMcpEndpoint,
     val tools: List<JsonObject>,
 ) : AutoCloseable {
     val url = proxy.url
@@ -68,10 +68,6 @@ internal class InspectionServer private constructor(
                 ideArguments = listOf(
                     "--linter=$liveQodanaLinter",
                     "--wait-timeout=10m",
-                    "--property=qodana.application=false",
-                    "--property=jdk.configure.existing=true",
-                    // SDK registration in Qodana JVM 263.7890 requires the event dispatch thread (IDEA-389470).
-                    "--property=idea.background.write.action.enabled=false",
                 ),
                 log = log,
                 resultsDirectory = output.resolve("intellij-mcp-results"),
@@ -80,7 +76,7 @@ internal class InspectionServer private constructor(
             val endpoint = runBlocking { lifecycle.start() }
             var client: HttpInspectionKtsClient? = null
             try {
-                val connected = HttpInspectionKtsClient(endpoint, source.toString())
+                val connected = HttpInspectionKtsClient(endpoint.uri, source.toString(), authToken = endpoint.authToken)
                 client = connected
                 val tools = runBlocking { connected.listTools() }
                 val proxy = InspectionToolProxy(

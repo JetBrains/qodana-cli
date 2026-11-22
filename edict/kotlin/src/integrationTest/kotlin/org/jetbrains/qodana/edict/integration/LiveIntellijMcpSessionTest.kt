@@ -61,10 +61,11 @@ class LiveIntellijMcpSessionTest : LiveIntegrationTest() {
             }
             assumeTrue(supportsTimeout, "The installed Qodana linter does not support IDE-side project analysis timeouts")
             HttpInspectionKtsClient(
-                endpoint = ide.streamableEndpoint,
+                endpoint = ide.streamableEndpoint.uri,
                 projectPath = ide.source.toString(),
                 requestTimeout = Duration.ofMinutes(2),
                 projectAnalysisTimeoutMinutes = 1,
+                authToken = ide.streamableEndpoint.authToken,
             ).use { client ->
                 val timedOut = client.analyzeProject(HANGING_INSPECTION)
                 val timeoutError = timedOut.files.singleOrNull()?.executionError.orEmpty()

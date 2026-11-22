@@ -58,6 +58,11 @@ func downloadAndInstallIDE(
 	}
 
 	fileName := filepath.Base(ideUrl)
+	// Nightly feeds reuse the build.number placeholder across branches.
+	if strings.Contains(fileName, "build.number") {
+		urlHash := sha256.Sum256([]byte(ideUrl))
+		fileName = fmt.Sprintf("%x-%s", urlHash[:8], fileName)
+	}
 	fileExt := filepath.Ext(fileName)
 	installDir := filepath.Join(baseDir, strings.TrimSuffix(fileName, fileExt))
 	if _, err := os.Stat(installDir); err == nil {

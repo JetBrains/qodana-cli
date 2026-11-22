@@ -40,7 +40,9 @@ func TestMain(m *testing.M) {
 		terminated := make(chan os.Signal, 1)
 		signal.Notify(terminated, syscall.SIGTERM)
 		_, _ = os.Stdout.WriteString("Starting IDE\n")
-		_, _ = os.Stderr.WriteString("  - Streamable HTTP endpoint: http://127.0.0.1:54321/mcp\x1b[0m\n")
+		_, _ = os.Stderr.WriteString("  - Streamable HTTP endpoint: http://127.0.0.1:54321/stream\x1b[0m\n")
+		_, _ = os.Stderr.WriteString("  - Send the header IJ_MCP_AUTH_TOKEN with the token in /tmp/ide config/token.txt\x1b[0m\n")
+		_, _ = os.Stderr.WriteString("Terminate the process to stop the server and close the project\n")
 		<-terminated
 		_, _ = os.Stderr.WriteString("fake IDE stopped\n")
 		os.Exit(0)
@@ -86,30 +88,26 @@ func TestSelectIDEDistributionPrefersExplicitChoiceOverQodanaDist(t *testing.T) 
 	}
 }
 
-// The Kotlin Edict server calls or forwards exactly these IntelliJ tools; keep both sides in sync.
-const edictInspectionTools = "generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples," +
-	"run_inspection_kts,compile_inspection_kts,run_inspection_kts_examples,run_inspection_kts_project"
-
-func TestIDEStarterUsesHeadlessMCPWithInspectionKtsTools(t *testing.T) {
-	want := []string{
-		"/opt/idea", "mcpServer", "--project=/project", "--invocation-mode=direct",
-		"--allowed-tools=" + edictInspectionTools,
+func TestForwardIDEOutputWaitsForTheScriptStartupBanner(t *testing.T) {
+	endpoints := make(chan ideMCPEndpoint, 1)
+	output := "  - SSE endpoint: http://127.0.0.1:64342/sse\n" +
+		"  - Streamable HTTP endpoint: http://127.0.0.1:64342/stream\n"
+	forwardIDEOutput(strings.NewReader(output), io.Discard, endpoints)
+	select {
+	case got := <-endpoints:
+		t.Fatalf("published readiness before the end of the script startup banner: %+v", got)
+	default:
 	}
-	if got := ideMCPArguments("/opt/idea", "/project"); !slices.Equal(got, want) {
-		t.Fatalf("IDE MCP arguments = %v, want %v", got, want)
-	}
-}
-
-func TestMCPEndpointRecognizesIDEAnnouncements(t *testing.T) {
-	for line, want := range map[string]string{
-		"  - Streamable HTTP endpoint: http://127.0.0.1:64342/mcp\x1b[0m\n": "http://127.0.0.1:64342/mcp",
-		"* SSE URL: http://127.0.0.1:54321/sse\n":                           "http://127.0.0.1:54321/stream",
-		"  - SSE endpoint: http://127.0.0.1:64342/sse\n":                    "",
-	} {
-		got, ok := mcpEndpoint(line)
-		if got != want || ok != (want != "") {
-			t.Errorf("mcpEndpoint(%q) = %q, %v; want %q", line, got, ok, want)
+	output += "Terminate the process to stop the server and close the project\n"
+	forwardIDEOutput(strings.NewReader(output), io.Discard, endpoints)
+	select {
+	case got := <-endpoints:
+		want := ideMCPEndpoint{URL: "http://127.0.0.1:64342/stream"}
+		if got != want {
+			t.Fatalf("endpoint = %+v, want %+v", got, want)
 		}
+	default:
+		t.Fatal("the script's startup banner did not produce readiness")
 	}
 }
 
@@ -127,17 +125,16 @@ func TestPrepareMCPScanContextRejectsDockerLinters(t *testing.T) {
 func TestIDEMCPPropertiesReplaceDefaultsTheCallerSets(t *testing.T) {
 	// The caller sets one default as given and one with -D; -Xmx sets no default but wins over the heap percentage.
 	properties := ideMCPProperties([]string{
-		"-Xmx8g", "qodana.application=false", "-Dorg.gradle.daemon.idletimeout=300000",
+		"-Xmx8g", "vfs.health-check.enabled=true", "-Dorg.gradle.daemon.idletimeout=300000",
 	})
 
 	expected := []string{
 		"-XX:MaxRAMPercentage=70",
 		"idea.batch.inspections.inspect.injected.psi=false",
 		"idea.enable.duplicates.online.calculation=false",
-		"vfs.health-check.enabled=false",
 		"kotlin.daemon.jvm.options=-Xmx2g",
 		"-Xmx8g",
-		"qodana.application=false",
+		"vfs.health-check.enabled=true",
 		"-Dorg.gradle.daemon.idletimeout=300000",
 	}
 	if !slices.Equal(properties, expected) {
@@ -176,13 +173,13 @@ func TestServeIDEMCPPublishesReadinessAndStopsIDEWhenStdinCloses(t *testing.T) {
 	if err != nil {
 		t.Fatalf("no readiness line: %v", err)
 	}
-	var ready struct {
-		Status string
-		URL    string
-		PID    int
-	}
-	if err := json.Unmarshal([]byte(line), &ready); err != nil || ready.Status != "ready" || ready.URL != "http://127.0.0.1:54321/mcp" || ready.PID <= 0 {
+	var ready ideMCPReady
+	if err := json.Unmarshal([]byte(line), &ready); err != nil || ready.Status != "ready" || ready.PID <= 0 {
 		t.Fatalf("unexpected readiness %q: %v", line, err)
+	}
+	wantEndpoint := ideMCPEndpoint{URL: "http://127.0.0.1:54321/stream", AuthTokenFile: "/tmp/ide config/token.txt"}
+	if ready.ideMCPEndpoint != wantEndpoint {
+		t.Fatalf("endpoint = %+v, want %+v", ready.ideMCPEndpoint, wantEndpoint)
 	}
 	go func() { _, _ = io.Copy(io.Discard, stdout) }()
 

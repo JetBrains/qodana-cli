@@ -66,6 +66,24 @@ func TestGetIde(t *testing.T) {
 	}
 }
 
+func TestSelectLatestCompatibleReleaseHonorsVersionOverride(t *testing.T) {
+	defaultVersion, otherVersion := product.ReleaseVersion, "2099.1"
+	feed := &Product{Releases: []ReleaseInfo{
+		{MajorVersion: &defaultVersion, Type: product.EapVer},
+		{MajorVersion: &otherVersion, Type: product.EapVer},
+		{MajorVersion: &otherVersion, Type: product.ReleaseVer},
+	}}
+
+	t.Setenv("QD_PRODUCT_INTERNAL_VERSION", "")
+	if got := selectLatestCompatibleRelease(feed, product.EapVer); got != &feed.Releases[0] {
+		t.Fatalf("native linter selection should default to %s EAP", defaultVersion)
+	}
+	t.Setenv("QD_PRODUCT_INTERNAL_VERSION", otherVersion)
+	if got := selectLatestCompatibleRelease(feed, product.EapVer); got != &feed.Releases[1] {
+		t.Fatalf("native linter selection should use requested version %s EAP", otherVersion)
+	}
+}
+
 func TestDownloadAndInstallIDE(t *testing.T) {
 	product.RequireNightlyAuth(t)
 	linters := []product.Linter{product.GoLinter}

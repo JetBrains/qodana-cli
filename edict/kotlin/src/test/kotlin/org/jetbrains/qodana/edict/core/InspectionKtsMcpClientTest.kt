@@ -181,8 +181,9 @@ class InspectionKtsMcpClientTest {
   @Test
   @Timeout(30)
   fun `keeps an event stream open for each session`() = runBlocking {
-    SessionServer().use { server ->
-      HttpInspectionKtsClient(server.endpoint, "/project/root").use { client ->
+    val token = "test-token"
+    SessionServer(authToken = token).use { server ->
+      HttpInspectionKtsClient(server.endpoint, "/project/root", authToken = token).use { client ->
         assertEquals("sample-rule", client.compile("inspection").inspectionId)
         assertEquals(listOf("session-1"), server.awaitStreams(1))
       }
@@ -286,6 +287,7 @@ class InspectionKtsMcpClientTest {
   private class SessionServer(
     private val rejected: Set<String> = emptySet(),
     private val toolDelayMillis: Long = 0,
+    private val authToken: String? = null,
   ) : AutoCloseable {
     private val executor = Executors.newCachedThreadPool()
     private val sessions = AtomicInteger()
@@ -297,6 +299,10 @@ class InspectionKtsMcpClientTest {
       executor = this@SessionServer.executor
       createContext("/mcp") { exchange ->
         exchange.use {
+          if (exchange.requestHeaders.getFirst("IJ_MCP_AUTH_TOKEN") != authToken) {
+            exchange.sendResponseHeaders(401, -1)
+            return@createContext
+          }
           val session = exchange.requestHeaders.getFirst("Mcp-Session-Id")
           if (exchange.requestMethod == "GET") {
             stream(exchange, checkNotNull(session))

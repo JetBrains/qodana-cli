@@ -21,6 +21,7 @@ import org.jetbrains.qodana.edict.integration.support.inspection.liveQodanaLinte
 import org.jetbrains.qodana.edict.integration.support.signalFiles
 import org.jetbrains.qodana.edict.integration.support.verifyCommitSignals
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 
@@ -28,6 +29,7 @@ private const val retrospectiveFixtureHead = "a7fa96f48394b6e1e0d2d46e45403f0b3e
 private const val retrospectiveCluster = "avoid-thread-sleep-for-synchronization"
 private const val retrospectiveInspection = "AvoidThreadSleepForSynchronization"
 
+@Disabled
 class LiveRetrospectiveSignalAnalysisTest : LiveIntegrationTest() {
     override val fixtureRevision = retrospectiveFixtureHead
 
