@@ -1,6 +1,6 @@
 plugins {
-    kotlin("jvm") version "2.3.21"
-    kotlin("plugin.serialization") version "2.3.21"
+    kotlin("jvm") version "2.4.21"
+    kotlin("plugin.serialization") version "2.4.21"
     application
 }
 
@@ -20,7 +20,7 @@ dependencies {
     implementation("org.jetbrains.qodana:publisher:3.1.14")
     implementation("org.jetbrains.qodana:qodana-cloud-kotlin-client:0.2.17")
     implementation("com.jetbrains.qodana:qodana-sarif:1.0.57")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
     implementation("org.tomlj:tomlj:2.2.0")
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.7")
     runtimeOnly("ch.qos.logback:logback-classic:1.6.6")
