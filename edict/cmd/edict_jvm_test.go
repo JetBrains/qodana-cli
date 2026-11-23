@@ -18,6 +18,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -417,7 +418,7 @@ func TestEdictMCPStartLocksTheStateDirectory(t *testing.T) {
 	server.stop(t, cancel)
 	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer restartCancel()
-	startEdictMCP(t, restartContext).stop(t, restartCancel)
+	restartEdictMCP(t, restartContext).stop(t, restartCancel)
 }
 
 // Another state cannot move to another port: the agent config names the one install wrote.
@@ -431,6 +432,29 @@ func TestEdictMCPStartFailsOnABusyPort(t *testing.T) {
 		t.Fatalf("second JVM did not fail on the busy port: %v, %s", err, output)
 	}
 	server.stop(t, cancel)
+}
+
+func TestEdictMCPStartRetriesWhenConfiguredPortIsBusy(t *testing.T) {
+	prepareEdictProject(t)
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = listener.Close() })
+	busyPort := listener.Addr().(*net.TCPAddr).Port
+	moveEdictPort(t, busyPort)
+	installEdict(t)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	server := startEdictMCP(t, ctx)
+	defer server.stop(t, cancel)
+	if server.url == fmt.Sprintf("http://127.0.0.1:%d/mcp", busyPort) {
+		t.Fatalf("server kept the occupied port: %s", server.url)
+	}
+	if installedURL := edictMCPURL(t); server.url != installedURL {
+		t.Fatalf("server listens at %s, not at the installed address %s", server.url, installedURL)
+	}
 }
 
 // runEdictMCPStart runs `qodana edict mcp start --foreground` to completion, for a start that is expected to fail.
@@ -528,6 +552,22 @@ func writeEdictPort(t *testing.T, port int) {
 	}
 }
 
+func moveEdictPort(t *testing.T, port int) {
+	t.Helper()
+	config, err := os.ReadFile("qodana.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	portSetting := regexp.MustCompile(`(?m)^  mcpPort: \d+$`)
+	if !portSetting.Match(config) {
+		t.Fatal("qodana.yaml has no Edict MCP port to update")
+	}
+	updated := portSetting.ReplaceAll(config, []byte(fmt.Sprintf("  mcpPort: %d", port)))
+	if err := os.WriteFile("qodana.yaml", updated, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func appendEdictStatePath(t *testing.T, statePath string) {
 	t.Helper()
 	file, err := os.OpenFile("qodana.yaml", os.O_APPEND|os.O_WRONLY, 0o600)
@@ -577,6 +617,32 @@ type edictMCPServer struct {
 // startEdictMCP runs `qodana edict mcp start` in the current directory until ctx is cancelled.
 func startEdictMCP(t *testing.T, ctx context.Context, args ...string) edictMCPServer {
 	t.Helper()
+	for attempt := 1; ; attempt++ {
+		server, output, err := tryStartEdictMCP(t, ctx, args...)
+		if err == nil {
+			return server
+		}
+		if attempt == 3 || !strings.Contains(output, "Address already in use") {
+			t.Fatalf("HTTP server exited before startup (attempt %d): %v\nJVM output:\n%s", attempt, err, output)
+		}
+		moveEdictPort(t, freePort(t))
+		installEdict(t)
+	}
+}
+
+// restartEdictMCP starts the server on the port a stopped one released, without moving to another port: a port that
+// stays bound after stop fails the test.
+func restartEdictMCP(t *testing.T, ctx context.Context) edictMCPServer {
+	t.Helper()
+	server, output, err := tryStartEdictMCP(t, ctx)
+	if err != nil {
+		t.Fatalf("HTTP server did not restart: %v\nJVM output:\n%s", err, output)
+	}
+	return server
+}
+
+func tryStartEdictMCP(t *testing.T, ctx context.Context, args ...string) (edictMCPServer, string, error) {
+	t.Helper()
 	output, outputWriter := io.Pipe()
 	t.Cleanup(func() { _ = output.Close() })
 	command := newEdictManagedMCPStartCommand()
@@ -585,28 +651,37 @@ func startEdictMCP(t *testing.T, ctx context.Context, args ...string) edictMCPSe
 	server := edictMCPServer{done: make(chan error, 1)}
 	command.SetOut(outputWriter)
 	command.SetErr(outputWriter)
+	endpoint := make(chan string, 1)
+	scanned := make(chan string, 1)
+	go func() {
+		var lines []string
+		scanner := bufio.NewScanner(output)
+		for scanner.Scan() {
+			line := scanner.Text()
+			lines = append(lines, line)
+			if _, url, ok := strings.Cut(line, "edict-mcp listening at "); ok {
+				endpoint <- url
+			}
+		}
+		scanned <- strings.Join(lines, "\n")
+	}()
 	go func() {
 		err := command.ExecuteContext(ctx)
 		_ = outputWriter.Close()
 		server.done <- err
 	}()
-	endpoint := make(chan string, 1)
-	go func() {
-		scanner := bufio.NewScanner(output)
-		for scanner.Scan() {
-			if _, url, ok := strings.Cut(scanner.Text(), "edict-mcp listening at "); ok {
-				endpoint <- url
-			}
-		}
-	}()
 	select {
 	case server.url = <-endpoint:
+		return server, "", nil
 	case err := <-server.done:
-		t.Fatalf("HTTP server exited before startup: %v", err)
+		if err == nil {
+			err = errors.New("process exited before listening endpoint")
+		}
+		return server, <-scanned, err
 	case <-ctx.Done():
-		t.Fatal("HTTP server startup timed out")
+		err := <-server.done
+		return server, <-scanned, fmt.Errorf("HTTP server startup: %w (process error: %v)", ctx.Err(), err)
 	}
-	return server
 }
 
 func (server edictMCPServer) stop(t *testing.T, cancel context.CancelFunc) {
