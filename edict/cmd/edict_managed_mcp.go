@@ -47,7 +47,9 @@ Succeeds when no server runs.`,
 }
 
 func newEdictManagedMCPStartCommand() *cobra.Command {
-	return newEdictManagedMCPStartCommandWithRunner(runEdictJVM)
+	command := newEdictManagedMCPStartCommandWithRunner(runEdictJVM)
+	command.PreRunE = requireEdictRoutinePlatform
+	return command
 }
 
 func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string) error) *cobra.Command {

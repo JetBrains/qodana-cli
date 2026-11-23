@@ -16,6 +16,9 @@
 package cmd
 
 import (
+	"errors"
+	"runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +36,13 @@ func NewCommand() *cobra.Command {
 		newEdictFeedbackCommand(),
 	)
 	return cmd
+}
+
+func requireEdictRoutinePlatform(_ *cobra.Command, _ []string) error {
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "amd64" {
+		return errors.New("the Edict daily routine is unavailable on x86-64 macOS: ONNX Runtime no longer ships native libraries for this platform; use a supported platform such as Apple Silicon with the arm64 Qodana CLI")
+	}
+	return nil
 }
 
 // newEdictFeedbackCommand returns the commands a GitHub Actions run uses to show findings of not yet promoted
@@ -170,6 +180,7 @@ branch without history, and excludes it from the project's git status. The proje
 on its branch. A state directory that already holds files is kept as it is.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
+		PreRunE:      requireEdictRoutinePlatform,
 		RunE: func(command *cobra.Command, _ []string) error {
 			args := append([]string{"install"}, edictQodanaYamlArguments(".", configFile)...)
 			for _, path := range deniedPaths {
