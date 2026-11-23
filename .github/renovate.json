@@ -216,9 +216,9 @@
       "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
-      "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
+      "description": "config-loader-cli.jar in test.yaml needs Java 21; only accept LTS versions with 1-4 digit respin numbers.",
       "matchDepNames": ["java-jdk"],
-      "allowedVersions": "/^21(\\.|$)/"
+      "allowedVersions": "/^21\\.\\d+\\.\\d+\\+\\d{1,4}\\.\\d+\\.LTS$/"
     },
     {
       "matchDepNames": ["java-jdk"],
