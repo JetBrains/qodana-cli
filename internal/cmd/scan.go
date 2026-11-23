@@ -57,7 +57,7 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			telemetry.Start(
 				"scan",
-				func() string { return platform.GetDeviceIdSalt(cliOptions.ProjectDir)[0] },
+				func() (string, string) { return platform.DeviceIdAndRemoteUrl(cliOptions.ProjectDir) },
 				cliOptions.NoCliStatistics(),
 				cliOptions.Env_,
 			)

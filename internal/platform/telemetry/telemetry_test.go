@@ -282,7 +282,7 @@ func TestContainerHandsTheRunOver(t *testing.T) {
 	// the CLI in the container
 	fakeFus(t)
 	t.Setenv(handoverEnv, filepath.Join(cacheDir, handoverName))
-	Start("scan", func() string { return testDevice }, false, nil)
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
 	LicenseObtained("cloud", "ULTIMATE")
 	SetScenario(ScenarioStartCommitMissing)
 	Allow(false)
@@ -600,7 +600,7 @@ func TestRunIsSent(t *testing.T) {
 		return fake(device, build)
 	}
 	SetVersion("2026.2.3")
-	Start("scan", func() string { return testDevice }, false, nil)
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
 	SetCloudIds(testProject, testOrg)
 	LicenseObtained("cloud", "ULTIMATE")
 	BaselineResolved("cloud", "found", 0, time.Second)
@@ -628,7 +628,7 @@ func TestRunIsSent(t *testing.T) {
 
 func TestRejectedLicenseFinishesRun(t *testing.T) {
 	received := fakeFus(t)
-	Start("scan", func() string { return "" }, false, nil)
+	Start("scan", func() (string, string) { return "", "" }, false, nil)
 
 	SetTokenSource("prompt")
 	RejectLicense("token_invalid")
@@ -661,10 +661,12 @@ func TestNothingIsCollectedWithoutPermission(t *testing.T) {
 				t.Setenv(qdenv.QodanaToken, "")
 				run.setup(t)
 
-				Start("scan", func() string { return "" }, run.noStatistics, run.env)
+				gitRun := false
+				Start("scan", func() (string, string) { gitRun = true; return "", "" }, run.noStatistics, run.env)
 				Finish(0, "")
 
 				assert.False(t, connected, "JetBrains should not be contacted")
+				assert.False(t, gitRun, "the remote of the project should not be read")
 				assert.Empty(t, events)
 			},
 		)
@@ -683,7 +685,7 @@ func TestEnvOverridesTheTokensOfTheCli(t *testing.T) {
 
 func TestDisallowedRunIsNotSent(t *testing.T) {
 	received := fakeFus(t)
-	Start("scan", func() string { return "" }, false, nil)
+	Start("scan", func() (string, string) { return "", "" }, false, nil)
 	Allow(false)
 	Allow(true)
 
@@ -727,7 +729,7 @@ func TestAnalysisIdIsOnlyAUuid(t *testing.T) {
 
 func TestDisabledInTestsOfOtherPackages(t *testing.T) {
 	reset(t)
-	Start("scan", func() string { return "" }, false, nil)
+	Start("scan", func() (string, string) { return "", "" }, false, nil)
 	LicenseObtained("env", "")
 	Finish(0, "")
 
@@ -771,7 +773,7 @@ func lastEvent(report fus.Report, id string) map[string]any {
 func reset(t *testing.T) {
 	clear := func() {
 		disabled, connect, build = true, newSender, version.Version
-		enabled, allowed, analyzing = false, true, false
+		enabled, collectionStarted, allowed, analyzing = false, false, true, false
 		command, projectId, orgId, analysisId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", "", ""
 		baselineFound = false
 		events, senders, collected, startedAt = nil, nil, nil, time.Time{}
@@ -848,9 +850,150 @@ func TestReleaseIsSentToFusAndPostHog(t *testing.T) {
 func TestPanicOfTheSenderSendsNothing(t *testing.T) {
 	received := fakeFus(t)
 	connect = func(string, string) *sender { panic("boom") }
-	Start("scan", func() string { return "" }, false, nil)
+	Start("scan", func() (string, string) { return "", "" }, false, nil)
 
 	Finish(0, "")
 
 	assert.Empty(t, received)
+}
+
+func TestJetBrainsRunsAreNotSent(t *testing.T) {
+	for name, run := range map[string]struct {
+		remoteUrl, endpoint  string
+		internalOrganization bool
+	}{
+		"repository":                  {remoteUrl: "git@github.com:JetBrains/qodana-cli.git"},
+		"repository of JetBrains Git": {remoteUrl: "ssh://git@git.jetbrains.team/qodana/cli.git"},
+		"Qodana Cloud":                {endpoint: "https://qodana.labs.jb.gg"},
+		"Qodana Cloud without scheme": {endpoint: "qodana.labs.jb.gg"},
+		"internal organization":       {internalOrganization: true},
+	} {
+		t.Run(
+			name, func(t *testing.T) {
+				received := fakeFus(t)
+				env := []string{qdenv.QodanaEndpointEnv + "=" + run.endpoint}
+				Start("scan", func() (string, string) { return testDevice, run.remoteUrl }, false, env)
+				SetCloudIds(testProject, testOrg)
+				Allow(!run.internalOrganization)
+
+				Finish(0, "")
+
+				assert.Empty(t, received)
+				assert.False(t, Allowed(), "the events of third-party linters are not sent either")
+			},
+		)
+	}
+}
+
+func TestJetBrainsRunInAContainerIsNotAllowed(t *testing.T) {
+	fakeFus(t)
+	t.Setenv(handoverEnv, filepath.Join(t.TempDir(), "handover.json"))
+	Start("scan", func() (string, string) { return testDevice, "git@github.com:JetBrains/qodana-cli.git" }, false, nil)
+
+	assert.False(t, Allowed(), "a third-party linter sends its legacy events from the container")
+}
+
+func TestNotStartedRunIsNotAllowed(t *testing.T) {
+	reset(t)
+	disabled = false
+	Start("scan", func() (string, string) { return testDevice, "" }, true, nil)
+
+	assert.False(t, Allowed(), "an opted-out run sends no legacy events")
+}
+
+func TestCustomerRunIsSent(t *testing.T) {
+	received := fakeFus(t)
+	env := []string{qdenv.QodanaEndpointEnv + "=https://qodana.cloud"}
+	Start("scan", func() (string, string) { return testDevice, "git@github.com:acme/app.git" }, false, env)
+	SetCloudIds(testProject, testOrg)
+	Allow(true)
+
+	assert.True(t, Allowed())
+	Finish(0, "")
+	assert.NotNil(t, lastEvent(<-received, finished))
+}
+
+func TestQodanaCloudOfTheCliIsChecked(t *testing.T) {
+	received := fakeFus(t)
+	t.Setenv(qdenv.QodanaEndpointEnv, "https://qodana.jetbrains.team")
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
+	Finish(0, "")
+
+	assert.Empty(t, received)
+}
+
+func TestQodanaCloudOfTheLinterOverridesTheOneOfTheCli(t *testing.T) {
+	fakeFus(t)
+	t.Setenv(qdenv.QodanaEndpointEnv, "https://qodana.jetbrains.team")
+	env := []string{qdenv.QodanaEndpointEnv + "=https://qodana.acme.com"}
+	Start("scan", func() (string, string) { return testDevice, "" }, false, env)
+
+	assert.True(t, Allowed(), "the linter reports to the Qodana Cloud of --env")
+}
+
+func TestEnvValue(t *testing.T) {
+	key := qdenv.QodanaEndpointEnv
+	t.Setenv(key, "cli")
+	assert.Equal(t, "cli", envValue(nil, key))
+	assert.Equal(t, "cli", envValue([]string{"OTHER=value"}, key))
+	assert.Equal(t, "", envValue([]string{key}, key), "Docker removes a variable without a value from the container")
+	assert.Equal(t, "b=c", envValue([]string{key + "=a", key + "=b=c"}, key), "the last one wins and keeps its =")
+}
+
+func TestJetBrainsHost(t *testing.T) {
+	for host, expected := range map[string]bool{
+		"jetbrains.com":            true,
+		"qodana.jetbrains.com":     true,
+		"git.jetbrains.team":       true,
+		"buildserver.intellij.net": true,
+		"qodana.labs.jb.gg":        true,
+		"notjetbrains.com":         false,
+		"jetbrains.com.acme.com":   false,
+		"jetbrains.space":          false,
+		"acme.jetbrains.space":     false,
+		"qodana.cloud":             false,
+		"":                         false,
+	} {
+		assert.Equal(t, expected, isJetBrainsHost(host), host)
+	}
+}
+
+func TestParseUrl(t *testing.T) {
+	for rawUrl, expected := range map[string][2]string{
+		"https://github.com/JetBrains/qodana-cli.git": {"github.com", "JetBrains"},
+		"https://user:pass@GitHub.com:443/Acme/app":   {"github.com", "Acme"},
+		"git@github.com:JetBrains/qodana-cli.git":     {"github.com", "JetBrains"},
+		"ssh://git@git.jetbrains.team:22/qodana/cli":  {"git.jetbrains.team", "qodana"},
+		"github.com/acme/app":                         {"github.com", "acme"},
+		"qodana.labs.jb.gg":                           {"qodana.labs.jb.gg", ""},
+		"https://qodana.cloud/":                       {"qodana.cloud", ""},
+		"/srv/git/jetbrains/app.git":                  {"", "srv"},
+		"file:///srv/git/JetBrains/app.git":           {"", "srv"},
+		"":                                            {"", ""},
+	} {
+		host, owner := parseUrl(rawUrl)
+		assert.Equal(t, expected, [2]string{host, owner}, rawUrl)
+	}
+}
+
+func TestJetBrainsRepository(t *testing.T) {
+	for remoteUrl, expected := range map[string]bool{
+		"https://github.com/JetBrains/qodana-cli.git":           true,
+		"git@github.com:JetBrains-Research/code.git":            true,
+		"github.com/jetbrains/kotlin":                           true,
+		"ssh://git@git.jetbrains.team/qodana/cli.git":           true,
+		"https://code.jetbrains.team/p/qodana/repositories/cli": true,
+		"https://github.com/acme/jetbrains-plugin.git":          false,
+		"https://git.jetbrains.space/acme/project/app.git":      false,
+		"git@gitlab.com:acme/app.git":                           false,
+		"git@bitbucket.org:JetBrains/app.git":                   true,
+		"https://GitHub.com/JetBrains/app.git":                  true,
+		"https://gitlab.acme.com/jetbrains-tools/app.git":       false,
+		"git@github.com:JetBrainsFan/app.git":                   false,
+		"/srv/git/JetBrains/app.git":                            false,
+		"https://bitbucket.org/jetbrains-research/app":          true,
+		"": false,
+	} {
+		assert.Equal(t, expected, isJetBrainsRepository(remoteUrl), remoteUrl)
+	}
 }

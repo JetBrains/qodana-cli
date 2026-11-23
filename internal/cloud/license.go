@@ -40,6 +40,8 @@ type LicenseData struct {
 	LicensePlan        string `json:"licensePlan"`
 	// OrganizationAllowsErrorReporting is optional in the response, a missing field means false.
 	OrganizationAllowsErrorReporting bool `json:"organizationAllowsErrorReporting"`
+	// OrganizationIsInternal tells an organization of JetBrains, optional in the response as well.
+	OrganizationIsInternal bool `json:"organizationIsInternal"`
 }
 
 type LicenseToken struct {
@@ -240,6 +242,7 @@ func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
 	}
 	licenseData := DeserializeLicenseData(licenseDataResponse)
 	telemetry.SetCloudIds(licenseData.ProjectIdHash, licenseData.OrganisationIdHash)
+	telemetry.Allow(!licenseData.OrganizationIsInternal)
 	return licenseData
 }
 

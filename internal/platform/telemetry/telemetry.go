@@ -74,6 +74,8 @@ var (
 	scenario   string
 	startedAt  time.Time
 	analyzing  bool
+	// collectionStarted tells that Start began collecting, which Finish keeps, unlike enabled
+	collectionStarted bool
 	// stage is the last funnel step the run reached, failedStage the step a container run failed at
 	stage       string
 	failedStage string
@@ -93,25 +95,29 @@ func OptedOut(noStatistics bool) bool {
 	return noStatistics || isTruthy(os.Getenv(doNotTrackEnv))
 }
 
-// Start begins collecting statistics for the command; nothing is collected when the user opted out. deviceId gives
-// the device id the CLI gives the linters it runs, it is computed only when statistics are on. env is given to the
-// linter with --env.
-func Start(cmd string, deviceId func() string, noStatistics bool, env []string) {
+// Start begins collecting statistics for the command; nothing is collected when the user opted out. repository gives
+// the device id the CLI gives the linters it runs and the remote url of the project, it is called only when
+// statistics are on. env is given to the linter with --env.
+func Start(cmd string, repository func() (deviceId string, remoteUrl string), noStatistics bool, env []string) {
 	if disabled || OptedOut(noStatistics) || isLicenseOnly(env) {
 		return
 	}
 	now := time.Now()
 	// the CLI that started this container reports the run: nothing is sent from here
 	inContainer := handoverFile() != ""
-	var id string
+	// repository runs git: not under mu. A container checks the remote too: a third-party linter sends its legacy
+	// events from there, see Allowed
+	id, remote := repository()
 	var ready chan *sender
 	var done chan struct{}
 	if !inContainer {
-		// deviceId runs git: not under mu
-		id, ready, done = deviceId(), make(chan *sender, 1), make(chan struct{})
+		ready, done = make(chan *sender, 1), make(chan struct{})
 	}
+	endpoint, _ := parseUrl(envValue(env, qdenv.QodanaEndpointEnv))
+	jetBrains := isJetBrainsHost(endpoint) || isJetBrainsRepository(remote)
 	mu.Lock()
-	enabled, command, startedAt, senders, collected = true, cmd, now, ready, done
+	enabled, collectionStarted, command, startedAt, senders, collected = true, true, cmd, now, ready, done
+	allowed = allowed && !jetBrains
 	binaryVersion := build
 	mu.Unlock()
 	log.RegisterExitHandler(func() { Finish(1, ReasonFatal) })
@@ -172,16 +178,18 @@ func recoverPanic() {
 // from the environment before the license is checked, also on the host of a linter container which never checks it.
 // env is given to the linter with --env, overriding the environment of the CLI.
 func isLicenseOnly(env []string) bool {
-	token, licenseOnlyToken := os.Getenv(qdenv.QodanaToken), os.Getenv(qdenv.QodanaLicenseOnlyToken)
+	return envValue(env, qdenv.QodanaLicenseOnlyToken) != "" && envValue(env, qdenv.QodanaToken) == ""
+}
+
+// envValue returns the variable of the environment of the CLI or, overriding it, of env.
+func envValue(env []string, key string) string {
+	value := os.Getenv(key)
 	for _, variable := range env {
-		switch key, value, _ := strings.Cut(variable, "="); key {
-		case qdenv.QodanaToken:
-			token = value
-		case qdenv.QodanaLicenseOnlyToken:
-			licenseOnlyToken = value
+		if name, envValue, _ := strings.Cut(variable, "="); name == key {
+			value = envValue
 		}
 	}
-	return licenseOnlyToken != "" && token == ""
+	return value
 }
 
 // SetVersion sets the version of a binary built without the one of the CLI, qodana-clang and qodana-cdnet. It must
@@ -192,11 +200,21 @@ func SetVersion(binaryVersion string) {
 	build = binaryVersion
 }
 
-// Allow permits sending the statistics, it is forbidden for license-only tokens.
+// Allow permits sending the statistics, it is forbidden for license-only tokens and internal organizations of
+// JetBrains.
 func Allow(isAllowed bool) {
 	mu.Lock()
 	defer mu.Unlock()
 	allowed = allowed && isAllowed
+}
+
+// Allowed reports whether the statistics of this run may be sent: not when the user opted out, the run is air-gapped
+// or has a license-only token, nor for a run of JetBrains: its repository, its Qodana Cloud endpoint or an internal
+// organization. It is final when the command finishes.
+func Allowed() bool {
+	mu.Lock()
+	defer mu.Unlock()
+	return collectionStarted && allowed
 }
 
 // SetCloudIds sets the Qodana Cloud project and organization id hashes attached to every run event.

@@ -41,7 +41,12 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			telemetry.Start("init", func() string { return platform.GetDeviceIdSalt(cliOptions.ProjectDir)[0] }, cliOptions.NoStatistics, nil)
+			telemetry.Start(
+				"init",
+				func() (string, string) { return platform.DeviceIdAndRemoteUrl(cliOptions.ProjectDir) },
+				cliOptions.NoStatistics,
+				nil,
+			)
 			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
 			localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
