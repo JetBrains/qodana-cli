@@ -47,8 +47,9 @@ go build -o qodana ./cli
   Runtime native libraries, and Go build constraints embed only the matching JAR. This lets parallel
   cross-compilation run without pulling in other platforms' libraries.
 
-ONNX Runtime 1.22.0 has no Windows ARM64 natives, so local embeddings are unavailable on that target. The JAR name
-includes a content hash and the runtime name includes a module hash, so stale extracted tools are never reused.
+The Intel macOS bundle keeps the Java code without ONNX Runtime natives, which ONNX Runtime stopped shipping for that
+target in 1.24. The Windows ARM64 bundle also omits ONNX Runtime natives. The JAR name includes a content hash and the
+runtime name includes a module hash, so stale extracted tools are never reused.
 
 ## Source layout
 

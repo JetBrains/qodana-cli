@@ -123,6 +123,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 }
 
 func TestEdictManagedMCPRequiresInstall(t *testing.T) {
+	skipUnsupportedEdictRoutine(t)
 	t.Chdir(t.TempDir())
 	command := newEdictManagedMCPStartCommand()
 	command.SetArgs([]string{"--foreground"})
