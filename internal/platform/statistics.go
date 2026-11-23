@@ -36,7 +36,10 @@ import (
 
 var wg sync.WaitGroup
 
-const qodanaProjectId = "system_qdcld_project_id"
+const (
+	qodanaProjectId  = "system_qdcld_project_id"
+	qodanaAnalysisId = "system_qdcld_analysis_id"
+)
 
 func createFuserEventChannel(events *[]FuserEvent) chan FuserEvent {
 	ch := make(chan FuserEvent)
@@ -115,17 +118,20 @@ func currentTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func commonEventData(linterInfo thirdpartyscan.LinterInfo, projectIdHash string) map[string]string {
+func commonEventData(linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) map[string]string {
 	eventData := map[string]string{"version": linterInfo.GetMajorVersion()}
 	if projectIdHash != "" {
 		eventData[qodanaProjectId] = projectIdHash
 	}
+	if analysisId != "" {
+		eventData[qodanaAnalysisId] = analysisId
+	}
 	return eventData
 }
 
-func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) {
 	wg.Add(1)
-	eventData := commonEventData(linterInfo, projectIdHash)
+	eventData := commonEventData(linterInfo, projectIdHash, analysisId)
 	ch <- FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.opened",
@@ -135,9 +141,9 @@ func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, pr
 	}
 }
 
-func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) {
 	wg.Add(1)
-	eventData := commonEventData(linterInfo, projectIdHash)
+	eventData := commonEventData(linterInfo, projectIdHash, analysisId)
 	ch <- FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.closed",
@@ -147,9 +153,9 @@ func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, p
 	}
 }
 
-func logOs(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logOs(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) {
 	wg.Add(1)
-	eventData := commonEventData(linterInfo, projectIdHash)
+	eventData := commonEventData(linterInfo, projectIdHash, analysisId)
 	eventData["name"] = runtime.GOOS
 	eventData["arch"] = runtime.GOARCH
 	ch <- FuserEvent{

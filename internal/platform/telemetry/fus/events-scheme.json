@@ -36,6 +36,15 @@
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
             },
             {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
               "path": "container",
               "value": [
                 "{enum#boolean}"
@@ -96,6 +105,15 @@
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
             },
             {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
               "path": "linter",
               "value": [
                 "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
@@ -145,6 +163,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             },
             {
               "path": "mode",
@@ -205,6 +232,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             },
             {
               "path": "token",
@@ -268,6 +304,15 @@
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
             },
             {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
               "path": "reject_reason",
               "value": [
                 "{enum:no_token|token_invalid|token_declined|request_failed|community_plan|empty_key|expired}"
@@ -317,6 +362,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             },
             {
               "path": "linter",
@@ -398,6 +452,15 @@
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
             },
             {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
               "path": "source",
               "value": [
                 "{enum:local|cloud|none}"
@@ -465,6 +528,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             }
           ],
           "description": "Analysis started, including git manipulations"
@@ -498,6 +570,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             },
             {
               "path": "exit_code",
@@ -568,6 +649,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             },
             {
               "path": "total",
@@ -648,6 +738,15 @@
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
             },
             {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
               "path": "publish_status",
               "value": [
                 "{enum:uploaded|failed|skipped}"
@@ -688,6 +787,15 @@
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
               "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
             },
             {
               "path": "exit_code",

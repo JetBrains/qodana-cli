@@ -61,6 +61,7 @@ But you can always override qodana.yaml options with the following command-line 
 				cliOptions.NoCliStatistics(),
 				cliOptions.Env_,
 			)
+			telemetry.SetAnalysisId(cliOptions.AnalysisId)
 			tokenloader.InitializeQodanaGlobalEnv(cliOptions)
 			// QODANA_ORG_TOKEN is resolved: drop it so it never reaches the scan context and its debug output
 			cliOptions.Env_ = qdenv.WithoutEnv(cliOptions.Env_, qdenv.QodanaOrgToken)

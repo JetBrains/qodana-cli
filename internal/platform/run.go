@@ -127,12 +127,13 @@ func RunThirdPartyLinterAnalysis(
 	eventsCh := createFuserEventChannel(&events)
 
 	projectIdHash := thirdPartyCloudData.ProjectIdHash
+	analysisId := telemetry.AnalysisId(context.AnalysisId())
 	defer func() {
-		logProjectClose(eventsCh, linterInfo, projectIdHash)
+		logProjectClose(eventsCh, linterInfo, projectIdHash, analysisId)
 		sendFuserEvents(eventsCh, &events, context, GetDeviceIdSalt(context.ProjectDir())[0])
 	}()
-	logOs(eventsCh, linterInfo, projectIdHash)
-	logProjectOpen(eventsCh, linterInfo, projectIdHash)
+	logOs(eventsCh, linterInfo, projectIdHash, analysisId)
+	logProjectOpen(eventsCh, linterInfo, projectIdHash, analysisId)
 
 	finishAnalysis := telemetry.StartAnalysis()
 	if err = linter.RunAnalysis(context); err != nil {

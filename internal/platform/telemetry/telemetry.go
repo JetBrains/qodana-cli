@@ -64,15 +64,16 @@ var (
 	// build is the version the statistics are sent with, see SetVersion
 	build = version.Version
 
-	mu        sync.Mutex
-	enabled   bool
-	allowed   = true
-	command   string
-	projectId string
-	orgId     string
-	scenario  string
-	startedAt time.Time
-	analyzing bool
+	mu         sync.Mutex
+	enabled    bool
+	allowed    = true
+	command    string
+	projectId  string
+	orgId      string
+	analysisId string
+	scenario   string
+	startedAt  time.Time
+	analyzing  bool
 	// stage is the last funnel step the run reached, failedStage the step a container run failed at
 	stage       string
 	failedStage string
@@ -203,6 +204,24 @@ func SetCloudIds(projectIdHash string, organizationIdHash string) {
 	mu.Lock()
 	defer mu.Unlock()
 	projectId, orgId = projectIdHash, organizationIdHash
+}
+
+var analysisIdRegexp = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+
+// AnalysisId returns the analysis id the statistics are sent with, empty unless it is a UUID: --analysis-id takes
+// any text, like a CI build number, and the IDE rejects it then with the same pattern, see QodanaEventsData.
+func AnalysisId(id string) string {
+	if analysisIdRegexp.MatchString(id) {
+		return id
+	}
+	return ""
+}
+
+// SetAnalysisId sets the analysis id attached to every run event, see AnalysisId.
+func SetAnalysisId(id string) {
+	mu.Lock()
+	defer mu.Unlock()
+	analysisId = AnalysisId(id)
 }
 
 func LinterReady(linter string, version string, paid bool, eap bool, mode string) {
@@ -554,11 +573,11 @@ func recordOnce(group string, id string, data map[string]any) {
 	}
 }
 
-// withIds attaches the command, project and organization ids to the run events, and the token source, which a
+// withIds attaches the command, project, organization and analysis ids to the run events, and the token source, which a
 // container doesn't know, to the license ones. Must be called under mu.
 func withIds(pending []event) []event {
 	ids := map[string]any{"command": command}
-	for key, value := range map[string]string{"project_id": projectId, "org_id": orgId} {
+	for key, value := range map[string]string{"project_id": projectId, "org_id": orgId, "analysis_id": analysisId} {
 		if value != "" {
 			ids[key] = value
 		}

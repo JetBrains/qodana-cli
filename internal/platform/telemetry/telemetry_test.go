@@ -707,6 +707,24 @@ func TestWithIds(t *testing.T) {
 	assert.Equal(t, map[string]any{"os": "linux"}, result[1].Data, "environment events are not linked to the run")
 }
 
+func TestRunEventsHaveTheAnalysisId(t *testing.T) {
+	reset(t)
+	command = "scan"
+	SetAnalysisId("0f8fad5b-d9cb-469f-a165-70867728950e")
+
+	result := withIds([]event{{groupRun, started, 1, nil}})
+
+	assert.Equal(t, map[string]any{"command": "scan", "analysis_id": "0f8fad5b-d9cb-469f-a165-70867728950e"}, result[0].Data)
+}
+
+func TestAnalysisIdIsOnlyAUuid(t *testing.T) {
+	for _, id := range []string{
+		"", "build-42", "0F8FAD5B-D9CB-469F-A165-70867728950E", "https://ci.example.com/0f8fad5b-d9cb-469f-a165-70867728950e",
+	} {
+		assert.Empty(t, AnalysisId(id), id)
+	}
+}
+
 func TestDisabledInTestsOfOtherPackages(t *testing.T) {
 	reset(t)
 	Start("scan", func() string { return "" }, false, nil)
@@ -754,7 +772,7 @@ func reset(t *testing.T) {
 	clear := func() {
 		disabled, connect, build = true, newSender, version.Version
 		enabled, allowed, analyzing = false, true, false
-		command, projectId, orgId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", ""
+		command, projectId, orgId, analysisId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", "", ""
 		baselineFound = false
 		events, senders, collected, startedAt = nil, nil, nil, time.Time{}
 		finishOnce = sync.Once{}

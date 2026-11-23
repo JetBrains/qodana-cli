@@ -35,6 +35,8 @@ const (
 	// [-0-9A-Fa-f]{32,64} and [0-9A-Za-z]{2,16}: the FUS rule syntax has no quantifiers to check the length with.
 	projectIdPattern = `[-0-9A-Fa-f]+`
 	orgIdPattern     = `[0-9A-Za-z]+`
+	// analysisIdPattern is of the analysis id, a UUID the CLI gives the linter as qodana.automation.guid: see AnalysisId.
+	analysisIdPattern = `[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+`
 
 	groupRun     = "qd.cli.run"
 	groupEnv     = "qd.cli.env"
@@ -291,6 +293,9 @@ func runEvent(id string, description string, fields ...fus.FieldDefinition) fus.
 		// the ids of Qodana Cloud, hashed already: they join the events of the CLI with its ones
 		field("project_id", "Qodana Cloud project id hash, as Qodana Cloud sends it", fus.RegexpExpr(projectIdPattern)),
 		field("org_id", "Qodana Cloud organization id hash, as Qodana Cloud sends it", fus.RegexpExpr(orgIdPattern)),
+		// linters from 2027.1 send it as system_qdcld_analysis_id: it joins the events of the CLI with the ones of its
+		// linters. Older linters don't send it, their events join by the device, the project and the time.
+		field("analysis_id", "Analysis id of the scan, which the linter gets too", fus.RegexpExpr(analysisIdPattern)),
 	}
 	return fus.EventDefinition{ID: id, Description: description, Fields: append(common, fields...)}
 }

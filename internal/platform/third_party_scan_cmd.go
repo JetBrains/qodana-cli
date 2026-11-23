@@ -52,6 +52,7 @@ But you can always override qodana.yaml options with the following command-line 
 				cliOptions.NoCliStatistics(),
 				cliOptions.Env_,
 			)
+			telemetry.SetAnalysisId(cliOptions.AnalysisId)
 			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
 			telemetry.Finish(exitCode, "")
 
