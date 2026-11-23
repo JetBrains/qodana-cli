@@ -23,7 +23,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.13.0")
     implementation("org.tomlj:tomlj:2.2.0")
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.7")
-    runtimeOnly("ch.qos.logback:logback-classic:1.6.6")
+    runtimeOnly("ch.qos.logback:logback-classic:1.6.7")
     implementation("org.yaml:snakeyaml:2.7")
     implementation("org.eclipse.jgit:org.eclipse.jgit:7.8.1.202611041320-r")
     testImplementation(kotlin("test-junit5"))
