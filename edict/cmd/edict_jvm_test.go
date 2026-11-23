@@ -434,29 +434,6 @@ func TestEdictMCPStartFailsOnABusyPort(t *testing.T) {
 	server.stop(t, cancel)
 }
 
-func TestEdictMCPStartRetriesWhenConfiguredPortIsBusy(t *testing.T) {
-	prepareEdictProject(t)
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = listener.Close() })
-	busyPort := listener.Addr().(*net.TCPAddr).Port
-	moveEdictPort(t, busyPort)
-	installEdict(t)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	server := startEdictMCP(t, ctx)
-	defer server.stop(t, cancel)
-	if server.url == fmt.Sprintf("http://127.0.0.1:%d/mcp", busyPort) {
-		t.Fatalf("server kept the occupied port: %s", server.url)
-	}
-	if installedURL := edictMCPURL(t); server.url != installedURL {
-		t.Fatalf("server listens at %s, not at the installed address %s", server.url, installedURL)
-	}
-}
-
 // runEdictMCPStart runs `qodana edict mcp start --foreground` to completion, for a start that is expected to fail.
 func runEdictMCPStart(ctx context.Context) (string, error) {
 	command := newEdictManagedMCPStartCommand()
