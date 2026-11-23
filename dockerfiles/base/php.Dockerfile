@@ -1,5 +1,5 @@
 ARG NODE_TAG="22-debian13-dev@sha256:02f9c039d2042991abd48e07d0a6beb90ce9b85b74399596d9982e02b7294182"
-ARG PHP_TAG="8.5-dev"
+ARG PHP_TAG="8.5-dev@sha256:d3075ecfc7cdad6922dc3ee5895719c1088cccd7eb1d4e56f0ce87af3d41be5b"
 ARG COMPOSER_TAG="2.11.1"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM composer:$COMPOSER_TAG AS composer_base
