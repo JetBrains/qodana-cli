@@ -41,6 +41,12 @@ const (
 	qodanaAnalysisId = "system_qdcld_analysis_id"
 )
 
+// StartStatistics starts the statistics of the command run on the project, see telemetry.Start: it runs git for the
+// device id and the remote only when the statistics are on.
+func StartStatistics(command string, projectDir string, noStatistics bool, env []string) {
+	telemetry.Start(command, func() (string, string) { return DeviceIdAndRemoteUrl(projectDir) }, noStatistics, env)
+}
+
 func createFuserEventChannel(events *[]FuserEvent) chan FuserEvent {
 	ch := make(chan FuserEvent)
 	guid := uuid.New().String()

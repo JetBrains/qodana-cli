@@ -31,7 +31,8 @@ func GetDeviceIdSalt(projectDir string) []string {
 	return deviceIdSalt(func() string { return getRemoteUrl(projectDir) })
 }
 
-// DeviceIdAndRemoteUrl returns the device id of GetDeviceIdSalt and the remote url of the git repository of the project.
+// DeviceIdAndRemoteUrl returns the device id of GetDeviceIdSalt and the remote url of the git repository of the
+// project.
 func DeviceIdAndRemoteUrl(projectDir string) (string, string) {
 	remoteUrl := getRemoteUrl(projectDir)
 	return deviceIdSalt(func() string { return remoteUrl })[0], remoteUrl

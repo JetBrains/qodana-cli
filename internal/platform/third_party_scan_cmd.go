@@ -46,12 +46,7 @@ But you can always override qodana.yaml options with the following command-line 
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
 			// goreleaser stamps the version of this binary into its main package only
 			telemetry.SetVersion(linterInfo.LinterVersion)
-			telemetry.Start(
-				"scan",
-				func() (string, string) { return DeviceIdAndRemoteUrl(cliOptions.ProjectDir) },
-				cliOptions.NoCliStatistics(),
-				cliOptions.Env_,
-			)
+			StartStatistics("scan", cliOptions.ProjectDir, cliOptions.NoCliStatistics(), cliOptions.Env_)
 			telemetry.SetAnalysisId(cliOptions.AnalysisId)
 			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
 			telemetry.Finish(exitCode, "")
