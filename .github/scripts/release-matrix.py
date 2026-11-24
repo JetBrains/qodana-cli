@@ -19,7 +19,7 @@ RUNNERS = {
     "linux/arm64": "ubuntu-24.04-arm",
 }
 
-TARGET_BRANCH = os.getenv("GITHUB_BASE_REF")
+TARGET_BRANCH = os.getenv("GITHUB_BASE_REF") or None  # empty outside of pull requests
 
 def changed_in_this_pr(path):
     if TARGET_BRANCH is None:
@@ -46,10 +46,10 @@ if dockerfiles_dir.exists():
         if any(fnmatch(product_dir.name, pattern) for pattern in EXCLUDE_PATTERNS):
             continue  # Excluded by EXCLUDE_PATTERNS
 
-        if not (product_dir / "Dockerfile").exists():
+        if not (product_dir / "internal.Dockerfile").exists():
             continue  # Dockerfile missing
 
-        if TARGET_BRANCH is not None and not changed_in_this_pr(f"dockerfiles/{product_dir.name}/Dockerfile"):
+        if TARGET_BRANCH is not None and not changed_in_this_pr(f"dockerfiles/{product_dir.name}/internal.Dockerfile"):
             continue  # This is a PR and this release's Dockerfile was unchanged
 
         for platform in PLATFORMS:
@@ -58,6 +58,9 @@ if dockerfiles_dir.exists():
                 "platform": platform,
                 "runner": RUNNERS[platform],
             })
+
+if TARGET_BRANCH is None and not result:
+    sys.exit("no product internal.Dockerfile found")  # an empty matrix outside PRs means the build silently tests nothing
 
 json.dump(result, sys.stdout, ensure_ascii=False)
 json.dump(result, sys.stderr, ensure_ascii=False, indent="\t")
