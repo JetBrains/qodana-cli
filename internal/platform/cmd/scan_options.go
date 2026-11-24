@@ -227,13 +227,13 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.FullHistory,
 		"full-history",
 		false,
-		"Go through the full commit history and run the analysis on each commit. If combined with `--commit`, analysis will be started from the given commit. Could take a long time.",
+		"Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.",
 	)
 	flags.StringVar(
 		&options.Commit,
 		"commit",
 		"",
-		"Commit to start a diff run from. Only files changed between this commit and `--diff-end` will be analysed. If combined with `--full-history`, full history analysis will be started from the given commit.",
+		"Commit to start a diff run from. Only files changed between this commit and --diff-end will be analysed. If combined with --full-history, full history analysis will be started from the given commit.",
 	)
 	flags.StringVar(
 		&options.FailThreshold,
