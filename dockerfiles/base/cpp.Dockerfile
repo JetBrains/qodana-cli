@@ -1,5 +1,6 @@
 ARG BASE_TAG="trixie-debian13-dev"
 ARG NODE_TAG="22-debian13-dev@sha256:02f9c039d2042991abd48e07d0a6beb90ce9b85b74399596d9982e02b7294182"
+FROM qodana-tools
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM cpp-community
 
@@ -26,3 +27,6 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         jq && \
     apt-get autoremove -y && apt-get clean
+
+# Strips the distrusted roots from the certificate bundles of the IDE, once the image installs it (QD-16607)
+COPY --from=qodana-tools /strip-distrusted-roots.py /usr/local/lib/qodana/strip-distrusted-roots.py

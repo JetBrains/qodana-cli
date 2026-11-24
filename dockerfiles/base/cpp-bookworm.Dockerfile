@@ -3,6 +3,7 @@
 # trixie-native debian13 node binary won't load there (glibc).
 ARG BASE_TAG="bookworm"
 ARG NODE_TAG="22-debian12-dev@sha256:36d8292daa06aef862ace71c082e3825aaa2eac11c3ef546c0806bffd246af7b"
+FROM qodana-tools
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM cpp-community
 
@@ -30,3 +31,6 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         jq && \
     apt-get autoremove -y && apt-get clean
+
+# Strips the distrusted roots from the certificate bundles of the IDE, once the image installs it (QD-16607)
+COPY --from=qodana-tools /strip-distrusted-roots.py /usr/local/lib/qodana/strip-distrusted-roots.py

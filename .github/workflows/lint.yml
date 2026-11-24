@@ -9,6 +9,7 @@ on:
       - 'scripts/dockerfiles_test.py'
       - 'scripts/validate_dockerfiles_base.py'
       - 'scripts/validate_dockerfiles_base_test.py'
+      - 'scripts/strip_distrusted_roots_test.py'
 
 jobs:
   lint:

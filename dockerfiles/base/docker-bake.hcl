@@ -91,8 +91,18 @@ group "ruby" {
   targets = ["ruby3x"]
 }
 
+# Tools shared by the bases (qodana-tools.Dockerfile); built only as their context, never pushed
+target "qodana-tools" {
+  platforms  = split(",", BASE_PLATFORMS)
+  dockerfile = "qodana-tools.Dockerfile"
+  output     = ["type=cacheonly"]
+}
+
 target "jvm-community" {
   inherits = ["_base"]
+  contexts = {
+    qodana-tools = "target:qodana-tools"
+  }
   tags = tags("jvm-community-base-latest")
   dockerfile = "jvm-community.Dockerfile"
 }
@@ -109,6 +119,7 @@ target "jvm" {
 target "python-community" {
   inherits = ["_base"]
   contexts = {
+    qodana-tools = "target:qodana-tools"
     jvm-community = "target:jvm-community"
   }
   tags = tags("python-community-base-latest")
@@ -150,6 +161,9 @@ target "php-base-latest" {
 
 target "rust-base-latest" {
   inherits = ["_base"]
+  contexts = {
+    qodana-tools = "target:qodana-tools"
+  }
   tags = tags("rust-base-latest")
   dockerfile = "rust.Dockerfile"
 }
@@ -170,6 +184,7 @@ target "cpp-community" {
 target "cpp" {
   inherits = ["_base"]
   contexts = {
+    qodana-tools = "target:qodana-tools"
     cpp-community = "target:cpp-community-${clang}-latest"
   }
   matrix = {
@@ -200,6 +215,7 @@ target "cpp-community-bookworm" {
 target "cpp-bookworm" {
   inherits = ["_base"]
   contexts = {
+    qodana-tools = "target:qodana-tools"
     cpp-community = "target:cpp-community-bookworm-${clang}-latest"
   }
   matrix = {
@@ -222,6 +238,7 @@ target "dotnet-community" {
 target "dotnet" {
   inherits = ["_base"]
   contexts = {
+    qodana-tools = "target:qodana-tools"
     dotnet-community = "target:dotnet-community"
   }
   tags = tags("dotnet-base-latest")

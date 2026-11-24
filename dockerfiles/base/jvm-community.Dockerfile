@@ -1,4 +1,6 @@
 ARG BASE_TAG="trixie-debian13-dev@sha256:3a0f849e7ecad5433a8a517e4606794dc65941b275177c7f44002c3fc322d7a8"
+# For python-community, which builds on this base and uses the tools (see qodana-tools.Dockerfile)
+FROM qodana-tools
 FROM dhi.io/debian-base:$BASE_TAG
 
 ENV HOME="/root" \

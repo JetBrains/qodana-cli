@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1
 ARG BASE_TAG="trixie-debian13-dev@sha256:3a0f849e7ecad5433a8a517e4606794dc65941b275177c7f44002c3fc322d7a8"
+FROM qodana-tools
 FROM dhi.io/debian-base:$BASE_TAG
 
 # renovate: datasource=npm depName=eslint
@@ -51,3 +52,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     rustup component add rust-src && \
     chmod -R +w $RUSTUP_HOME && \
     rm -rf /tmp/*
+
+# Strips the distrusted roots from the certificate bundles of the IDE, once the image installs it (QD-16607)
+COPY --from=qodana-tools /strip-distrusted-roots.py /usr/local/lib/qodana/strip-distrusted-roots.py

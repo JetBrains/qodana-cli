@@ -26,7 +26,11 @@ def bake_tags(group):
     env = {k: v for k, v in os.environ.items() if k not in ("PUSH_BY_DIGEST", "BASE_PLATFORMS")}
     out = sp.run(["docker", "buildx", "bake", "--print", group], env=env, check=True, capture_output=True, text=True)
     targets = json.loads(out.stdout)["target"]
-    return {name: target.get("tags") or [] for name, target in targets.items()}
+    # A target without tags that the others only use as a build context (qodana-tools) is never pushed
+    contexts = {ref.removeprefix("target:") for target in targets.values()
+                for ref in (target.get("contexts") or {}).values() if ref.startswith("target:")}
+    return {name: target.get("tags") or [] for name, target in targets.items()
+            if target.get("tags") or name not in contexts}
 
 
 def load_metadata(digests_dir, group):
