@@ -309,6 +309,22 @@ func ReportPublished(hasToken bool, uploaded bool) {
 	track(groupRun, reportPublished, map[string]any{"publish_status": status})
 }
 
+// ReportShown records where qodana show shows the report: the one of Qodana Cloud, the local one it serves, or the
+// results directory.
+func ReportShown(target string) {
+	track(groupRun, reportShown, map[string]any{"target": target})
+}
+
+// ContributorsCounted records the active contributors qodana contributors counts in the repositories over the days,
+// by order of magnitude.
+func ContributorsCounted(contributors int, repositories int, days int) {
+	track(
+		groupRun, contributorsCounted, map[string]any{
+			"contributors": bucket(contributors), "repositories": bucket(repositories), "days": max(days, 0),
+		},
+	)
+}
+
 // LinterSelected records the linter qodana init configures the project with, or that the project has one already.
 func LinterSelected(linter string, preconfigured bool) {
 	data := map[string]any{"preconfigured": preconfigured}

@@ -11,7 +11,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -80,7 +80,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -140,7 +140,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -209,7 +209,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -279,7 +279,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -339,7 +339,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -427,7 +427,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -505,7 +505,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -547,7 +547,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -593,7 +593,7 @@
             {
               "path": "reason",
               "value": [
-                "{enum:success|fail_threshold|empty_changeset|license_expired|timeout|out_of_memory|linter_error|internal_error|license_rejected|no_files|cancelled|interrupted|fatal|baseline_error|upload_failed|setup_error|unsupported_project|invalid_config|linter_download_failed|docker_unavailable|image_pull_failed|git_missing|report_failed|bootstrap_failed}"
+                "{enum:success|fail_threshold|empty_changeset|license_expired|timeout|out_of_memory|linter_error|internal_error|license_rejected|no_files|cancelled|interrupted|fatal|baseline_error|upload_failed|setup_error|unsupported_project|invalid_config|linter_download_failed|docker_unavailable|image_pull_failed|git_missing|report_failed|bootstrap_failed|report_missing|serve_failed}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -626,7 +626,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -713,7 +713,7 @@
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -759,12 +759,132 @@
           "description": "Report is published to Qodana Cloud"
         },
         {
+          "event": "report.shown",
+          "fields": [
+            {
+              "path": "command",
+              "value": [
+                "{enum:init|scan|send|show|contributors}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CLI command"
+            },
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "target",
+              "value": [
+                "{enum:cloud|local|dir}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The report of Qodana Cloud, the local one served, or the results directory"
+            }
+          ],
+          "description": "Report is shown by qodana show"
+        },
+        {
+          "event": "contributors.counted",
+          "fields": [
+            {
+              "path": "command",
+              "value": [
+                "{enum:init|scan|send|show|contributors}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CLI command"
+            },
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "contributors",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Active contributors, by order of magnitude"
+            },
+            {
+              "path": "repositories",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Repositories counted, by order of magnitude"
+            },
+            {
+              "path": "days",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Period the contributors are active in"
+            }
+          ],
+          "description": "Active contributors are counted by qodana contributors"
+        },
+        {
           "event": "finished",
           "fields": [
             {
               "path": "command",
               "value": [
-                "{enum:init|scan}"
+                "{enum:init|scan|send|show|contributors}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -810,7 +930,7 @@
             {
               "path": "reason",
               "value": [
-                "{enum:success|fail_threshold|empty_changeset|license_expired|timeout|out_of_memory|linter_error|internal_error|license_rejected|no_files|cancelled|interrupted|fatal|baseline_error|upload_failed|setup_error|unsupported_project|invalid_config|linter_download_failed|docker_unavailable|image_pull_failed|git_missing|report_failed|bootstrap_failed}"
+                "{enum:success|fail_threshold|empty_changeset|license_expired|timeout|out_of_memory|linter_error|internal_error|license_rejected|no_files|cancelled|interrupted|fatal|baseline_error|upload_failed|setup_error|unsupported_project|invalid_config|linter_download_failed|docker_unavailable|image_pull_failed|git_missing|report_failed|bootstrap_failed|report_missing|serve_failed}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
@@ -828,7 +948,7 @@
             {
               "path": "stage",
               "value": [
-                "{enum:started|linter.selected|linter.downloaded|linter.ready|license.obtained|license.rejected|baseline.resolved|analysis.started|analysis.finished|problems.found|report.published}"
+                "{enum:started|linter.selected|linter.downloaded|linter.ready|license.obtained|license.rejected|baseline.resolved|analysis.started|analysis.finished|problems.found|report.published|report.shown|contributors.counted}"
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,

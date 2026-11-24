@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -392,22 +393,34 @@ func SaveReport(resultDir string, reportDir string, cacheDir string) {
 	unpackWebUI(cacheDir, reportDir)
 }
 
-// ShowReport serves the Qodana report
-func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) {
+// ErrReportMissing is given to the shown callback of ShowReport when there is no report to show.
+var ErrReportMissing = errors.New("qodana report not found")
+
+// ShowReport opens the report of Qodana Cloud, or serves the local one until the user interrupts it. shown, which may
+// be nil, is called with the target, cloud or local, before the report is opened or served, and with the error when
+// the report can't be shown.
+func ShowReport(cacheDir string, resultsDir string, reportDir string, port int, shown func(target string, err error)) {
+	if shown == nil {
+		shown = func(string, error) {}
+	}
 	cloudUrl := cloud.GetReportUrl(resultsDir)
 	if cloudUrl != "" {
-		openReport(cloudUrl, reportDir, port)
+		shown("cloud", nil)
+		openBrowserWhenAvailable(cloudUrl)
 	} else {
 		msg.WarningMessage("Press Ctrl+C to stop serving the report\n")
 		msg.PrintProcess(
 			func(_ *pterm.SpinnerPrinter) {
 				if _, err := os.Stat(reportDir); errors.Is(err, os.ErrNotExist) {
+					shown("local", ErrReportMissing)
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
+					// reached only when a test replaces the exit of logrus
+					return
 				}
 				if _, err := os.Stat(filepath.Join(reportDir, "index.html")); errors.Is(err, os.ErrNotExist) {
 					unpackWebUI(cacheDir, reportDir)
 				}
-				openReport("", reportDir, port)
+				serveReport(reportDir, port, func(err error) { shown("local", err) })
 			},
 			fmt.Sprintf("Showing Qodana report from http://localhost:%d/", port),
 			"",
@@ -421,7 +434,7 @@ func InteractiveShowReport(showReport bool, cacheDir string, resultsDir string, 
 		showReport = msg.AskUserConfirm("Do you want to open the latest report")
 	}
 	if showReport {
-		ShowReport(cacheDir, resultsDir, reportDir, port)
+		ShowReport(cacheDir, resultsDir, reportDir, port, nil)
 		return
 	}
 	if !qdenv.IsContainer() && msg.IsInteractive() {
@@ -459,17 +472,19 @@ func unpackWebUI(cacheDir string, reportDir string) {
 	}
 }
 
-// openReport serves the report on the given port and opens the browser.
-func openReport(cloudUrl string, path string, port int) {
-	if cloudUrl != "" {
-		openBrowserWhenAvailable(cloudUrl)
+// serveReport serves the local report and opens the browser: served is called once the server listens, or with the
+// error it can't listen with.
+func serveReport(path string, port int, served func(err error)) {
+	server := createReportServer(path, port)
+	listener, err := net.Listen("tcp", server.Addr)
+	served(err)
+	if err != nil {
+		msg.WarningMessage("Problem serving report, %s\n", err.Error())
 		return
 	}
-	url := fmt.Sprintf("http://localhost:%d", port)
-	go openBrowserWhenAvailable(url)
-	server := createReportServer(path, port)
+	go openBrowserWhenAvailable(fmt.Sprintf("http://localhost:%d", port))
 	defer func() { _ = server.Close() }()
-	err := server.ListenAndServe()
+	err = server.Serve(listener)
 	if err != nil {
 		msg.WarningMessage("Problem serving report, %s\n", err.Error())
 		return
@@ -487,8 +502,11 @@ func openBrowserWhenAvailable(url string) {
 	if resp.StatusCode != http.StatusOK {
 		return
 	}
-	_ = utils.OpenBrowser(url)
+	_ = openBrowser(url)
 }
+
+// openBrowser opens the url in the browser, tests replace it.
+var openBrowser = utils.OpenBrowser
 
 func createReportServer(path string, port int) *http.Server {
 	addr := fmt.Sprintf("localhost:%d", port)

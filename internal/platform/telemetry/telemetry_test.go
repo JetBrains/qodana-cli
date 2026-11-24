@@ -107,6 +107,8 @@ func TestEventsMatchScheme(t *testing.T) {
 			map[string]any{"total": "100+", "new": "10+", "unchanged": "100+", "absent": "0", "baseline": "applied"},
 		},
 		{groupRun, reportPublished, 0, map[string]any{"publish_status": "uploaded"}},
+		{groupRun, reportShown, 0, map[string]any{"target": "local"}},
+		{groupRun, contributorsCounted, 0, map[string]any{"contributors": "10+", "repositories": "1+", "days": 90}},
 		{
 			groupRun,
 			finished,
@@ -153,6 +155,77 @@ func TestEventsMatchScheme(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestCommandsMatchScheme(t *testing.T) {
+	validator := newTestValidator(t)
+	for _, command := range []string{"init", "scan", "send", "show", "contributors"} {
+		data := map[string]any{
+			"command": command, "exit_code": 0, "reason": ReasonSuccess, "success": true, "stage": reportShown,
+		}
+		validated, dropped := validator.Validate(
+			fus.LogEvent{Group: fus.Group(groupRun, 1), Event: fus.EventAction{ID: finished, Data: data}},
+		)
+		require.False(t, dropped, command)
+		assert.Equal(t, command, validated.Event.Data["command"])
+		assert.Equal(t, reportShown, validated.Event.Data["stage"])
+	}
+}
+
+func TestReasonsMatchScheme(t *testing.T) {
+	validator := newTestValidator(t)
+	for _, reason := range reasons {
+		data := map[string]any{"command": "show", "exit_code": 1, "reason": reason, "success": false, "stage": started}
+		validated, dropped := validator.Validate(
+			fus.LogEvent{Group: fus.Group(groupRun, 1), Event: fus.EventAction{ID: finished, Data: data}},
+		)
+		require.False(t, dropped, reason)
+		assert.Equal(t, reason, validated.Event.Data["reason"])
+	}
+}
+
+func TestMissingReportIsNoCrash(t *testing.T) {
+	received := fakeFus(t)
+	Start("show", func() (string, string) { return testDevice, "" }, false, nil)
+	Fail(ReasonReportMissing)
+	// the log.Fatal of ShowReport
+	Finish(1, ReasonFatal)
+
+	assert.Equal(t, ReasonReportMissing, lastEvent(<-received, finished)["reason"])
+}
+
+func TestShowIsSent(t *testing.T) {
+	received := fakeFus(t)
+	Start("show", func() (string, string) { return testDevice, "" }, false, nil)
+	ReportShown("cloud")
+	Finish(0, "")
+
+	report := <-received
+	assert.Equal(t, map[string]any{"command": "show", "target": "cloud"}, lastEvent(report, reportShown))
+	assert.Equal(t, reportShown, lastEvent(report, finished)["stage"])
+}
+
+func TestContributorsAreCounted(t *testing.T) {
+	received := fakeFus(t)
+	Start("contributors", func() (string, string) { return testDevice, "" }, false, nil)
+	ContributorsCounted(42, 3, 90)
+	ContributorsCounted(0, 1, -1)
+	Finish(0, "")
+
+	report := <-received
+	var counted []map[string]any
+	for _, e := range report.Events {
+		if e.Event.ID == contributorsCounted {
+			counted = append(counted, e.Event.Data)
+		}
+	}
+	require.Len(t, counted, 2)
+	assert.Equal(
+		t,
+		map[string]any{"command": "contributors", "contributors": "10+", "repositories": "1+", "days": float64(90)},
+		counted[0],
+	)
+	assert.Equal(t, float64(0), counted[1]["days"], "a negative period is no period")
 }
 
 // ids as the linter and Qodana Cloud have them

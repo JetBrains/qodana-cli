@@ -59,6 +59,9 @@ const (
 	problemsFound    = "problems.found"
 	reportPublished  = "report.published"
 	finished         = "finished"
+	// the steps of qodana show and qodana contributors
+	reportShown         = "report.shown"
+	contributorsCounted = "contributors.counted"
 )
 
 // ScenarioStartCommitMissing is the scenario of a diff run whose start commit is missing, so it analyzes the current
@@ -86,6 +89,9 @@ const (
 	ReasonBaselineError   = "baseline_error"
 	ReasonUploadFailed    = "upload_failed"
 	ReasonReportFailed    = "report_failed"
+	// qodana show finds no report, or can't serve it
+	ReasonReportMissing = "report_missing"
+	ReasonServeFailed   = "serve_failed"
 	// failures before the analysis
 	ReasonSetupError         = "setup_error"
 	ReasonUnsupportedProject = "unsupported_project"
@@ -103,6 +109,7 @@ var reasons = []string{
 	ReasonCancelled, ReasonInterrupted, ReasonFatal, ReasonBaselineError, ReasonUploadFailed,
 	ReasonSetupError, ReasonUnsupportedProject, ReasonInvalidConfig, ReasonLinterDownload,
 	ReasonDockerUnavailable, ReasonImagePull, ReasonGitMissing, ReasonReportFailed, ReasonBootstrapFailed,
+	ReasonReportMissing, ReasonServeFailed,
 }
 
 // other is sent for a value outside its enum, which FUS would drop
@@ -236,13 +243,23 @@ var definition = &fus.Definition{
 					field("publish_status", "The report is uploaded, failed to upload, or not published without a token",
 						fus.EnumExpr("uploaded", "failed", "skipped")),
 				),
+				runEvent(reportShown, "Report is shown by qodana show",
+					field("target", "The report of Qodana Cloud, the local one served, or the results directory",
+						fus.EnumExpr("cloud", "local", "dir")),
+				),
+				runEvent(contributorsCounted, "Active contributors are counted by qodana contributors",
+					field("contributors", "Active contributors, by order of magnitude", fus.EnumExpr(buckets...)),
+					field("repositories", "Repositories counted, by order of magnitude", fus.EnumExpr(buckets...)),
+					field("days", "Period the contributors are active in", integerRule),
+				),
 				runEvent(finished, "Command finished",
 					field("exit_code", "Exit code of the command", exitCodeRules...),
 					field("reason", "Result of the command", fus.EnumExpr(reasons...)),
 					boolField("success", "The command succeeded"),
 					field("stage", "Last funnel step the command reached", fus.EnumExpr(
 						started, linterSelected, linterDownloaded, linterReady, licenseObtained, licenseRejected,
-						baselineResolved, analysisStarted, analysisFinished, problemsFound, reportPublished,
+						baselineResolved, analysisStarted, analysisFinished, problemsFound, reportPublished, reportShown,
+						contributorsCounted,
 					)),
 					field("duration_ms", "Duration of the command", integerRule),
 				),
@@ -289,7 +306,7 @@ var tokenField = field("token", "Where the Qodana Cloud token comes from",
 // runEvent adds the fields that Finish attaches to every qd.cli.run event.
 func runEvent(id string, description string, fields ...fus.FieldDefinition) fus.EventDefinition {
 	common := []fus.FieldDefinition{
-		field("command", "CLI command", fus.EnumExpr("init", "scan")),
+		field("command", "CLI command", fus.EnumExpr("init", "scan", "send", "show", "contributors")),
 		// the ids of Qodana Cloud, hashed already: they join the events of the CLI with its ones
 		field("project_id", "Qodana Cloud project id hash, as Qodana Cloud sends it", fus.RegexpExpr(projectIdPattern)),
 		field("org_id", "Qodana Cloud organization id hash, as Qodana Cloud sends it", fus.RegexpExpr(orgIdPattern)),
