@@ -1,3 +1,25 @@
+{#- The certificate bundles of the IDE that still have the distrusted roots (QD-16607), by variant -#}
+{%- set distrusted_roots_in = {
+    "python": [
+        "plugins/python-ce/helpers/pip-*.whl",
+        "plugins/python-ce/helpers/virtualenv*.pyz",
+    ],
+    "cpp": [
+        "plugins/python-ce/helpers/pip-*.whl",
+        "plugins/python-ce/helpers/virtualenv*.pyz",
+        "bin/gdb/linux/*/lib/python3*.zip",
+        "bin/lldb/linux/*/lib/python3*.zip",
+    ],
+    "dotnet": [
+        "lib/ReSharperHost/*/dotnet/sdk/*/trustedroots/*.pem",
+        "plugins/cidr-debugger*/bin/gdb/linux/*/lib/python3*.zip",
+        "plugins/cidr-debugger*/bin/lldb/linux/*/lib/python3*.zip",
+    ],
+    "rust": [
+        "bin/gdb/linux/*/lib/python3*.zip",
+        "bin/lldb/linux/*/lib/python3*.zip",
+    ],
+} -%}
 ARG QD_RELEASE=""
 ARG QD_VERSION="{{ qd_version }}"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="{{ qd_image }}"
@@ -52,7 +74,15 @@ RUN set -ex && \
     mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd  && \
     mv /tmp/qd/qodana-QD* "$QODANA_DIST" && \
     chmod +x "$QODANA_DIST"/bin/*.sh "$QODANA_DIST"/bin/qodana && \
-    update-alternatives --install /usr/bin/java java "$JAVA_HOME/bin/java" 0 && \
+{% if variant in distrusted_roots_in %}    if ! python3 -I -c "import zipfile" 2>/dev/null; then \
+        apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 && \
+        qd_python="installed"; \
+    fi && \
+    python3 -I /usr/local/lib/qodana/strip-distrusted-roots.py \
+{% for path in distrusted_roots_in[variant] %}      "$QODANA_DIST"/{{ path }} \
+{% endfor %}      && \
+    if [ "${qd_python:-}" = "installed" ]; then apt-get purge -y --auto-remove python3; fi && \
+{% endif %}    update-alternatives --install /usr/bin/java java "$JAVA_HOME/bin/java" 0 && \
     update-alternatives --install /usr/bin/javac javac "$JAVA_HOME/bin/javac" 0 && \
     update-alternatives --set java "$JAVA_HOME/bin/java" && \
     update-alternatives --set javac "$JAVA_HOME/bin/javac" && \

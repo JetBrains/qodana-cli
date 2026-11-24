@@ -10,6 +10,10 @@ import zipfile
 
 import pytest
 
+sys.path.insert(0, os.path.dirname(__file__))
+
+import dockerfiles  # noqa: E402
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOOLS = os.path.join(REPO, "dockerfiles", "base", "qodana-tools.Dockerfile")
 BUNDLE = "pip/_vendor/certifi/cacert.pem"
@@ -271,3 +275,28 @@ def test_fails_when_a_wheel_is_pinned_twice(tool, tmp_path):
     assert result.returncode != 0 and "pinned more than once" in result.stderr
     assert path.read_bytes() == original
 
+
+@pytest.fixture
+def _repo_root():
+    old = os.getcwd()
+    os.chdir(REPO)
+    yield
+    os.chdir(old)
+
+
+@pytest.mark.parametrize("variant, strips", [
+    ("python", True), ("python-community", True), ("cpp", True), ("dotnet", True), ("rust", True),
+    ("jvm", False), ("go", False),
+])
+def test_generated_dockerfiles_install_and_run_the_tool(_repo_root, monkeypatch, variant, strips):
+    monkeypatch.setattr(dockerfiles, "load_release_info", lambda *_: {})
+    env = dockerfiles.create_jinja_environment()
+    intellij = dockerfiles.load_template(env, "dockerfiles/base/templates/intellij.Dockerfile.j2")
+    thirdparty = dockerfiles.load_template(env, "dockerfiles/base/templates/thirdparty.Dockerfile.j2")
+    data = dockerfiles.load_variants()[variant]
+    content = dockerfiles.generate_variant_dockerfile(variant, data, "dockerfiles/base", intellij, thirdparty, "2026.3")
+    assert content.count("FROM scratch AS qodana-tools") <= 1
+    assert ("python3 -I /usr/local/lib/qodana/strip-distrusted-roots.py" in content) == strips
+    if strips:
+        assert content.count("FROM scratch AS qodana-tools") == 1
+        assert "COPY --from=qodana-tools /strip-distrusted-roots.py /usr/local/lib/qodana/" in content

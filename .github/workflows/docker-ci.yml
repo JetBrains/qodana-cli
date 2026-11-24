@@ -69,6 +69,40 @@ jobs:
           mkdir -p "$dist/bin" "$dist/jbr/bin"
           touch "$dist/bin/qodana" "$dist/bin/stub.sh" "$dist/jbr/bin/java" "$dist/jbr/bin/javac" "$dist/qodana-clang" "$dist/qodana-cdnet"
           chmod +x "$dist/jbr/bin/java" "$dist/jbr/bin/javac"
+      # The images strip the distrusted roots from the IDE's certificate bundles (QD-16607), so stub each one the
+      # template lists for the linter with a real pip wheel that still has the roots: on its own, embedded in a zipapp
+      # like virtualenv-py3.pyz or a standard library like python312.zip, or as the PEM trust list of the .NET SDK
+      - name: Stub IDE certificate bundles
+        if: ${{ contains(fromJSON('["python", "python-community", "cpp", "dotnet", "rust"]'), matrix.linter) }}
+        run: |
+          wheel="$RUNNER_TEMP/pip-25.0.1-py3-none-any.whl"
+          curl -fsSL -o "$wheel" \
+            "https://files.pythonhosted.org/packages/c9/bc/b7db44f5f39f9d0494071bddae6880eb645970366d0a200022a1a93d57f5/pip-25.0.1-py3-none-any.whl"
+          echo "c46efd13b6aa8279f33f2864459c8ce587ea6a1a59ee20de055868d8f7688f7f  $wheel" | sha256sum --check
+          python3 -I -c '
+          import os, shutil, sys, zipfile
+          wheel, dist, linter = sys.argv[1:]
+          helpers = ["plugins/python-ce/helpers/pip-25.0.1-py3-none-any.whl", "plugins/python-ce/helpers/virtualenv-py3.pyz"]
+          debuggers = ["bin/gdb/linux/x64/lib/python312.zip", "bin/lldb/linux/x64/lib/python312.zip"]
+          stubs = {
+              "python": helpers, "python-community": helpers, "cpp": helpers + debuggers, "rust": debuggers,
+              "dotnet": ["lib/ReSharperHost/linux-x64/dotnet/sdk/10.0.100/trustedroots/codesignctl.pem"]
+                        + ["plugins/cidr-debugger-plugin/" + d for d in debuggers],
+          }[linter]
+          for stub in stubs:
+              path = os.path.join(dist, stub)
+              os.makedirs(os.path.dirname(path), exist_ok=True)
+              if path.endswith(".whl"):
+                  shutil.copy(wheel, path)
+              elif path.endswith(".pem"):
+                  with zipfile.ZipFile(wheel) as source, open(path, "wb") as pem:
+                      pem.write(source.read("pip/_vendor/certifi/cacert.pem"))
+              else:
+                  inside = "ensurepip/_bundled/" if path.endswith(".zip") else "virtualenv/seed/wheels/embed/"
+                  with zipfile.ZipFile(path, "w") as archive:
+                      archive.write(wheel, inside + os.path.basename(wheel))
+              print("stubbed", path)
+          ' "$wheel" "dockerfiles/${{ matrix.linter }}/${{ matrix.platform }}" "${{ matrix.linter }}"
       - name: Build
         uses: docker/build-push-action@v7
         with:
