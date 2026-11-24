@@ -14,6 +14,7 @@ import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.core.EdictManagementService
 import org.jetbrains.qodana.edict.core.EdictDistributionService
+import org.jetbrains.qodana.edict.core.EdictTimeouts
 import org.jetbrains.qodana.edict.core.EdictGenerationService
 import org.jetbrains.qodana.edict.core.EdictMcpToolset
 import org.jetbrains.qodana.edict.core.EdictRepositoryState
@@ -110,7 +111,8 @@ internal class EdictServer private constructor(
           feedbackApi?.let { FeedbackMcpToolset(management, FeedbackSignals(FeedbackRecords(paths), it, store, Clock.systemUTC())) },
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
-          mcpStreamableHttp { toolset.createServer() }
+          // Keep the idle session for the whole agent run, not just the SDK's default 30 minutes.
+          mcpStreamableHttp(sessionIdleTimeout = EdictTimeouts.session) { toolset.createServer() }
         }.start(wait = false)
         val resolvedPort = runBlocking { engine.engine.resolvedConnectors() }.single().port
         return EdictServer(store, management, inspectionServer, engine, "http://127.0.0.1:$resolvedPort/mcp")
