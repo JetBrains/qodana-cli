@@ -210,9 +210,12 @@ var definition = &fus.Definition{
 					boolField("eap", "The linter is an EAP build"),
 					field("mode", "Native linter or Docker image", fus.EnumExpr("native", "docker")),
 				),
-				runEvent(baselineResolved, "Baseline the analysis compares its results with is resolved: a local "+
-					"file or the one of Qodana Cloud, found, or why the analysis runs without it",
-					field("source", "Kind of the baseline", fus.EnumExpr("local", "cloud", "none")),
+				runEvent(baselineResolved, "Baseline the analysis compares its results with is resolved by the CLI: "+
+					"a local file, the one of Qodana Cloud for a third-party linter, or none without Qodana Cloud. An IDE "+
+					"linter downloads its cloud baseline itself and reports it in qodana.usage.cloud.baseline.resolved, "+
+					"joined by the analysis id",
+					field("source", "Kind of the baseline, cloud only for a third-party linter",
+						fus.EnumExpr("local", "cloud", "none")),
 					field("baseline_status", "The baseline is found, or why the analysis runs without it", fus.EnumExpr(
 						"found", "missing", "empty", "disabled", "unsupported", "not_connected",
 						"timeout", "request_failed", "invalid_response", "io_error",
@@ -237,7 +240,9 @@ var definition = &fus.Definition{
 					field("unchanged", "Problems which are in the baseline", fus.EnumExpr(buckets...)),
 					field("absent", "Problems of the baseline which are fixed", fus.EnumExpr(buckets...)),
 					field("baseline", "The analysis applied the baseline it was given, ignored it, had none, or "+
-						"there are no problems to tell", fus.EnumExpr("none", "applied", "ignored", "unknown")),
+						"there are no problems to tell. When an IDE linter downloads its cloud baseline itself, the "+
+						"value comes from the baseline states of the problems: applied when every problem has one, "+
+						"none otherwise", fus.EnumExpr("none", "applied", "ignored", "unknown")),
 				),
 				runEvent(reportPublished, "Report is published to Qodana Cloud",
 					field("publish_status", "The report is uploaded, failed to upload, or not published without a token",

@@ -467,7 +467,7 @@
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
-              "description": "Kind of the baseline"
+              "description": "Kind of the baseline, cloud only for a third-party linter"
             },
             {
               "path": "baseline_status",
@@ -497,7 +497,7 @@
               "description": "Duration of the Qodana Cloud request"
             }
           ],
-          "description": "Baseline the analysis compares its results with is resolved: a local file or the one of Qodana Cloud, found, or why the analysis runs without it"
+          "description": "Baseline the analysis compares its results with is resolved by the CLI: a local file, the one of Qodana Cloud for a third-party linter, or none without Qodana Cloud. An IDE linter downloads its cloud baseline itself and reports it in qodana.usage.cloud.baseline.resolved, joined by the analysis id"
         },
         {
           "event": "analysis.started",
@@ -702,7 +702,7 @@
               ],
               "dataType": "PRIMITIVE",
               "shouldBeAnonymized": false,
-              "description": "The analysis applied the baseline it was given, ignored it, had none, or there are no problems to tell"
+              "description": "The analysis applied the baseline it was given, ignored it, had none, or there are no problems to tell. When an IDE linter downloads its cloud baseline itself, the value comes from the baseline states of the problems: applied when every problem has one, none otherwise"
             }
           ],
           "description": "Problems of the report and their baseline states, by order of magnitude, and whether the analysis applied its baseline"
