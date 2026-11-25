@@ -2,7 +2,7 @@
 // +build ignore
 
 /*
- * Copyright 2021-2024 JetBrains s.r.o.
+ * Copyright 2021-2026 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,71 +17,38 @@
  * limitations under the License.
  */
 
-// Script to generate CLI documentation in README.md using cobra/doc.
-// Documents init and scan first, then all other non-hidden commands.
+// Script to generate the documentation of the CLI commands in README.md from their --help. TestReadmeIsUpToDate of
+// internal/cmd checks that README.md is up to date.
 package main
 
 import (
-	"bytes"
+	"fmt"
+	"log"
 	"os"
-	"regexp"
-	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cmd"
-	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 )
 
 func main() {
-	cmd.InitCli()
-	root := cmd.GetRootCommand()
-
-	cmdMap := make(map[string]*cobra.Command)
-	for _, c := range root.Commands() {
-		cmdMap[c.Name()] = c
+	log.SetFlags(0)
+	if len(os.Args) > 1 {
+		log.Fatalf("Unexpected arguments %v: the script regenerates README.md, TestReadmeIsUpToDate checks it", os.Args[1:])
 	}
 
-	var docs bytes.Buffer
-	writeDoc := func(c *cobra.Command) {
-		doc.GenMarkdownCustom(c, &docs, func(string) string { return "" })
-		docs.WriteString("\n")
+	readme, err := os.ReadFile("README.md")
+	if err != nil {
+		log.Fatalf("Run the script from the repository root: %v", err)
 	}
-
-	if c := cmdMap["init"]; c != nil && !c.Hidden {
-		writeDoc(c)
+	updated, err := cmd.GenerateReadme(string(readme))
+	if err != nil {
+		log.Fatal(err)
 	}
-	if c := cmdMap["scan"]; c != nil && !c.Hidden {
-		writeDoc(c)
-	}
-	for _, c := range root.Commands() {
-		if !c.Hidden && c.Name() != "init" && c.Name() != "scan" {
-			writeDoc(c)
-		}
-	}
-
-	result := cleanup(docs.String())
-	content, _ := os.ReadFile("README.md")
-	newContent := regexp.MustCompile(`(?s)## qodana init\n.*?(## Why)`).ReplaceAllString(string(content), result+"$1")
-
-	if len(os.Args) > 1 && os.Args[1] == "--check" {
-		if string(content) != newContent {
-			println("README.md is out of date. Run 'go run scripts/generate-docs.go' to update it.")
-			os.Exit(1)
-		}
-		println("README.md is up to date.")
+	if updated == string(readme) {
+		fmt.Println("README.md is up to date.")
 		return
 	}
-
-	os.WriteFile("README.md", []byte(newContent), 0644)
-	println("README.md updated.")
-}
-
-// cleanup removes ANSI codes, UUID defaults, and replaces home dir with ~
-func cleanup(s string) string {
-	s = regexp.MustCompile(`\x1b\[[0-9;]*m`).ReplaceAllString(s, "")
-	s = regexp.MustCompile(` \(default "[0-9a-f-]{36}"\)`).ReplaceAllString(s, "")
-	if h, _ := os.UserHomeDir(); h != "" {
-		s = strings.ReplaceAll(s, h, "~")
+	if err := os.WriteFile("README.md", []byte(updated), 0o644); err != nil {
+		log.Fatal(err)
 	}
-	return s
+	fmt.Println("README.md updated.")
 }

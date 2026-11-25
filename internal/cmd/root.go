@@ -169,14 +169,14 @@ func newRootCommand() *cobra.Command {
 
 var rootCommand = newRootCommand()
 
-// GetRootCommand returns the root command for documentation generation.
-func GetRootCommand() *cobra.Command {
-	return rootCommand
-}
-
 // InitCli adds all child commands to the root command.
 func InitCli() {
-	rootCommand.AddCommand(
+	rootCommand.AddCommand(newChildCommands()...)
+}
+
+// newChildCommands returns the child commands of the root command, in the order the README documents them.
+func newChildCommands() []*cobra.Command {
+	return []*cobra.Command{
 		newInitCommand(),
 		newScanCommand(),
 		newShowCommand(),
@@ -186,7 +186,7 @@ func InitCli() {
 		newContributorsCommand(),
 		newClocCommand(),
 		edictcmd.NewCommand(),
-	)
+	}
 }
 
 // InitWithCustomCommands adds custom commands to the root command.
