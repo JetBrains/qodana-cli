@@ -231,6 +231,12 @@
       "enabled": false
     },
     {
+      "description": "Each amazoncorretto COPY --from in the Android images ships a separate JDK for user projects, and its source path names the major (java-11-amazon-corretto), so a major tag bump breaks the build (PR #1170). Adding a JDK line is a manual change.",
+      "matchPackageNames": ["amazoncorretto"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "matchDatasources": ["github-releases"],
       "matchPackageNames": ["mgoltzsche/podman-static", "goreleaser/goreleaser-pro", "cli/cli"],
       "matchManagers": ["custom.regex"],
