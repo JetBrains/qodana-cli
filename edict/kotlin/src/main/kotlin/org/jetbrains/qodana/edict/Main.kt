@@ -166,9 +166,8 @@ private fun install(qodanaYaml: Path?, deniedPaths: List<Path>) {
 private fun prepareFeedbackInspections(qodanaYaml: Path?, stateDirectory: String, outputDirectory: Path) {
     logOutsideTheProject()
     val configuration = EdictYamlConfiguration.load(qodanaYaml)
-    val ciUrl = configuration.ci ?: throw IllegalStateException("CI URL not set inside qodana.yaml")
     val layout = EdictLayout.get(stateDirectory)
-    val review = ciRunFeedbackApi(ciUrl, layout.root).analysedReview()
+    val review = ciRunFeedbackApi(configuration.ci, layout.root).analysedReview()
     prepareFeedback(layout, configuration.stateBranch, review, outputDirectory, configuration.feedback)
 }
 
@@ -176,9 +175,8 @@ private fun prepareFeedbackInspections(qodanaYaml: Path?, stateDirectory: String
 private fun postFeedbackFindings(qodanaYaml: Path?, stateDirectory: String, sarif: Path) {
     logOutsideTheProject()
     val configuration = EdictYamlConfiguration.load(qodanaYaml)
-    val ciUrl = configuration.ci ?: throw IllegalStateException("CI URL not set inside qodana.yaml")
     val layout = EdictLayout.get(stateDirectory)
-    val api = ciRunFeedbackApi(ciUrl, layout.root)
+    val api = ciRunFeedbackApi(configuration.ci, layout.root)
     postFeedback(layout, configuration.stateBranch, api.analysedReview(), api, sarif, Clock.systemUTC(), configuration.feedback)
 }
 

@@ -44,10 +44,20 @@ internal sealed interface RecordOutcome {
     data class Unread(val review: ReviewReference, val failure: Throwable) : RecordOutcome
 }
 
-/** The feedback of the CI run in [project]: of a Space SafePush when [ci] is on Space, else of a GitHub Actions run. */
-internal fun ciRunFeedbackApi(ci: ReviewRepository, project: Path): FeedbackApi = when (ci.provider) {
+/**
+ * The feedback of the CI run in [project]: of a Space SafePush when [ci], edict.ci, is on Space, of a GitHub Actions run when
+ * it is on GitHub, and of the CI the environment shows when it is not set.
+ */
+internal fun ciRunFeedbackApi(ci: ReviewRepository?, project: Path): FeedbackApi = when (ci?.provider) {
     CiProviderId.SPACE -> spaceFeedbackApi(ci, project)
-    CiProviderId.GITHUB -> GitHubFeedbackApi(lazy(::actionsTransport))
+    CiProviderId.GITHUB -> actionsFeedbackApi()
+    null -> feedbackApiFromEnvironment()
+}
+
+/** The feedback of the CI run the environment shows, which only GitHub Actions does: Space needs edict.ci for its repository. */
+private fun feedbackApiFromEnvironment(): FeedbackApi = when {
+    runsInGitHubActions() -> actionsFeedbackApi()
+    else -> error("edict.ci is not set in qodana.yaml, and the environment shows no CI run that Edict feedback knows")
 }
 
 /** The feedback of the Edict server for [repository], edict.ci, checked out in [project]. */

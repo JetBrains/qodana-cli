@@ -53,6 +53,12 @@ internal data class FeedbackThread(
     val replies: List<EdictReply>,
 )
 
+/** Whether the process runs in GitHub Actions, which sets `GITHUB_ACTIONS` to `true` in every run. */
+internal fun runsInGitHubActions(): Boolean = System.getenv("GITHUB_ACTIONS") == "true"
+
+/** The feedback of the GitHub Actions run the process is in. */
+internal fun actionsFeedbackApi(): GitHubFeedbackApi = GitHubFeedbackApi(lazy(::actionsTransport))
+
 /** The API of GitHub for the workflow run, at the URL and with the token GitHub Actions gives it. */
 internal fun actionsTransport(): CiHttpTransport {
     val apiUrl = System.getenv("GITHUB_API_URL")?.takeIf(String::isNotBlank)

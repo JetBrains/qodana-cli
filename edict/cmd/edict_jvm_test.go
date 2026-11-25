@@ -787,18 +787,6 @@ func TestEdictStatePushBeforeInstallLeavesTheStateDirectoryToInstall(t *testing.
 	}
 }
 
-// gitHubFeedbackConfig writes, outside the project, the Qodana configuration of a project whose reviews are on GitHub,
-// which feedback takes the CI of its run from.
-func gitHubFeedbackConfig(t *testing.T) string {
-	t.Helper()
-	config := filepath.Join(t.TempDir(), "qodana.yaml")
-	content := "version: \"1.0\"\nedict:\n  ci:\n    url: https://github.com/owner/project\n"
-	if err := os.WriteFile(config, []byte(content), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	return config
-}
-
 func TestEdictFeedbackPrepareForNoPullRequestCopiesNothingAndLogsOutsideTheProject(t *testing.T) {
 	t.Chdir(t.TempDir())
 	project := realWorkingDirectory(t)
@@ -807,10 +795,11 @@ func TestEdictFeedbackPrepareForNoPullRequestCopiesNothingAndLogsOutsideTheProje
 	if err := os.WriteFile(event, []byte(`{"ref": "refs/heads/main"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("GITHUB_ACTIONS", "true")
 	t.Setenv("GITHUB_EVENT_PATH", event)
 	prepare := newEdictFeedbackCommand()
 	output := filepath.Join(t.TempDir(), "inspections")
-	prepare.SetArgs([]string{"prepare", "--state-dir", t.TempDir(), "--output-dir", output, "--config", gitHubFeedbackConfig(t)})
+	prepare.SetArgs([]string{"prepare", "--state-dir", t.TempDir(), "--output-dir", output})
 	prepare.SetIn(strings.NewReader(""))
 	var stdout, stderr bytes.Buffer
 	prepare.SetOut(&stdout)
@@ -839,6 +828,7 @@ func TestEdictFeedbackPostForNoPullRequestPostsNothingAndLogsOutsideTheProject(t
 	if err := os.WriteFile(event, []byte(`{"ref": "refs/heads/main"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("GITHUB_ACTIONS", "true")
 	t.Setenv("GITHUB_EVENT_PATH", event)
 	// Nothing reaches the API: the run is for no pull request.
 	t.Setenv("GITHUB_API_URL", "https://api.github.invalid")
@@ -851,8 +841,6 @@ func TestEdictFeedbackPostForNoPullRequestPostsNothingAndLogsOutsideTheProject(t
 			t.TempDir(),
 			"--sarif",
 			filepath.Join(t.TempDir(), "qodana.sarif.json"),
-			"--config",
-			gitHubFeedbackConfig(t),
 		},
 	)
 	post.SetIn(strings.NewReader(""))
