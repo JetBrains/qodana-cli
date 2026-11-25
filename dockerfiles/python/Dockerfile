@@ -53,6 +53,8 @@ ARG CONDA_VERSION="py312_24.5.0-0"
 # emSign ECC Root CA - G3 and AAA Certificate Services roots, so they are upgraded too. virtualenv 21.15.6
 # seeds new environments of Python 3.10 and later with pip 26.3, whose certifi no longer has them. Drop that
 # once Python bundles pip 26.2.2 or later.
+# virtualenv's pip 26.0.1 for Python 3.9, which is end-of-life and has no later pip, still has emSign ECC G3 (QD-16607),
+# so it is removed: virtualenv can no longer seed Python 3.9 environments. The removal fails once virtualenv drops it.
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
@@ -87,6 +89,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       "ca-certificates>=2026.10.19" "certifi>=2026.10.19" "pip>=26.2.2" "virtualenv>=21.15.6" "python>=3.12.16,<3.13" \
       "libmambapy<2" && \
     ${CONDA_DIR}/bin/conda clean -afy && \
+    "$CONDA_DIR/bin/python" -I -c "import os, virtualenv.seed.wheels.embed as embed; os.remove(os.path.join(embed.BUNDLE_FOLDER, 'pip-26.0.1-py3-none-any.whl'))" && \
     "$CONDA_DIR/bin/python" -I - <<"EOF" && \
     poetry config virtualenvs.create false && \
     chmod 777 -R $HOME/.conda $CONDA_DIR/ $HOME/.config/pypoetry/ && \
