@@ -30,7 +30,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
@@ -38,74 +37,65 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// baselineDownloader writes the baseline of a tool from Qodana Cloud to a file.
+// baselineDownloader writes the baseline of a tool from Qodana Cloud to the file at path.
 type baselineDownloader interface {
-	WriteBaseline(toolName string, file *os.File) (cloud.BaselineStatus, error)
+	WriteBaseline(toolName string, path string) (cloud.BaselineStatus, error)
 }
 
-var noBaselineCleanup = func() {}
-
-// Baseline is the baseline an analysis compares its results with.
-type Baseline struct {
-	baselinePath             string
-	source                   string
-	cloudStatus              cloud.BaselineStatus
-	resolvedByLauncher       bool
-	removeDownloadedBaseline func()
+// Baseline is the baseline an analysis compares its results with: a LocalBaseline, a CloudBaseline or
+// NoBaseline. QodanaBaseline of the linter has the same kinds.
+type Baseline interface {
+	// BaselinePath is the file the analysis results are compared with, empty for NoBaseline.
+	BaselinePath() string
+	// Cleanup removes the baseline this CLI has downloaded for the analysis.
+	Cleanup()
+	// UsedMessage tells which baseline the analysis has used, with the words of the linter.
+	UsedMessage() string
 }
 
-func (b Baseline) BaselinePath() string { return b.baselinePath }
-
-func (b Baseline) IsFromCloud() bool { return b.source == qdenv.BaselineSourceCloud }
-
-// Source tells a linter which baseline this CLI has resolved for it, so that the linter reports the
-// source of the baseline and doesn't look for one in Qodana Cloud again.
-func (b Baseline) Source() string { return b.source }
-
-func (b Baseline) Cleanup() {
-	if b.removeDownloadedBaseline != nil {
-		b.removeDownloadedBaseline()
-	}
+// LocalBaseline is a baseline file given to the run.
+type LocalBaseline struct {
+	path string
 }
 
-// ReportsUsed tells whether this CLI reports which baseline the analysis has used, so that a run
-// reports it once. The launcher of a CLI reports it, as it knows why there is no baseline, except
-// for a local baseline of a linter in a container, whose path only that linter knows.
-func (b Baseline) ReportsUsed(linterInContainer bool) bool {
-	if b.resolvedByLauncher {
-		return b.source == qdenv.BaselineSourceLocal
-	}
-	return !linterInContainer || b.source != qdenv.BaselineSourceLocal
+func (b LocalBaseline) BaselinePath() string { return b.path }
+
+func (b LocalBaseline) Cleanup() {}
+
+func (b LocalBaseline) UsedMessage() string {
+	return fmt.Sprintf("The analysis used the baseline file %s", b.path)
 }
 
-// UsedMessage tells which baseline the analysis has used.
-func (b Baseline) UsedMessage() string {
-	switch {
-	case b.source == qdenv.BaselineSourceCloud:
-		return "The analysis used the baseline from Qodana Cloud"
-	case b.baselinePath != "":
-		return fmt.Sprintf("The analysis used the baseline file %s", b.baselinePath)
-	case b.cloudStatus == cloud.BaselineEmpty:
-		return "The analysis used no baseline: the cloud baseline of the project in Qodana Cloud is empty."
-	case b.cloudStatus == cloud.BaselineUnsupported:
-		return "The analysis used no baseline: this Qodana Cloud doesn't serve cloud baselines. " +
-			"Give a baseline file with --baseline."
-	default:
+// CloudBaseline is the baseline stored in Qodana Cloud, downloaded to a file in a directory of its own.
+type CloudBaseline struct {
+	path string
+}
+
+func (b CloudBaseline) BaselinePath() string { return b.path }
+
+func (b CloudBaseline) Cleanup() { removeBaselineDir(filepath.Dir(b.path)) }
+
+func (b CloudBaseline) UsedMessage() string {
+	return "The analysis used the baseline from Qodana Cloud"
+}
+
+// NoBaseline is a run without a baseline.
+type NoBaseline struct {
+	// reason tells why the run has no baseline and what to do. Without one, the message gives the
+	// advice of the linter.
+	reason string
+}
+
+func (b NoBaseline) BaselinePath() string { return "" }
+
+func (b NoBaseline) Cleanup() {}
+
+func (b NoBaseline) UsedMessage() string {
+	if b.reason == "" {
 		return "The analysis used no baseline. Give a baseline file with --baseline, " +
 			"or turn on the cloud baseline of the project in Qodana Cloud."
 	}
-}
-
-// LauncherBaselineSource returns the baseline source which the CLI that launched this one has
-// resolved for it. Only a CLI in a Qodana image is launched by another CLI: on a host the variable
-// is a leftover of another run.
-func LauncherBaselineSource() string {
-	source := os.Getenv(qdenv.QodanaBaselineSource)
-	if source != "" && !qdenv.IsContainer() {
-		log.Debugf("Ignoring %s=%s outside of a container", qdenv.QodanaBaselineSource, source)
-		return ""
-	}
-	return source
+	return "The analysis used no baseline: " + b.reason
 }
 
 // ResolveBaseline returns the baseline the analysis results are compared with: baselineFile, if the
@@ -114,102 +104,75 @@ func LauncherBaselineSource() string {
 // The downloaded baseline is stored in cacheDir and must be cleaned up. A relative baselineFile is of projectDir or
 // of the current dir.
 //
-// Qodana Cloud is asked only once: a linter launched by a CLI which has resolved the baseline
-// already is told so by launcherSource, the qdenv.QodanaBaselineSource of that CLI, and takes that
-// answer. A CLI which nothing has launched passes no launcherSource, see LauncherBaselineSource.
+// Call it after the analysis, just before the comparison, so that a failed analysis downloads
+// nothing. An IDE linter compares its results itself, so it downloads its cloud baseline itself.
 func ResolveBaseline(
 	baselineFile string,
 	projectDir string,
-	launcherSource string,
 	cloudToken string,
 	toolName string,
 	cacheDir string,
 ) Baseline {
 	newClient := func() baselineDownloader {
-		return cloud.GetCloudApiEndpoints().NewLintersApiClient(cloudToken)
+		return cloud.GetCloudApiEndpoints().NewBaselineClient(cloudToken)
 	}
-	return resolveBaseline(baselineFile, projectDir, launcherSource, cloudToken != "", toolName, cacheDir, newClient)
+	return resolveBaseline(baselineFile, projectDir, cloudToken != "", toolName, cacheDir, newClient)
+}
+
+// LinterBaselineResolved records the baseline the CLI gives an IDE linter: the baseline file of the run, or none
+// without a connection to Qodana Cloud. The linter resolves the cloud baseline itself, after the analysis, so the
+// CLI records nothing for it: see telemetry.ProblemsFound.
+func LinterBaselineResolved(baselineFile string, projectDir string, connected bool) {
+	switch {
+	case baselineFile != "":
+		localBaselineResolved(baselineFile, projectDir)
+	case !connected:
+		telemetry.BaselineResolved("none", "not_connected", 0, 0)
+	}
+}
+
+func localBaselineResolved(baselineFile string, projectDir string) {
+	status := "missing"
+	if fileExists(baselineFile) || !filepath.IsAbs(baselineFile) && fileExists(filepath.Join(projectDir, baselineFile)) {
+		status = "found"
+	}
+	telemetry.BaselineResolved("local", status, 0, 0)
+}
+
+func fileExists(file string) bool {
+	_, err := os.Stat(file)
+	return err == nil
 }
 
 func resolveBaseline(
 	baselineFile string,
 	projectDir string,
-	launcherSource string,
 	connected bool,
 	toolName string,
 	cacheDir string,
 	newClient func() baselineDownloader,
 ) Baseline {
 	if baselineFile != "" {
-		source := launcherSource
-		if source == "" {
-			status := "missing"
-			if fileExists(baselineFile) || !filepath.IsAbs(baselineFile) && fileExists(filepath.Join(projectDir, baselineFile)) {
-				status = "found"
-			}
-			telemetry.BaselineResolved("local", status, 0, 0)
-		}
-		if source != qdenv.BaselineSourceCloud {
-			source = qdenv.BaselineSourceLocal
-		}
-		return Baseline{
-			baselinePath:             baselineFile,
-			source:                   source,
-			resolvedByLauncher:       launcherSource != "",
-			removeDownloadedBaseline: noBaselineCleanup,
-		}
-	}
-
-	noBaseline := Baseline{source: qdenv.BaselineSourceNone, removeDownloadedBaseline: noBaselineCleanup}
-	if launcherSource == qdenv.BaselineSourceNone {
-		log.Debug("The CLI which launched this linter has resolved no baseline for it")
-		noBaseline.resolvedByLauncher = true
-		return noBaseline
-	}
-	if launcherSource != "" {
-		// a launching CLI passes the file of a baseline it has resolved, so the source has no
-		// baseline to back it: it is not trusted to skip Qodana Cloud
-		msg.WarningMessage(
-			"Ignoring %s=%s, which is set without a baseline file",
-			qdenv.QodanaBaselineSource,
-			launcherSource,
-		)
+		localBaselineResolved(baselineFile, projectDir)
+		return LocalBaseline{path: baselineFile}
 	}
 	if !connected {
 		telemetry.BaselineResolved("none", "not_connected", 0, 0)
 		log.Debug("Not connected to Qodana Cloud, running without a baseline")
-		return noBaseline
+		return NoBaseline{}
 	}
 	fmt.Println("Checking for baseline from Qodana Cloud ...")
 	toolName = product.CloudBaselineToolName(toolName)
 	start := time.Now()
-	baseline, err := downloadCloudBaseline(newClient(), toolName, cacheDir)
+	baseline, status, err := downloadCloudBaseline(newClient(), toolName, cacheDir)
 	if err != nil {
-		status, httpStatus := cloudBaselineFailure(err)
-		telemetry.BaselineResolved("cloud", status, httpStatus, time.Since(start))
+		failure, httpStatus := cloudBaselineFailure(err)
+		telemetry.BaselineResolved("cloud", failure, httpStatus, time.Since(start))
 		msg.WarningMessage("Cannot use the baseline of Qodana Cloud, running without a baseline: %v", err)
-		return noBaseline
+		return NoBaseline{reason: "the baseline of Qodana Cloud could not be downloaded."}
 	}
-	switch baseline.cloudStatus {
-	case cloud.BaselineEmpty:
-		log.Debugf("The cloud baseline of '%s' is empty", toolName)
-		fmt.Println("The cloud baseline of the project in Qodana Cloud is empty, running without a baseline")
-		telemetry.BaselineResolved("cloud", "empty", 0, time.Since(start))
-	case cloud.BaselineDisabled:
-		fmt.Println("The cloud baseline is turned off for this project in Qodana Cloud, running without a baseline")
-		telemetry.BaselineResolved("cloud", "disabled", 0, time.Since(start))
-	case cloud.BaselineUnsupported:
-		fmt.Println("This Qodana Cloud doesn't serve cloud baselines, running without a baseline")
-		telemetry.BaselineResolved("cloud", "unsupported", 0, time.Since(start))
-	default:
-		telemetry.BaselineResolved("cloud", "found", 0, time.Since(start))
-	}
+	telemetry.BaselineResolved("cloud", status, 0, time.Since(start))
 	return baseline
-}
-
-func fileExists(file string) bool {
-	_, err := os.Stat(file)
-	return err == nil
 }
 
 // cloudBaselineFailure tells why the baseline of Qodana Cloud is not downloaded, with the HTTP status of the answer.
@@ -219,8 +182,9 @@ func cloudBaselineFailure(err error) (string, int) {
 	switch {
 	case errors.As(err, new(*fs.PathError)):
 		return "io_error", 0
-	// a stalled download is canceled
-	case errors.As(err, &netError) && netError.Timeout(), errors.Is(err, context.DeadlineExceeded), errors.Is(err, context.Canceled):
+	// a read which waits too long fails the download
+	case errors.As(err, &netError) && netError.Timeout(), errors.Is(err, context.DeadlineExceeded),
+		errors.Is(err, context.Canceled):
 		return "timeout", 0
 	case errors.Is(err, cloud.ErrInvalidBaseline), errors.Is(err, io.ErrUnexpectedEOF):
 		return "invalid_response", 0
@@ -231,61 +195,53 @@ func cloudBaselineFailure(err error) (string, int) {
 	}
 }
 
-// downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in the cache dir. A
-// baseline without a file tells by its cloud status why there is no cloud baseline to compare the
-// analysis with.
-func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir string) (Baseline, error) {
+// downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in a directory of its
+// own in the cache dir. When Qodana Cloud has no baseline to compare the analysis with, it returns
+// NoBaseline, which tells why. The status is the baseline_status of the statistics.
+func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir string) (Baseline, string, error) {
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
-		return Baseline{}, fmt.Errorf("failed to create the cache dir %s: %w", cacheDir, err)
+		return nil, "", fmt.Errorf("failed to create the cache dir %s: %w", cacheDir, err)
 	}
 	dir, err := os.MkdirTemp(cacheDir, "cloud-baseline-")
 	if err != nil {
-		return Baseline{}, fmt.Errorf("failed to create a directory for the baseline: %w", err)
+		return nil, "", fmt.Errorf("failed to create a directory for the baseline: %w", err)
 	}
-	cleanup := func() { _ = os.RemoveAll(dir) }
-	// a linter in a container reads the baseline as the user of the container, which is not always
-	// the user which has downloaded it, while MkdirTemp lets only the owner in
-	if err := os.Chmod(dir, 0o755); err != nil {
-		cleanup()
-		return Baseline{}, fmt.Errorf("failed to open the directory of the baseline: %w", err)
+	path := filepath.Join(dir, "qodana.sarif.json")
+	status, err := client.WriteBaseline(toolName, path)
+	if err == nil && status == cloud.BaselineWritten {
+		if info, statErr := os.Stat(path); statErr == nil {
+			log.Debugf("Baseline of %s from Qodana Cloud: %s, %d bytes", toolName, path, info.Size())
+		}
+		return CloudBaseline{path: path}, "found", nil
 	}
-	baseline := filepath.Join(dir, "qodana.sarif.json")
-	file, err := os.Create(baseline)
+	removeBaselineDir(dir)
 	if err != nil {
-		cleanup()
-		return Baseline{}, fmt.Errorf("failed to create the baseline file %s: %w", baseline, err)
+		return nil, "", err
 	}
+	switch status {
+	case cloud.BaselineEmpty:
+		log.Debugf("The cloud baseline of '%s' is empty", toolName)
+		fmt.Println("The cloud baseline of the project in Qodana Cloud is empty, running without a baseline")
+		return NoBaseline{reason: "the cloud baseline of the project in Qodana Cloud is empty."}, "empty", nil
+	case cloud.BaselineDisabled:
+		fmt.Println("The cloud baseline is turned off for this project in Qodana Cloud, running without a baseline")
+		return NoBaseline{}, "disabled", nil
+	case cloud.BaselineUnsupported:
+		fmt.Println("This Qodana Cloud doesn't serve cloud baselines, running without a baseline")
+		return NoBaseline{
+			reason: "this Qodana Cloud doesn't serve cloud baselines. Give a baseline file with --baseline.",
+		}, "unsupported", nil
+	default:
+		return nil, "", fmt.Errorf("unexpected answer of Qodana Cloud to the baseline request: status %d", status)
+	}
+}
 
-	status, err := client.WriteBaseline(toolName, file)
-	if closeErr := file.Close(); err == nil {
-		err = closeErr
+// removeBaselineDir removes the directory a cloud baseline was downloaded to. A directory left behind
+// only takes space in the cache dir, so the analysis goes on.
+func removeBaselineDir(dir string) {
+	if err := os.RemoveAll(dir); err != nil {
+		log.Warnf("Failed to remove the downloaded baseline %s: %v", dir, err)
 	}
-	if err != nil {
-		cleanup()
-		return Baseline{}, err
-	}
-	if status != cloud.BaselineWritten {
-		cleanup()
-		return Baseline{
-			source:                   qdenv.BaselineSourceNone,
-			cloudStatus:              status,
-			removeDownloadedBaseline: noBaselineCleanup,
-		}, nil
-	}
-	// os.Create obeys the umask of the host, which can leave the file to its owner only
-	if err := os.Chmod(baseline, 0o644); err != nil {
-		cleanup()
-		return Baseline{}, fmt.Errorf("failed to make the baseline readable: %w", err)
-	}
-	if info, statErr := os.Stat(baseline); statErr == nil {
-		log.Debugf("Baseline of %s from Qodana Cloud: %s, %d bytes", toolName, baseline, info.Size())
-	}
-	return Baseline{
-		baselinePath:             baseline,
-		source:                   qdenv.BaselineSourceCloud,
-		cloudStatus:              status,
-		removeDownloadedBaseline: cleanup,
-	}, nil
 }
 
 // computeBaselinePrintResults runs SARIF analysis (compares with baseline and prints the result)=

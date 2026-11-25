@@ -145,7 +145,6 @@ func RunThirdPartyLinterAnalysis(
 	baseline := ResolveBaseline(
 		context.Baseline(),
 		context.ProjectDir(),
-		LauncherBaselineSource(),
 		context.CloudData().QodanaToken,
 		context.LinterInfo().ProductCode,
 		context.CacheDir(),
@@ -155,10 +154,7 @@ func RunThirdPartyLinterAnalysis(
 	analysisResult, err = computeBaselinePrintResults(context, thresholds, baseline.BaselinePath())
 	// not deferred: the analysis may leave the process with os.Exit over the fail threshold
 	baseline.Cleanup()
-	// the linter runs in this process, not in a container of its own
-	if baseline.ReportsUsed(false) {
-		fmt.Println(baseline.UsedMessage())
-	}
+	fmt.Println(baseline.UsedMessage())
 	if err != nil {
 		telemetry.Fail(telemetry.ReasonBaselineError)
 		finishAnalysis(1, "")

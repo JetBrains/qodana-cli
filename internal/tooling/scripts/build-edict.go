@@ -25,11 +25,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = flock.With(filepath.Join(root, ".cache", "edict", "build.lock"), func() {
-		if err := buildEdict(root); err != nil {
-			log.Fatal(err)
-		}
-	})
+	err = flock.With(
+		filepath.Join(root, ".cache", "edict", "build.lock"), func() {
+			if err := buildEdict(root); err != nil {
+				log.Fatal(err)
+			}
+		},
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,10 +75,10 @@ func buildEdict(root string) error {
 	return nil
 }
 
-// ONNX Runtime 1.22.0 does not ship Windows ARM64 libraries. That target keeps
-// the Java code, as before, but cannot run local embeddings with this dependency.
+// Targets without bundled ONNX Runtime natives retain the Java code for
+// commands that do not use local embeddings.
 var edictNativePlatforms = map[string]string{
-	"darwin-amd64":  "osx-x64",
+	"darwin-amd64":  "",
 	"darwin-arm64":  "osx-aarch64",
 	"linux-amd64":   "linux-x64",
 	"linux-arm64":   "linux-aarch64",

@@ -1,5 +1,5 @@
-ARG NODE_TAG="22-debian13-dev@sha256:c30ecc2499a6aa77b95d9fc890b10fe8ac46340bd45177b0256ecd7f7eb1956c"
-ARG PHP_TAG="8.5-dev"
+ARG NODE_TAG="22-debian13-dev@sha256:d551ac0c2c608068f0668bdc1c8121eba29fa8ef0695c4311e30e8aab8ee099d"
+ARG PHP_TAG="8.6-dev@sha256:513146643d506361dd45ab8ce72da78e0e944bfcba446d3c3488a68249d90c6a"
 ARG COMPOSER_TAG="2.11.1"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM composer:$COMPOSER_TAG AS composer_base
@@ -7,7 +7,7 @@ FROM dhi.io/php:$PHP_TAG
 SHELL ["/bin/bash", "-c"]
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="10.14.0"
+ENV ESLINT_VERSION="10.15.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \

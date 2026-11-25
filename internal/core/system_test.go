@@ -60,7 +60,7 @@ func TestScopedScript(t *testing.T) {
 			expectedHashes: []string{"startHash", "endHash"},
 			expectedParamsFunc: func(dir string) [][]string {
 				return [][]string{
-					{"-Dqodana.skip.result=true", "-Dqodana.skip.coverage.computation=true"},
+					{"-Dqodana.skip.result=true", "-Dqodana.skip.coverage.computation=true", "-Dqodana.skip.cloud.baseline=true"},
 					{
 						"-Dqodana.skip.preamble=true",
 						"-Didea.headless.enable.statistics=false",
@@ -79,7 +79,7 @@ func TestScopedScript(t *testing.T) {
 			expectedHashes: []string{"startHash"},
 			expectedParamsFunc: func(dir string) [][]string {
 				return [][]string{
-					{"-Dqodana.skip.result=true", "-Dqodana.skip.coverage.computation=true"},
+					{"-Dqodana.skip.result=true", "-Dqodana.skip.coverage.computation=true", "-Dqodana.skip.cloud.baseline=true"},
 				}
 			},
 		},

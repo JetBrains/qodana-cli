@@ -58,7 +58,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 	server.stop(t, cancel)
 	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer restartCancel()
-	startEdictMCP(t, restartContext).stop(t, restartCancel)
+	restartEdictMCP(t, restartContext).stop(t, restartCancel)
 
 	logData, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-mcp-system.log"))
 	if err != nil {
@@ -123,6 +123,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 }
 
 func TestEdictManagedMCPRequiresInstall(t *testing.T) {
+	skipUnsupportedEdictRoutine(t)
 	t.Chdir(t.TempDir())
 	command := newEdictManagedMCPStartCommand()
 	command.SetArgs([]string{"--foreground"})

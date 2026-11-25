@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-ARG BASE_TAG="trixie-debian13-dev"
+ARG BASE_TAG="trixie-debian13-dev@sha256:88a5530e030acdf99fa522d3b5239fd49f7b8612c46739d19a95b1935da42a61"
 FROM dhi.io/debian-base:$BASE_TAG
 
 ARG TARGETPLATFORM

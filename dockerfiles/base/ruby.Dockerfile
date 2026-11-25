@@ -1,11 +1,11 @@
-ARG NODE_TAG="22-debian13-dev@sha256:c30ecc2499a6aa77b95d9fc890b10fe8ac46340bd45177b0256ecd7f7eb1956c"
+ARG NODE_TAG="22-debian13-dev@sha256:d551ac0c2c608068f0668bdc1c8121eba29fa8ef0695c4311e30e8aab8ee099d"
 ARG RUBY_TAG="3.4-debian13-dev"
 
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM dhi.io/ruby:$RUBY_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="10.14.0"
+ENV ESLINT_VERSION="10.15.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \

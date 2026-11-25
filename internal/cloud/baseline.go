@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,42 +65,61 @@ const (
 	BaselineUnsupported
 )
 
-// WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF
-// report. An empty tool name asks for the baseline of every tool of the project. The status tells
-// whether there was a baseline to write, and if there wasn't, why.
+// NewBaselineClient returns the client of the linters API to download baselines with. A download has
+// no overall deadline, because reading the baseline of a big project takes as long as it takes. A
+// read which waits longer than the request timeout fails the download instead, as a read timeout of a
+// socket does: the wait for the response, and each read of its body.
+func (endpoints *QdApiEndpoints) NewBaselineClient(token string) *QdClient {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	dialer := &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}
+	timeout := getRequestTimeout()
+	transport.DialContext = func(ctx context.Context, network, address string) (net.Conn, error) {
+		conn, err := dialer.DialContext(ctx, network, address)
+		if err != nil || timeout <= 0 {
+			return conn, err
+		}
+		return readTimeoutConn{Conn: conn, timeout: timeout}, nil
+	}
+	return &QdClient{
+		httpClient: &http.Client{Transport: transport},
+		apiUrl:     endpoints.LintersApiUrl,
+		token:      token,
+	}
+}
+
+// readTimeoutConn fails a read which waits longer than timeout. Without it a server which sends the
+// headers and then goes quiet would hang the analysis for as long as it keeps the connection.
+type readTimeoutConn struct {
+	net.Conn
+	timeout time.Duration
+}
+
+func (c readTimeoutConn) Read(p []byte) (int, error) {
+	if err := c.SetReadDeadline(time.Now().Add(c.timeout)); err != nil {
+		return 0, err
+	}
+	return c.Conn.Read(p)
+}
+
+// WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to the file at path as a
+// SARIF report. An empty tool name asks for the baseline of every tool of the project. The status
+// tells whether there was a baseline to write, and if there wasn't, why: the file holds the report
+// only for BaselineWritten. The client must come from NewBaselineClient.
 //
 // Qodana Cloud streams the baseline problem by problem, so it is converted the same way: neither the
 // response nor the report is ever held in memory as a whole.
-func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineStatus, error) {
+func (client *QdClient) WriteBaseline(toolName string, path string) (BaselineStatus, error) {
 	request := NewCloudRequest(qodanaBaselineUri + baselineQuery(toolName))
+	// a new attempt does not change the answer for a token which may not read the baseline
+	request.AcceptedStatuses = append(request.AcceptedStatuses, http.StatusForbidden)
 
 	status := BaselineUnknown
-	request.ReadResponse = func(statusCode int, body io.Reader) error {
-		// a retried request writes the report anew, over what a failed attempt has left
-		if err := file.Truncate(0); err != nil {
-			return err
-		}
-		if _, err := file.Seek(0, io.SeekStart); err != nil {
-			return err
-		}
-		if statusCode == http.StatusNoContent {
-			status = BaselineDisabled
-			return nil
-		}
-		out := bufio.NewWriter(file)
-		written, err := writeBaselineSarif(toolName, body, out)
-		if err != nil {
-			return err
-		}
-		if !written {
-			status = BaselineEmpty
-			return nil
-		}
-		status = BaselineWritten
-		return out.Flush()
+	request.ReadResponse = func(statusCode int, body io.Reader) (err error) {
+		status, err = writeBaselineFile(toolName, statusCode, body, path)
+		return err
 	}
 
-	if _, err := client.streaming().doRequest(&request); err != nil {
+	if _, err := client.doRequest(&request); err != nil {
 		var apiError *APIError
 		if errors.As(err, &apiError) && apiError.StatusCode == http.StatusNotFound {
 			// a Qodana Cloud which doesn't serve baselines at all
@@ -114,59 +134,31 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (BaselineS
 	return status, nil
 }
 
-// streaming returns the client to download the baseline with. The download gets no overall
-// deadline, because reading the baseline of a big project takes as long as it takes, and a request
-// which stops making progress is failed instead: by the timeout of the response header, and by the
-// stall guard of the body.
-func (client *QdClient) streaming() *QdClient {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	transport.ResponseHeaderTimeout = getRequestTimeout()
-	return &QdClient{
-		httpClient: &http.Client{Transport: stallGuard{transport: transport, timeout: getRequestTimeout()}},
-		apiUrl:     client.apiUrl,
-		token:      client.token,
-	}
-}
-
-// stallGuard fails a response whose body stops arriving. Without it a server which sends the
-// headers and then goes quiet would hang the analysis for as long as it keeps the connection.
-type stallGuard struct {
-	transport http.RoundTripper
-	timeout   time.Duration
-}
-
-func (guard stallGuard) RoundTrip(request *http.Request) (*http.Response, error) {
-	// the request is aborted rather than the body closed: closing a body waits for the read which
-	// is stuck on it, while aborting the request drops the connection and ends that read
-	ctx, abort := context.WithCancel(request.Context())
-	response, err := guard.transport.RoundTrip(request.Clone(ctx))
+// writeBaselineFile writes a successful answer of Qodana Cloud to the baseline file. Each attempt of
+// the request creates the file anew, over what a failed attempt has left.
+func writeBaselineFile(toolName string, statusCode int, body io.Reader, path string) (status BaselineStatus, err error) {
+	file, err := os.Create(path)
 	if err != nil {
-		abort()
-		return nil, err
+		return BaselineUnknown, err
 	}
-	response.Body = &guardedBody{body: response.Body, abort: abort, timeout: guard.timeout}
-	return response, nil
-}
+	defer func() {
+		if closeErr := file.Close(); err == nil {
+			err = closeErr
+		}
+	}()
 
-// guardedBody aborts the request it reads from when a read takes longer than the timeout.
-type guardedBody struct {
-	body    io.ReadCloser
-	abort   context.CancelFunc
-	timeout time.Duration
-}
-
-func (b *guardedBody) Read(p []byte) (int, error) {
-	if b.timeout <= 0 {
-		return b.body.Read(p)
+	if statusCode == http.StatusNoContent {
+		return BaselineDisabled, nil
 	}
-	stalled := time.AfterFunc(b.timeout, b.abort)
-	defer stalled.Stop()
-	return b.body.Read(p)
-}
-
-func (b *guardedBody) Close() error {
-	defer b.abort()
-	return b.body.Close()
+	out := bufio.NewWriter(file)
+	written, err := writeBaselineSarif(toolName, body, out)
+	if err != nil {
+		return BaselineUnknown, err
+	}
+	if !written {
+		return BaselineEmpty, nil
+	}
+	return BaselineWritten, out.Flush()
 }
 
 // baselineQuery asks for the baseline of one tool. The name is sent as the linters send it, which

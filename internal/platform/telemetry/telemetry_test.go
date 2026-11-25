@@ -518,6 +518,20 @@ func TestProblemsFound(t *testing.T) {
 	assert.Equal(t, "ignored", events[4].Data["baseline"])
 }
 
+func TestProblemsFoundWithTheBaselineOfTheLinter(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	// an IDE linter resolves its cloud baseline itself: the CLI records no baseline.resolved
+	ProblemsFound(map[string]int{"new": 3, "unchanged": 20})
+	ProblemsFound(map[string]int{"": 7})
+	ProblemsFound(map[string]int{})
+
+	assert.Equal(t, "applied", events[0].Data["baseline"])
+	assert.Equal(t, "none", events[1].Data["baseline"], "problems without states had no baseline")
+	assert.Equal(t, "unknown", events[2].Data["baseline"])
+}
+
 func TestTokenSourceIsTheFirstOne(t *testing.T) {
 	reset(t)
 
@@ -848,7 +862,7 @@ func reset(t *testing.T) {
 		disabled, connect, build = true, newSender, version.Version
 		enabled, collectionStarted, allowed, analyzing = false, false, true, false
 		command, projectId, orgId, analysisId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", "", ""
-		baselineFound = false
+		baselineKnown, baselineFound = false, false
 		events, senders, collected, startedAt = nil, nil, nil, time.Time{}
 		finishOnce = sync.Once{}
 	}

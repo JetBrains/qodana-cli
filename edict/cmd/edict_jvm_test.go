@@ -18,6 +18,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -26,6 +28,41 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
+
+func TestEdictDailyRoutineRejectsX86MacOS(t *testing.T) {
+	if runtime.GOOS != "darwin" || runtime.GOARCH != "amd64" {
+		t.Skip("requires an x86-64 macOS binary")
+	}
+	for _, tt := range []struct {
+		name string
+		args []string
+	}{
+		{"install", []string{"install"}},
+		{"detached server", []string{"mcp", "start"}},
+		{"foreground server", []string{"mcp", "start", "--foreground"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Chdir(t.TempDir())
+			command := NewCommand()
+			command.SetArgs(tt.args)
+			_, err := executeEdictCommand(context.Background(), command)
+			if err == nil || !strings.Contains(err.Error(), "ONNX Runtime no longer ships native libraries") {
+				t.Fatalf("expected an unsupported platform error, got %v", err)
+			}
+			entries, err := os.ReadDir(".")
+			if err != nil || len(entries) != 0 {
+				t.Fatalf("command should leave the project untouched, got %v, %v", entries, err)
+			}
+		})
+	}
+}
+
+func skipUnsupportedEdictRoutine(t *testing.T) {
+	t.Helper()
+	if err := requireEdictRoutinePlatform(nil, nil); err != nil {
+		t.Skip(err)
+	}
+}
 
 // Exercise the real embedded JAR and bundled JBR, with no system Java, model, or IDE.
 func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
@@ -60,27 +97,29 @@ func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
 	}
 	// Bundled skills may be grouped in folders; each is installed flat under its name.
 	for name, root := range bundled {
-		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
-			if err != nil || entry.IsDir() {
-				return err
-			}
-			relative, err := filepath.Rel(root, path)
-			if err != nil {
-				return err
-			}
-			expected, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			actual, err := os.ReadFile(filepath.Join(destination, name, relative))
-			if err != nil {
-				return err
-			}
-			if !bytes.Equal(expected, actual) {
-				t.Errorf("installed resource differs from Kotlin bundle: %s/%s", name, relative)
-			}
-			return nil
-		})
+		err := filepath.WalkDir(
+			root, func(path string, entry fs.DirEntry, err error) error {
+				if err != nil || entry.IsDir() {
+					return err
+				}
+				relative, err := filepath.Rel(root, path)
+				if err != nil {
+					return err
+				}
+				expected, err := os.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				actual, err := os.ReadFile(filepath.Join(destination, name, relative))
+				if err != nil {
+					return err
+				}
+				if !bytes.Equal(expected, actual) {
+					t.Errorf("installed resource differs from Kotlin bundle: %s/%s", name, relative)
+				}
+				return nil
+			},
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -126,6 +165,7 @@ func TestEdictInstallSetsUpCodexInCurrentDirectory(t *testing.T) {
 
 // Install fails, leaving no local config, until Codex trusts the project; it never edits the global Codex config.
 func TestEdictInstallRequiresCodexTrust(t *testing.T) {
+	skipUnsupportedEdictRoutine(t)
 	t.Chdir(t.TempDir())
 	project := realWorkingDirectory(t)
 	initGitRepository(t, project)
@@ -217,7 +257,10 @@ func fakeCodexServers() ([]map[string]string, error) {
 	}
 	for _, line := range strings.Split(string(local), "\n") {
 		header, _, _ := strings.Cut(strings.TrimSpace(line), "#")
-		if name, ok := strings.CutPrefix(strings.TrimSpace(header), "[mcp_servers."); ok && strings.HasSuffix(name, "]") {
+		if name, ok := strings.CutPrefix(strings.TrimSpace(header), "[mcp_servers."); ok && strings.HasSuffix(
+			name,
+			"]",
+		) {
 			servers = append(servers, map[string]string{"name": strings.TrimSuffix(name, "]")})
 		}
 	}
@@ -259,6 +302,7 @@ func fakeCodexTrusts(project string) (bool, error) {
 // installEdict runs `qodana edict install` in the current directory and returns its console output.
 func installEdict(t *testing.T, args ...string) string {
 	t.Helper()
+	skipUnsupportedEdictRoutine(t)
 	output, err := runEdictInstall(args...)
 	if err != nil {
 		t.Fatalf("install: %v\n%s", err, output)
@@ -329,22 +373,24 @@ func bundledSkills(t *testing.T) map[string]string {
 		t.Fatal(err)
 	}
 	skills := map[string]string{}
-	err = filepath.WalkDir(bundle, func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.Name() != "SKILL.md" {
-			return err
-		}
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		for _, line := range strings.Split(string(data), "\n") {
-			if name, ok := strings.CutPrefix(line, "name: "); ok {
-				skills[strings.TrimSpace(name)] = filepath.Dir(path)
-				return nil
+	err = filepath.WalkDir(
+		bundle, func(path string, entry fs.DirEntry, err error) error {
+			if err != nil || entry.Name() != "SKILL.md" {
+				return err
 			}
-		}
-		return fmt.Errorf("%s declares no name", path)
-	})
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			for _, line := range strings.Split(string(data), "\n") {
+				if name, ok := strings.CutPrefix(line, "name: "); ok {
+					skills[strings.TrimSpace(name)] = filepath.Dir(path)
+					return nil
+				}
+			}
+			return fmt.Errorf("%s declares no name", path)
+		},
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -352,6 +398,7 @@ func bundledSkills(t *testing.T) map[string]string {
 }
 
 func TestEdictJVMPropagatesFailure(t *testing.T) {
+	skipUnsupportedEdictRoutine(t)
 	t.Chdir(t.TempDir())
 	trustCodexProject(t, t.TempDir(), realWorkingDirectory(t))
 	if err := os.WriteFile(".codex", []byte("keep"), 0o600); err != nil {
@@ -380,7 +427,10 @@ func TestEdictMCPStartServesOverHTTP(t *testing.T) {
 	// Speak Streamable HTTP like an agent host: the SDK client initializes and keeps the session.
 	session := connectEdictMCP(t, ctx, server.url)
 	registry, err := json.Marshal(callEdictTool(t, ctx, session, "edict_registry", map[string]any{}).StructuredContent)
-	if err != nil || !bytes.Contains(registry, []byte(`"edict_manager"`)) || !bytes.Contains(registry, []byte(`"edict-distribution"`)) {
+	if err != nil || !bytes.Contains(registry, []byte(`"edict_manager"`)) || !bytes.Contains(
+		registry,
+		[]byte(`"edict-distribution"`),
+	) {
 		t.Fatalf("unexpected Kotlin HTTP registry: %s, %v", registry, err)
 	}
 	token := createEdictPlan(t, ctx, session, "Check the HTTP server", nil).Token
@@ -390,7 +440,10 @@ func TestEdictMCPStartServesOverHTTP(t *testing.T) {
 		t.Fatalf("unexpected edict_context result: %s", toolResultText(runContext))
 	}
 	if paths.ProjectDirectory != project || paths.StateDirectory != state ||
-		!strings.HasPrefix(paths.ScratchDirectory, filepath.Join(project, "log", "agent-work")+string(filepath.Separator)) {
+		!strings.HasPrefix(
+			paths.ScratchDirectory,
+			filepath.Join(project, "log", "agent-work")+string(filepath.Separator),
+		) {
 		t.Fatalf("unexpected run paths: %+v", paths)
 	}
 	if info, err := os.Stat(paths.ScratchDirectory); err != nil || !info.IsDir() {
@@ -417,7 +470,7 @@ func TestEdictMCPStartLocksTheStateDirectory(t *testing.T) {
 	server.stop(t, cancel)
 	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer restartCancel()
-	startEdictMCP(t, restartContext).stop(t, restartCancel)
+	restartEdictMCP(t, restartContext).stop(t, restartCancel)
 }
 
 // Another state cannot move to another port: the agent config names the one install wrote.
@@ -442,7 +495,13 @@ func runEdictMCPStart(ctx context.Context) (string, error) {
 }
 
 // callEdictTool calls a tool that must succeed, and fails the test with the server's message otherwise.
-func callEdictTool(t *testing.T, ctx context.Context, session *mcp.ClientSession, name string, arguments map[string]any) *mcp.CallToolResult {
+func callEdictTool(
+	t *testing.T,
+	ctx context.Context,
+	session *mcp.ClientSession,
+	name string,
+	arguments map[string]any,
+) *mcp.CallToolResult {
 	t.Helper()
 	result, err := session.CallTool(ctx, &mcp.CallToolParams{Name: name, Arguments: arguments})
 	if err != nil {
@@ -475,7 +534,13 @@ type edictPlanCreation struct {
 }
 
 // createEdictPlan creates the run's plan, which needs no token, and returns it with the manager token.
-func createEdictPlan(t *testing.T, ctx context.Context, session *mcp.ClientSession, request string, steps []map[string]string) edictPlanCreation {
+func createEdictPlan(
+	t *testing.T,
+	ctx context.Context,
+	session *mcp.ClientSession,
+	request string,
+	steps []map[string]string,
+) edictPlanCreation {
 	t.Helper()
 	if steps == nil {
 		steps = []map[string]string{}
@@ -523,7 +588,27 @@ func initGitRepository(t *testing.T, project string) {
 
 func writeEdictPort(t *testing.T, port int) {
 	t.Helper()
-	if err := os.WriteFile("qodana.yaml", []byte(fmt.Sprintf("version: \"1.0\"\nedict:\n  mcpPort: %d\n", port)), 0o600); err != nil {
+	if err := os.WriteFile(
+		"qodana.yaml",
+		[]byte(fmt.Sprintf("version: \"1.0\"\nedict:\n  mcpPort: %d\n", port)),
+		0o600,
+	); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func moveEdictPort(t *testing.T, port int) {
+	t.Helper()
+	config, err := os.ReadFile("qodana.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	portSetting := regexp.MustCompile(`(?m)^  mcpPort: \d+$`)
+	if !portSetting.Match(config) {
+		t.Fatal("qodana.yaml has no Edict MCP port to update")
+	}
+	updated := portSetting.ReplaceAll(config, []byte(fmt.Sprintf("  mcpPort: %d", port)))
+	if err := os.WriteFile("qodana.yaml", updated, 0o600); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -577,6 +662,32 @@ type edictMCPServer struct {
 // startEdictMCP runs `qodana edict mcp start` in the current directory until ctx is cancelled.
 func startEdictMCP(t *testing.T, ctx context.Context, args ...string) edictMCPServer {
 	t.Helper()
+	for attempt := 1; ; attempt++ {
+		server, output, err := tryStartEdictMCP(t, ctx, args...)
+		if err == nil {
+			return server
+		}
+		if attempt == 3 || !strings.Contains(output, "Address already in use") {
+			t.Fatalf("HTTP server exited before startup (attempt %d): %v\nJVM output:\n%s", attempt, err, output)
+		}
+		moveEdictPort(t, freePort(t))
+		installEdict(t)
+	}
+}
+
+// restartEdictMCP starts the server on the port a stopped one released, without moving to another port: a port that
+// stays bound after stop fails the test.
+func restartEdictMCP(t *testing.T, ctx context.Context) edictMCPServer {
+	t.Helper()
+	server, output, err := tryStartEdictMCP(t, ctx)
+	if err != nil {
+		t.Fatalf("HTTP server did not restart: %v\nJVM output:\n%s", err, output)
+	}
+	return server
+}
+
+func tryStartEdictMCP(t *testing.T, ctx context.Context, args ...string) (edictMCPServer, string, error) {
+	t.Helper()
 	output, outputWriter := io.Pipe()
 	t.Cleanup(func() { _ = output.Close() })
 	command := newEdictManagedMCPStartCommand()
@@ -585,28 +696,37 @@ func startEdictMCP(t *testing.T, ctx context.Context, args ...string) edictMCPSe
 	server := edictMCPServer{done: make(chan error, 1)}
 	command.SetOut(outputWriter)
 	command.SetErr(outputWriter)
+	endpoint := make(chan string, 1)
+	scanned := make(chan string, 1)
+	go func() {
+		var lines []string
+		scanner := bufio.NewScanner(output)
+		for scanner.Scan() {
+			line := scanner.Text()
+			lines = append(lines, line)
+			if _, url, ok := strings.Cut(line, "edict-mcp listening at "); ok {
+				endpoint <- url
+			}
+		}
+		scanned <- strings.Join(lines, "\n")
+	}()
 	go func() {
 		err := command.ExecuteContext(ctx)
 		_ = outputWriter.Close()
 		server.done <- err
 	}()
-	endpoint := make(chan string, 1)
-	go func() {
-		scanner := bufio.NewScanner(output)
-		for scanner.Scan() {
-			if _, url, ok := strings.Cut(scanner.Text(), "edict-mcp listening at "); ok {
-				endpoint <- url
-			}
-		}
-	}()
 	select {
 	case server.url = <-endpoint:
+		return server, "", nil
 	case err := <-server.done:
-		t.Fatalf("HTTP server exited before startup: %v", err)
+		if err == nil {
+			err = errors.New("process exited before listening endpoint")
+		}
+		return server, <-scanned, err
 	case <-ctx.Done():
-		t.Fatal("HTTP server startup timed out")
+		err := <-server.done
+		return server, <-scanned, fmt.Errorf("HTTP server startup: %w (process error: %v)", ctx.Err(), err)
 	}
-	return server
 }
 
 func (server edictMCPServer) stop(t *testing.T, cancel context.CancelFunc) {
@@ -653,7 +773,10 @@ func TestEdictStatePushBeforeInstallLeavesTheStateDirectoryToInstall(t *testing.
 	push := newEdictStateCommand()
 	push.SetArgs([]string{"push"})
 	push.SetIn(strings.NewReader(""))
-	if output, err := executeEdictCommand(context.Background(), push); err == nil || !strings.Contains(output, "is not a worktree of edict/state") {
+	if output, err := executeEdictCommand(context.Background(), push); err == nil || !strings.Contains(
+		output,
+		"is not a worktree of edict/state",
+	) {
 		t.Fatalf("state push before install: %v\n%s", err, output)
 	}
 
@@ -709,7 +832,15 @@ func TestEdictFeedbackPostForNoPullRequestPostsNothingAndLogsOutsideTheProject(t
 	t.Setenv("GITHUB_API_URL", "https://api.github.invalid")
 	t.Setenv("GITHUB_TOKEN", "unused")
 	post := newEdictFeedbackCommand()
-	post.SetArgs([]string{"post", "--state-dir", t.TempDir(), "--sarif", filepath.Join(t.TempDir(), "qodana.sarif.json")})
+	post.SetArgs(
+		[]string{
+			"post",
+			"--state-dir",
+			t.TempDir(),
+			"--sarif",
+			filepath.Join(t.TempDir(), "qodana.sarif.json"),
+		},
+	)
 	post.SetIn(strings.NewReader(""))
 	var stdout, stderr bytes.Buffer
 	post.SetOut(&stdout)

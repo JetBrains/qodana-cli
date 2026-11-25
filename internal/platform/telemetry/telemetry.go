@@ -80,7 +80,9 @@ var (
 	stage       string
 	failedStage string
 	tokenSource string
-	// baselineFound tells that the analysis is given a baseline
+	// baselineKnown tells that the CLI resolved the baseline, baselineFound that the analysis is given one: an IDE
+	// linter resolves its cloud baseline itself
+	baselineKnown bool
 	baselineFound bool
 	// knownReason is the precise reason of a failure, which its exit code does not tell
 	knownReason string
@@ -294,7 +296,7 @@ func BaselineResolved(source string, status string, httpStatus int, downloadTime
 	mu.Lock()
 	defer mu.Unlock()
 	// a missing baseline file is no baseline: problems.found reports baseline=none
-	baselineFound = status == "found"
+	baselineKnown, baselineFound = true, status == "found"
 	record(groupRun, baselineResolved, data)
 }
 
@@ -361,7 +363,8 @@ func DockerReady(cpuCount int, memoryBytes int64, engineVersion string) {
 
 // ProblemsFound records the numbers of problems of the report by their SARIF baseline states, in buckets, and
 // whether the analysis applied the baseline it was given: only then the problems have baseline states. Absent
-// problems are of the baseline, not of the project.
+// problems are of the baseline, not of the project. A baseline which an IDE linter resolves itself is told by the
+// states only: applied, or none without them.
 func ProblemsFound(countsByBaselineState map[string]int) {
 	total := -countsByBaselineState["absent"]
 	for _, count := range countsByBaselineState {
@@ -376,13 +379,15 @@ func ProblemsFound(countsByBaselineState map[string]int) {
 	mu.Lock()
 	defer mu.Unlock()
 	switch {
-	case !baselineFound:
+	case baselineKnown && !baselineFound:
 		data["baseline"] = "none"
 	case total+countsByBaselineState["absent"] == 0:
 		// a report without problems does not tell
 		data["baseline"] = "unknown"
 	case countsByBaselineState[""] == 0:
 		data["baseline"] = "applied"
+	case !baselineKnown:
+		data["baseline"] = "none"
 	default:
 		data["baseline"] = "ignored"
 	}

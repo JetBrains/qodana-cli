@@ -39,6 +39,8 @@ Edict manager requires available Edict mcp server. All results of work are store
 
 ## Requirements
 
+- On macOS, the daily routine requires the arm64 Qodana CLI on Apple Silicon. ONNX Runtime 1.24 and later omit the
+  x86-64 macOS natives required for local embeddings.
 - Git. The project must be a Git repository.
 - [Codex](https://github.com/openai/codex), installed and on `PATH` (or set `$CODEX_BIN`).
 - A Codex configuration in `$CODEX_HOME/config.toml` that has your model provider and marks the project as trusted:

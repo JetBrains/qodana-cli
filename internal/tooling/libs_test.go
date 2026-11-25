@@ -36,7 +36,7 @@ func TestEmbeddedEdictContainsOnlyTargetNatives(t *testing.T) {
 		t.Fatal(err)
 	}
 	nativePlatform := map[string]string{
-		"darwin-amd64": "osx-x64", "darwin-arm64": "osx-aarch64",
+		"darwin-amd64": "", "darwin-arm64": "osx-aarch64",
 		"linux-amd64": "linux-x64", "linux-arm64": "linux-aarch64",
 		"windows-amd64": "win-x64", "windows-arm64": "",
 	}[target]

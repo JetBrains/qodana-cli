@@ -288,7 +288,7 @@ func TestWrongVersion(t *testing.T) {
 	}
 }
 
-func TestNewLintersApiClient(t *testing.T) {
+func TestNewBaselineClient(t *testing.T) {
 	endpoints := &QdApiEndpoints{
 		RootEndpoint:  &QdRootEndpoint{Url: "https://qodana.cloud"},
 		LintersApiUrl: "https://linters.api.url/v1",
@@ -296,7 +296,7 @@ func TestNewLintersApiClient(t *testing.T) {
 	}
 
 	t.Run("creates client with token", func(t *testing.T) {
-		client := endpoints.NewLintersApiClient("test-token")
+		client := endpoints.NewBaselineClient("test-token")
 		assert.NotNil(t, client)
 		assert.Equal(t, "https://linters.api.url/v1", client.apiUrl)
 		assert.Equal(t, "test-token", client.token)
@@ -304,7 +304,7 @@ func TestNewLintersApiClient(t *testing.T) {
 	})
 
 	t.Run("creates client without token", func(t *testing.T) {
-		client := endpoints.NewLintersApiClient("")
+		client := endpoints.NewBaselineClient("")
 		assert.NotNil(t, client)
 		assert.Equal(t, "", client.token)
 	})
