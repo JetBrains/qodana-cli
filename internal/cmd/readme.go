@@ -22,7 +22,6 @@ import (
 	"regexp"
 	"strings"
 
-	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -51,8 +50,8 @@ func generateCliReadme(readme string) (string, error) {
 }
 
 // generateReadme returns readme with the documentation of commands between the markers, each of which it must have
-// once. It documents the available commands, in their order, and then their available subcommands, but the ones with
-// platformcmd.UndocumentedAnnotation. It trims the descriptions of the commands it documents.
+// once. It documents the available commands, in their order, and then their available subcommands: the ones --help
+// shows. It trims the descriptions of the commands it documents.
 func generateReadme(readme string, commands []*cobra.Command) (string, error) {
 	for _, marker := range []string{readmeCommandsStart, readmeCommandsEnd} {
 		if count := strings.Count(readme, marker); count != 1 {
@@ -72,12 +71,10 @@ func generateReadme(readme string, commands []*cobra.Command) (string, error) {
 	return before + readmeCommandsStart + "\n" + cleanup(docs.String()) + readmeCommandsEnd + after, nil
 }
 
-// writeCommandsMarkdown writes the documentation of the available commands and their available subcommands, but the
-// ones with platformcmd.UndocumentedAnnotation.
+// writeCommandsMarkdown writes the documentation of the available commands and their available subcommands.
 func writeCommandsMarkdown(docs *strings.Builder, commands []*cobra.Command) error {
 	for _, command := range commands {
-		if _, undocumented := command.Annotations[platformcmd.UndocumentedAnnotation]; undocumented ||
-			!command.IsAvailableCommand() {
+		if !command.IsAvailableCommand() {
 			continue
 		}
 		markdown, err := commandMarkdown(command)
@@ -96,9 +93,11 @@ func writeCommandsMarkdown(docs *strings.Builder, commands []*cobra.Command) err
 // command, no SEE ALSO section nor generation date.
 func commandMarkdown(command *cobra.Command) (string, error) {
 	command.DisableAutoGenTag = true
-	// Blank lines that a description starts or ends with would show as more than one blank line.
-	command.Short = strings.TrimSpace(command.Short)
-	command.Long = strings.TrimSpace(command.Long)
+	// Blank lines that a description starts or ends with would show as more than one blank line, and markdown would
+	// hide a placeholder such as <directory> in a description as an HTML tag.
+	escapeTags := strings.NewReplacer("<", "&lt;")
+	command.Short = escapeTags.Replace(strings.TrimSpace(command.Short))
+	command.Long = escapeTags.Replace(strings.TrimSpace(command.Long))
 
 	var markdown bytes.Buffer
 	if err := doc.GenMarkdownCustom(command, &markdown, func(string) string { return "" }); err != nil {

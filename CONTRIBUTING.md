@@ -99,8 +99,7 @@ shows image names with the version and, before the release, an `-eap` suffix.
 ```sh
 go test ./internal/cmd -run TestReadmeIsUpToDate -update
 ```
-The README documents a new command and its subcommands automatically. To keep one out of it, for example while it is
-not publicly available, set `platformcmd.UndocumentedAnnotation` in its `Annotations` to the reason.
+The README documents every command and subcommand that `--help` shows, a new one too, and no hidden one.
 
 Dry-run goreleaser:
 

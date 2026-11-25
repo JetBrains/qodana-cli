@@ -23,7 +23,6 @@ import (
 	"strings"
 	"testing"
 
-	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -71,7 +70,6 @@ func TestGenerateReadmeDocumentsTheAvailableCommandsInTheirOrder(t *testing.T) {
 		newRunnableTestCommand("first", "The first command"),
 		&cobra.Command{Use: "hidden", Short: "A hidden command", Hidden: true, Run: func(*cobra.Command, []string) {}},
 		&cobra.Command{Use: "group", Short: "A command without an available subcommand"},
-		newUndocumentedTestCommand("internal", "not publicly available"),
 	)
 
 	updated, err := generateReadme(readmeWithCommands("outdated\n"), commands)
@@ -85,7 +83,7 @@ func TestGenerateReadmeDocumentsTheAvailableSubcommandsAfterTheirCommand(t *test
 	group := &cobra.Command{Use: "group", Short: "A group of commands"}
 	group.AddCommand(
 		newRunnableTestCommand("run", "Run something"),
-		newUndocumentedTestCommand("internal", "not publicly available"),
+		&cobra.Command{Use: "hidden", Short: "A hidden subcommand", Hidden: true, Run: func(*cobra.Command, []string) {}},
 	)
 	commands := newReadmeTestCommands(group, newRunnableTestCommand("next", "The next command"))
 
@@ -112,6 +110,15 @@ func TestGenerateReadmeKeepsTheTextAroundTheCommandsAsIs(t *testing.T) {
 	require.NoError(t, err)
 	docs := readmeWithCommands(testCommandMarkdown("only", "Costs $1 and ${HOME}"))
 	assert.Equal(t, "# $1 ${HOME}\n"+docs+"## Why $1\n", updated)
+}
+
+func TestGenerateReadmeKeepsThePlaceholdersOfTheDescriptionsVisible(t *testing.T) {
+	commands := newReadmeTestCommands(newRunnableTestCommand("only", "Logs to ./log/<run-id>"))
+
+	updated, err := generateReadme(readmeWithCommands(""), commands)
+
+	require.NoError(t, err)
+	assert.Equal(t, readmeWithCommands(testCommandMarkdown("only", "Logs to ./log/&lt;run-id>")), updated)
 }
 
 func TestGenerateReadmeFailsWithoutEachMarkerOnce(t *testing.T) {
@@ -145,12 +152,6 @@ func newReadmeTestCommands(commands ...*cobra.Command) []*cobra.Command {
 
 func newRunnableTestCommand(name, short string) *cobra.Command {
 	return &cobra.Command{Use: name, Short: short, Run: func(*cobra.Command, []string) {}}
-}
-
-func newUndocumentedTestCommand(name, reason string) *cobra.Command {
-	command := newRunnableTestCommand(name, "A command the README does not document")
-	command.Annotations = map[string]string{platformcmd.UndocumentedAnnotation: reason}
-	return command
 }
 
 func testCommandMarkdown(name, short string) string {
