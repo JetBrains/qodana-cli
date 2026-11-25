@@ -216,14 +216,9 @@
       "commitMessagePrefix": ":arrow_up: QD-12983"
     },
     {
-      "description": "config-loader-cli.jar in test.yaml needs Java 21; only accept LTS versions with 1-4 digit respin numbers.",
+      "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
       "matchDepNames": ["java-jdk"],
-      "allowedVersions": "/^21\\.\\d+\\.\\d+\\+\\d{1,4}\\.\\d+\\.LTS$/"
-    },
-    {
-      "matchDepNames": ["java-jdk"],
-      "matchUpdateTypes": ["patch"],
-      "automerge": true
+      "allowedVersions": "/^21(\\.|$)/"
     },
     {
       "description": "ruby.Dockerfile's RUBY_TAG is only a default; the built Ruby versions come from the ruby3x matrix in dockerfiles/base/docker-bake.hcl, which Renovate can't update.",
