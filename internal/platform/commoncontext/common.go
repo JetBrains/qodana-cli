@@ -482,6 +482,7 @@ func serveReport(path string, port int, served func(err error)) {
 		msg.WarningMessage("Problem serving report, %s\n", err.Error())
 		return
 	}
+	defer func() { _ = listener.Close() }()
 	go openBrowserWhenAvailable(fmt.Sprintf("http://localhost:%d", port))
 	defer func() { _ = server.Close() }()
 	err = server.Serve(listener)

@@ -549,7 +549,7 @@ func TestValuesOutsideEnumsAreOther(t *testing.T) {
 }
 
 func TestVersionName(t *testing.T) {
-	for version, expected := range map[string]string{
+	for raw, expected := range map[string]string{
 		"2025.1": "2025.1",
 		"27.3.1": "27.3.1",
 		"24":     "24",
@@ -557,7 +557,7 @@ func TestVersionName(t *testing.T) {
 		"":       other,
 		"1..2":   other,
 	} {
-		assert.Equal(t, expected, versionName(version), version)
+		assert.Equal(t, expected, versionName(raw), raw)
 	}
 	reset(t)
 	enabled = true
@@ -858,7 +858,7 @@ func lastEvent(report fus.Report, id string) map[string]any {
 }
 
 func reset(t *testing.T) {
-	clear := func() {
+	restore := func() {
 		disabled, connect, build = true, newSender, version.Version
 		enabled, collectionStarted, allowed, analyzing = false, false, true, false
 		command, projectId, orgId, analysisId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", "", ""
@@ -866,8 +866,8 @@ func reset(t *testing.T) {
 		events, senders, collected, startedAt = nil, nil, nil, time.Time{}
 		finishOnce = sync.Once{}
 	}
-	t.Cleanup(clear)
-	clear()
+	t.Cleanup(restore)
+	restore()
 }
 
 func TestRepositoryDeviceIsTheOneOfTheLinter(t *testing.T) {

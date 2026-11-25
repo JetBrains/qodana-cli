@@ -109,16 +109,25 @@ This command serves the Qodana report locally and opens a browser to it.`,
 // local report is served until the user interrupts qodana show, which is no failure: the run is finished meanwhile. A
 // report that can't be shown sets the reason the run finishes with: a missing one fails it, a port in use only warns.
 func reportShown(target string, err error) {
+	if reason := showFailure(err); reason != "" {
+		telemetry.Fail(reason)
+		return
+	}
+	telemetry.ReportShown(target)
+	if target == "local" {
+		go telemetry.Finish(0, "")
+	}
+}
+
+// showFailure gives the reason of a report that can't be shown, "" for a shown one.
+func showFailure(err error) string {
 	switch {
+	case err == nil:
+		return ""
 	case errors.Is(err, commoncontext.ErrReportMissing):
-		telemetry.Fail(telemetry.ReasonReportMissing)
-	case err != nil:
-		telemetry.Fail(telemetry.ReasonServeFailed)
+		return telemetry.ReasonReportMissing
 	default:
-		telemetry.ReportShown(target)
-		if target == "local" {
-			go telemetry.Finish(0, "")
-		}
+		return telemetry.ReasonServeFailed
 	}
 }
 

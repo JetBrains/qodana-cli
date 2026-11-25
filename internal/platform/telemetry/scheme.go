@@ -89,10 +89,10 @@ const (
 	ReasonBaselineError   = "baseline_error"
 	ReasonUploadFailed    = "upload_failed"
 	ReasonReportFailed    = "report_failed"
-	// qodana show finds no report, or can't serve it
+	// ReasonReportMissing and ReasonServeFailed: qodana show finds no report, or can't serve it
 	ReasonReportMissing = "report_missing"
 	ReasonServeFailed   = "serve_failed"
-	// failures before the analysis
+	// ReasonSetupError and the reasons below it are failures before the analysis
 	ReasonSetupError         = "setup_error"
 	ReasonUnsupportedProject = "unsupported_project"
 	ReasonInvalidConfig      = "invalid_config"
