@@ -38,6 +38,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
+    chmod 777 -R "$GOPATH" && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*'
 
