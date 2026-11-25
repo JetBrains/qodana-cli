@@ -67,11 +67,11 @@ ARG QD_RELEASE=""
 ARG QD_VERSION="2026.3"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="jvm"
 ARG QD_CODE="QDJVM"
-ARG QD_BUILD="263.7890"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.7890.82.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.7890.82-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.7890.82.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.7890.82-aarch64.tar.gz.sha256"
+ARG QD_BUILD="263.8407"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.8407.131.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.8407.131-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.8407.131.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDJVM-263.8407.131-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
