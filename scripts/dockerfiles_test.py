@@ -27,19 +27,19 @@ def _chdir_repo_root():
     os.chdir(old)
 
 
-def _render_variant(qd_version, variant="jvm"):
+def _render_jvm(qd_version):
     env = dockerfiles.create_jinja_environment()
     intellij = dockerfiles.load_template(env, "dockerfiles/base/templates/intellij.Dockerfile.j2")
     thirdparty = dockerfiles.load_template(env, "dockerfiles/base/templates/thirdparty.Dockerfile.j2")
-    data = dockerfiles.load_variants()[variant]
+    data = dockerfiles.load_variants()["jvm"]
     return dockerfiles.generate_variant_dockerfile(
-        variant, data, "dockerfiles/base", intellij, thirdparty, qd_version,
+        "jvm", data, "dockerfiles/base", intellij, thirdparty, qd_version,
     )
 
 
 def test_variant_without_matching_release_renders_empty_fallbacks(monkeypatch):
     monkeypatch.setattr(dockerfiles, "load_release_info", lambda *a, **k: {})
-    out = _render_variant("2026.2")
+    out = _render_jvm("2026.2")
     assert out
     assert 'ARG QD_BUILD=""' in out
     assert 'ARG QD_DOWNLOAD_URL_LINUX=""' in out
@@ -52,19 +52,10 @@ def test_variant_with_release_info_renders_download_urls(monkeypatch):
     monkeypatch.setattr(dockerfiles, "load_release_info", lambda *a, **k: {
         "build": "262.9999", "downloads": REAL_DOWNLOADS,
     })
-    out = _render_variant("2026.2")
+    out = _render_jvm("2026.2")
     assert 'ARG QD_BUILD="262.9999"' in out
     assert 'ARG QD_DOWNLOAD_URL_LINUX="https://example.test/qodana-linux.tar.gz"' in out
     assert 'ARG QD_CHECKSUM_URL_LINUX_ARM64="https://example.test/qodana-arm.tar.gz.sha256"' in out
-
-
-def test_android_variant_includes_corretto_25(monkeypatch):
-    monkeypatch.setattr(dockerfiles, "load_release_info", lambda *a, **k: {})
-    out = _render_variant("2026.2", "android")
-
-    assert 'QODANA_CORETTO_SDK_25="/root/.jdks/corretto-25"' in out
-    assert "COPY --from=dhi.io/amazoncorretto:25 /usr/lib/jvm/java-25-amazon-corretto $QODANA_CORETTO_SDK_25" in out
-    assert 'for jdk in "$QODANA_CORETTO_SDK_11" "$QODANA_CORETTO_SDK_17" "$QODANA_CORETTO_SDK_25"; do' in out
 
 
 def test_main_succeeds_and_writes_all_variants_for_empty_fallbacks(monkeypatch):
@@ -156,7 +147,7 @@ def test_load_release_info_raises_on_unknown_product_code():
 
 def test_intellij_template_wires_overridable_qd_version_into_url(monkeypatch):
     monkeypatch.setattr(dockerfiles, "load_release_info", lambda *a, **k: {})
-    out = _render_variant("2026.2")
+    out = _render_jvm("2026.2")
     assert 'ARG QD_VERSION="2026.2"' in out
     assert 'ENV QD_VERSION="$QD_VERSION"' in out
     assert "qodana/$QD_VERSION/" in out
