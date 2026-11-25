@@ -4,8 +4,6 @@ on:
     paths:
       - 'internal/cmd/**'
       - 'internal/platform/cmd/**'
-      - 'internal/platform/product/**'
-      - 'go.mod'
       - 'scripts/generate-docs.go'
       - 'README.md'
 
