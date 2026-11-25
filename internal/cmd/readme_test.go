@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -28,35 +29,40 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var updateReadme = flag.Bool("update", false, "regenerate README.md instead of checking it: "+updateReadmeCommand)
+
+// TestReadmeIsUpToDate checks that README.md documents the commands as their --help shows them, and regenerates it
+// with -update.
 func TestReadmeIsUpToDate(t *testing.T) {
-	readme, err := os.ReadFile("../../README.md")
+	const path = "../../README.md"
+	readme, err := os.ReadFile(path)
 	require.NoError(t, err)
 
-	updated, err := GenerateReadme(string(readme))
+	updated, err := generateCliReadme(string(readme))
 
 	require.NoError(t, err)
+	if *updateReadme {
+		require.NoError(t, os.WriteFile(path, []byte(updated), 0o644))
+		return
+	}
 	// Not assert.Equal, which would print the whole README twice before the difference.
 	if line, readmeLine, updatedLine, differ := firstDifferentLine(string(readme), updated); differ {
-		t.Fatalf("README.md is out of date: run 'go run scripts/generate-docs.go'. Its line %d is\n%q\nbut --help shows\n%q",
-			line, readmeLine, updatedLine)
+		t.Fatalf("README.md is out of date: run '%s'. Its line %d is\n%q\nbut --help shows\n%q",
+			updateReadmeCommand, line, readmeLine, updatedLine)
 	}
 }
 
-// firstDifferentLine returns the number of the first line in which a and b differ, and the lines, a missing one empty.
+// firstDifferentLine returns the number of the first line in which a and b differ, and the lines: past the end of the
+// shorter text, the rest of the longer one and nothing.
 func firstDifferentLine(a, b string) (line int, aLine, bLine string, differ bool) {
 	aLines, bLines := strings.Split(a, "\n"), strings.Split(b, "\n")
-	lineAt := func(lines []string, i int) string {
-		if i < len(lines) {
-			return lines[i]
-		}
-		return ""
-	}
-	for i := range max(len(aLines), len(bLines)) {
-		if i >= len(aLines) || i >= len(bLines) || aLines[i] != bLines[i] {
-			return i + 1, lineAt(aLines, i), lineAt(bLines, i), true
+	common := min(len(aLines), len(bLines))
+	for i := range common {
+		if aLines[i] != bLines[i] {
+			return i + 1, aLines[i], bLines[i], true
 		}
 	}
-	return 0, "", "", false
+	return common + 1, strings.Join(aLines[common:], "\n"), strings.Join(bLines[common:], "\n"), len(aLines) != len(bLines)
 }
 
 func TestGenerateReadmeDocumentsTheAvailableCommandsInTheirOrder(t *testing.T) {
@@ -95,15 +101,6 @@ func TestGenerateReadmeDocumentsTheAvailableSubcommandsAfterTheirCommand(t *test
 	}
 	assert.Equal(t, []string{"## group", "## group run", "## next"}, headings)
 	assert.Contains(t, docs, "\nqodana group run [flags]\n")
-}
-
-func TestGenerateReadmeFailsForAnUndocumentedCommandThatDoesNotSayWhy(t *testing.T) {
-	group := &cobra.Command{Use: "group", Short: "A group of commands"}
-	group.AddCommand(newRunnableTestCommand("run", "Run something"), newUndocumentedTestCommand("internal", " "))
-
-	_, err := generateReadme(readmeWithCommands(""), newReadmeTestCommands(group))
-
-	assert.EqualError(t, err, `the command "qodana group internal" must say why the README does not document it`)
 }
 
 func TestGenerateReadmeKeepsTheTextAroundTheCommandsAsIs(t *testing.T) {

@@ -97,7 +97,7 @@ Regenerate it after changing a command or its flags, and in the pull requests th
 `IsReleased` of `internal/platform/product`, such as a version bump or the release of a branch: the help of `scan`
 shows image names with the version and, before the release, an `-eap` suffix.
 ```sh
-go run scripts/generate-docs.go
+go test ./internal/cmd -run TestReadmeIsUpToDate -update
 ```
 The README documents a new command and its subcommands automatically. To keep one out of it, for example while it is
 not publicly available, set `platformcmd.UndocumentedAnnotation` in its `Annotations` to the reason.
