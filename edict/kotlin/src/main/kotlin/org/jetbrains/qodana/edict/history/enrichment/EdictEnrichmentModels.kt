@@ -11,6 +11,10 @@ internal data class EdictHistoryContext(
 @Serializable
 internal data class EdictHistoryRange(
   val headRevision: String,
+  /** The date cutoff, an ISO-8601 UTC instant: older commits are outside the window. */
   val since: String,
-  val commitRevisions: List<String>,
+  /** How many revisions [revisionsFile] lists; 0 for an empty window. */
+  val revisionCount: Int,
+  /** Absolute path of the window's revisions, newest first, one full SHA per line. */
+  val revisionsFile: String,
 )
