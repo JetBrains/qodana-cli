@@ -58,11 +58,11 @@ ARG QD_RELEASE=""
 ARG QD_VERSION="2026.2"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="rust"
 ARG QD_CODE="QDRST"
-ARG QD_BUILD="262.12296"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12296.125.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12296.125-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12296.125.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12296.125-aarch64.tar.gz.sha256"
+ARG QD_BUILD="262.12665"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12665.145.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12665.145-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12665.145.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDRST-262.12665.145-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

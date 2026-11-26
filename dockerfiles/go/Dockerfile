@@ -64,11 +64,11 @@ ARG QD_RELEASE=""
 ARG QD_VERSION="2026.2"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="go"
 ARG QD_CODE="QDGO"
-ARG QD_BUILD="262.12294"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12294.376.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12294.376-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12294.376.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12294.376-aarch64.tar.gz.sha256"
+ARG QD_BUILD="262.12653"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12653.420.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12653.420-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12653.420.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDGO-262.12653.420-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
