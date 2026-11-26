@@ -22,8 +22,8 @@ ENV TARGETARCH=$TARGETARCH \
     CLANG=$CLANG \
     JAVA_HOME=/usr/lib/jvm/java-21-openjdk-$TARGETARCH
 ENV CHOCO_VERSION=2.2.2 \
-    GH_VERSION=2.41.0 \
-    GORELEASER_VERSION=2.14.3
+    GH_VERSION=2.103.3 \
+    GORELEASER_VERSION=2.20.2
 ENV MONO_REPO="https://download.mono-project.com/repo/debian"
 
 RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
