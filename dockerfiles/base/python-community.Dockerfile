@@ -10,12 +10,9 @@ ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
 # https://repo.anaconda.com/miniconda/
 ARG CONDA_VERSION="py312_24.5.0-0"
 
-# The CA bundles of Miniconda 24.5.0, most notably the certifi vendored by pip 24.0, include the distrusted
-# emSign ECC Root CA - G3 and AAA Certificate Services roots, so they are upgraded too (QD-16607). Python 3.14's
-# ensurepip bundles pip 26.2.2 and virtualenv seeds Python 3.10 and later with pip 26.3, whose certifi bundles no longer
-# have them. virtualenv's pip 26.0.1 for Python 3.9, which is end-of-life and has no later pip, still has emSign ECC G3,
-# so it is removed if present: virtualenv can no longer seed Python 3.9 environments. The same step then fails the build
-# if any PEM bundle in the conda environment, or in one of its wheels, still has either root.
+# QD-16607: no CA bundle may trust emSign ECC Root CA - G3 or AAA Certificate Services. Miniconda 24.5.0's do, hence the
+# upgrades; Python 3.14's ensurepip (pip 26.2.2) and virtualenv's pip 26.3 are clean. The guard after the install drops
+# virtualenv's pip 26.0.1 for end-of-life Python 3.9 (no clean pip exists) and fails the build if a root is left.
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
@@ -53,8 +50,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     poetry config virtualenvs.create false && \
     chmod 777 -R $HOME/.conda $CONDA_DIR/ $HOME/.config/pypoetry/ && \
     rm -rf /tmp/*
-# Drops virtualenv's pip for Python 3.9 if virtualenv still ships it, then fails the build if anything in the conda
-# environment still trusts a distrusted root CA (QD-16607): a PEM bundle, or one inside a wheel, such as pip's certifi
+# QD-16607 guard: drops virtualenv's Python 3.9 pip if present, then fails if any PEM bundle under $CONDA_DIR, or in
+# its wheels (pip's certifi), has a distrusted root, or if nothing was checked
 import base64, binascii, hashlib, os, re, sys, zipfile
 
 distrusted = {
@@ -72,14 +69,14 @@ def check(name, data):
         try:
             der = base64.b64decode(b"".join(match.group(1).split()))
         except binascii.Error:
-            continue  # not a certificate anyone can trust
+            continue  # not a valid certificate
         checked += 1
         fingerprint = hashlib.sha256(der).hexdigest()
         if fingerprint in distrusted:
             found.append(f"{name}: {distrusted[fingerprint]}")
 
 
-for folder, _, files in os.walk(sys.argv[1]):  # symlinked folders, such as conda's lib/python3.1, are not followed
+for folder, _, files in os.walk(sys.argv[1]):  # skips symlinked dirs such as conda's lib/python3.1
     for file in files:
         path = os.path.join(folder, file)
         if os.path.islink(path):
