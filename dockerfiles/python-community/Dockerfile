@@ -51,7 +51,8 @@ ARG CONDA_VERSION="py312_24.5.0-0"
 # seeds new environments of Python 3.10 and later with pip 26.3, whose certifi no longer has them. Drop that
 # once Python bundles pip 26.2.2 or later.
 # virtualenv's pip 26.0.1 for Python 3.9, which is end-of-life and has no later pip, still has emSign ECC G3 (QD-16607),
-# so it is removed: virtualenv can no longer seed Python 3.9 environments. The removal fails once virtualenv drops it.
+# so it is removed if present: virtualenv can no longer seed Python 3.9 environments. The next step then fails the build
+# if any PEM bundle in the conda environment, or in one of its wheels, still has either root.
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
@@ -86,8 +87,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       "ca-certificates>=2026.10.19" "certifi>=2026.10.19" "pip>=26.2.2" "virtualenv>=21.15.6" "python>=3.12.16,<3.13" \
       "libmambapy<2" && \
     ${CONDA_DIR}/bin/conda clean -afy && \
-    "$CONDA_DIR/bin/python" -I -c "import os, virtualenv.seed.wheels.embed as embed; os.remove(os.path.join(embed.BUNDLE_FOLDER, 'pip-26.0.1-py3-none-any.whl'))" && \
     "$CONDA_DIR/bin/python" -I - <<"EOF" && \
+    "$CONDA_DIR/bin/python" -I - "$CONDA_DIR" <<"GUARD" && \
     poetry config virtualenvs.create false && \
     chmod 777 -R $HOME/.conda $CONDA_DIR/ $HOME/.config/pypoetry/ && \
     rm -rf /tmp/*
@@ -131,6 +132,54 @@ for wheel in wheels:
     os.replace(wheel + ".new", wheel)
     print(f"{wheel}: removed {len(removed)} of {len(certificates)} certificates")
 EOF
+# Drops virtualenv's pip for Python 3.9 if virtualenv still ships it, then fails the build if anything in the conda
+# environment still trusts a distrusted root CA (QD-16607): a PEM bundle, or one inside a wheel, such as pip's certifi
+import base64, binascii, hashlib, os, re, sys, zipfile
+
+distrusted = {
+    "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b": "emSign ECC Root CA - G3",
+    "d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4": "AAA Certificate Services",
+}
+python39_pip = os.path.join("virtualenv", "seed", "wheels", "embed", "pip-26.0.1-py3-none-any.whl")
+certificate = re.compile(rb"-----BEGIN CERTIFICATE-----([A-Za-z0-9+/=\s]+?)-----END CERTIFICATE-----")
+checked, found = 0, []
+
+
+def check(name, data):
+    global checked
+    for match in certificate.finditer(data):
+        try:
+            der = base64.b64decode(b"".join(match.group(1).split()))
+        except binascii.Error:
+            continue  # not a certificate anyone can trust
+        checked += 1
+        fingerprint = hashlib.sha256(der).hexdigest()
+        if fingerprint in distrusted:
+            found.append(f"{name}: {distrusted[fingerprint]}")
+
+
+for folder, _, files in os.walk(sys.argv[1]):  # symlinked folders, such as conda's lib/python3.1, are not followed
+    for file in files:
+        path = os.path.join(folder, file)
+        if os.path.islink(path):
+            continue
+        if path.endswith(python39_pip):
+            os.remove(path)
+            print(f"Removed {path}")
+        elif file.endswith((".pem", ".crt")):
+            with open(path, "rb") as f:
+                check(path, f.read())
+        elif file.endswith(".whl"):
+            with zipfile.ZipFile(path) as wheel:
+                for entry in wheel.namelist():
+                    if entry.endswith((".pem", ".crt")):
+                        check(f"{path}!/{entry}", wheel.read(entry))
+if not checked:
+    sys.exit(f"No certificates found in {sys.argv[1]}, so nothing was checked")
+if found:
+    sys.exit("Distrusted root CAs left (QD-16607):\n" + "\n".join(found))
+print(f"Checked {checked} certificates in {sys.argv[1]}: no distrusted root CAs")
+GUARD
 
 ARG QD_RELEASE=""
 ARG QD_VERSION="2026.3"
