@@ -6,18 +6,18 @@ import java.nio.file.Path
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.core.*
+import org.jetbrains.qodana.edict.history.enrichment.EdictEnrichmentService
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.junit.jupiter.api.Test
 import kotlin.io.path.exists
+import kotlin.io.path.readLines
 import kotlin.io.path.readText
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -89,7 +89,13 @@ class LiveEnrichmentTest : IntegrationTest() {
                 .obj("result").obj("structuredContent")
             assertEquals(enrichmentCluster, context.text("clusterId"))
             assertFalse("signals" in context || "coverage" in context)
-            val revisions = context.obj("range").getValue("commitRevisions").jsonArray.map { it.jsonPrimitive.content }
+            // The task's scratch, which held the revisions file, may be deleted by now, so the still Pending cluster's
+            // window is computed again.
+            val revisions = runBlocking {
+                EdictEnrichmentService(repository, workspace.repository.root)
+                    .getHistoryContext(enrichmentCluster, workspace.output.resolve("history-scratch")).range
+            }.let { Path.of(it.revisionsFile).readLines() }
+            assertEquals(context.obj("range").text("headRevision"), revisions.first())
             assertTrue(enrichmentCorrection in revisions)
             assertTrue(enriched.all { (it.source as EdictSignalSource.FromCommit).commitRevision in revisions })
             val allowedDomainTools = setOf(

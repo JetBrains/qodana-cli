@@ -11,6 +11,7 @@ import org.jetbrains.qodana.edict.support.FakeInspectionKtsClient
 import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
+import org.jetbrains.qodana.edict.support.revisions
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,24 +41,26 @@ class EdictGenerationServiceTest {
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
     val project = GitRepository(directory.resolve("project"))
     try {
-      val context = enrichment.getHistoryContext("busy-wait")
+      val scratch = directory.resolve("scratch")
+      val context = enrichment.getHistoryContext("busy-wait", scratch)
+      val revisions = context.range.revisions()
       assertEquals("busy-wait", context.clusterId)
       assertEquals(project.resolve("HEAD"), context.range.headRevision)
       val accepted = fixtureSignals(project).first()
       assertTrue(enrichment.publishClusterSignal("busy-wait", accepted).created)
       assertFalse(enrichment.publishClusterSignal("busy-wait", accepted).created)
-      assertEquals(context.range.commitRevisions, enrichment.getHistoryContext("second").range.commitRevisions)
+      assertEquals(revisions, enrichment.getHistoryContext("second", scratch).range.revisions())
       assertFalse(repository.loadCluster("busy-wait").candidateInspectionPath.exists())
       assertFalse(repository.loadCluster("busy-wait").directory.evaluationPath.exists())
       assertTrue(generation.appendHistory("second", "Manager chose this cluster without selection").success)
-      assertEquals(context.range.commitRevisions, enrichment.getHistoryContext("busy-wait").range.commitRevisions)
+      assertEquals(revisions, enrichment.getHistoryContext("busy-wait", scratch).range.revisions())
 
       val restartedEnrichment = EdictEnrichmentService(EdictRepository(repository.paths), project.root)
       val restarted = EdictGenerationService(EdictRepository(repository.paths), inspection, project.root)
-      assertEquals(context.range.commitRevisions, restartedEnrichment.getHistoryContext("busy-wait").range.commitRevisions)
+      assertEquals(revisions, restartedEnrichment.getHistoryContext("busy-wait", scratch).range.revisions())
       restarted.renameCluster("busy-wait", "renamed-cluster")
       assertEquals(setOf("s-busy-wait", accepted.id), repository.clusterSignalIds("renamed-cluster"))
-      assertEquals(context.range.commitRevisions, restartedEnrichment.getHistoryContext("renamed-cluster").range.commitRevisions)
+      assertEquals(revisions, restartedEnrichment.getHistoryContext("renamed-cluster", scratch).range.revisions())
       assertTrue(restartedEnrichment.publishClusterSignal("renamed-cluster", fixtureSignals(project).last()).created)
       assertTrue(restarted.appendHistory("renamed-cluster", "Continue with the latest evidence").success)
       assertTrue(analyses.isEmpty())
@@ -557,8 +560,8 @@ class EdictGenerationServiceTest {
       generation.selectGenerationClusters()
       generation.appendHistory("busy-wait", "First target started")
       val signal = fixtureSignals(GitRepository(directory.resolve("project"))).first()
-      assertEquals("busy-wait", enrichment.getHistoryContext("busy-wait").clusterId)
-      assertEquals("second", enrichment.getHistoryContext("second").clusterId)
+      assertEquals("busy-wait", enrichment.getHistoryContext("busy-wait", directory.resolve("scratch")).clusterId)
+      assertEquals("second", enrichment.getHistoryContext("second", directory.resolve("scratch")).clusterId)
       assertTrue(enrichment.publishClusterSignal("second", signal).created)
       assertTrue(directory.resolve("state/clusters/second/signals/${signal.id}.json").exists())
       assertTrue(generation.appendHistory("second", "Start with all enriched evidence").success)

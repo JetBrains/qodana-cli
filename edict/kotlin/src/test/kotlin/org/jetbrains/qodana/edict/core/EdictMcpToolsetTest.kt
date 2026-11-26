@@ -48,6 +48,7 @@ import java.io.InputStream
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.readLines
 import kotlin.io.path.readText
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -414,7 +415,14 @@ class EdictMcpToolsetTest {
       assertEquals("string-equality", context.text("clusterId"))
       assertFalse("signals" in context || "coverage" in context)
       assertEquals(project.resolve("HEAD"), context.obj("range").text("headRevision"))
-      assertTrue(context.obj("range").getValue("commitRevisions").jsonArray.isNotEmpty())
+      val range = context.obj("range")
+      assertEquals(
+        management.scratchDirectory(worker.token).resolve("history/string-equality.revisions").toString(),
+        range.text("revisionsFile"),
+      )
+      val revisions = Path.of(range.text("revisionsFile")).readLines()
+      assertEquals(project.git("rev-list", "--topo-order", "HEAD").trim().lines(), revisions)
+      assertEquals(revisions.size, range.getValue("revisionCount").jsonPrimitive.int)
       // Common evidence reads have no history capability or distribution/generation lifecycle prerequisite.
       for (id in listOf("7", "9")) {
         val evidence = responses.getValue(id).obj("result").obj("structuredContent")
