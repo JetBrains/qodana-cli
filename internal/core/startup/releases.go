@@ -35,6 +35,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform/version"
 )
 
 /*
@@ -153,7 +154,10 @@ func selectLatestCompatibleRelease(prod *Product, reqType string) *ReleaseInfo {
 
 	for i := 0; i < len(prod.Releases); i++ {
 		release := &prod.Releases[i]
-		if *release.MajorVersion == product.ReleaseVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		// A nightly CLI, stamped "<major>-nightly", also takes the nightly linters of its own major version.
+		nightly := release.PrintableReleaseType != nil && *release.MajorVersion+"-"+*release.PrintableReleaseType == version.Version
+		compatible := *release.MajorVersion == product.ReleaseVersion && release.Type == reqType
+		if (nightly || compatible) && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}
