@@ -72,11 +72,11 @@ ARG QD_RELEASE=""
 ARG QD_VERSION="2026.3"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="php"
 ARG QD_CODE="QDPHP"
-ARG QD_BUILD="263.7902"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.7902.27-aarch64.tar.gz.sha256"
+ARG QD_BUILD="263.8409"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.8409.42.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.8409.42-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.8409.42.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.3/qodana-QDPHP-263.8409.42-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
