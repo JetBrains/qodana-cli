@@ -49,6 +49,8 @@ ARG CONDA_VERSION="py312_24.5.0-0"
 # emSign ECC Root CA - G3 and AAA Certificate Services roots, so they are upgraded too. virtualenv 21.15.6
 # seeds new environments of Python 3.10 and later with pip 26.3, whose certifi no longer has them. Drop that
 # once Python bundles pip 26.2.2 or later.
+# The guard after the patch drops virtualenv's pip 26.0.1 for end-of-life Python 3.9 (no clean pip exists, QD-16607)
+# and fails the build if a distrusted root is left.
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
@@ -84,6 +86,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       "libmambapy<2" && \
     ${CONDA_DIR}/bin/conda clean -afy && \
     "$CONDA_DIR/bin/python" -I - <<"EOF" && \
+    "$CONDA_DIR/bin/python" -I - "$CONDA_DIR" <<"GUARD" && \
     poetry config virtualenvs.create false && \
     chmod 777 -R $HOME/.conda $CONDA_DIR/ $HOME/.config/pypoetry/ && \
     rm -rf /tmp/*
@@ -127,15 +130,63 @@ for wheel in wheels:
     os.replace(wheel + ".new", wheel)
     print(f"{wheel}: removed {len(removed)} of {len(certificates)} certificates")
 EOF
+# QD-16607 guard: drops virtualenv's Python 3.9 pip if present, then fails if any PEM bundle under $CONDA_DIR, or in
+# its wheels (pip's certifi), has a distrusted root, or if nothing was checked
+import base64, binascii, hashlib, os, re, sys, zipfile
+
+distrusted = {
+    "86a1ecba089c4a8d3bbe2734c612ba341d813e043cf9e8a862cd5c57a36bbe6b": "emSign ECC Root CA - G3",
+    "d7a7a0fb5d7e2731d771e9484ebcdef71d5f0c3e0a2948782bc83ee0ea699ef4": "AAA Certificate Services",
+}
+python39_pip = os.path.join("virtualenv", "seed", "wheels", "embed", "pip-26.0.1-py3-none-any.whl")
+certificate = re.compile(rb"-----BEGIN CERTIFICATE-----([A-Za-z0-9+/=\s]+?)-----END CERTIFICATE-----")
+checked, found = 0, []
+
+
+def check(name, data):
+    global checked
+    for match in certificate.finditer(data):
+        try:
+            der = base64.b64decode(b"".join(match.group(1).split()))
+        except binascii.Error:
+            continue  # not a valid certificate
+        checked += 1
+        fingerprint = hashlib.sha256(der).hexdigest()
+        if fingerprint in distrusted:
+            found.append(f"{name}: {distrusted[fingerprint]}")
+
+
+for folder, _, files in os.walk(sys.argv[1]):  # skips symlinked dirs such as conda's lib/python3.1
+    for file in files:
+        path = os.path.join(folder, file)
+        if os.path.islink(path):
+            continue
+        if path.endswith(python39_pip):
+            os.remove(path)
+            print(f"Removed {path}")
+        elif file.endswith((".pem", ".crt")):
+            with open(path, "rb") as f:
+                check(path, f.read())
+        elif file.endswith(".whl"):
+            with zipfile.ZipFile(path) as wheel:
+                for entry in wheel.namelist():
+                    if entry.endswith((".pem", ".crt")):
+                        check(f"{path}!/{entry}", wheel.read(entry))
+if not checked:
+    sys.exit(f"No certificates found in {sys.argv[1]}, so nothing was checked")
+if found:
+    sys.exit("Distrusted root CAs left (QD-16607):\n" + "\n".join(found))
+print(f"Checked {checked} certificates in {sys.argv[1]}: no distrusted root CAs")
+GUARD
 
 ARG QD_RELEASE=""
 ENV QD_VERSION="2026.1" QD_IMAGE="python-community"
 ARG QD_CODE="QDPYC"
-ARG QD_BUILD="261.25883"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.25883.161.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.25883.161-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.25883.161.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.25883.161-aarch64.tar.gz.sha256"
+ARG QD_BUILD="261.29477"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.29477.327.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.29477.327-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.29477.327.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDPYC-261.29477.327-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
