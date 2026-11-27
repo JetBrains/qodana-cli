@@ -233,6 +233,12 @@ func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
 	}
 }
 
+func TestEdictCommandIsHidden(t *testing.T) {
+	if !NewCommand().Hidden {
+		t.Fatal("edict is not public yet and must stay hidden from --help and the README")
+	}
+}
+
 func TestEdictIDEMCPCommandIsHidden(t *testing.T) {
 	for _, command := range NewCommand().Commands() {
 		if command.Name() == "ide-mcp" && !command.Hidden {
