@@ -34,6 +34,7 @@ org.jetbrains.plugins.clion.test.catch
 org.jetbrains.plugins.clion.test.boost
 org.jetbrains.plugins.clion.test.doctest
 org.jetbrains.plugins.clion.radler
+com.intellij.clion.dfa
 com.intellij.clion.meson
 com.jetbrains.clion.plugins.packageManager
 com.intellij.clion.embedded
