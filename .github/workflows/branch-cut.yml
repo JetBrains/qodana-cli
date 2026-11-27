@@ -40,14 +40,10 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh workflow run base.yml --ref "$BRANCH" -f publish=true
-          # The dispatch returns no run id: wait for the run to appear, then for it to finish
-          for _ in $(seq 30); do
-            RUN=$(gh run list --workflow base.yml --branch "$BRANCH" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')
-            [ -n "$RUN" ] && break
-            sleep 10
-          done
-          [ -n "$RUN" ] || { echo "::error::No base.yml run on $BRANCH"; exit 1; }
+          # The dispatch returns the id of the run it created: never wait for another run on the branch
+          RUN=$(gh api -X POST "repos/$GITHUB_REPOSITORY/actions/workflows/base.yml/dispatches" \
+            -f ref="$BRANCH" -f 'inputs[publish]=true' -F return_run_details=true --jq '.workflow_run_id')
+          [ -n "$RUN" ] || { echo "::error::base.yml dispatch on $BRANCH returned no run id"; exit 1; }
           gh run watch "$RUN" --exit-status
       - name: Open a PR that switches BASE_SUFFIX to ${{ github.event.ref }}
         if: steps.check.outputs.release == 'true'
