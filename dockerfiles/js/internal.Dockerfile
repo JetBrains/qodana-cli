@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:js-base-latest
+ARG BASE_SUFFIX="262"
+FROM registry.jetbrains.team/p/sa/containers/qodana:js-base-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 ARG DEVICEID
