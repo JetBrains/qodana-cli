@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-latest
+ARG BASE_SUFFIX="263"
+FROM registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 ARG DEVICEID
