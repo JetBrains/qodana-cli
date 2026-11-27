@@ -16,6 +16,11 @@ on:
       - '.github/workflows/base.yml'
   schedule:
     - cron: '0 0 * * 1'
+
+env:
+  # docker-bake.hcl: a release branch NNN gets *-NNN tags, main gets *-latest
+  BASE_BRANCH: ${{ github.ref_name }}
+
 jobs:
   base:
     strategy:

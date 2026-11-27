@@ -1,3 +1,14 @@
+# The branch being built (base.yml sets github.ref_name): a release branch NNN publishes *-NNN tags instead of *-latest,
+# so branches never overwrite each other's bases; internal.Dockerfile's BASE_SUFFIX selects them
+variable "BASE_BRANCH" {
+  default = "main"
+}
+
+function "suffix" {
+  params = []
+  result = length(regexall("^[0-9]{3}$", BASE_BRANCH)) > 0 ? BASE_BRANCH : "latest"
+}
+
 group "all" {
   targets = [
     "jvm-community", "jvm", "python-community", "python",
@@ -68,7 +79,7 @@ group "ruby" {
 
 target "jvm-community" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "jvm-community.Dockerfile"
@@ -79,7 +90,7 @@ target "jvm" {
     jvm-community = "target:jvm-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:jvm-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:jvm-base-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "jvm.Dockerfile"
@@ -90,7 +101,7 @@ target "python-community" {
     jvm-community = "target:jvm-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-community-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-community-base-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python-community.Dockerfile"
@@ -101,38 +112,38 @@ target "python" {
     python-community = "target:python-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-base-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
 }
 
 target "poly-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:poly-base-latest"]
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:poly-base-${suffix()}"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "poly.Dockerfile"
 }
 
 target "go-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:go-base-latest"]
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:go-base-${suffix()}"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "go.Dockerfile"
 }
 
 target "js-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:js-base-latest"]
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:js-base-${suffix()}"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "js.Dockerfile"
 }
 
 target "php-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:php-base-latest"]
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:php-base-${suffix()}"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "php.Dockerfile"
 }
 
 target "rust-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:rust-base-latest"]
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:rust-base-${suffix()}"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "rust.Dockerfile"
 }
@@ -143,7 +154,7 @@ target "cpp-community" {
   }
   name = "cpp-community-${clang}-latest"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp-community.Dockerfile"
@@ -161,7 +172,7 @@ target "cpp" {
   }
   name = "cpp-base-${clang}-latest"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"
@@ -177,7 +188,7 @@ target "cpp-community-bookworm" {
   }
   name = "cpp-community-bookworm-${clang}-latest"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp-community-bookworm.Dockerfile"
@@ -195,7 +206,7 @@ target "cpp-bookworm" {
   }
   name = "cpp-base-bookworm-${clang}-latest"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp-bookworm.Dockerfile"
@@ -206,7 +217,7 @@ target "cpp-bookworm" {
 
 target "dotnet-community" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "dotnet-community.Dockerfile"
@@ -217,7 +228,7 @@ target "dotnet" {
     dotnet-community = "target:dotnet-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "dotnet.Dockerfile"
@@ -229,7 +240,7 @@ target "ruby3x" {
   }
   name = "ruby-base-3${version}"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-${suffix()}"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"

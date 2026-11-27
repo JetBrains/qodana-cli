@@ -1,5 +1,6 @@
 ARG CLANG="16"
-FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-$CLANG-latest
+ARG BASE_SUFFIX="262"
+FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-$CLANG-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 ARG DEVICEID
