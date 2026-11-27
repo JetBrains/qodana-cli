@@ -1,13 +1,11 @@
 name: '🌿 Branch cut'
 # A new release branch NNN builds its linter images on its own base images (*-NNN, see dockerfiles/base/docker-bake.hcl):
-# build them, then open a PR that points internal.Dockerfile's BASE_SUFFIX at them.
+# publish them, then open a PR that points internal.Dockerfile's BASE_SUFFIX at them.
 on:
   create:
 
 permissions:
-  contents: write
-  pull-requests: write
-  actions: write
+  contents: read
 
 jobs:
   base-suffix:
@@ -15,30 +13,54 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BRANCH: ${{ github.event.ref }}
-      GH_TOKEN: ${{ github.token }}
     steps:
       - name: Check the branch is a release branch
         id: check
         run: |
           if [[ "$BRANCH" =~ ^[0-9]{3}$ ]]; then echo "release=true" >> "$GITHUB_OUTPUT"; fi
+      # The bot's PR must start the required checks, which a GITHUB_TOKEN PR doesn't (as in backport.yml)
+      - name: Generate GitHub App token
+        id: app-token
+        if: steps.check.outputs.release == 'true'
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+          permission-actions: write
       - name: Checkout
         if: steps.check.outputs.release == 'true'
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.ref }}
-      - name: Build the *-${{ github.event.ref }} base images
+          token: ${{ steps.app-token.outputs.token }}
+      - name: Publish the *-${{ github.event.ref }} base images
         if: steps.check.outputs.release == 'true'
-        run: gh workflow run base.yml --ref "$BRANCH"
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh workflow run base.yml --ref "$BRANCH" -f publish=true
+          # The dispatch returns no run id: wait for the run to appear, then for it to finish
+          for _ in $(seq 30); do
+            RUN=$(gh run list --workflow base.yml --branch "$BRANCH" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId')
+            [ -n "$RUN" ] && break
+            sleep 10
+          done
+          [ -n "$RUN" ] || { echo "::error::No base.yml run on $BRANCH"; exit 1; }
+          gh run watch "$RUN" --exit-status
       - name: Open a PR that switches BASE_SUFFIX to ${{ github.event.ref }}
         if: steps.check.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           sed -i -E "s/^ARG BASE_SUFFIX=\".*\"$/ARG BASE_SUFFIX=\"$BRANCH\"/" dockerfiles/*/internal.Dockerfile
           git diff --quiet && { echo "BASE_SUFFIX is already $BRANCH"; exit 0; }
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name qodana-bot
+          git config user.email qodana-support@jetbrains.com
           git switch -c "base-suffix/$BRANCH"
           git commit -am ":construction_worker: QD-17353 Build the $BRANCH linter images on the $BRANCH base images"
           git push origin "base-suffix/$BRANCH"
           gh pr create --base "$BRANCH" --head "base-suffix/$BRANCH" \
             --title ":construction_worker: QD-17353 Build the $BRANCH linter images on the $BRANCH base images" \
-            --body "Merge after the 🐳 Base run on $BRANCH has pushed the *-$BRANCH base images. A PR from this workflow starts no checks: re-run them before merging."
+            --body "The *-$BRANCH base images are published (🐳 Base, workflow_dispatch on $BRANCH)."

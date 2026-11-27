@@ -71,13 +71,14 @@ func TestInternalDockerfilesBaseSuffixMatchesBranch(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") != "true" || branch == "" {
 		t.Skip("branch is known only in GitHub Actions")
 	}
-	expected := "latest"
+	// A release branch keeps latest until branch-cut.yml publishes its bases and switches it
+	allowed := map[string]bool{"latest": true}
 	if releaseBranch.MatchString(branch) {
-		expected = branch
+		allowed[branch] = true
 	}
 	for linter, suffix := range baseSuffixes(t) {
-		if suffix != expected {
-			t.Errorf("%s: BASE_SUFFIX is %q on branch %s, expected %q", linter, suffix, branch, expected)
+		if !allowed[suffix] {
+			t.Errorf("%s: BASE_SUFFIX %q on branch %s builds on another branch's base images", linter, suffix, branch)
 		}
 	}
 }
