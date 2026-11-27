@@ -27,6 +27,7 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
     * [Prepare your project](#prepare-your-project)
     * [Analyze your project](#analyze-your-project)
     * [View the report](#view-the-report)
+  * [Usage statistics](#usage-statistics)
   * [Configuration](#configuration)
   * [Why](#why)
 <!-- TOC -->
@@ -115,6 +116,22 @@ qodana show
 
 You can serve any Qodana HTML report regardless of the project if you provide the correct report path.
 
+## Usage statistics
+
+The CLI sends anonymous usage statistics to JetBrains: the steps of `qodana init`, `qodana scan` and `qodana send`, the use of `qodana show` and `qodana contributors`, the reason of a failure, and the environment, like the OS and the CI.
+The statistics contain no source code, file paths or problem texts.
+The CLI sends counts and sizes as ranges, like `100+`.
+
+- Only release builds send statistics. The CLI sends them once, when the command finishes.
+- The events go to JetBrains Feature Usage Statistics (FUS) and to the PostHog project of Qodana Cloud.
+
+To turn the statistics off, use `--no-statistics` or set `DO_NOT_TRACK=1`. This also turns off the statistics of the linter that the CLI starts.
+A run with a license-only token (`QODANA_LICENSE_ONLY_TOKEN` without `QODANA_TOKEN`) sends nothing.
+
+The [events scheme in FUS](https://resources.jetbrains.com/storage/ap/fus/metadata/tiger/QD/groups/QDCLI.json) lists every event and field that FUS accepts from the CLI. It is the source of truth.
+The CLI generates the same scheme, with a description of each event and field, in [`events-scheme.json`](internal/platform/telemetry/fus/events-scheme.json).
+A test fails when this file differs from the code.
+
 ## Configuration
 
 To find more CLI options run `qodana ...` commands with the `--help` flag.
@@ -145,10 +162,11 @@ qodana init [flags]
 ### Options
 
 ```
-      --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
-  -f, --force[=true|false]   Force initialization (overwrite existing valid qodana.yaml)
-  -h, --help[=true|false]    help for init
-  -i, --project-dir string   Root directory of the project to configure (default ".")
+      --config string                Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
+  -f, --force[=true|false]           Force initialization (overwrite existing valid qodana.yaml)
+  -h, --help[=true|false]            help for init
+      --no-statistics[=true|false]   Disable sending anonymous statistics
+  -i, --project-dir string           Root directory of the project to configure (default ".")
 ```
 
 ### Options inherited from parent commands
@@ -222,7 +240,7 @@ qodana scan [flags]
       --diff-start string                      Commit to start a diff run from. Only files changed between --diff-start and --diff-end will be analysed.
       --diff-end string                        Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.
       --reverse[=true|false]                   Override the default run-scenario for diff runs to always use the reverse-scoped script
-      --no-statistics[=true|false]             [qodana-clang/qodana-dotnet] Disable sending anonymous statistics
+      --no-statistics[=true|false]             Disable sending anonymous statistics
       --air-gapped[=true|false]                Run in a network with no access to the internet: the linter does not update the statistics schema and does not upload statistics
       --compile-commands string                [qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory. (default "./build/compile_commands.json")
       --clang-args string                      [qodana-clang specific] Extra arguments for clang. Tokens are split using POSIX shell quoting rules. By default appended after '--' as compiler args; include '--' yourself to pass clang-tidy options first, e.g. '--config-file=X -- -Wno-foo'.
@@ -265,14 +283,15 @@ qodana show [flags]
 ### Options
 
 ```
-      --config string           Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
-  -d, --dir-only[=true|false]   Open report directory only, don't serve it
-  -h, --help[=true|false]       help for show
-  -l, --linter string           Override linter to use
-  -p, --port int                Specify port to serve report at (default 8080)
-  -i, --project-dir string      Root directory of the inspected project (default ".")
-  -r, --report-dir string       Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
-  -o, --results-dir string      Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
+      --config string                Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
+  -d, --dir-only[=true|false]        Open report directory only, don't serve it
+  -h, --help[=true|false]            help for show
+  -l, --linter string                Override linter to use
+      --no-statistics[=true|false]   Disable sending anonymous statistics
+  -p, --port int                     Specify port to serve report at (default 8080)
+  -i, --project-dir string           Root directory of the inspected project (default ".")
+  -r, --report-dir string            Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
+  -o, --results-dir string           Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
 ```
 
 ### Options inherited from parent commands
@@ -301,13 +320,14 @@ qodana send [flags]
 ### Options
 
 ```
-  -a, --analysis-id string   Unique report identifier (GUID) to be used by Qodana Cloud
-      --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
-  -h, --help[=true|false]    help for send
-  -l, --linter string        Override linter to use
-  -i, --project-dir string   Root directory of the inspected project (default ".")
-  -r, --report-dir string    Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
-  -o, --results-dir string   Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
+  -a, --analysis-id string           Unique report identifier (GUID) to be used by Qodana Cloud
+      --config string                Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
+  -h, --help[=true|false]            help for send
+  -l, --linter string                Override linter to use
+      --no-statistics[=true|false]   Disable sending anonymous statistics
+  -i, --project-dir string           Root directory of the inspected project (default ".")
+  -r, --report-dir string            Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
+  -o, --results-dir string           Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
 ```
 
 ### Options inherited from parent commands
@@ -389,10 +409,11 @@ qodana contributors [flags]
 ### Options
 
 ```
-  -d, --days int                  Number of days since when to calculate the number of active contributors (default 90)
-  -h, --help[=true|false]         help for contributors
-  -o, --output string             Output format, can be tabular or json (default "tabular")
-  -i, --project-dir stringArray   Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used
+  -d, --days int                     Number of days since when to calculate the number of active contributors (default 90)
+  -h, --help[=true|false]            help for contributors
+      --no-statistics[=true|false]   Disable sending anonymous statistics
+  -o, --output string                Output format, can be tabular or json (default "tabular")
+  -i, --project-dir stringArray      Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used
 ```
 
 ### Options inherited from parent commands

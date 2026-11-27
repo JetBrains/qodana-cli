@@ -340,3 +340,12 @@ func TestDeserializeLicenseOrganizationAllowsErrorReporting(t *testing.T) {
 		t.Error("expected true")
 	}
 }
+
+func TestDeserializeLicenseOrganizationIsInternal(t *testing.T) {
+	if DeserializeLicenseData([]byte(`{"licenseId": "A"}`)).OrganizationIsInternal {
+		t.Error("missing field should mean false")
+	}
+	if !DeserializeLicenseData([]byte(`{"organizationIsInternal": true}`)).OrganizationIsInternal {
+		t.Error("expected true")
+	}
+}

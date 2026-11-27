@@ -17,9 +17,13 @@
 package cmd
 
 import (
+	"errors"
+
 	"github.com/JetBrains/qodana-cli/internal/core"
+	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -37,6 +41,7 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			platform.StartStatistics("show", cliOptions.ProjectDir, cliOptions.NoStatistics, nil)
 			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
 			commonCtx := commoncontext.Compute(
@@ -58,14 +63,17 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				if err != nil {
 					log.Fatal(err)
 				}
+				telemetry.ReportShown("dir")
 			} else {
 				commoncontext.ShowReport(
 					commonCtx.CacheDir,
 					commonCtx.ResultsDir,
 					commonCtx.ReportDir,
 					cliOptions.Port,
+					reportShown,
 				)
 			}
+			telemetry.Finish(0, "")
 		},
 	}
 	flags := cmd.Flags()
@@ -93,15 +101,43 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		"",
 		"Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.",
 	)
+	flags.BoolVar(&cliOptions.NoStatistics, "no-statistics", false, "Disable sending anonymous statistics")
 	return cmd
 }
 
+// reportShown records where commoncontext.ShowReport shows the report, it is shared with scans: they don't record it. A
+// local report is served until the user interrupts qodana show, which is no failure: the run is finished meanwhile. A
+// report that can't be shown sets the reason the run finishes with: a missing one fails it, a port in use only warns.
+func reportShown(target string, err error) {
+	if reason := showFailure(err); reason != "" {
+		telemetry.ShowFailed(reason)
+		return
+	}
+	telemetry.ReportShown(target)
+	if target == "local" {
+		go telemetry.Finish(0, "")
+	}
+}
+
+// showFailure gives the reason of a report that can't be shown, "" for a shown one.
+func showFailure(err error) string {
+	switch {
+	case err == nil:
+		return ""
+	case errors.Is(err, commoncontext.ErrReportMissing):
+		return telemetry.ReasonReportMissing
+	default:
+		return telemetry.ReasonServeFailed
+	}
+}
+
 type showOptions struct {
-	Linter     string
-	ProjectDir string
-	ResultsDir string
-	ReportDir  string
-	Port       int
-	OpenDir    bool
-	ConfigName string
+	Linter       string
+	ProjectDir   string
+	ResultsDir   string
+	ReportDir    string
+	Port         int
+	OpenDir      bool
+	ConfigName   string
+	NoStatistics bool
 }

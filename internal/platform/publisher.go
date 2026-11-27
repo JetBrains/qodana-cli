@@ -27,6 +27,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
 )
@@ -46,7 +47,10 @@ func SendReport(cacheDir string, publisher Publisher, token string) {
 		token,
 		cloud.GetCloudRootEndpoint().Url,
 	)
-	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand); res > 0 || err != nil {
+	_, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand)
+	telemetry.ReportPublished(true, res == 0 && err == nil)
+	if res > 0 || err != nil {
+		telemetry.Finish(res, telemetry.ReasonUploadFailed)
 		os.Exit(res)
 	}
 }

@@ -20,15 +20,18 @@ import (
 	"fmt"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // contributorsOptions represents contributor command options.
 type contributorsOptions struct {
-	ProjectDirs []string
-	Days        int
-	Output      string
+	ProjectDirs  []string
+	Days         int
+	Output       string
+	NoStatistics bool
 }
 
 // newShowCommand returns a new instance of the show command.
@@ -48,7 +51,11 @@ A command-line helper for Qodana pricing[1] to calculate active contributor(s)[2
 			if len(options.ProjectDirs) == 0 {
 				options.ProjectDirs = append(options.ProjectDirs, ".")
 			}
+			// the device of the first repository: one of them, as the device of a scan is one of its repository
+			platform.StartStatistics("contributors", options.ProjectDirs[0], options.NoStatistics, nil)
 			contributors := core.GetContributors(options.ProjectDirs, options.Days, false)
+			telemetry.ContributorsCounted(len(contributors), len(options.ProjectDirs), options.Days)
+			defer telemetry.Finish(0, "")
 			switch options.Output {
 			case "tabular":
 				core.PrintContributorsTable(contributors, options.Days, len(options.ProjectDirs))
@@ -84,6 +91,7 @@ A command-line helper for Qodana pricing[1] to calculate active contributor(s)[2
 		"Number of days since when to calculate the number of active contributors",
 	)
 	flags.StringVarP(&options.Output, "output", "o", "tabular", "Output format, can be tabular or json")
+	flags.BoolVar(&options.NoStatistics, "no-statistics", false, "Disable sending anonymous statistics")
 
 	return cmd
 }

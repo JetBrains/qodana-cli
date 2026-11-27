@@ -23,6 +23,7 @@ import (
 	"runtime"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/docker/cli/cli/command"
 	dockerCliConfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/flags"
@@ -52,6 +53,8 @@ func PrepareContainerEnvSettings() {
 				"running, consider setting DOCKER_HOST variable explicitly.",
 			err,
 		)
+		telemetry.DockerFailed(telemetry.ReasonDockerUnavailable)
+		telemetry.Finish(1, "")
 		os.Exit(1)
 	}
 

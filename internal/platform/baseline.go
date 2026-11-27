@@ -17,13 +17,20 @@
 package platform
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"io"
+	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -94,12 +101,14 @@ func (b NoBaseline) UsedMessage() string {
 // ResolveBaseline returns the baseline the analysis results are compared with: baselineFile, if the
 // run was given one, otherwise the baseline stored in Qodana Cloud for toolName, if the project of
 // cloudToken has one. An empty toolName gets the baseline of every tool of the project.
-// The downloaded baseline is stored in cacheDir and must be cleaned up.
+// The downloaded baseline is stored in cacheDir and must be cleaned up. A relative baselineFile is of projectDir or
+// of the current dir.
 //
 // Call it after the analysis, just before the comparison, so that a failed analysis downloads
 // nothing. An IDE linter compares its results itself, so it downloads its cloud baseline itself.
 func ResolveBaseline(
 	baselineFile string,
+	projectDir string,
 	cloudToken string,
 	toolName string,
 	cacheDir string,
@@ -107,43 +116,95 @@ func ResolveBaseline(
 	newClient := func() baselineDownloader {
 		return cloud.GetCloudApiEndpoints().NewBaselineClient(cloudToken)
 	}
-	return resolveBaseline(baselineFile, cloudToken != "", toolName, cacheDir, newClient)
+	return resolveBaseline(baselineFile, projectDir, cloudToken != "", toolName, cacheDir, newClient)
+}
+
+// LinterBaselineResolved records the baseline the CLI gives an IDE linter: the baseline file of the run, or none
+// without a connection to Qodana Cloud. The linter resolves the cloud baseline itself, after the analysis, so the
+// CLI records nothing for it: see telemetry.ProblemsFound.
+func LinterBaselineResolved(baselineFile string, projectDir string, connected bool) {
+	switch {
+	case baselineFile != "":
+		localBaselineResolved(baselineFile, projectDir)
+	case !connected:
+		telemetry.BaselineResolved("none", "not_connected", 0, 0)
+	}
+}
+
+func localBaselineResolved(baselineFile string, projectDir string) {
+	status := "missing"
+	if fileExists(baselineFile) || !filepath.IsAbs(baselineFile) && fileExists(filepath.Join(projectDir, baselineFile)) {
+		status = "found"
+	}
+	telemetry.BaselineResolved("local", status, 0, 0)
+}
+
+func fileExists(file string) bool {
+	_, err := os.Stat(file)
+	return err == nil
 }
 
 func resolveBaseline(
 	baselineFile string,
+	projectDir string,
 	connected bool,
 	toolName string,
 	cacheDir string,
 	newClient func() baselineDownloader,
 ) Baseline {
 	if baselineFile != "" {
+		localBaselineResolved(baselineFile, projectDir)
 		return LocalBaseline{path: baselineFile}
 	}
 	if !connected {
+		telemetry.BaselineResolved("none", "not_connected", 0, 0)
 		log.Debug("Not connected to Qodana Cloud, running without a baseline")
 		return NoBaseline{}
 	}
 	fmt.Println("Checking for baseline from Qodana Cloud ...")
 	toolName = product.CloudBaselineToolName(toolName)
-	baseline, err := downloadCloudBaseline(newClient(), toolName, cacheDir)
+	start := time.Now()
+	baseline, status, err := downloadCloudBaseline(newClient(), toolName, cacheDir)
 	if err != nil {
+		failure, httpStatus := cloudBaselineFailure(err)
+		telemetry.BaselineResolved("cloud", failure, httpStatus, time.Since(start))
 		msg.WarningMessage("Cannot use the baseline of Qodana Cloud, running without a baseline: %v", err)
 		return NoBaseline{reason: "the baseline of Qodana Cloud could not be downloaded."}
 	}
+	telemetry.BaselineResolved("cloud", status, 0, time.Since(start))
 	return baseline
+}
+
+// cloudBaselineFailure tells why the baseline of Qodana Cloud is not downloaded, with the HTTP status of the answer.
+func cloudBaselineFailure(err error) (string, int) {
+	var netError net.Error
+	var apiError *cloud.APIError
+	switch {
+	case errors.As(err, new(*fs.PathError)):
+		return "io_error", 0
+	// a read which waits too long fails the download
+	case errors.As(err, &netError) && netError.Timeout(), errors.Is(err, context.DeadlineExceeded),
+		errors.Is(err, context.Canceled):
+		return "timeout", 0
+	case errors.Is(err, cloud.ErrInvalidBaseline), errors.Is(err, io.ErrUnexpectedEOF):
+		return "invalid_response", 0
+	case errors.As(err, &apiError):
+		return "request_failed", apiError.StatusCode
+	default:
+		return "request_failed", 0
+	}
 }
 
 // downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in a directory of its
 // own in the cache dir. When Qodana Cloud has no baseline to compare the analysis with, it returns
-// NoBaseline, which tells why.
-func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir string) (Baseline, error) {
+// NoBaseline, which tells why. The status is the reason of the baseline events of the statistics.
+func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir string) (Baseline, string, error) {
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
-		return nil, fmt.Errorf("failed to create the cache dir %s: %w", cacheDir, err)
+		return nil, "", fmt.Errorf("failed to create the cache dir %s: %w", cacheDir, err)
 	}
 	dir, err := os.MkdirTemp(cacheDir, "cloud-baseline-")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create a directory for the baseline: %w", err)
+		return nil, "", fmt.Errorf("failed to create a directory for the baseline: %w", err)
 	}
 	path := filepath.Join(dir, "qodana.sarif.json")
 	status, err := client.WriteBaseline(toolName, path)
@@ -151,27 +212,27 @@ func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir 
 		if info, statErr := os.Stat(path); statErr == nil {
 			log.Debugf("Baseline of %s from Qodana Cloud: %s, %d bytes", toolName, path, info.Size())
 		}
-		return CloudBaseline{path: path}, nil
+		return CloudBaseline{path: path}, "found", nil
 	}
 	removeBaselineDir(dir)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	switch status {
 	case cloud.BaselineEmpty:
 		log.Debugf("The cloud baseline of '%s' is empty", toolName)
 		fmt.Println("The cloud baseline of the project in Qodana Cloud is empty, running without a baseline")
-		return NoBaseline{reason: "the cloud baseline of the project in Qodana Cloud is empty."}, nil
+		return NoBaseline{reason: "the cloud baseline of the project in Qodana Cloud is empty."}, "empty", nil
 	case cloud.BaselineDisabled:
 		fmt.Println("The cloud baseline is turned off for this project in Qodana Cloud, running without a baseline")
-		return NoBaseline{}, nil
+		return NoBaseline{}, "disabled", nil
 	case cloud.BaselineUnsupported:
 		fmt.Println("This Qodana Cloud doesn't serve cloud baselines, running without a baseline")
 		return NoBaseline{
 			reason: "this Qodana Cloud doesn't serve cloud baselines. Give a baseline file with --baseline.",
-		}, nil
+		}, "unsupported", nil
 	default:
-		return nil, fmt.Errorf("unexpected answer of Qodana Cloud to the baseline request: status %d", status)
+		return nil, "", fmt.Errorf("unexpected answer of Qodana Cloud to the baseline request: status %d", status)
 	}
 }
 

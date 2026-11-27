@@ -23,6 +23,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -43,6 +44,8 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			msg.PrimaryBold(qdenv.QodanaEndpointEnv),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
+			platform.StartStatistics("send", cliOptions.ProjectDir, cliOptions.NoStatistics, nil)
+			telemetry.SetAnalysisId(cliOptions.AnalysisId)
 			tokenloader.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
 			commonCtx := commoncontext.Compute(
@@ -71,6 +74,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				publisher,
 				tokenloader.ValidateCloudToken(commonCtx, false),
 			)
+			telemetry.Finish(0, "")
 		},
 	}
 	flags := cmd.Flags()
@@ -103,14 +107,16 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 		uuid.New().String(),
 		"Unique report identifier (GUID) to be used by Qodana Cloud",
 	)
+	flags.BoolVar(&cliOptions.NoStatistics, "no-statistics", false, "Disable sending anonymous statistics")
 	return cmd
 }
 
 type sendOptions struct {
-	Linter     string
-	ProjectDir string
-	ResultsDir string
-	ReportDir  string
-	ConfigName string
-	AnalysisId string
+	Linter       string
+	ProjectDir   string
+	ResultsDir   string
+	ReportDir    string
+	ConfigName   string
+	AnalysisId   string
+	NoStatistics bool
 }

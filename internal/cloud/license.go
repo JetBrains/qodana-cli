@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,6 +40,8 @@ type LicenseData struct {
 	LicensePlan        string `json:"licensePlan"`
 	// OrganizationAllowsErrorReporting is optional in the response, a missing field means false.
 	OrganizationAllowsErrorReporting bool `json:"organizationAllowsErrorReporting"`
+	// OrganizationIsInternal tells an organization of JetBrains, optional in the response as well.
+	OrganizationIsInternal bool `json:"organizationIsInternal"`
 }
 
 type LicenseToken struct {
@@ -223,18 +226,24 @@ func SetupLicenseToken(cloudUploadToken string) {
 			LicenseOnly: false,
 		}
 	}
+	telemetry.Allow(Token.IsAllowedToSendFUS())
 }
 
 func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
 	licenseDataResponse, err := endpoints.RequestLicenseData(token)
 	if errors.Is(err, ErrTokenDeclined) {
+		telemetry.RejectLicense("token_declined")
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
+		telemetry.RejectLicense("request_failed")
 		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.Url)
 		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
-	return DeserializeLicenseData(licenseDataResponse)
+	licenseData := DeserializeLicenseData(licenseDataResponse)
+	telemetry.SetCloudIds(licenseData.ProjectIdHash, licenseData.OrganisationIdHash)
+	telemetry.Allow(!licenseData.OrganizationIsInternal)
+	return licenseData
 }
 
 func (endpoints *QdApiEndpoints) GetLicensePlan(token string) string {

@@ -24,6 +24,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -416,6 +417,7 @@ func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
 	}
 	err = yaml.Unmarshal(yamlFile, q)
 	if err != nil {
+		telemetry.ConfigFailed()
 		log.Fatalf("Unmarshal: %v", err)
 	}
 	return *q

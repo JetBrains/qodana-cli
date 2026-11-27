@@ -29,8 +29,10 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
@@ -72,6 +74,13 @@ func RunThirdPartyLinterAnalysis(
 	printQodanaLogo(commonCtx.LogDir(), commonCtx.CacheDir, linterInfo)
 
 	mountInfo := extractUtils(linter, commonCtx.CacheDir)
+	telemetry.LinterReady(
+		linterInfo.ProductCode,
+		linterInfo.LinterVersion,
+		product.FindLinterByProductCode(linterInfo.ProductCode).IsPaid,
+		linterInfo.IsEap,
+		"third_party",
+	)
 
 	localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 		commonCtx.ProjectDir,
@@ -93,12 +102,15 @@ func RunThirdPartyLinterAnalysis(
 		commonCtx.LogDir(),
 	)
 	if err != nil {
+		telemetry.ConfigFailed()
 		log.Fatalf("Failed to load Qodana configuration %s", err)
 	}
+	telemetry.ConfigResolved(localQodanaYamlFullPath != "", cliOptions.GlobalConfigurationId != "")
 	qodanaYamlConfig := thirdpartyscan.QodanaYamlConfig{}
 	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
 		yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath)
 		qodanaYamlConfig = thirdpartyscan.YamlConfig(yaml)
+		telemetry.Allow(!yaml.AirGapped)
 	}
 
 	context := thirdpartyscan.ComputeContext(
@@ -116,20 +128,24 @@ func RunThirdPartyLinterAnalysis(
 	eventsCh := createFuserEventChannel(&events)
 
 	projectIdHash := thirdPartyCloudData.ProjectIdHash
+	analysisId := telemetry.AnalysisId(context.AnalysisId())
 	defer func() {
-		logProjectClose(eventsCh, linterInfo, projectIdHash)
-		sendFuserEvents(eventsCh, &events, context, GetDeviceIdSalt()[0])
+		logProjectClose(eventsCh, linterInfo, projectIdHash, analysisId)
+		sendFuserEvents(eventsCh, &events, context, GetDeviceIdSalt(context.ProjectDir())[0])
 	}()
-	logOs(eventsCh, linterInfo, projectIdHash)
-	logProjectOpen(eventsCh, linterInfo, projectIdHash)
+	logOs(eventsCh, linterInfo, projectIdHash, analysisId)
+	logProjectOpen(eventsCh, linterInfo, projectIdHash, analysisId)
 
+	finishAnalysis := telemetry.StartAnalysis("")
 	if err = linter.RunAnalysis(context); err != nil {
+		finishAnalysis(1, "")
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
 
 	baseline := ResolveBaseline(
 		context.Baseline(),
+		context.ProjectDir(),
 		context.CloudData().QodanaToken,
 		context.LinterInfo().ProductCode,
 		context.CacheDir(),
@@ -141,12 +157,16 @@ func RunThirdPartyLinterAnalysis(
 	baseline.Cleanup()
 	fmt.Println(baseline.UsedMessage())
 	if err != nil {
+		telemetry.Fail(telemetry.ReasonBaselineError)
+		finishAnalysis(1, "")
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
+	finishAnalysis(analysisResult, "")
 	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
 		err = copyQodanaYamlToLogDir(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath, context.LogDir())
 		if err != nil {
+			telemetry.Fail(telemetry.ReasonInternalError)
 			msg.ErrorMessage(err.Error())
 			return 1, err
 		}
@@ -225,6 +245,11 @@ func checkLinterLicense(loader tokenloader.CloudTokenLoader) thirdpartyscan.Thir
 		tokenloader.ValidateTokenPrintProject(cloud.Token.Token)
 		licensePlan = licenseData.LicensePlan
 		projectIdHash = licenseData.ProjectIdHash
+		telemetry.LicenseObtained("cloud", licensePlan)
+	} else if loader.GetAnalyzer().IsEAP() {
+		telemetry.LicenseObtained("eap", "")
+	} else {
+		telemetry.LicenseObtained("community", "")
 	}
 	return thirdpartyscan.ThirdPartyStartupCloudData{
 		LicensePlan:   licensePlan,
@@ -256,6 +281,7 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 			cloud.Token.Token,
 		)
 	} else {
+		telemetry.ReportPublished(false, false)
 		fmt.Println("Skipping report publishing")
 	}
 }

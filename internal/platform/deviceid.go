@@ -27,12 +27,25 @@ import (
 )
 
 // GetDeviceIdSalt set consistent device.id based on given repo upstream #SA-391.
-func GetDeviceIdSalt() []string {
+func GetDeviceIdSalt(projectDir string) []string {
+	return deviceIdSalt(func() string { return getRemoteUrl(projectDir) })
+}
+
+// DeviceIdAndRemoteUrl returns the device id of GetDeviceIdSalt and the remote url of the git repository of the
+// project.
+func DeviceIdAndRemoteUrl(projectDir string) (string, string) {
+	remoteUrl := getRemoteUrl(projectDir)
+	return deviceIdSalt(func() string { return remoteUrl })[0], remoteUrl
+}
+
+// deviceIdSalt takes the remote url as a function: GetDeviceIdSalt runs git for it only when SALT or DEVICEID is not
+// set.
+func deviceIdSalt(remote func() string) []string {
 	salt := os.Getenv("SALT")
 	deviceId := os.Getenv("DEVICEID")
 	if salt == "" || deviceId == "" {
 		hash := "00000000000000000000000000000000"
-		remoteUrl := getRemoteUrl()
+		remoteUrl := remote()
 		if remoteUrl != "" {
 			hash = fmt.Sprintf("%x", md5.Sum(append([]byte("1n1T-$@Lt-"), remoteUrl...)))
 		}
@@ -46,11 +59,11 @@ func GetDeviceIdSalt() []string {
 	return []string{deviceId, salt}
 }
 
-// getRemoteUrl returns remote url of the current git repository.
-func getRemoteUrl() string {
+// getRemoteUrl returns remote url of the git repository of the project.
+func getRemoteUrl(projectDir string) string {
 	url := os.Getenv(qdenv.QodanaRemoteUrl)
 	if url == "" {
-		out, err := exec.Command("git", "remote", "get-url", "origin").Output()
+		out, err := exec.Command("git", "-C", projectDir, "remote", "get-url", "origin").Output()
 		if err != nil {
 			return ""
 		}

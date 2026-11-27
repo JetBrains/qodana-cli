@@ -1,0 +1,1998 @@
+{
+  "scheme": [
+    {
+      "id": "qd.cli.run",
+      "type": "counter",
+      "version": 1,
+      "schema": [
+        {
+          "event": "init.started",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "container",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in a Qodana container"
+            },
+            {
+              "path": "interactive",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in an interactive terminal"
+            },
+            {
+              "path": "ci",
+              "value": [
+                "{enum:azure-pipelines|bamboo|bitrise|buddy|circleci|codefresh|codeship|github-actions|gitlab|gocd|jenkins|semaphore|travis-ci|wercker|teamcity|space|bitbucket|aws-codebuild|none|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CI system the CLI runs on, none outside CI"
+            }
+          ],
+          "description": "qodana init started"
+        },
+        {
+          "event": "scan.started",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "container",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in a Qodana container"
+            },
+            {
+              "path": "interactive",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in an interactive terminal"
+            },
+            {
+              "path": "ci",
+              "value": [
+                "{enum:azure-pipelines|bamboo|bitrise|buddy|circleci|codefresh|codeship|github-actions|gitlab|gocd|jenkins|semaphore|travis-ci|wercker|teamcity|space|bitbucket|aws-codebuild|none|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CI system the CLI runs on, none outside CI"
+            }
+          ],
+          "description": "qodana scan started"
+        },
+        {
+          "event": "send.started",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "container",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in a Qodana container"
+            },
+            {
+              "path": "interactive",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in an interactive terminal"
+            },
+            {
+              "path": "ci",
+              "value": [
+                "{enum:azure-pipelines|bamboo|bitrise|buddy|circleci|codefresh|codeship|github-actions|gitlab|gocd|jenkins|semaphore|travis-ci|wercker|teamcity|space|bitbucket|aws-codebuild|none|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CI system the CLI runs on, none outside CI"
+            }
+          ],
+          "description": "qodana send started"
+        },
+        {
+          "event": "show.started",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "container",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in a Qodana container"
+            },
+            {
+              "path": "interactive",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in an interactive terminal"
+            },
+            {
+              "path": "ci",
+              "value": [
+                "{enum:azure-pipelines|bamboo|bitrise|buddy|circleci|codefresh|codeship|github-actions|gitlab|gocd|jenkins|semaphore|travis-ci|wercker|teamcity|space|bitbucket|aws-codebuild|none|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CI system the CLI runs on, none outside CI"
+            }
+          ],
+          "description": "qodana show started"
+        },
+        {
+          "event": "contributors.started",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "container",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in a Qodana container"
+            },
+            {
+              "path": "interactive",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The CLI runs in an interactive terminal"
+            },
+            {
+              "path": "ci",
+              "value": [
+                "{enum:azure-pipelines|bamboo|bitrise|buddy|circleci|codefresh|codeship|github-actions|gitlab|gocd|jenkins|semaphore|travis-ci|wercker|teamcity|space|bitbucket|aws-codebuild|none|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CI system the CLI runs on, none outside CI"
+            }
+          ],
+          "description": "qodana contributors started"
+        },
+        {
+          "event": "config.resolved",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "source",
+              "value": [
+                "{enum:local|global|local_and_global|none}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Where the configuration comes from"
+            }
+          ],
+          "description": "Qodana configuration is loaded: the qodana.yaml of the project, a global configuration, both, or none. The linter reports the settings in qodana.usage.config"
+        },
+        {
+          "event": "config.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            }
+          ],
+          "description": "Qodana configuration can't be loaded: command.failed tells invalid_config"
+        },
+        {
+          "event": "linter.selected",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "linter",
+              "value": [
+                "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Product code of the linter"
+            },
+            {
+              "path": "mode",
+              "value": [
+                "{enum:native|docker}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Native linter or Docker image, absent for a linter name in qodana.yaml: qodana scan chooses its mode"
+            },
+            {
+              "path": "preconfigured",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "qodana.yaml of the project has the linter already"
+            }
+          ],
+          "description": "Linter is selected for the project by qodana init"
+        },
+        {
+          "event": "linter.ready",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "linter",
+              "value": [
+                "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Product code of the linter"
+            },
+            {
+              "path": "version",
+              "value": [
+                "{regexp#version}",
+                "{enum:latest|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Version of the linter, latest for an image without a version"
+            },
+            {
+              "path": "paid",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The linter requires a license"
+            },
+            {
+              "path": "eap",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The linter is an EAP build"
+            },
+            {
+              "path": "setup",
+              "value": [
+                "{enum:native_downloaded|native_cached|native_preinstalled|docker_pulled|docker_cached|docker_local|docker_pull_skipped|third_party}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "How the linter is set up: downloaded, cached or preinstalled native, the Docker image pulled, up to date, local after a failed pull, or not pulled with --skip-pull, or a third-party linter"
+            },
+            {
+              "path": "download_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the download or the pull, 0 without one"
+            }
+          ],
+          "description": "Linter is on the machine and chosen for the analysis"
+        },
+        {
+          "event": "linter.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "linter",
+              "value": [
+                "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Product code of the linter"
+            }
+          ],
+          "description": "Native linter can't be downloaded: command.failed tells native_download_failed. Docker problems are of docker.failed"
+        },
+        {
+          "event": "docker.ready",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "cpu_count",
+              "value": [
+                "{enum:1|2|4|8|16|32|64+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CPUs of the engine, rounded down to a power of two"
+            },
+            {
+              "path": "ram_gb",
+              "value": [
+                "{enum:0|1|2|4|8|16|32|64|128+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Memory of the engine, rounded down to a power of two"
+            },
+            {
+              "path": "version",
+              "value": [
+                "{regexp#version}",
+                "{enum:other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Version of the engine"
+            }
+          ],
+          "description": "Container engine is reachable and runs Linux: its limits, not the host ones, apply to the linter"
+        },
+        {
+          "event": "docker.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "linter",
+              "value": [
+                "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Product code of the linter of the image"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:docker_unavailable|docker_not_linux|docker_pull_failed}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the Docker run can't start"
+            }
+          ],
+          "description": "Docker run of the linter can't start: the engine is unreachable, doesn't run Linux, or the image can't be pulled"
+        },
+        {
+          "event": "license.obtained",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "token",
+              "value": [
+                "{enum:env|org_token|keychain|prompt}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Where the Qodana Cloud token comes from: env is QODANA_TOKEN, org_token one exchanged for the organization token, keychain the one qodana login saved, prompt the one the user typed"
+            },
+            {
+              "path": "kind",
+              "value": [
+                "{enum:env|community|eap|cloud}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Where the license comes from: env is the license key of QODANA_LICENSE, community a free linter, eap an EAP build, cloud the license of the Qodana Cloud token"
+            },
+            {
+              "path": "plan",
+              "value": [
+                "{enum:EAP_COMMUNITY|EAP_ULTIMATE|EAP_ULTIMATE_PLUS|TRIAL_COMMUNITY|TRIAL_ULTIMATE|TRIAL_ULTIMATE_PLUS|COMMUNITY|ULTIMATE|ULTIMATE_PLUS|PREMIUM|PREMIUM_LITE|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "License plan of the Qodana Cloud organization"
+            }
+          ],
+          "description": "License obtained"
+        },
+        {
+          "event": "license.rejected",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:no_token|token_invalid|token_declined|request_failed|community_plan|empty_key|expired}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the license is rejected"
+            },
+            {
+              "path": "token",
+              "value": [
+                "{enum:env|org_token|keychain|prompt}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Where the Qodana Cloud token comes from: env is QODANA_TOKEN, org_token one exchanged for the organization token, keychain the one qodana login saved, prompt the one the user typed"
+            }
+          ],
+          "description": "License rejected"
+        },
+        {
+          "event": "baseline.found",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "source",
+              "value": [
+                "{enum:local|cloud}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Kind of the baseline, cloud only for a third-party linter"
+            },
+            {
+              "path": "request_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the Qodana Cloud request"
+            }
+          ],
+          "description": "Baseline the analysis compares its results with is found by the CLI: a local file, or the one of Qodana Cloud for a third-party linter. An IDE linter downloads its cloud baseline itself and reports it in qodana.usage.cloud.baseline.resolved, joined by the analysis id"
+        },
+        {
+          "event": "baseline.none",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:not_connected|disabled|empty}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the analysis runs without a baseline: not_connected without Qodana Cloud, disabled or empty for the cloud baseline"
+            },
+            {
+              "path": "request_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the Qodana Cloud request"
+            }
+          ],
+          "description": "Analysis runs without a baseline on purpose: no Qodana Cloud and no baseline file, or the cloud baseline of the project is turned off or empty"
+        },
+        {
+          "event": "baseline.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "source",
+              "value": [
+                "{enum:local|cloud}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Kind of the baseline"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:missing|unsupported|timeout|request_failed|invalid_response|io_error}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the baseline can't be used"
+            },
+            {
+              "path": "http_status",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "HTTP status of a failed Qodana Cloud request"
+            },
+            {
+              "path": "request_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the Qodana Cloud request"
+            }
+          ],
+          "description": "Baseline can't be used: the file is missing, or the one of Qodana Cloud can't be downloaded"
+        },
+        {
+          "event": "analysis.started",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "scan_mode",
+              "value": [
+                "{enum:full|incremental|full_history}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The analysis runs on the whole project, on a diff of commits, or on every commit"
+            }
+          ],
+          "description": "Analysis started: an incremental one checks its start commit in git.prepared, then checks out the commits it analyzes"
+        },
+        {
+          "event": "git.prepared",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "start_commit",
+              "value": [
+                "{enum:found|missing}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The start commit is in the repository, or missing: the analysis runs on the current state"
+            }
+          ],
+          "description": "Start commit of an incremental or full-history analysis is checked, before the commits are checked out"
+        },
+        {
+          "event": "git.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            }
+          ],
+          "description": "git is needed by the analysis and is not installed: command.failed tells git_missing"
+        },
+        {
+          "event": "bootstrap.succeeded",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "duration_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the bootstrap command"
+            }
+          ],
+          "description": "bootstrap command of qodana.yaml ran before the analysis"
+        },
+        {
+          "event": "bootstrap.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "exit_code",
+              "value": [
+                "{regexp#integer}",
+                "{enum:-1}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Exit code of the bootstrap command"
+            },
+            {
+              "path": "duration_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the bootstrap command"
+            }
+          ],
+          "description": "bootstrap command of qodana.yaml failed"
+        },
+        {
+          "event": "analysis.succeeded",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "linter",
+              "value": [
+                "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Product code of the linter, as linter.ready tells it"
+            },
+            {
+              "path": "mode",
+              "value": [
+                "{enum:native|docker|third_party|container}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Native linter, Docker image this CLI starts, third-party linter, or container: the CLI runs inside a Qodana image"
+            },
+            {
+              "path": "exit_code",
+              "value": [
+                "{regexp#integer}",
+                "{enum:-1}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Exit code of the analysis: a success can come with a non-zero one, over the fail threshold or when a linter container can't write the report"
+            },
+            {
+              "path": "duration_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the analysis. A Docker one includes the pull of the image, see the download_ms of linter.ready, and the start of the container"
+            },
+            {
+              "path": "scan_mode",
+              "value": [
+                "{enum:full|incremental|full_history}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The analysis runs on the whole project, on a diff of commits, or on every commit"
+            },
+            {
+              "path": "scenario",
+              "value": [
+                "{enum:scope|reversed-scope|start-commit-missing}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Diff of an incremental analysis: the start commit first, the end commit first, or the current state because the start commit is missing"
+            },
+            {
+              "path": "result",
+              "value": [
+                "{enum:success|fail_threshold|empty_changeset}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Result: success, fail_threshold, a success though the CLI exits with a non-zero code as the problems exceed the threshold, or empty_changeset, a diff without changes"
+            }
+          ],
+          "description": "Analysis finished with a report"
+        },
+        {
+          "event": "analysis.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "linter",
+              "value": [
+                "{enum:QDJVMC|QDJVM|QDANDC|QDAND|QDPHP|QDPYC|QDPY|QDJS|QDNETC|QDNET|QDRUBY|QDCPP|QDGO|QDRST|QDCLC|QDPOLY}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Product code of the linter, as linter.ready tells it"
+            },
+            {
+              "path": "mode",
+              "value": [
+                "{enum:native|docker|third_party|container}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Native linter, Docker image this CLI starts, third-party linter, or container: the CLI runs inside a Qodana image"
+            },
+            {
+              "path": "exit_code",
+              "value": [
+                "{regexp#integer}",
+                "{enum:-1}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Exit code of the analysis: a success can come with a non-zero one, over the fail threshold or when a linter container can't write the report"
+            },
+            {
+              "path": "duration_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the analysis. A Docker one includes the pull of the image, see the download_ms of linter.ready, and the start of the container"
+            },
+            {
+              "path": "scan_mode",
+              "value": [
+                "{enum:full|incremental|full_history}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The analysis runs on the whole project, on a diff of commits, or on every commit"
+            },
+            {
+              "path": "scenario",
+              "value": [
+                "{enum:scope|reversed-scope|start-commit-missing}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Diff of an incremental analysis: the start commit first, the end commit first, or the current state because the start commit is missing"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:license_expired|timeout|out_of_memory|linter_error|internal_error|baseline_error|license_rejected|invalid_config|git_missing|bootstrap_failed|plugins_failed|docker_unavailable|docker_not_linux|docker_pull_failed|fatal|interrupted|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the analysis failed: interrupted comes with exit_code 0, the CLI exits with 0 when it is interrupted"
+            }
+          ],
+          "description": "Analysis failed, also when the CLI exits during it"
+        },
+        {
+          "event": "problems.found",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "total",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Problems of the project"
+            },
+            {
+              "path": "new",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Problems which are not in the baseline"
+            },
+            {
+              "path": "unchanged",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Problems which are in the baseline"
+            },
+            {
+              "path": "absent",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Problems of the baseline which are fixed"
+            },
+            {
+              "path": "baseline",
+              "value": [
+                "{enum:none|applied|ignored|unknown}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The analysis applied the baseline it was given, ignored it, had none, or there are no problems to tell. When an IDE linter downloads its cloud baseline itself, the value comes from the baseline states of the problems: applied when every problem has one, none otherwise"
+            }
+          ],
+          "description": "Problems of the report and their baseline states, by order of magnitude, and whether the analysis applied its baseline"
+        },
+        {
+          "event": "report.published",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            }
+          ],
+          "description": "Report is uploaded to Qodana Cloud. A run without a Qodana Cloud token, which has no project_id, publishes nothing"
+        },
+        {
+          "event": "report.publish_failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            }
+          ],
+          "description": "Report can't be uploaded to Qodana Cloud. A full-history Docker run uploads the report of each commit, so it can have both report.published and report.publish_failed"
+        },
+        {
+          "event": "report.shown",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "target",
+              "value": [
+                "{enum:cloud|local|dir}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "The report of Qodana Cloud, the local one served, or the results directory"
+            }
+          ],
+          "description": "Report is shown by qodana show"
+        },
+        {
+          "event": "report.show_failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:report_missing|serve_failed}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the report can't be shown"
+            }
+          ],
+          "description": "Report can't be shown by qodana show"
+        },
+        {
+          "event": "contributors.counted",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "contributors",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Active contributors, by order of magnitude"
+            },
+            {
+              "path": "project_dirs",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Project directories given with --project-dir, by order of magnitude"
+            },
+            {
+              "path": "days",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Period the contributors are active in"
+            }
+          ],
+          "description": "Active contributors are counted by qodana contributors"
+        },
+        {
+          "event": "command.succeeded",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "command",
+              "value": [
+                "{enum:init|scan|send|show|contributors}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CLI command"
+            },
+            {
+              "path": "exit_code",
+              "value": [
+                "{regexp#integer}",
+                "{enum:-1}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Exit code of the command: a success can come with a non-zero one, over the fail threshold"
+            },
+            {
+              "path": "stage",
+              "value": [
+                "{enum:init.started|scan.started|send.started|show.started|contributors.started|config.resolved|config.failed|linter.selected|docker.ready|docker.failed|linter.ready|linter.failed|license.obtained|license.rejected|baseline.found|baseline.none|baseline.failed|analysis.started|git.prepared|git.failed|bootstrap.succeeded|bootstrap.failed|analysis.succeeded|analysis.failed|problems.found|report.published|report.publish_failed|report.shown|report.show_failed|contributors.counted}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Last funnel step the command reached"
+            },
+            {
+              "path": "duration_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the command"
+            },
+            {
+              "path": "result",
+              "value": [
+                "{enum:success|fail_threshold|empty_changeset}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Result: success, fail_threshold, a success though the CLI exits with a non-zero code as the problems exceed the threshold, or empty_changeset, a diff without changes"
+            }
+          ],
+          "description": "Command succeeded"
+        },
+        {
+          "event": "command.failed",
+          "fields": [
+            {
+              "path": "project_id",
+              "value": [
+                "{regexp:[-0-9A-Fa-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud project id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "org_id",
+              "value": [
+                "{regexp:[0-9A-Za-z]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Qodana Cloud organization id hash, as Qodana Cloud sends it"
+            },
+            {
+              "path": "analysis_id",
+              "value": [
+                "{regexp:[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Analysis id of the scan, which the linter gets too"
+            },
+            {
+              "path": "command",
+              "value": [
+                "{enum:init|scan|send|show|contributors}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CLI command"
+            },
+            {
+              "path": "exit_code",
+              "value": [
+                "{regexp#integer}",
+                "{enum:-1}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Exit code of the command: a success can come with a non-zero one, over the fail threshold"
+            },
+            {
+              "path": "stage",
+              "value": [
+                "{enum:init.started|scan.started|send.started|show.started|contributors.started|config.resolved|config.failed|linter.selected|docker.ready|docker.failed|linter.ready|linter.failed|license.obtained|license.rejected|baseline.found|baseline.none|baseline.failed|analysis.started|git.prepared|git.failed|bootstrap.succeeded|bootstrap.failed|analysis.succeeded|analysis.failed|problems.found|report.published|report.publish_failed|report.shown|report.show_failed|contributors.counted}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Last funnel step the command reached"
+            },
+            {
+              "path": "duration_ms",
+              "value": [
+                "{regexp#integer}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Duration of the command"
+            },
+            {
+              "path": "reason",
+              "value": [
+                "{enum:license_expired|timeout|out_of_memory|linter_error|internal_error|license_rejected|no_files|cancelled|interrupted|fatal|baseline_error|upload_failed|report_failed|setup_error|unsupported_project|invalid_config|git_missing|bootstrap_failed|plugins_failed|docker_unavailable|docker_not_linux|docker_pull_failed|native_download_failed|report_missing|serve_failed}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Why the command failed: interrupted comes with exit_code 0, the CLI exits with 0 when it is interrupted"
+            }
+          ],
+          "description": "Command failed"
+        }
+      ],
+      "description": "Qodana CLI command run funnel",
+      "recorder": "QD"
+    },
+    {
+      "id": "qd.cli.env",
+      "type": "counter",
+      "version": 1,
+      "schema": [
+        {
+          "event": "system",
+          "fields": [
+            {
+              "path": "os",
+              "value": [
+                "{enum:darwin|linux|windows}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Operating system"
+            },
+            {
+              "path": "os_version",
+              "value": [
+                "{regexp#version}",
+                "{enum:other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Version of the operating system"
+            },
+            {
+              "path": "distro",
+              "value": [
+                "{enum:ubuntu|debian|alpine|centos|redhat|fedora|amazon|opensuse|suse|arch|rocky|almalinux|oracle|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Linux distribution"
+            },
+            {
+              "path": "arch",
+              "value": [
+                "{enum:amd64|arm64}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CPU architecture"
+            },
+            {
+              "path": "cpu_count",
+              "value": [
+                "{enum:1|2|4|8|16|32|64+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "CPUs, rounded down to a power of two"
+            },
+            {
+              "path": "ram_gb",
+              "value": [
+                "{enum:0|1|2|4|8|16|32|64|128+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Memory, of the container when it is limited, rounded down to a power of two"
+            },
+            {
+              "path": "disk_free_gb",
+              "value": [
+                "{enum:0|1+|10+|100+|1000+|10000+|100000+}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Free space of the disk of the cache, by order of magnitude"
+            }
+          ],
+          "description": "Hardware and OS"
+        },
+        {
+          "event": "software",
+          "fields": [
+            {
+              "path": "shell",
+              "value": [
+                "{enum:bash|zsh|sh|dash|fish|ksh|tcsh|csh|other}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Shell the CLI is started from"
+            },
+            {
+              "path": "git",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "git is installed"
+            },
+            {
+              "path": "docker",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Docker CLI is installed"
+            },
+            {
+              "path": "java",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "Java is installed"
+            },
+            {
+              "path": "tar",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "tar is installed"
+            },
+            {
+              "path": "unzip",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "unzip is installed"
+            },
+            {
+              "path": "toolbox",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "JetBrains Toolbox is installed"
+            },
+            {
+              "path": "ide",
+              "value": [
+                "{enum#boolean}"
+              ],
+              "dataType": "PRIMITIVE",
+              "shouldBeAnonymized": false,
+              "description": "A JetBrains IDE has been run"
+            }
+          ],
+          "description": "Shell and installed tools"
+        }
+      ],
+      "description": "Environment Qodana CLI runs in",
+      "recorder": "QD"
+    }
+  ],
+  "recorderScheme": [
+    {
+      "recorderId": "QD",
+      "recorderVersion": 1,
+      "ids": [
+        {
+          "path": "device",
+          "required": true,
+          "values": [
+            "{regexp#hash}",
+            "{regexp:200820300000000-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+}"
+          ]
+        }
+      ],
+      "clientData": [],
+      "systemData": []
+    }
+  ]
+}

@@ -17,8 +17,13 @@
 package platform
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
+	"io/fs"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -77,7 +82,7 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		client := &baselineDownloaderStub{baseline: reportWithToolName("QDNET")}
 		cacheDir := t.TempDir()
 
-		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+		downloaded, _, err := downloadCloudBaseline(client, "QDNET", cacheDir)
 		require.NoError(t, err)
 		defer downloaded.Cleanup()
 
@@ -98,17 +103,19 @@ func TestDownloadCloudBaseline(t *testing.T) {
 	})
 
 	for _, tc := range []struct {
-		name   string
-		status cloud.BaselineStatus
+		name       string
+		status     cloud.BaselineStatus
+		statistics string
 	}{
-		{"empty baseline in the cloud", cloud.BaselineEmpty},
-		{"cloud baseline turned off", cloud.BaselineDisabled},
-		{"cloud without baselines", cloud.BaselineUnsupported},
+		{"empty baseline in the cloud", cloud.BaselineEmpty, "empty"},
+		{"cloud baseline turned off", cloud.BaselineDisabled, "disabled"},
+		{"cloud without baselines", cloud.BaselineUnsupported, "unsupported"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			cacheDir := t.TempDir()
-			downloaded, err := downloadCloudBaseline(&baselineDownloaderStub{status: tc.status}, "QDNET", cacheDir)
+			downloaded, status, err := downloadCloudBaseline(&baselineDownloaderStub{status: tc.status}, "QDNET", cacheDir)
 			require.NoError(t, err)
+			assert.Equal(t, tc.statistics, status)
 			require.IsType(t, NoBaseline{}, downloaded)
 			assert.Empty(t, downloaded.BaselinePath())
 			left, err := os.ReadDir(cacheDir)
@@ -121,7 +128,7 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		client := &baselineDownloaderStub{err: errors.New("the cloud is unreachable")}
 		cacheDir := t.TempDir()
 
-		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+		downloaded, _, err := downloadCloudBaseline(client, "QDNET", cacheDir)
 
 		assert.ErrorContains(t, err, "the cloud is unreachable")
 		assert.Nil(t, downloaded)
@@ -135,7 +142,7 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		client := &baselineDownloaderStub{baseline: reportWithToolName("QDNET")}
 		cacheDir := filepath.Join(t.TempDir(), "absent")
 
-		downloaded, err := downloadCloudBaseline(client, "QDNET", cacheDir)
+		downloaded, _, err := downloadCloudBaseline(client, "QDNET", cacheDir)
 		require.NoError(t, err)
 		defer downloaded.Cleanup()
 
@@ -149,7 +156,7 @@ func TestResolveBaseline(t *testing.T) {
 		client := &baselineDownloaderStub{baseline: reportWithToolName("QDJVM")}
 		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
 
-		baseline := resolveBaseline(baselineFile, true, "QDJVM", t.TempDir(), client.newClient)
+		baseline := resolveBaseline(baselineFile, "", true, "QDJVM", t.TempDir(), client.newClient)
 		defer baseline.Cleanup()
 
 		assert.False(t, client.asked)
@@ -158,7 +165,7 @@ func TestResolveBaseline(t *testing.T) {
 	})
 
 	t.Run("no baseline without a cloud token", func(t *testing.T) {
-		baseline := ResolveBaseline("", "", "QDJVM", t.TempDir())
+		baseline := ResolveBaseline("", "", "", "QDJVM", t.TempDir())
 		defer baseline.Cleanup()
 
 		assert.Equal(t, NoBaseline{}, baseline)
@@ -168,7 +175,7 @@ func TestResolveBaseline(t *testing.T) {
 	t.Run("baseline from the cloud", func(t *testing.T) {
 		client := &baselineDownloaderStub{baseline: reportWithToolName("QDJVM")}
 
-		baseline := resolveBaseline("", true, "QDJVMC", t.TempDir(), client.newClient)
+		baseline := resolveBaseline("", "", true, "QDJVMC", t.TempDir(), client.newClient)
 		defer baseline.Cleanup()
 
 		assert.Equal(t, "QDJVM", client.toolName)
@@ -179,7 +186,7 @@ func TestResolveBaseline(t *testing.T) {
 	t.Run("a failed download is no baseline which tells so", func(t *testing.T) {
 		client := &baselineDownloaderStub{err: errors.New("the cloud is unreachable")}
 
-		baseline := resolveBaseline("", true, "QDJVM", t.TempDir(), client.newClient)
+		baseline := resolveBaseline("", "", true, "QDJVM", t.TempDir(), client.newClient)
 
 		assert.Equal(
 			t,
@@ -214,7 +221,7 @@ func TestResolveBaseline(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			client := &baselineDownloaderStub{status: tc.status}
 
-			baseline := resolveBaseline("", true, "QDJVM", t.TempDir(), client.newClient)
+			baseline := resolveBaseline("", "", true, "QDJVM", t.TempDir(), client.newClient)
 			defer baseline.Cleanup()
 
 			require.IsType(t, NoBaseline{}, baseline)
@@ -240,4 +247,25 @@ func TestUsedMessage(t *testing.T) {
 			"or turn on the cloud baseline of the project in Qodana Cloud.",
 		NoBaseline{}.UsedMessage(),
 	)
+}
+
+func TestCloudBaselineFailure(t *testing.T) {
+	for name, failure := range map[string]struct {
+		err        error
+		status     string
+		httpStatus int
+	}{
+		"cache dir":       {&fs.PathError{Op: "mkdir", Err: fs.ErrPermission}, "io_error", 0},
+		"network timeout": {&net.DNSError{IsTimeout: true}, "timeout", 0},
+		"canceled":        {fmt.Errorf("download: %w", context.Canceled), "timeout", 0},
+		"deadline":        {context.DeadlineExceeded, "timeout", 0},
+		"invalid":         {cloud.ErrInvalidBaseline, "invalid_response", 0},
+		"truncated":       {io.ErrUnexpectedEOF, "invalid_response", 0},
+		"http":            {fmt.Errorf("request: %w", &cloud.APIError{StatusCode: 503}), "request_failed", 503},
+		"other":           {errors.New("connection refused"), "request_failed", 0},
+	} {
+		status, httpStatus := cloudBaselineFailure(failure.err)
+		assert.Equal(t, failure.status, status, name)
+		assert.Equal(t, failure.httpStatus, httpStatus, name)
+	}
 }

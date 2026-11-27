@@ -33,6 +33,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 
@@ -52,6 +53,8 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
+			platform.StartStatistics("scan", cliOptions.ProjectDir, cliOptions.NoCliStatistics(), cliOptions.Env_)
+			telemetry.SetAnalysisId(cliOptions.AnalysisId)
 			tokenloader.InitializeQodanaGlobalEnv(cliOptions)
 			// QODANA_ORG_TOKEN is resolved: drop it so it never reaches the scan context and its debug output
 			cliOptions.Env_ = qdenv.WithoutEnv(cliOptions.Env_, qdenv.QodanaOrgToken)
@@ -101,11 +104,14 @@ But you can always override qodana.yaml options with the following command-line 
 					commonCtx.LogDir(),
 				)
 				if err != nil {
+					telemetry.ConfigFailed()
 					log.Fatalf("Failed to load Qodana configuration %s", err)
 				}
+				telemetry.ConfigResolved(localQodanaYamlFullPath != "", cliOptions.GlobalConfigurationId != "")
 				if effectiveConfigFiles.EffectiveQodanaYamlPath != "" {
 					yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
 					qodanaYamlConfig = corescan.YamlConfig(yaml)
+					telemetry.Allow(!yaml.AirGapped)
 				}
 			}
 			scanContext := corescan.CreateContext(
@@ -116,15 +122,34 @@ But you can always override qodana.yaml options with the following command-line 
 				effectiveConfigFiles.ConfigDir,
 			)
 
+			platform.LinterBaselineResolved(
+				scanContext.Baseline(),
+				scanContext.ProjectDir(),
+				scanContext.QodanaUploadToken() != "",
+			)
+			finishAnalysis := telemetry.StartAnalysis(
+				scanContext.RequestedRunScenario(scanContext.Commit() != "" || scanContext.DiffStart() != ""),
+			)
 			exitCode := core.RunAnalysis(ctx, scanContext)
+			finishAnalysis(statisticsExit(exitCode, scanContext))
 			if qdenv.IsContainer() {
 				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
 				if err != nil {
 					msg.ErrorMessage("Unable to change permissions in %s: %s", scanContext.ResultsDir(), err)
 				}
 			}
-			checkExitCode(exitCode, scanContext)
 			newReportUrl := cloud.GetReportUrl(scanContext.ResultsDir())
+			if exitCode == exitcodes.QodanaSuccessExitCode || exitCode == exitcodes.QodanaFailThresholdExitCode {
+				// the linter publishes the report itself and leaves its url in the results
+				telemetry.ReportPublished(
+					scanContext.QodanaUploadToken() != "",
+					newReportUrl != "" && newReportUrl != oldReportUrl,
+				)
+			} else {
+				// checkExitCode exits
+				telemetry.Finish(statisticsExit(exitCode, scanContext))
+			}
+			checkExitCode(exitCode, scanContext)
 			platform.ProcessSarif(
 				filepath.Join(scanContext.ResultsDir(), commoncontext.QodanaSarifName),
 				scanContext.AnalysisId(),
@@ -133,6 +158,7 @@ But you can always override qodana.yaml options with the following command-line 
 				scanContext.GenerateCodeClimateReport(),
 				scanContext.SendBitBucketInsights(),
 			)
+			telemetry.Finish(exitCode, "")
 
 			if newReportUrl != oldReportUrl && newReportUrl != "" && !qdenv.IsContainer() {
 				msg.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
@@ -167,13 +193,26 @@ func checkProjectDir(projectDir string) {
 			fmt.Sprintf("Project directory (%s) is the $HOME directory", projectDir),
 		)
 		if !msg.AskUserConfirm(msg.DefaultPromptText) {
+			telemetry.Finish(0, telemetry.ReasonCancelled)
 			os.Exit(0)
 		}
 	}
 	if !fs.CheckDirFiles(projectDir) {
 		msg.ErrorMessage("No files to check with Qodana found in %s", projectDir)
+		telemetry.Finish(1, telemetry.ReasonNoFiles)
 		os.Exit(1)
 	}
+}
+
+// statisticsExit returns the exit code checkExitCode exits with for a placeholder, and its reason.
+func statisticsExit(exitCode int, c corescan.Context) (int, string) {
+	switch exitCode {
+	case exitcodes.QodanaTimeoutExitCodePlaceholder:
+		return c.AnalysisTimeoutExitCode(), telemetry.ReasonTimeout
+	case exitcodes.QodanaEmptyChangesetExitCodePlaceholder:
+		return exitcodes.QodanaSuccessExitCode, telemetry.ReasonEmptyChangeset
+	}
+	return exitCode, ""
 }
 
 func checkExitCode(exitCode int, c corescan.Context) {

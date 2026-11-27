@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -35,7 +36,16 @@ import (
 
 var wg sync.WaitGroup
 
-const qodanaProjectId = "system_qdcld_project_id"
+const (
+	qodanaProjectId  = "system_qdcld_project_id"
+	qodanaAnalysisId = "system_qdcld_analysis_id"
+)
+
+// StartStatistics starts the statistics of the command run on the project, see telemetry.Start: it runs git for the
+// device id and the remote only when the statistics are on.
+func StartStatistics(command string, projectDir string, noStatistics bool, env []string) {
+	telemetry.Start(command, func() (string, string) { return DeviceIdAndRemoteUrl(projectDir) }, noStatistics, env)
+}
 
 func createFuserEventChannel(events *[]FuserEvent) chan FuserEvent {
 	ch := make(chan FuserEvent)
@@ -59,7 +69,7 @@ func sendFuserEvents(
 	linterInfo := c.LinterInfo()
 	wg.Wait()
 	close(ch)
-	if c.NoStatistics() {
+	if telemetry.OptedOut(c.NoStatistics()) {
 		println("Statistics disabled, skipping FUS")
 		return
 	}
@@ -114,17 +124,20 @@ func currentTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func commonEventData(linterInfo thirdpartyscan.LinterInfo, projectIdHash string) map[string]string {
+func commonEventData(linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) map[string]string {
 	eventData := map[string]string{"version": linterInfo.GetMajorVersion()}
 	if projectIdHash != "" {
 		eventData[qodanaProjectId] = projectIdHash
 	}
+	if analysisId != "" {
+		eventData[qodanaAnalysisId] = analysisId
+	}
 	return eventData
 }
 
-func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) {
 	wg.Add(1)
-	eventData := commonEventData(linterInfo, projectIdHash)
+	eventData := commonEventData(linterInfo, projectIdHash, analysisId)
 	ch <- FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.opened",
@@ -134,9 +147,9 @@ func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, pr
 	}
 }
 
-func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) {
 	wg.Add(1)
-	eventData := commonEventData(linterInfo, projectIdHash)
+	eventData := commonEventData(linterInfo, projectIdHash, analysisId)
 	ch <- FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.closed",
@@ -146,9 +159,9 @@ func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, p
 	}
 }
 
-func logOs(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logOs(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string, analysisId string) {
 	wg.Add(1)
-	eventData := commonEventData(linterInfo, projectIdHash)
+	eventData := commonEventData(linterInfo, projectIdHash, analysisId)
 	eventData["name"] = runtime.GOOS
 	eventData["arch"] = runtime.GOARCH
 	ch <- FuserEvent{

@@ -26,12 +26,14 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	fexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/pterm/pterm"
 	"github.com/shirou/gopsutil/v4/process"
 
@@ -43,9 +45,18 @@ func Bootstrap(command string, project string) {
 	if command == "" {
 		return
 	}
-	if res, err := fexec.RunShell(project, command); res > 0 || err != nil {
+	start := time.Now()
+	res, err := fexec.RunShell(project, command)
+	exitCode := res
+	if err != nil && exitCode == 0 {
+		// the command can't be started
+		exitCode = 1
+	}
+	telemetry.BootstrapFinished(exitCode, time.Since(start))
+	if res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
-		os.Exit(res)
+		telemetry.Finish(exitCode, "")
+		os.Exit(exitCode)
 	}
 }
 

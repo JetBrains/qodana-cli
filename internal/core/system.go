@@ -34,6 +34,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/telemetry"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/moby/moby/client"
@@ -126,6 +127,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	platform.LogContext(&c)
 
 	if !utils.IsInstalled("git") && (c.FullHistory() || c.Commit() != "" || c.DiffStart() != "" || c.DiffEnd() != "") {
+		telemetry.GitFailed()
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
@@ -134,18 +136,24 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 		log.Fatal(err)
 	}
 	scenario := c.DetermineRunScenario(startHash != "")
-	if scenario != corescan.RunScenarioDefault && !git.RevisionExists(c.RepositoryRoot(), startHash, c.LogDir()) {
-		msg.WarningMessageCI(
-			"Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.",
-			startHash,
-		)
-		scenario = corescan.RunScenarioDefault
+	// in Docker mode the container checks the start commit of a diff and hands the result over
+	if scenario != corescan.RunScenarioDefault {
+		found := git.RevisionExists(c.RepositoryRoot(), startHash, c.LogDir())
+		telemetry.GitPrepared(found)
+		if !found {
+			msg.WarningMessageCI(
+				"Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.",
+				startHash,
+			)
+			scenario = corescan.RunScenarioDefault
 
-		// backoff to regular analysis
-		c = c.BackoffToDefaultAnalysisBecauseOfMissingCommit()
+			// backoff to regular analysis
+			c = c.BackoffToDefaultAnalysisBecauseOfMissingCommit()
+		}
 	}
 
 	if err := installPlugins(c); err != nil {
+		telemetry.Fail(telemetry.ReasonPluginsFailed)
 		log.Fatalf("Failed to install plugins: %v", err)
 	}
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
