@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-latest
+ARG BASE_SUFFIX="263"
+FROM registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/qodana-cdnet /opt/qodana/qodana

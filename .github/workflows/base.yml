@@ -17,6 +17,10 @@ on:
   schedule:
     - cron: '0 0 * * 1'
 
+env:
+  # docker-bake.hcl: a release branch NNN gets *-NNN tags, main gets *-latest (bake and merge both read it)
+  BASE_BRANCH: ${{ github.ref_name }}
+
 # Each bake group is built natively per platform (no QEMU): amd64 on ubuntu-latest,
 # arm64 on ubuntu-24.04-arm. Images are pushed by digest, then the merge job
 # assembles the multi-arch tags defined in docker-bake.hcl.

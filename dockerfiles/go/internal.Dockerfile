@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:go-base-latest
+ARG BASE_SUFFIX="263"
+FROM registry.jetbrains.team/p/sa/containers/qodana:go-base-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 ARG DEVICEID
