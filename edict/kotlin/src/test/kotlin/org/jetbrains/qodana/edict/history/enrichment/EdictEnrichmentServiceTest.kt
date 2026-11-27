@@ -11,6 +11,7 @@ import org.jetbrains.qodana.edict.core.EdictRepository
 import org.jetbrains.qodana.edict.core.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
+import org.jetbrains.qodana.edict.support.revisions
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import java.time.Clock
@@ -34,15 +35,21 @@ class EdictEnrichmentServiceTest {
   @TempDir
   lateinit var directory: Path
 
+  /** The managed task's scratch, where the history range writes its revisions. */
+  private val scratch: Path by lazy { directory.resolve("scratch") }
+
   @Test
   fun `standalone enrichment returns a range and publishes without persisting analysis state`() = runBlocking<Unit> {
     val (enrichment, repository, project) = fixture()
     val seed = repository.loadCluster("busy-wait").signals.single()
     val signal = fixtureSignals(project).last()
-    val context = enrichment.getHistoryContext("busy-wait")
+    val context = enrichment.getHistoryContext("busy-wait", scratch)
+    val revisions = context.range.revisions()
     assertEquals("busy-wait", context.clusterId)
     assertEquals(project.resolve("HEAD"), context.range.headRevision)
-    assertEquals(project.git("rev-list", "--topo-order", "HEAD").trim().lines(), context.range.commitRevisions)
+    assertEquals(project.git("rev-list", "--topo-order", "HEAD").trim().lines(), revisions)
+    assertEquals(revisions.size, context.range.revisionCount)
+    assertEquals(scratch.resolve("history/busy-wait.revisions").toString(), context.range.revisionsFile)
     assertTrue(enrichment.publishClusterSignal("busy-wait", signal).created)
     assertFalse(enrichment.publishClusterSignal("busy-wait", signal).created)
     assertEquals(setOf(seed.id, signal.id), repository.clusterSignalIds("busy-wait"))
@@ -54,7 +61,7 @@ class EdictEnrichmentServiceTest {
     legacy.writeText("obsolete coverage is ignored")
     val restartedRepository = EdictRepository(repository.paths)
     val restarted = EdictEnrichmentService(restartedRepository, project.root)
-    assertEquals(context.range.commitRevisions, restarted.getHistoryContext("busy-wait").range.commitRevisions)
+    assertEquals(revisions, restarted.getHistoryContext("busy-wait", scratch).range.revisions())
     assertEquals("obsolete coverage is ignored", legacy.readText())
     assertFalse(repository.loadCluster("busy-wait").candidateInspectionPath.exists())
     assertFalse(repository.loadCluster("busy-wait").directory.evaluationPath.exists())
@@ -65,12 +72,13 @@ class EdictEnrichmentServiceTest {
     val now = Instant.now().plus(Duration.ofDays(3650))
     val (enrichment, _, project) = fixture(clock = Clock.fixed(now, ZoneOffset.UTC))
     val revisions = commitsAt(project, now.minusSeconds(1), HISTORY_ANALYSIS_COMMIT_DEPTH + 3)
-    val range = enrichment.getHistoryContext("busy-wait").range
-    assertEquals(revisions.takeLast(HISTORY_ANALYSIS_COMMIT_DEPTH).reversed(), range.commitRevisions)
+    val range = enrichment.getHistoryContext("busy-wait", scratch).range
+    val window = range.revisions()
+    assertEquals(revisions.takeLast(HISTORY_ANALYSIS_COMMIT_DEPTH).reversed(), window)
     assertEquals(revisions.last(), range.headRevision)
     assertEquals(now.minus(Duration.ofDays(HISTORY_ANALYSIS_DAY_DEPTH)).toString(), range.since)
     // A rare pickaxe hit outside the last N commits must not leak into the bounded search.
-    assertTrue(project.git("log", "--no-walk=unsorted", "--format=%H", "-S", "Objects.equals", *range.commitRevisions.toTypedArray(), "--").isBlank())
+    assertTrue(project.git("log", "--no-walk=unsorted", "--format=%H", "-S", "Objects.equals", *window.toTypedArray(), "--").isBlank())
   }
 
   @Test
@@ -81,7 +89,7 @@ class EdictEnrichmentServiceTest {
     commitAt(project, since.minusSeconds(1))
     val boundary = commitAt(project, since)
     val recent = commitAt(project, now.minusSeconds(1))
-    assertEquals(listOf(recent, boundary), enrichment.getHistoryContext("busy-wait").range.commitRevisions)
+    assertEquals(listOf(recent, boundary), enrichment.getHistoryContext("busy-wait", scratch).range.revisions())
     assertFalse(repository.loadCluster("busy-wait").directory.root.resolve("history-analysis.json").exists())
   }
 
@@ -89,12 +97,14 @@ class EdictEnrichmentServiceTest {
   fun `old history produces an empty range without hiding newer ancestors behind clock skew`() = runBlocking<Unit> {
     val now = Instant.parse("2040-01-01T12:00:00Z")
     val (enrichment, _, project) = fixture(clock = Clock.fixed(now, ZoneOffset.UTC))
-    assertTrue(enrichment.getHistoryContext("busy-wait").range.commitRevisions.isEmpty())
+    val empty = enrichment.getHistoryContext("busy-wait", scratch).range
+    assertEquals(0, empty.revisionCount)
+    assertEquals(emptyList(), empty.revisions())
     val recent = commitAt(project, now.minusSeconds(1))
     val oldHead = commitAt(project, now.minus(Duration.ofDays(HISTORY_ANALYSIS_DAY_DEPTH + 1)))
-    val range = enrichment.getHistoryContext("busy-wait").range
+    val range = enrichment.getHistoryContext("busy-wait", scratch).range
     assertEquals(oldHead, range.headRevision)
-    assertEquals(listOf(recent), range.commitRevisions)
+    assertEquals(listOf(recent), range.revisions())
   }
 
   @Test
@@ -109,19 +119,20 @@ class EdictEnrichmentServiceTest {
     runProcess(project.root, listOf("git", "merge", "--no-ff", "-qm", "Merge history topic", "history-topic"), environment = mapOf(
       "GIT_AUTHOR_DATE" to now.toString(), "GIT_COMMITTER_DATE" to now.toString(),
     ))
-    val range = enrichment.getHistoryContext("busy-wait").range
-    assertEquals(setOf(project.resolve("HEAD"), topic, sibling), range.commitRevisions.toSet())
-    assertEquals(range.headRevision, range.commitRevisions.first())
+    val range = enrichment.getHistoryContext("busy-wait", scratch).range
+    val revisions = range.revisions()
+    assertEquals(setOf(project.resolve("HEAD"), topic, sibling), revisions.toSet())
+    assertEquals(range.headRevision, revisions.first())
   }
 
   @Test
   fun `enrichment requires an existing Pending cluster`() = runBlocking<Unit> {
     val (enrichment, repository, project) = fixture()
-    assertFailsWith<IllegalArgumentException> { enrichment.getHistoryContext("missing") }
-    assertFailsWith<IllegalArgumentException> { enrichment.getHistoryContext("../busy-wait") }
+    assertFailsWith<IllegalArgumentException> { enrichment.getHistoryContext("missing", scratch) }
+    assertFailsWith<IllegalArgumentException> { enrichment.getHistoryContext("../busy-wait", scratch) }
     val cluster = repository.loadCluster("busy-wait")
     cluster.directory.manifestPath.writeText(EdictJson.encodeToString(cluster.manifest.copy(status = EdictClusterStatus.Generated)))
-    assertFailsWith<IllegalArgumentException> { enrichment.getHistoryContext(cluster.id) }
+    assertFailsWith<IllegalArgumentException> { enrichment.getHistoryContext(cluster.id, scratch) }
     assertFailsWith<IllegalArgumentException> { enrichment.publishClusterSignal(cluster.id, fixtureSignals(project).last()) }
   }
 
@@ -135,7 +146,7 @@ class EdictEnrichmentServiceTest {
     }
     assertEquals(listOf(false, true), publications.map { it.await().created }.sorted())
     assertEquals(cluster.signalIds + signal.id, repository.clusterSignalIds(cluster.id))
-    assertEquals(cluster.id, enrichment.getHistoryContext(cluster.id).clusterId)
+    assertEquals(cluster.id, enrichment.getHistoryContext(cluster.id, scratch).clusterId)
   }
 
   private fun commitAt(project: GitRepository, instant: Instant): String {

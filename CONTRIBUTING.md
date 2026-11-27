@@ -92,6 +92,15 @@ export GITHUB_ACTIONS=true
 go test -v ./...
 ```
 
+`README.md` documents the commands as their `--help` shows them, and `TestReadmeIsUpToDate` fails when they differ.
+Regenerate it after changing a command or its flags, and in the pull requests that change `ReleaseVersion` or
+`IsReleased` of `internal/platform/product`, such as a version bump or the release of a branch: the help of `scan`
+shows image names with the version and, before the release, an `-eap` suffix.
+```sh
+go test ./internal/cmd -run TestReadmeIsUpToDate -update
+```
+The README documents every command and subcommand that `--help` shows, a new one too, and no hidden one.
+
 Dry-run goreleaser:
 
 ```sh

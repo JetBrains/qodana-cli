@@ -15,6 +15,8 @@ import java.nio.file.Path
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 
 internal const val HISTORY_ANALYSIS_COMMIT_DEPTH = 10000
 internal const val HISTORY_ANALYSIS_DAY_DEPTH = 180L
@@ -27,8 +29,12 @@ internal class EdictEnrichmentService(
 ) {
   private val publicationMutex = Mutex()
 
-  /** Applies both depth limits before pickaxe filtering; no evidence or analysis coverage is returned or persisted. */
-  suspend fun getHistoryContext(clusterId: String): EdictHistoryContext {
+  /**
+   * Writes the window of [clusterId] into `history/<clusterId>.revisions` of [scratchDirectory], newest first, one full
+   * revision per line.
+   * Applies both depth limits before pickaxe filtering; no evidence or analysis coverage is returned or persisted.
+   */
+  suspend fun getHistoryContext(clusterId: String, scratchDirectory: Path): EdictHistoryContext {
     require(repository.loadCluster(clusterId).manifest.status == EdictClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
     val git = GitRepository(projectRoot)
     val head = git.resolve("HEAD")
@@ -40,7 +46,9 @@ internal class EdictEnrichmentService(
       .map { it.split(' ', limit = 2) }
       .filter { Instant.ofEpochSecond(it[0].toLong()) >= since }
       .map { it[1] }.toList()
-    return EdictHistoryContext(clusterId, EdictHistoryRange(head, since.toString(), revisions))
+    val revisionsFile = scratchDirectory.resolve("history").createDirectories().resolve("$clusterId.revisions")
+    revisionsFile.writeText(revisions.joinToString("") { "$it\n" })
+    return EdictHistoryContext(clusterId, EdictHistoryRange(head, since.toString(), revisions.size, revisionsFile.toString()))
   }
 
   /** Publishes trusted enrichment into the supplied Pending cluster. */

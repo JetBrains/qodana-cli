@@ -5,6 +5,7 @@ import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.extraction.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.extraction.git.SignalFinding
+import org.jetbrains.qodana.edict.history.enrichment.EdictHistoryRange
 import org.jetbrains.qodana.edict.core.EdictRepositoryState
 import org.jetbrains.qodana.edict.core.EdictRepositoryState.Delegation
 import org.jetbrains.qodana.edict.core.EdictRepositoryState.PlanCreation
@@ -15,6 +16,7 @@ import org.jetbrains.qodana.edict.core.EdictSignalLabel
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.readLines
 
 internal const val fixturePath = "module/src/Equality.java"
 internal const val beforeSource = "class Equality {\n  boolean same(String a, String b) {\n    return a == b;\n  }\n}\n"
@@ -88,3 +90,6 @@ internal fun EdictRepositoryState.batch(): Pair<PlanCreation, Delegation> {
         "edict-batch-signal-analysis",
     )
 }
+
+/** The revisions of the window; read them before a later range of the same cluster rewrites its file. */
+internal fun EdictHistoryRange.revisions(): List<String> = Path.of(revisionsFile).readLines()

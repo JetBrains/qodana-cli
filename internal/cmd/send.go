@@ -36,7 +36,7 @@ func newSendCommand() *cobra.Command {
 		Use:   "send",
 		Short: "Send a Qodana report to Cloud",
 		Long: fmt.Sprintf(
-			`Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud. 
+			`Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud.
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 

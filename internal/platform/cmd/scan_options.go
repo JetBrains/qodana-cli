@@ -110,24 +110,24 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 			"linter",
 			"l",
 			"",
-			"Defines the linter to be used for analysis. Default value is determined based on project files. \nAvailable values: "+strings.Join(
+			"Defines the linter to be used for analysis. Default value is determined based on project files.\nAvailable values: "+strings.Join(
 				product.AllNames,
 				", ",
-			)+". \n!Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.",
+			)+".\n!Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.",
 		)
 
 		flags.StringVar(
 			&options.WithinDocker,
 			"within-docker",
 			"",
-			"Defines if analysis is performed within a docker container or not. \nSet to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container. \nThe image for container creation will be chosen automatically based on the value of the --linter param (e.g. jetbrains/qodana-jvm for --linter=qodana-jvm). \nDefault value is defined dynamically depending on the current environment and project.",
+			"Defines if analysis is performed within a docker container or not.\nSet to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container.\nThe image for container creation will be chosen automatically based on the value of the --linter param (e.g. jetbrains/qodana-jvm for --linter=qodana-jvm).\nDefault value is defined dynamically depending on the current environment and project.",
 		)
 
 		flags.StringVar(
 			&options.Image,
 			"image",
 			"",
-			"Defines an image to be used for analysis execution. \nSets --within-docker=true. Sets --linter to the one preinstalled within the image. \nAvailable images are: "+
+			"Defines an image to be used for analysis execution.\nSets --within-docker=true. Sets --linter to the one preinstalled within the image.\nAvailable images are: "+
 				product.JvmLinter.Image()+", "+product.DotNetLinter.Image()+", etc. Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .",
 		)
 	}
@@ -227,13 +227,13 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.FullHistory,
 		"full-history",
 		false,
-		"Go through the full commit history and run the analysis on each commit. If combined with `--commit`, analysis will be started from the given commit. Could take a long time.",
+		"Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.",
 	)
 	flags.StringVar(
 		&options.Commit,
 		"commit",
 		"",
-		"Commit to start a diff run from. Only files changed between this commit and `--diff-end` will be analysed. If combined with `--full-history`, full history analysis will be started from the given commit.",
+		"Commit to start a diff run from. Only files changed between this commit and --diff-end will be analysed. If combined with --full-history, full history analysis will be started from the given commit.",
 	)
 	flags.StringVar(
 		&options.FailThreshold,

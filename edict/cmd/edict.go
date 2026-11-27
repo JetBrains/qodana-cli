@@ -22,11 +22,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewCommand returns the parent command for edict-related tooling.
+// NewCommand returns the parent command for edict-related tooling. It is hidden: Edict is not public yet, so neither
+// --help nor the README shows it or its subcommands, which still run.
 func NewCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "edict",
-		Short: "Edict commands: extract inspection rules from your development history",
+		Use:    "edict",
+		Short:  "Edict commands: extract inspection rules from your development history",
+		Hidden: true,
 	}
 	cmd.AddCommand(
 		newEdictInstallCommand(),

@@ -20,17 +20,19 @@ internal class EdictEnrichmentMcpToolset(
   fun registerTools(server: Server) {
     server.addTool(
       name = "edict_get_history_context",
-      description = "Return the bounded Git-history range for one Pending cluster: frozen HEAD, date cutoff and exact " +
-        "eligible commit revisions. Uses the smaller window of the latest $HISTORY_ANALYSIS_COMMIT_DEPTH commits and " +
-        "the last $HISTORY_ANALYSIS_DAY_DEPTH days. Fetch Signals separately with edict_get_cluster_signals. " +
+      description = "Return the bounded Git-history range for one Pending cluster: frozen HEAD, date cutoff, and the " +
+        "count and file of the exact eligible commit revisions, written to your scratch directory newest first, one per " +
+        "line. Uses the smaller window of the latest $HISTORY_ANALYSIS_COMMIT_DEPTH commits and the last " +
+        "$HISTORY_ANALYSIS_DAY_DEPTH days. Fetch Signals separately with edict_get_cluster_signals. " +
         "Does not select generation targets or persist analysis coverage.",
       inputSchema = stringArguments(
         "token" to "Your managed history-enrichment task token",
         "clusterId" to "Subject Pending cluster ID",
       ),
     ) { request ->
-      management.requireSkill(request.requireString("token"), "edict-git-history-signal-enrichment")
-      enrichment.getHistoryContext(request.requireString("clusterId")).toToolResult()
+      val token = request.requireString("token")
+      management.requireSkill(token, "edict-git-history-signal-enrichment")
+      enrichment.getHistoryContext(request.requireString("clusterId"), management.scratchDirectory(token)).toToolResult()
     }
 
     server.addTool(
