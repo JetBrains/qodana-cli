@@ -73,6 +73,10 @@ jobs:
           # See docker-bake.hcl: one platform per native runner; on push, untagged by digest
           BASE_PLATFORMS: ${{ matrix.platform.name }}
           PUSH_BY_DIGEST: ${{ github.event_name == 'push' }}
+          # Keep the provenance, which carries the GitHub event and its commit messages, out of the metadata output:
+          # merge-base-images.py reads only image.name and containerimage.digest, and the next step gets the metadata
+          # through an environment variable, which fails above 128 KiB. The images keep their provenance attestations.
+          BUILDX_METADATA_PROVENANCE: disabled
         with:
           workdir: dockerfiles/base
           source: .
