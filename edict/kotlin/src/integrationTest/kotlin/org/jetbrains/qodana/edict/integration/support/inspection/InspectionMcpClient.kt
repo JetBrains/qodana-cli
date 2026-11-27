@@ -34,7 +34,11 @@ internal fun decodeInspectionResult(result: JsonObject): InspectionResult {
 }
 
 /** Test-only client for both IDE MCP transports; SSE messages are correlated with their request IDs. */
-internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
+internal class InspectionMcpClient(
+    private val endpoint: URI,
+    /** Sent as `IJ_MCP_AUTH_TOKEN` with every request, as IDEs that check the header require. */
+    private val authToken: String? = null,
+) : AutoCloseable {
     private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
     private val sequence = AtomicLong()
     private val pending = ConcurrentHashMap<String, CompletableFuture<JsonObject>>()
@@ -49,7 +53,7 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
         try {
             if (legacySse) {
                 val response = client.send(
-                    HttpRequest.newBuilder(endpoint).header("Accept", "text/event-stream").GET().build(),
+                    request(endpoint).header("Accept", "text/event-stream").GET().build(),
                     HttpResponse.BodyHandlers.ofInputStream()
                 )
                 check(response.statusCode() == 200) { "Inspection SSE connection failed: HTTP ${response.statusCode()}" }
@@ -105,8 +109,11 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
         }
     }
 
+    private fun request(uri: URI): HttpRequest.Builder =
+        HttpRequest.newBuilder(uri).apply { authToken?.let { header("IJ_MCP_AUTH_TOKEN", it) } }
+
     private fun send(message: JsonObject): JsonObject? {
-        val request = HttpRequest.newBuilder(postEndpoint.get(60, TimeUnit.SECONDS)).timeout(Duration.ofMinutes(5))
+        val request = request(postEndpoint.get(60, TimeUnit.SECONDS)).timeout(Duration.ofMinutes(5))
             .header("Content-Type", "application/json").header("Accept", "application/json, text/event-stream")
             .header("MCP-Protocol-Version", protocol)
         session?.let { request.header("Mcp-Session-Id", it) }

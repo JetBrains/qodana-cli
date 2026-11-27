@@ -7,6 +7,7 @@ import org.jetbrains.qodana.edict.core.InspectionKtsClient
 import org.jetbrains.qodana.edict.core.InspectionKtsCompileResult
 import org.jetbrains.qodana.edict.core.InspectionKtsExampleRequest
 import org.jetbrains.qodana.edict.core.InspectionKtsProjectRunResult
+import org.jetbrains.qodana.edict.core.IntellijMcpEndpoint
 import org.jetbrains.qodana.edict.core.IntellijMcpServerLifecycle
 import java.net.URI
 import java.util.concurrent.CopyOnWriteArrayList
@@ -50,13 +51,15 @@ internal class FakeInspectionKtsClient(
 }
 
 /** An IDE MCP server that is already running at [endpoint]: it is never really started or stopped, only counted. */
-internal class FakeIntellijMcpServerLifecycle(private val endpoint: URI = URI("http://127.0.0.1:1/mcp")) : IntellijMcpServerLifecycle {
+internal class FakeIntellijMcpServerLifecycle(
+  private val endpoint: IntellijMcpEndpoint = IntellijMcpEndpoint(URI("http://127.0.0.1:1/mcp")),
+) : IntellijMcpServerLifecycle {
   private val startCount = AtomicInteger()
   private val stopCount = AtomicInteger()
   val starts: Int get() = startCount.get()
   val stops: Int get() = stopCount.get()
 
-  override suspend fun start(): URI = endpoint.also { startCount.incrementAndGet() }
+  override suspend fun start(): IntellijMcpEndpoint = endpoint.also { startCount.incrementAndGet() }
 
   override suspend fun stop() {
     stopCount.incrementAndGet()

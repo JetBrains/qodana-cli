@@ -41,6 +41,7 @@ func TestMain(m *testing.M) {
 		signal.Notify(terminated, syscall.SIGTERM)
 		_, _ = os.Stdout.WriteString("Starting IDE\n")
 		_, _ = os.Stderr.WriteString("  - Streamable HTTP endpoint: http://127.0.0.1:54321/mcp\x1b[0m\n")
+		_, _ = os.Stderr.WriteString("  - Send the header IJ_MCP_AUTH_TOKEN with the token in /config/token.txt\x1b[0m\n")
 		<-terminated
 		_, _ = os.Stderr.WriteString("fake IDE stopped\n")
 		os.Exit(0)
@@ -127,6 +128,43 @@ func TestMCPEndpointRecognizesIDEAnnouncements(t *testing.T) {
 	}
 }
 
+func TestForwardIDEOutputAnnouncesTheTokenFileNamedAfterTheEndpoint(t *testing.T) {
+	for name, test := range map[string]struct {
+		output string
+		want   *mcpAnnouncement
+	}{
+		"IDE starter": {
+			"* SSE URL: http://127.0.0.1:64342/sse\n" +
+				"* Send the header IJ_MCP_AUTH_TOKEN with the token in /home/u/Library/Application Support/global_mcp_server_token.txt\n",
+			&mcpAnnouncement{"http://127.0.0.1:64342/stream", "/home/u/Library/Application Support/global_mcp_server_token.txt"},
+		},
+		"Qodana script": {
+			"  - Streamable HTTP endpoint: http://127.0.0.1:64342/mcp\x1b[0m\n" +
+				"  - Send the header IJ_MCP_AUTH_TOKEN with the token in /config/global_mcp_server_token.txt\x1b[0m\n",
+			&mcpAnnouncement{"http://127.0.0.1:64342/mcp", "/config/global_mcp_server_token.txt"},
+		},
+		"IDE without token": {
+			"* SSE URL: http://127.0.0.1:64342/sse\n* Project: kotlin (/project)\n",
+			&mcpAnnouncement{"http://127.0.0.1:64342/stream", ""},
+		},
+		"IDE that exits after the endpoint": {"* SSE URL: http://127.0.0.1:64342/sse\n", nil},
+	} {
+		t.Run(name, func(t *testing.T) {
+			endpoints := make(chan mcpAnnouncement, 1)
+			log := &bytes.Buffer{}
+			forwardIDEOutput(strings.NewReader(test.output), log, endpoints)
+			close(endpoints)
+			got, announced := <-endpoints
+			if announced != (test.want != nil) || announced && got != *test.want {
+				t.Fatalf("announced %+v (%v), want %+v", got, announced, test.want)
+			}
+			if log.String() != test.output {
+				t.Fatalf("forwarded %q, want %q", log.String(), test.output)
+			}
+		})
+	}
+}
+
 func TestPrepareMCPScanContextRejectsDockerLinters(t *testing.T) {
 	t.Setenv(qdenv.QodanaDistEnv, "")
 	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
@@ -191,11 +229,13 @@ func TestServeIDEMCPPublishesReadinessAndStopsIDEWhenStdinCloses(t *testing.T) {
 		t.Fatalf("no readiness line: %v", err)
 	}
 	var ready struct {
-		Status string
-		URL    string
-		PID    int
+		Status        string
+		URL           string
+		PID           int
+		AuthTokenFile string
 	}
-	if err := json.Unmarshal([]byte(line), &ready); err != nil || ready.Status != "ready" || ready.URL != "http://127.0.0.1:54321/mcp" || ready.PID <= 0 {
+	if err := json.Unmarshal([]byte(line), &ready); err != nil || ready.Status != "ready" ||
+		ready.URL != "http://127.0.0.1:54321/mcp" || ready.PID <= 0 || ready.AuthTokenFile != "/config/token.txt" {
 		t.Fatalf("unexpected readiness %q: %v", line, err)
 	}
 	go func() { _, _ = io.Copy(io.Discard, stdout) }()

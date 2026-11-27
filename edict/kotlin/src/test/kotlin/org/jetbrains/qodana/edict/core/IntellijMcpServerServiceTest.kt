@@ -29,7 +29,8 @@ class IntellijMcpServerServiceTest {
     val qodana = fakeQodana(
       """
       echo "Downloading IDE"
-      echo '{"status":"ready","url":"http://127.0.0.1:9876/mcp"}'
+      echo "ide-token" > "${'$'}(dirname "${'$'}0")/token.txt"
+      echo "{\"status\":\"ready\",\"url\":\"http://127.0.0.1:9876/mcp\",\"authTokenFile\":\"${'$'}(dirname "${'$'}0")/token.txt\"}"
       echo "IDE log line" >&2
       cat > /dev/null
       echo stopped > "${'$'}(dirname "${'$'}0")/stopped"
@@ -37,19 +38,19 @@ class IntellijMcpServerServiceTest {
     )
     val log = project.resolve("logs/intellij-mcp.log")
     val client = FakeInspectionKtsClient()
-    var endpoint: URI? = null
+    var endpoint: IntellijMcpEndpoint? = null
     val service = IntellijMcpServerService(
       projectPath = project,
       qodanaExecutable = qodana.toString(),
       ideArguments = listOf("--dist=/opt/idea", "--property=-Xmx8g"),
       log = log,
       resultsDirectory = project.resolve("logs/intellij-mcp"),
-      clientFactory = InspectionKtsClientFactory { uri -> endpoint = uri; client },
+      clientFactory = InspectionKtsClientFactory { started -> endpoint = started; client },
     )
 
     assertSame(client, service.start())
     assertSame(client, service.start())
-    assertEquals(URI("http://127.0.0.1:9876/mcp"), endpoint)
+    assertEquals(IntellijMcpEndpoint(URI("http://127.0.0.1:9876/mcp"), "ide-token"), endpoint)
     assertEquals(
       listOf(
         "edict", "ide-mcp", "--project-dir", project.toAbsolutePath().normalize().toString(),
@@ -97,6 +98,34 @@ class IntellijMcpServerServiceTest {
     assertFalse(service.start() === first, "client of the dead helper was reused")
     assertEquals(1, first.closes)
     assertEquals(2, Files.readAllLines(qodana.resolveSibling("starts")).size)
+    service.stop()
+  }
+
+  @Test
+  fun `stops an IDE that refuses the connection and starts a new one on next use`() = runBlocking {
+    val qodana = fakeQodana(
+      """
+      directory="${'$'}(dirname "${'$'}0")"
+      echo started >> "${'$'}directory/starts"
+      echo '{"status":"ready","url":"http://127.0.0.1:9876/mcp"}'
+      cat > /dev/null
+      echo stopped >> "${'$'}directory/stops"
+      """,
+    )
+    val client = FakeInspectionKtsClient()
+    val refusals = AtomicInteger()
+    val service = IntellijMcpServerService(
+      projectPath = project,
+      qodanaExecutable = qodana.toString(),
+      clientFactory = InspectionKtsClientFactory {
+        if (refusals.getAndIncrement() == 0) error("Inspection MCP HTTP 401") else client
+      },
+    )
+
+    assertEquals("Inspection MCP HTTP 401", assertFailsWith<IllegalStateException> { service.start() }.message)
+    assertEquals(listOf("stopped"), Files.readAllLines(qodana.resolveSibling("stops")))
+    assertSame(client, service.start())
+    assertEquals(listOf("started", "started"), Files.readAllLines(qodana.resolveSibling("starts")))
     service.stop()
   }
 

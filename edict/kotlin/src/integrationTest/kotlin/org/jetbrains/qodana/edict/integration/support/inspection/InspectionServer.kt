@@ -2,10 +2,12 @@
 package org.jetbrains.qodana.edict.integration.support.inspection
 
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.core.IntellijMcpEndpoint
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.readText
 
 /** The compiler lives in a separate IDE process; the Kotlin project has no IntelliJ dependencies. */
 internal class InspectionServer private constructor(
@@ -15,7 +17,7 @@ internal class InspectionServer private constructor(
     val source: Path,
     private val proxy: InspectionToolProxy,
     /** The IDE's own Streamable HTTP endpoint, which production Edict talks to directly, unlike [url]. */
-    val streamableEndpoint: URI,
+    val endpoint: IntellijMcpEndpoint,
 ) : AutoCloseable {
     val url = proxy.url
 
@@ -73,16 +75,19 @@ internal class InspectionServer private constructor(
             var proxy: InspectionToolProxy? = null
             try {
                 println("Starting external inspection compiler; log: $log")
-                val endpoint = Regex("(?:Streamable HTTP endpoint|SSE URL):\\s*(https?://[^\\s\\u001b]+)")
+                // The endpoint, and the complete line after it, which names the token file as `qodana edict ide-mcp` reads it.
+                val announcement = Regex("(?:Streamable HTTP endpoint|SSE URL):\\s*(https?://[^\\s\\u001b]+)[^\\n]*\\n([^\\n]*)\\n")
                 val deadline = System.nanoTime() + TimeUnit.MINUTES.toNanos(10)
-                var url: String? = null
-                while (url == null) {
+                var announced: MatchResult? = null
+                while (announced == null) {
                     check(process.isAlive) { "External inspection compiler exited ${process.exitValue()}; see $log" }
                     check(System.nanoTime() < deadline) { "External inspection compiler did not start in 10 minutes; see $log" }
-                    url = endpoint.find(Files.readString(log))?.groupValues?.get(1)
-                    if (url == null) Thread.sleep(250)
+                    announced = announcement.find(Files.readString(log))
+                    if (announced == null) Thread.sleep(250)
                 }
-                client = InspectionMcpClient(URI.create(url))
+                val url = announced.groupValues[1]
+                val authToken = authTokenFile.find(announced.groupValues[2].trim())?.let { Path.of(it.groupValues[1]).readText().trim() }
+                client = InspectionMcpClient(URI.create(url), authToken)
                 val connected = client
                 val listed = connected.request("tools/list", JsonObject(emptyMap())).getValue("tools").jsonArray
                 proxy = InspectionToolProxy(
@@ -93,11 +98,13 @@ internal class InspectionServer private constructor(
                 )
                 // The same derivation as `qodana edict ide-mcp`, whose endpoint production Edict uses.
                 val streamable = URI.create(if (url.endsWith("/sse")) url.removeSuffix("/sse") + "/stream" else url)
-                return InspectionServer(process, connected, source, proxy, streamable)
+                return InspectionServer(process, connected, source, proxy, IntellijMcpEndpoint(streamable, authToken))
             } catch (e: Throwable) {
                 proxy?.close(); runCatching { client?.close() }; stopIde(process); throw e
             }
         }
+
+        private val authTokenFile = Regex("IJ_MCP_AUTH_TOKEN with the token in (.+?)(?:\\u001b\\[[0-9;]*m)?$")
 
         private fun stopIde(process: Process) {
             if (!process.isAlive) return

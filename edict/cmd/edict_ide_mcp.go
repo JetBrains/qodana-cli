@@ -58,7 +58,15 @@ var ideMCPTools = []string{
 var (
 	streamableEndpointPattern = regexp.MustCompile(`Streamable HTTP endpoint:\s*(https?://[^\s\x1b]+)`)
 	ideSSEEndpointPattern     = regexp.MustCompile(`SSE URL:\s*(https?://[^\s\x1b]+)`)
+	// The token file may sit under a path with spaces; Qodana's messages end with a color reset.
+	authTokenFilePattern = regexp.MustCompile(`IJ_MCP_AUTH_TOKEN with the token in (.+?)(?:\x1b\[[0-9;]*m)?$`)
 )
+
+// mcpAnnouncement is where the IDE serves MCP and the file of the token its requests must carry, if it checks one.
+type mcpAnnouncement struct {
+	url           string
+	authTokenFile string
+}
 
 // ideMCPOptions select a native IDE: a local distribution, a Qodana linter the CLI downloads, or QODANA_DIST.
 // Docker is not supported, since the IDE must read the host paths the Kotlin server passes to it.
@@ -80,7 +88,8 @@ func newEdictIDEMCPCommand() *cobra.Command {
 		Use:   "ide-mcp",
 		Short: "Run the IntelliJ MCP server for one Edict session (internal)",
 		Long: `Start the native IDE MCP server and keep it running until stdin closes or SIGTERM/SIGINT arrives.
-Stdout receives exactly one line, {"status":"ready","url":...,"pid":...}, once the IDE serves MCP.
+Stdout receives exactly one line, {"status":"ready","url":...,"pid":...,"authTokenFile":...}, once the IDE serves
+MCP; authTokenFile names the file of the IJ_MCP_AUTH_TOKEN header value and is absent for IDEs that check no token.
 The caller stops the IDE by pid if this helper is killed before it can.
 IDE output is forwarded to stderr. The Kotlin Edict server runs this on its first inspection call.
 The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not supported.`,
@@ -231,7 +240,7 @@ func serveIDEMCP(
 		exited <- err
 		close(stopped)
 	}()
-	endpoints := make(chan string, 1)
+	endpoints := make(chan mcpAnnouncement, 1)
 	go forwardIDEOutput(output, stderr, endpoints)
 	stdinClosed := make(chan struct{})
 	go func() {
@@ -244,10 +253,13 @@ func serveIDEMCP(
 	ready := false
 	for {
 		select {
-		case url := <-endpoints:
+		case announcement := <-endpoints:
 			ready, endpoints = true, nil
 			deadline.Stop()
-			readiness := map[string]any{"status": "ready", "url": url, "pid": ide.Process.Pid}
+			readiness := map[string]any{"status": "ready", "url": announcement.url, "pid": ide.Process.Pid}
+			if announcement.authTokenFile != "" {
+				readiness["authTokenFile"] = announcement.authTokenFile
+			}
 			if err := json.NewEncoder(stdout).Encode(readiness); err != nil {
 				return errors.Join(fmt.Errorf("publishing MCP readiness: %w", err), stopIDE(ide, stopped))
 			}
@@ -290,21 +302,34 @@ func stopIDE(ide *exec.Cmd, stopped <-chan struct{}) error {
 	}
 }
 
-// forwardIDEOutput copies IDE output line by line to log and sends the first MCP endpoint it announces.
-func forwardIDEOutput(output io.Reader, log io.Writer, endpoints chan<- string) {
+// forwardIDEOutput copies IDE output line by line to log and sends the first MCP endpoint it announces. Both IDE
+// entry points name the token file on the line right after the endpoint, so that line completes the announcement.
+func forwardIDEOutput(output io.Reader, log io.Writer, endpoints chan<- mcpAnnouncement) {
 	reader := bufio.NewReader(output)
-	reported := false
+	url, reported := "", false
 	for {
 		line, err := reader.ReadString('\n')
 		_, _ = io.WriteString(log, line)
-		if url, ok := mcpEndpoint(line); ok && !reported {
+		switch {
+		case reported, line == "": // The empty read at the end of the output is no line.
+		case url != "":
 			reported = true
-			endpoints <- url
+			endpoints <- mcpAnnouncement{url, mcpAuthTokenFile(line)}
+		default:
+			url, _ = mcpEndpoint(line)
 		}
 		if err != nil {
 			return
 		}
 	}
+}
+
+// mcpAuthTokenFile is the token file a line of IDE output names, or "" if it names none.
+func mcpAuthTokenFile(line string) string {
+	if match := authTokenFilePattern.FindStringSubmatch(strings.TrimSpace(line)); match != nil {
+		return match[1]
+	}
+	return ""
 }
 
 func mcpEndpoint(line string) (string, bool) {

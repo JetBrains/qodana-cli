@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.core
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -13,14 +14,18 @@ import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.absolutePathString
+import kotlin.io.path.readText
+
+/** Where the IDE serves MCP, and the `IJ_MCP_AUTH_TOKEN` its requests must carry; null for an IDE that checks none. */
+internal data class IntellijMcpEndpoint(val uri: URI, val authToken: String? = null)
 
 internal fun interface InspectionKtsClientFactory {
-  fun create(endpoint: URI): InspectionKtsClient
+  fun create(endpoint: IntellijMcpEndpoint): InspectionKtsClient
 }
 
 /** Starts and stops the IntelliJ MCP endpoint used by one Edict run. */
 internal interface IntellijMcpServerLifecycle {
-  suspend fun start(): URI
+  suspend fun start(): IntellijMcpEndpoint
 
   /** False once a started server has died, so its clients must not be reused. */
   val running: Boolean get() = true
@@ -45,7 +50,7 @@ internal class QodanaIntellijMcpServerLifecycle(
 
   override val running: Boolean get() = helper?.isAlive == true
 
-  override suspend fun start(): URI = withContext(Dispatchers.IO) {
+  override suspend fun start(): IntellijMcpEndpoint = withContext(Dispatchers.IO) {
     check(helper == null) { "IntelliJ MCP is already running" }
     val command = buildList {
         addAll(
@@ -67,7 +72,7 @@ internal class QodanaIntellijMcpServerLifecycle(
       // Captured now: the handle tracks this exact process, so a reused pid is never signalled.
       val ide = ready.pid?.let { ProcessHandle.of(it).orElse(null) }
       if (ide != null) process.onExit().thenRun { stopIde(ide) }
-      URI.create(ready.url)
+      IntellijMcpEndpoint(URI.create(ready.url), ready.authTokenFile?.let { Path.of(it).readText().trim() })
     }
     catch (e: Throwable) {
       stop(process)
@@ -117,7 +122,7 @@ internal class QodanaIntellijMcpServerLifecycle(
   }
 
   @Serializable
-  private data class McpReady(val status: String, val url: String, val pid: Long? = null)
+  private data class McpReady(val status: String, val url: String, val pid: Long? = null, val authTokenFile: String? = null)
 
   private companion object {
     // The helper itself allows the IDE ten seconds to exit before killing it.
@@ -165,9 +170,7 @@ internal class IntellijMcpServerService(
       client = null
       serverLifecycle.stop()
     }
-    val endpoint = serverLifecycle.start()
-    started = true
-    clientFactory.create(endpoint).also { client = it }
+    connect()
   }
 
   suspend fun <T> withClient(action: suspend (InspectionKtsClient) -> T): T {
@@ -189,7 +192,22 @@ internal class IntellijMcpServerService(
     runCatching { staleClient.close() }
     client = null
     serverLifecycle.stop()
-    clientFactory.create(serverLifecycle.start()).also { client = it }
+    connect()
+  }
+
+  /** Starts the IDE and connects to it. An IDE that refuses the connection is stopped, so the next use starts a new one. */
+  private suspend fun connect(): InspectionKtsClient {
+    val endpoint = serverLifecycle.start()
+    started = true
+    val connected = try {
+      clientFactory.create(endpoint)
+    }
+    catch (e: Throwable) {
+      // Even when cancelled: a helper left running makes every later start fail.
+      withContext(NonCancellable) { runCatching { serverLifecycle.stop() }.onFailure(e::addSuppressed) }
+      throw e
+    }
+    return connected.also { client = it }
   }
 
   suspend fun stop() {

@@ -102,7 +102,7 @@ class InspectionKtsMcpClientTest {
     val service = IntellijMcpServerService(
       projectPath = Path.of("/project/root"),
       projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes,
-      serverLifecycle = FakeIntellijMcpServerLifecycle(URI("http://127.0.0.1:${server.address.port}/mcp")),
+      serverLifecycle = FakeIntellijMcpServerLifecycle(IntellijMcpEndpoint(URI("http://127.0.0.1:${server.address.port}/mcp"))),
     )
     try {
       service.withClient { client ->
@@ -174,6 +174,18 @@ class InspectionKtsMcpClientTest {
         assertTrue(client.analyzeProject("inspection").compilation.compilationSuccess)
         assertEquals(listOf("session-1", "session-2"), server.toolSessions())
         assertFailsWith<HttpTimeoutException> { client.compile("inspection") }
+      }
+    }
+  }
+
+  @Test
+  @Timeout(30)
+  fun `sends the IDE's auth token with every request`() = runBlocking {
+    SessionServer(authToken = "ide-token").use { server ->
+      HttpInspectionKtsClient(server.endpoint, "/project/root").use { client ->
+        assertEquals("sample-rule", client.compile("inspection").inspectionId)
+        // The event stream is a request of its own, which the IDE refuses without the token too.
+        assertEquals(listOf("session-1"), server.awaitStreams(1))
       }
     }
   }
@@ -252,7 +264,7 @@ class InspectionKtsMcpClientTest {
       start()
     }
     try {
-      HttpInspectionKtsClient(URI("http://127.0.0.1:${server.address.port}/mcp"), "/project/root").use { client ->
+      HttpInspectionKtsClient(IntellijMcpEndpoint(URI("http://127.0.0.1:${server.address.port}/mcp")), "/project/root").use { client ->
         val started = System.nanoTime()
         assertFailsWith<TimeoutCancellationException> {
           withTimeout(500) { client.analyzeProject("project inspection") }
@@ -286,6 +298,8 @@ class InspectionKtsMcpClientTest {
   private class SessionServer(
     private val rejected: Set<String> = emptySet(),
     private val toolDelayMillis: Long = 0,
+    /** Required in the `IJ_MCP_AUTH_TOKEN` header of every request, as the IDE does; any request without it gets 401. */
+    private val authToken: String? = null,
   ) : AutoCloseable {
     private val executor = Executors.newCachedThreadPool()
     private val sessions = AtomicInteger()
@@ -298,6 +312,10 @@ class InspectionKtsMcpClientTest {
       createContext("/mcp") { exchange ->
         exchange.use {
           val session = exchange.requestHeaders.getFirst("Mcp-Session-Id")
+          if (authToken != null && exchange.requestHeaders.getFirst("IJ_MCP_AUTH_TOKEN") != authToken) {
+            exchange.sendResponseHeaders(401, -1)
+            return@createContext
+          }
           if (exchange.requestMethod == "GET") {
             stream(exchange, checkNotNull(session))
             return@createContext
@@ -336,7 +354,7 @@ class InspectionKtsMcpClientTest {
       start()
     }
 
-    val endpoint: URI = URI("http://127.0.0.1:${server.address.port}/mcp")
+    val endpoint = IntellijMcpEndpoint(URI("http://127.0.0.1:${server.address.port}/mcp"), authToken)
 
     fun toolSessions(): List<String?> = synchronized(toolSessions) { toolSessions.toList() }
 

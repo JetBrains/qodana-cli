@@ -109,7 +109,7 @@ internal class IntegrationWorkspace private constructor(
     ) {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
         try {
-            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = FakeIntellijMcpServerLifecycle(URI.create(it.url))) }
+            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = FakeIntellijMcpServerLifecycle(IntellijMcpEndpoint(URI.create(it.url)))) }
                 ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = lifecycle!!.qodanaExecutable.toString())
             EdictServer.start(
                 layout = layout,

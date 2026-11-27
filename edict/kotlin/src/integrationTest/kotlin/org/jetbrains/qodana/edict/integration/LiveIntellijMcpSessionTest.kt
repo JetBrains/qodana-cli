@@ -28,7 +28,7 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
     fun `production client keeps its IDE session across idle pauses without restarting the IDE`() = runBlocking {
         InspectionServer.start(workspace.project, workspace.output).use { ide ->
             // The surrounding test owns the IDE.
-            val lifecycle = FakeIntellijMcpServerLifecycle(ide.streamableEndpoint)
+            val lifecycle = FakeIntellijMcpServerLifecycle(ide.endpoint)
             val service = IntellijMcpServerService(ide.source, serverLifecycle = lifecycle)
             try {
                 repeat(3) { call ->
@@ -49,7 +49,7 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
     fun `project analysis can be submitted after the previous analysis times out`() = runBlocking {
         InspectionServer.start(workspace.project, workspace.output, ::prepareProjectForAnalysis).use { ide ->
             HttpInspectionKtsClient(
-                endpoint = ide.streamableEndpoint,
+                endpoint = ide.endpoint,
                 projectPath = ide.source.toString(),
                 requestTimeout = Duration.ofMinutes(2),
                 projectAnalysisTimeoutMinutes = 1,

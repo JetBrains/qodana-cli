@@ -16,7 +16,6 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.qodana.edict.common.DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES
-import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -93,7 +92,7 @@ internal class StaleInspectionMcpSession(val sessionId: String) :
  * once; only a second rejection reaches the lifecycle owner as [StaleInspectionMcpSession].
  */
 internal class HttpInspectionKtsClient(
-  private val endpoint: URI,
+  private val endpoint: IntellijMcpEndpoint,
   private val projectPath: String? = null,
   private val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
   private val requestTimeout: Duration = Duration.ofHours(1),
@@ -132,7 +131,7 @@ internal class HttpInspectionKtsClient(
 
   /** Edict reads no server-to-client messages; the stream only keeps the session alive, and a server without one is fine. */
   private fun openEvents(session: String): CompletableFuture<HttpResponse<Void>> = client.sendAsync(
-    HttpRequest.newBuilder(endpoint)
+    request()
       .header("Accept", "text/event-stream")
       .header("MCP-Protocol-Version", protocolVersion)
       .header("Mcp-Session-Id", session)
@@ -282,7 +281,7 @@ internal class HttpInspectionKtsClient(
   }
 
   private fun post(message: JsonObject, requestSessionId: String?, timeout: Duration = requestTimeout): HttpRequest {
-    val builder = HttpRequest.newBuilder(endpoint)
+    val builder = request()
       .timeout(timeout)
       .header("Content-Type", "application/json")
       .header("Accept", "application/json, text/event-stream")
@@ -290,6 +289,9 @@ internal class HttpInspectionKtsClient(
     requestSessionId?.let { builder.header("Mcp-Session-Id", it) }
     return builder.POST(HttpRequest.BodyPublishers.ofString(EdictJson.encodeToString(message))).build()
   }
+
+  private fun request(): HttpRequest.Builder =
+    HttpRequest.newBuilder(endpoint.uri).apply { endpoint.authToken?.let { header(AUTH_TOKEN_HEADER, it) } }
 
   private fun parse(message: JsonObject, response: HttpResponse<String>): JsonObject? {
     response.headers().firstValue("Mcp-Session-Id").ifPresent { sessionId = it }
@@ -318,6 +320,7 @@ internal class HttpInspectionKtsClient(
   private companion object {
     val ListSerializer = kotlinx.serialization.builtins.ListSerializer(InspectionKtsExampleRequest.serializer())
     val CANCEL_TIMEOUT: Duration = Duration.ofSeconds(10)
+    const val AUTH_TOKEN_HEADER = "IJ_MCP_AUTH_TOKEN"
   }
 }
 
