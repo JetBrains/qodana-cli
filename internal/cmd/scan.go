@@ -104,9 +104,10 @@ But you can always override qodana.yaml options with the following command-line 
 					commonCtx.LogDir(),
 				)
 				if err != nil {
-					telemetry.Fail(telemetry.ReasonInvalidConfig)
+					telemetry.ConfigFailed()
 					log.Fatalf("Failed to load Qodana configuration %s", err)
 				}
+				telemetry.ConfigResolved(localQodanaYamlFullPath != "", cliOptions.GlobalConfigurationId != "")
 				if effectiveConfigFiles.EffectiveQodanaYamlPath != "" {
 					yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
 					qodanaYamlConfig = corescan.YamlConfig(yaml)
@@ -126,7 +127,9 @@ But you can always override qodana.yaml options with the following command-line 
 				scanContext.ProjectDir(),
 				scanContext.QodanaUploadToken() != "",
 			)
-			finishAnalysis := telemetry.StartAnalysis()
+			finishAnalysis := telemetry.StartAnalysis(
+				scanContext.RequestedRunScenario(scanContext.Commit() != "" || scanContext.DiffStart() != ""),
+			)
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			finishAnalysis(statisticsExit(exitCode, scanContext))
 			if qdenv.IsContainer() {

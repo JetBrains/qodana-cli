@@ -79,7 +79,7 @@ func RunThirdPartyLinterAnalysis(
 		linterInfo.LinterVersion,
 		product.FindLinterByProductCode(linterInfo.ProductCode).IsPaid,
 		linterInfo.IsEap,
-		"native",
+		"third_party",
 	)
 
 	localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
@@ -102,9 +102,10 @@ func RunThirdPartyLinterAnalysis(
 		commonCtx.LogDir(),
 	)
 	if err != nil {
-		telemetry.Fail(telemetry.ReasonInvalidConfig)
+		telemetry.ConfigFailed()
 		log.Fatalf("Failed to load Qodana configuration %s", err)
 	}
+	telemetry.ConfigResolved(localQodanaYamlFullPath != "", cliOptions.GlobalConfigurationId != "")
 	qodanaYamlConfig := thirdpartyscan.QodanaYamlConfig{}
 	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
 		yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath)
@@ -135,7 +136,7 @@ func RunThirdPartyLinterAnalysis(
 	logOs(eventsCh, linterInfo, projectIdHash, analysisId)
 	logProjectOpen(eventsCh, linterInfo, projectIdHash, analysisId)
 
-	finishAnalysis := telemetry.StartAnalysis()
+	finishAnalysis := telemetry.StartAnalysis("")
 	if err = linter.RunAnalysis(context); err != nil {
 		finishAnalysis(1, "")
 		msg.ErrorMessage(err.Error())

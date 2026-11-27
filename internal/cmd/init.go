@@ -76,7 +76,11 @@ func newInitCommand() *cobra.Command {
 					token,
 					commoncontext.ExecutionModeNotSpecified,
 				)
-				telemetry.LinterSelected(analyzer.GetLinter().ProductCode, false)
+				mode := "native"
+				if analyzer.IsContainer() {
+					mode = "docker"
+				}
+				telemetry.LinterSelected(analyzer.GetLinter().ProductCode, false, mode)
 
 				writeQodanaLinterToYamlFileWithWarning(
 					localQodanaYamlFullPath,
@@ -85,15 +89,8 @@ func newInitCommand() *cobra.Command {
 
 				checkToken(analyzer, cliOptions)
 			} else {
-				// ide: is a product code, linter: a name or, as before, an image
-				configured := product.FindLinterByProductCode(ide)
-				if linter != "" {
-					configured = product.FindLinterByName(linter)
-					if configured.ProductCode == "" {
-						configured = product.FindLinterByImage(linter)
-					}
-				}
-				telemetry.LinterSelected(configured.ProductCode, true)
+				code, mode := preconfiguredLinter(ide, linter)
+				telemetry.LinterSelected(code, true, mode)
 				msg.EmptyMessage()
 				var analyzer string
 				if ide != "" {
@@ -165,4 +162,20 @@ type initOptions struct {
 	ConfigName   string
 	Force        bool
 	NoStatistics bool
+}
+
+// preconfiguredLinter gives the product code and the mode of the linter of qodana.yaml for the statistics. ide: is
+// the product code of a native linter, linter: a name or, as before, an image. A name gets no mode, qodana scan
+// chooses it, and an unknown linter gets neither.
+func preconfiguredLinter(ide string, linter string) (code string, mode string) {
+	if linter == "" {
+		return product.FindLinterByProductCode(ide).ProductCode, "native"
+	}
+	if code = product.FindLinterByName(linter).ProductCode; code != "" {
+		return code, ""
+	}
+	if code = product.FindLinterByImage(linter).ProductCode; code != "" {
+		return code, "docker"
+	}
+	return "", ""
 }

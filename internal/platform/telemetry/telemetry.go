@@ -74,16 +74,27 @@ var (
 	scenario   string
 	startedAt  time.Time
 	analyzing  bool
+	// analysisMode, analysisStart and analysisDone are of the analysis StartAnalysis opened, analysisReason is how it
+	// ended: a linter container hands it over, apart from the reason of its command
+	analysisMode   string
+	analysisStart  time.Time
+	analysisDone   bool
+	analysisReason string
 	// collectionStarted tells that Start began collecting, which Finish keeps, unlike enabled
 	collectionStarted bool
 	// stage is the last funnel step the run reached, failedStage the step a container run failed at
 	stage       string
 	failedStage string
 	tokenSource string
-	// baselineKnown tells that the CLI resolved the baseline, baselineFound that the analysis is given one: an IDE
+	// baselineKnown tells that the CLI resolved the baseline, hasBaseline that the analysis is given one: an IDE
 	// linter resolves its cloud baseline itself
 	baselineKnown bool
-	baselineFound bool
+	hasBaseline   bool
+	// linter and setup make linter.ready, which a Docker run knows before the pull and a native one after the download
+	linter map[string]any
+	setup  map[string]any
+	// linterMode is native, docker or third_party, of the analysis events
+	linterMode string
 	// knownReason is the precise reason of a failure, which its exit code does not tell
 	knownReason string
 	events      []event
@@ -143,7 +154,7 @@ func Start(cmd string, repository func() (deviceId string, remoteUrl string), no
 
 	track(
 		groupRun,
-		started,
+		cmd+startedSuffix,
 		map[string]any{"ci": ciName(), "container": qdenv.IsContainer(), "interactive": msg.IsInteractive()},
 	)
 }
@@ -244,23 +255,75 @@ func SetAnalysisId(id string) {
 	analysisId = AnalysisId(id)
 }
 
-func LinterReady(linter string, version string, paid bool, eap bool, mode string) {
+// LinterReady records the linter the analysis runs with: mode is native, docker, or third_party for qodana-clang
+// and qodana-cdnet. linter.ready is recorded once the linter is on the machine too, see LinterPrepared: a native
+// linter is downloaded before, a Docker image is pulled after.
+func LinterReady(code string, version string, paid bool, eap bool, mode string) {
 	// eap tells an EAP build
 	version, _, _ = strings.Cut(version, "-")
 	if version != "latest" {
 		version = versionName(version)
 	}
-	track(
-		groupRun,
-		linterReady,
-		map[string]any{"linter": linter, "version": version, "paid": paid, "eap": eap, "mode": mode},
-	)
+	mu.Lock()
+	defer mu.Unlock()
+	linter, linterMode = map[string]any{"linter": code, "version": version, "paid": paid, "eap": eap}, mode
+	switch {
+	case mode == "third_party":
+		setup = map[string]any{"setup": SetupThirdParty, "download_ms": 0}
+	case mode == "native" && setup == nil:
+		// a linter image, or a native linter given with its path
+		setup = map[string]any{"setup": SetupNativePreinstalled, "download_ms": 0}
+	}
+	// a Qodana image the user runs, like in a CI template: a container this CLI starts hands its events over instead
+	if mode == "native" && qdenv.IsContainer() {
+		linterMode = "container"
+	}
+	recordLinterReady()
+}
+
+// LinterPrepared records how the linter came on the machine, see the Setup constants, and how long it took.
+func LinterPrepared(how string, duration time.Duration) {
+	mu.Lock()
+	defer mu.Unlock()
+	setup = map[string]any{"setup": how, "download_ms": duration.Milliseconds()}
+	recordLinterReady()
+}
+
+// recordLinterReady records linter.ready once the linter and its setup are known. Must be called under mu.
+func recordLinterReady() {
+	if linter == nil || setup == nil {
+		return
+	}
+	data := maps.Clone(linter)
+	maps.Copy(data, setup)
+	// a full-history run pulls the image for each commit
+	recordOnce(groupRun, linterReady, data)
+}
+
+// LinterFailed records that the native linter can't be downloaded, and the reason the run fails with: its version is
+// unknown before the download.
+func LinterFailed(code string) {
+	mu.Lock()
+	defer mu.Unlock()
+	recordFailure(linterFailed, map[string]any{"linter": code}, ReasonDownloadFailed)
+}
+
+// DockerFailed records that the Docker run of the linter can't start, see dockerReasons, and the reason the run
+// fails with. The linter is the one LinterReady knows.
+func DockerFailed(reason string) {
+	mu.Lock()
+	defer mu.Unlock()
+	data := map[string]any{"reason": reason}
+	if code, ok := linter["linter"]; ok {
+		data["linter"] = code
+	}
+	recordFailure(dockerFailed, data, reason)
 }
 
 func LicenseObtained(kind string, plan string) {
 	data := map[string]any{"kind": kind}
 	if plan != "" {
-		data["plan"] = oneOf(plan, globalRules.Enums[enumLicenseType])
+		data["plan"] = oneOf(plan, licensePlans)
 	}
 	track(groupRun, licenseObtained, data)
 }
@@ -278,15 +341,24 @@ func SetTokenSource(source string) {
 func RejectLicense(reason string) {
 	mu.Lock()
 	defer mu.Unlock()
-	record(groupRun, licenseRejected, map[string]any{"reject_reason": reason})
-	knownReason = ReasonLicenseRejected
+	recordFailure(licenseRejected, map[string]any{"reason": reason}, ReasonLicenseRejected)
 }
 
-// BaselineResolved records which baseline the analysis compares its results with, a local file or the one of
-// Qodana Cloud, and its status: found, or why the analysis runs without it. httpStatus is the answer of a failed
-// Qodana Cloud request.
+// BaselineResolved records the baseline the analysis compares its results with, a local file or the one of Qodana
+// Cloud: found, none on purpose, or why it can't be used. httpStatus is the answer of a failed Qodana Cloud request.
 func BaselineResolved(source string, status string, httpStatus int, downloadTime time.Duration) {
-	data := map[string]any{"source": source, "baseline_status": status}
+	data := map[string]any{"source": source}
+	id := baselineFailed
+	switch {
+	case status == "found":
+		id = baselineFound
+	case slices.Contains(noBaselineReasons, status):
+		// the reason tells the source
+		id, data = baselineNone, map[string]any{}
+	}
+	if id != baselineFound {
+		data["reason"] = status
+	}
 	if httpStatus != 0 {
 		data["http_status"] = httpStatus
 	}
@@ -296,19 +368,24 @@ func BaselineResolved(source string, status string, httpStatus int, downloadTime
 	mu.Lock()
 	defer mu.Unlock()
 	// a missing baseline file is no baseline: problems.found reports baseline=none
-	baselineKnown, baselineFound = true, status == "found"
-	record(groupRun, baselineResolved, data)
+	baselineKnown, hasBaseline = true, id == baselineFound
+	record(groupRun, id, data)
 }
 
 // ReportPublished records whether the report reached Qodana Cloud; it is not published without an upload token.
 func ReportPublished(hasToken bool, uploaded bool) {
-	status := "skipped"
-	if uploaded {
-		status = "uploaded"
-	} else if hasToken {
-		status = "failed"
+	mu.Lock()
+	defer mu.Unlock()
+	// the CLI of a linter container records it too and hands it over: the first one is kept
+	if slices.ContainsFunc(events, func(e event) bool { return e.Id == reportPublished || e.Id == publishFailed }) {
+		return
 	}
-	track(groupRun, reportPublished, map[string]any{"publish_status": status})
+	switch {
+	case uploaded:
+		record(groupRun, reportPublished, nil)
+	case hasToken:
+		record(groupRun, publishFailed, nil)
+	}
 }
 
 // ReportShown records where qodana show shows the report: the one of Qodana Cloud, the local one it serves, or the
@@ -317,43 +394,45 @@ func ReportShown(target string) {
 	track(groupRun, reportShown, map[string]any{"target": target})
 }
 
+// ShowFailed records that qodana show can't show the report, and the reason the run fails with.
+func ShowFailed(reason string) {
+	mu.Lock()
+	defer mu.Unlock()
+	recordFailure(showFailed, map[string]any{"reason": reason}, reason)
+}
+
 // ContributorsCounted records the active contributors qodana contributors counts in the repositories over the days,
 // by order of magnitude.
-func ContributorsCounted(contributors int, repositories int, days int) {
+func ContributorsCounted(contributors int, projectDirs int, days int) {
 	track(
 		groupRun, contributorsCounted, map[string]any{
-			"contributors": bucket(contributors), "repositories": bucket(repositories), "days": max(days, 0),
+			"contributors": bucket(contributors), "project_dirs": bucket(projectDirs), "days": max(days, 0),
 		},
 	)
 }
 
-// LinterSelected records the linter qodana init configures the project with, or that the project has one already.
-func LinterSelected(linter string, preconfigured bool) {
+// LinterSelected records the linter qodana init configures the project with, or that the project has one already,
+// and its mode: native or docker, empty when qodana scan chooses it.
+func LinterSelected(code string, preconfigured bool, mode string) {
 	data := map[string]any{"preconfigured": preconfigured}
-	if linter != "" {
-		data["linter"] = linter
+	if code != "" {
+		data["linter"] = code
+	}
+	if mode != "" {
+		data["mode"] = mode
 	}
 	track(groupRun, linterSelected, data)
 }
 
-// LinterDownloaded records the download of the linter or the pull of its image, cached if the linter or the image
-// is up to date already.
-func LinterDownloaded(mode string, cached bool, duration time.Duration) {
-	trackOnce(
-		groupRun, linterDownloaded, map[string]any{
-			"mode": mode, "cached": cached, "download_ms": duration.Milliseconds(),
-		},
-	)
-}
-
 // DockerReady records the container engine the linter runs in: its limits, not the host ones, apply to the linter.
+// It is a step of a Docker run, recorded when the engine runs Linux.
 func DockerReady(cpuCount int, memoryBytes int64, engineVersion string) {
 	// a distribution build like 20.10.24+dfsg1 or 26.1.4-ce is reported by its version
 	if i := strings.IndexAny(engineVersion, "+-"); i >= 0 {
 		engineVersion = engineVersion[:i]
 	}
 	trackOnce(
-		groupEnv, dockerEngine, map[string]any{
+		groupRun, dockerReady, map[string]any{
 			"cpu_count": powerOfTwo(uint64(cpuCount), cpuCounts),
 			"ram_gb":    powerOfTwo(uint64(memoryBytes/gb), memorySizes),
 			"version":   versionName(engineVersion),
@@ -379,7 +458,7 @@ func ProblemsFound(countsByBaselineState map[string]int) {
 	mu.Lock()
 	defer mu.Unlock()
 	switch {
-	case baselineKnown && !baselineFound:
+	case baselineKnown && !hasBaseline:
 		data["baseline"] = "none"
 	case total+countsByBaselineState["absent"] == 0:
 		// a report without problems does not tell
@@ -435,47 +514,147 @@ func oneOf(value string, values []string) string {
 	return other
 }
 
-// Fail sets the precise reason of a failure, which analysis.finished and finished report instead of any other.
+// Fail sets the precise reason of a failure, which the failed events of the analysis and the command report instead
+// of any other.
 func Fail(reason string) {
 	mu.Lock()
 	defer mu.Unlock()
 	knownReason = reason
 }
 
-// SetScenario sets how the analysis runs: on the current state, on a diff of commits, on every commit, or on
-// the current state because the start commit of a diff is missing.
-func SetScenario(runScenario string) {
-	mu.Lock()
-	defer mu.Unlock()
-	scenario = runScenario
+// ConfigResolved records where the Qodana configuration comes from: the qodana.yaml of the project, a global
+// configuration, both or none.
+func ConfigResolved(local bool, global bool) {
+	source := "none"
+	switch {
+	case local && global:
+		source = "local_and_global"
+	case local:
+		source = "local"
+	case global:
+		source = "global"
+	}
+	trackOnce(groupRun, configResolved, map[string]any{"source": source})
 }
 
-// StartAnalysis records analysis.started and returns the function recording analysis.finished, with the reason of
-// Finish.
-func StartAnalysis() func(exitCode int, reason string) {
-	start := time.Now()
+// ConfigFailed records that the Qodana configuration can't be loaded, and the reason the run fails with.
+func ConfigFailed() {
 	mu.Lock()
 	defer mu.Unlock()
-	record(groupRun, analysisStarted, nil)
+	recordFailure(configFailed, nil, ReasonInvalidConfig)
+}
+
+// GitPrepared records whether the start commit of an incremental or full-history analysis is in the repository.
+// Without it the analysis runs on the current state, see ScenarioStartCommitMissing.
+func GitPrepared(startCommitFound bool) {
+	mu.Lock()
+	defer mu.Unlock()
+	startCommit := "found"
+	if !startCommitFound {
+		startCommit, scenario = "missing", ScenarioStartCommitMissing
+	}
+	recordOnce(groupRun, gitPrepared, map[string]any{"start_commit": startCommit})
+}
+
+// GitFailed records that the analysis needs git, which is not installed, and the reason the run fails with.
+func GitFailed() {
+	mu.Lock()
+	defer mu.Unlock()
+	recordFailure(gitFailed, nil, ReasonGitMissing)
+}
+
+// BootstrapFinished records the bootstrap command and, if it failed, the reason the run fails with. A diff runs it
+// for both commits, the first run is recorded.
+func BootstrapFinished(exitCode int, duration time.Duration) {
+	mu.Lock()
+	defer mu.Unlock()
+	if exitCode == 0 {
+		recordOnce(groupRun, bootstrapSucceeded, map[string]any{"duration_ms": duration.Milliseconds()})
+		return
+	}
+	recordFailure(
+		bootstrapFailed,
+		map[string]any{"exit_code": exitCode, "duration_ms": duration.Milliseconds()},
+		ReasonBootstrapFailed,
+	)
+}
+
+// recordFailure records the failed event of a step, once, the step as the stage the run ends at, and the reason the
+// run fails with. Must be called under mu.
+func recordFailure(id string, data map[string]any, reason string) {
+	recordOnce(groupRun, id, data)
+	failedStage, knownReason = id, reason
+}
+
+// StartAnalysis records analysis.started and returns the function recording analysis.succeeded or analysis.failed,
+// with the reason of Finish. runScenario is the one the options ask for: default, scope, reversed-scope or
+// full-history, empty for a linter without a diff.
+func StartAnalysis(runScenario string) func(exitCode int, reason string) {
+	mu.Lock()
+	defer mu.Unlock()
+	scenario, analysisMode, analysisStart, analysisDone, analysisReason =
+		runScenario, scanMode(runScenario), time.Now(), false, ""
+	record(groupRun, analysisStarted, map[string]any{"scan_mode": analysisMode})
 	analyzing = true
 	return func(exitCode int, reason string) {
 		mu.Lock()
 		defer mu.Unlock()
-		reason = exitReason(exitCode, reason)
-		if reason == ReasonLicenseExpired {
-			// a container may have handed it over already
-			recordOnce(groupRun, licenseRejected, map[string]any{"reject_reason": "expired"})
-		}
-		data := map[string]any{
-			"exit_code":   exitCode,
-			"reason":      reason,
-			"duration_ms": time.Since(start).Milliseconds(),
-		}
-		if scenario != "" {
-			data["scenario"] = scenario
-		}
-		record(groupRun, analysisFinished, data)
+		// a linter container tells how its analysis ended: a failure after it, like the upload, isn't of the analysis
+		finishAnalysis(exitCode, cmp.Or(analysisReason, exitReason(exitCode, reason)))
 	}
+}
+
+// finishAnalysis records analysis.succeeded or analysis.failed of the open analysis, once. Finish closes the one a
+// log.Fatal or an os.Exit left open, with the reason of the command. Must be called under mu.
+func finishAnalysis(exitCode int, reason string) {
+	if !analyzing || analysisDone {
+		return
+	}
+	analysisDone = true
+	if reason == ReasonLicenseExpired {
+		// a container may have handed it over already
+		recordOnce(groupRun, licenseRejected, map[string]any{"reason": "expired"})
+	}
+	data := map[string]any{
+		"exit_code":   exitCode,
+		"duration_ms": time.Since(analysisStart).Milliseconds(),
+		"scan_mode":   analysisMode,
+	}
+	if analysisMode == scanIncremental {
+		data["scenario"] = scenario
+	}
+	// the success rate and the duration per linter and mode need no join with linter.ready
+	if code, ok := linter["linter"]; ok {
+		data["linter"], data["mode"] = code, linterMode
+	}
+	analysisReason = reason
+	if !isSuccess(reason) {
+		reason = oneOf(reason, analysisReasons)
+	}
+	record(resultEvent(analysisSucceeded, analysisFailed, reason, data))
+}
+
+// scanMode gives the scan_mode of a run scenario.
+func scanMode(runScenario string) string {
+	switch runScenario {
+	case "scope", "reversed-scope":
+		return scanIncremental
+	case "full-history":
+		return scanFullHistory
+	}
+	return scanFull
+}
+
+// resultEvent gives the succeeded event with the result, or the failed one with the reason.
+func resultEvent(
+	succeeded string, failure string, reason string, data map[string]any,
+) (string, string, map[string]any) {
+	if isSuccess(reason) {
+		data["result"] = reason
+		return groupRun, succeeded, data
+	}
+	data["reason"] = reason
+	return groupRun, failure, data
 }
 
 // Finish records the finished event and sends everything collected. Only the first call has an effect.
@@ -490,14 +669,15 @@ func Finish(exitCode int, reason string) {
 			}
 			ready, done, started := senders, collected, startedAt
 			reason = exitReason(exitCode, reason)
+			finishAnalysis(exitCode, reason)
 			record(
-				groupRun, finished, map[string]any{
-					"exit_code":   exitCode,
-					"reason":      reason,
-					"success":     isSuccess(reason),
-					"stage":       cmp.Or(failedStage, stage),
-					"duration_ms": time.Since(started).Milliseconds(),
-				},
+				resultEvent(
+					commandSucceeded, commandFailed, reason, map[string]any{
+						"exit_code":   exitCode,
+						"stage":       cmp.Or(failedStage, stage),
+						"duration_ms": time.Since(started).Milliseconds(),
+					},
+				),
 			)
 			mu.Unlock()
 
@@ -516,7 +696,7 @@ func Finish(exitCode int, reason string) {
 			mu.Lock()
 			h := handover{
 				Events: events, ProjectId: projectId, OrgId: orgId, Reason: reason, Allowed: allowed,
-				StartCommitMissing: scenario == ScenarioStartCommitMissing,
+				AnalysisReason: analysisReason,
 			}
 			pending := withIds(events)
 			enabled, events = false, nil
@@ -549,7 +729,7 @@ func receive[T any](ch <-chan T, deadline <-chan struct{}) (T, bool) {
 	}
 }
 
-// exitReason returns the reason reported in analysis.finished and finished events: the precise reason of a failure
+// exitReason returns the reason of the result events of the analysis and the command: the precise reason of a failure
 // if it is known, otherwise the given one, otherwise the one of the exit code. Must be called under mu.
 func exitReason(exitCode int, reason string) string {
 	if knownReason != "" || reason != "" {
@@ -612,10 +792,10 @@ func recordOnce(group string, id string, data map[string]any) {
 	}
 }
 
-// withIds attaches the command, project, organization and analysis ids to the run events, and the token source, which a
-// container doesn't know, to the license ones. Must be called under mu.
+// withIds attaches the project, organization and analysis ids to the run events, the command to the finish ones, and
+// the token source, which a container doesn't know, to the license ones. Must be called under mu.
 func withIds(pending []event) []event {
-	ids := map[string]any{"command": command}
+	ids := map[string]any{}
 	for key, value := range map[string]string{"project_id": projectId, "org_id": orgId, "analysis_id": analysisId} {
 		if value != "" {
 			ids[key] = value
@@ -626,6 +806,9 @@ func withIds(pending []event) []event {
 		if e.Group == groupRun {
 			data := maps.Clone(ids)
 			maps.Copy(data, e.Data)
+			if e.Id == commandSucceeded || e.Id == commandFailed {
+				data["command"] = command
+			}
 			if tokenSource != "" && (e.Id == licenseObtained || e.Id == licenseRejected) {
 				data["token"] = tokenSource
 			}

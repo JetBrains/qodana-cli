@@ -46,11 +46,11 @@ func environment() (system map[string]any, software map[string]any) {
 		}
 	}
 	if memory, err := mem.VirtualMemory(); err == nil {
-		total, available := memory.Total, memory.Available
-		if limit, usage, ok := containerMemory(); ok && limit < memory.Total {
-			total, available = limit, limit-min(usage, limit)
+		total := memory.Total
+		if limit, ok := containerMemory(); ok && limit < memory.Total {
+			total = limit
 		}
-		system["ram_gb"], system["ram_available_gb"] = powerOfTwo(total/gb, memorySizes), powerOfTwo(available/gb, memorySizes)
+		system["ram_gb"] = powerOfTwo(total/gb, memorySizes)
 	}
 	cacheDir, _ := os.UserCacheDir()
 	if usage, err := disk.Usage(cmp.Or(cacheDir, ".")); err == nil {
@@ -80,20 +80,18 @@ func distro(platform string) string {
 	return oneOf(platform, distros)
 }
 
-// containerMemory returns the memory limit and usage of the container the CLI runs in, which can't use the memory
-// of the host beyond the limit. There is none outside a container or without a limit.
-func containerMemory() (limit uint64, usage uint64, ok bool) {
-	for _, cgroup := range [][2]string{
-		{"/sys/fs/cgroup/memory.max", "/sys/fs/cgroup/memory.current"},                                 // v2
-		{"/sys/fs/cgroup/memory/memory.limit_in_bytes", "/sys/fs/cgroup/memory/memory.usage_in_bytes"}, // v1
+// containerMemory returns the memory limit of the container the CLI runs in, which can't use the memory of the host
+// beyond the limit. There is none outside a container or without a limit.
+func containerMemory() (limit uint64, ok bool) {
+	for _, file := range []string{
+		"/sys/fs/cgroup/memory.max",                   // v2
+		"/sys/fs/cgroup/memory/memory.limit_in_bytes", // v1
 	} {
-		limit, limitErr := readUint(cgroup[0])
-		usage, usageErr := readUint(cgroup[1])
-		if limitErr == nil && usageErr == nil {
-			return limit, usage, true
+		if limit, err := readUint(file); err == nil {
+			return limit, true
 		}
 	}
-	return 0, 0, false
+	return 0, false
 }
 
 func readUint(file string) (uint64, error) {

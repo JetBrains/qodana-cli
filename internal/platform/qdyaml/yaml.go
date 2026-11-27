@@ -417,7 +417,7 @@ func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
 	}
 	err = yaml.Unmarshal(yamlFile, q)
 	if err != nil {
-		telemetry.Fail(telemetry.ReasonInvalidConfig)
+		telemetry.ConfigFailed()
 		log.Fatalf("Unmarshal: %v", err)
 	}
 	return *q

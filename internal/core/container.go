@@ -81,21 +81,21 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	}
 	docker, err := qdcontainer.NewContainerClient(ctx)
 	if err != nil {
-		telemetry.Fail(telemetry.ReasonDockerUnavailable)
+		telemetry.DockerFailed(telemetry.ReasonDockerUnavailable)
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
 	}
 
 	info, err := docker.Info(ctx, client.InfoOptions{})
 	if err != nil {
-		telemetry.Fail(telemetry.ReasonDockerUnavailable)
+		telemetry.DockerFailed(telemetry.ReasonDockerUnavailable)
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
 	}
-	telemetry.DockerReady(info.Info.NCPU, info.Info.MemTotal, info.Info.ServerVersion)
 	if info.Info.OSType != "linux" {
-		telemetry.Fail(telemetry.ReasonDockerUnavailable)
+		telemetry.DockerFailed(telemetry.ReasonDockerNotLinux)
 		msg.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
+	telemetry.DockerReady(info.Info.NCPU, info.Info.MemTotal, info.Info.ServerVersion)
 	fixDarwinCaches(c.CacheDir())
 
 	scanStages := getScanStages()
@@ -104,6 +104,8 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	CheckImage(dockerImage)
 	if !c.SkipPull() {
 		PullImage(docker, dockerImage)
+	} else {
+		telemetry.LinterPrepared(telemetry.SetupDockerPullSkipped, 0)
 	}
 	progress, _ := msg.StartQodanaSpinner(scanStages[0])
 
@@ -228,13 +230,18 @@ func PullImage(dockerClient client.APIClient, image string) {
 				msg.PrimaryBold(image),
 				pullErr,
 			)
+			telemetry.LinterPrepared(telemetry.SetupDockerLocal, time.Since(pullStart))
 			return
 		}
-		telemetry.Fail(telemetry.ReasonImagePull)
+		telemetry.DockerFailed(telemetry.ReasonPullFailed)
 		log.Fatal(pullErr)
 	}
 	pulled, _ := dockerClient.ImageInspect(ctx, image)
-	telemetry.LinterDownloaded("docker", local.ID != "" && local.ID == pulled.ID, time.Since(pullStart))
+	setup := telemetry.SetupDockerPulled
+	if local.ID != "" && local.ID == pulled.ID {
+		setup = telemetry.SetupDockerCached
+	}
+	telemetry.LinterPrepared(setup, time.Since(pullStart))
 	msg.SuccessMessage("Finished pulling the latest version of linter")
 }
 

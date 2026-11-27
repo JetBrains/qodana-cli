@@ -28,13 +28,22 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// A linter container started by the CLI does not send statistics: its CLI hands what only it knows (the license,
-// a missing start commit of the diff it runs and the precise finish reason) over to the starting CLI through a file in the mounted cache dir, so a run is
-// reported once, in one session.
+// A linter container started by the CLI does not send statistics: its CLI hands what only it knows (the
+// configuration, the license, the start commit of the diff it runs, the bootstrap and the precise finish reason)
+// over to the starting CLI through a file in the mounted cache dir, so a run is reported once, in one session.
 const handoverEnv = "QODANA_STATISTICS_FILE"
 
 // handoverName is random: a file left in a kept cache dir by a crashed run is never taken for the file of this one.
 var handoverName = "qodana-statistics-" + uuid.NewString() + ".json"
+
+// containerSteps are the events a linter container hands over, containerFailures the ones its run stops at.
+var (
+	containerSteps = []string{
+		configResolved, configFailed, licenseObtained, licenseRejected, gitPrepared, gitFailed, bootstrapSucceeded,
+		bootstrapFailed, reportPublished, publishFailed,
+	}
+	containerFailures = []string{configFailed, licenseRejected, gitFailed, bootstrapFailed}
+)
 
 // handoverVersion changes with the format of the handover file: the CLI of a linter image is of another release.
 const handoverVersion = 1
@@ -44,10 +53,10 @@ type handover struct {
 	Events    []event `json:"events"`
 	ProjectId string  `json:"projectId,omitempty"`
 	OrgId     string  `json:"orgId,omitempty"`
-	// StartCommitMissing tells that the diff the host left to the container ran on the current state instead
-	StartCommitMissing bool   `json:"startCommitMissing,omitempty"`
-	Reason             string `json:"reason"`
-	Allowed            bool   `json:"allowed"`
+	Reason    string  `json:"reason"`
+	// AnalysisReason is how the analysis of the container ended, empty from a linter image of an older release
+	AnalysisReason string `json:"analysisReason,omitempty"`
+	Allowed        bool   `json:"allowed"`
 }
 
 // AllowContainer forbids sending the run of a linter container which gets a license-only token, also one given
@@ -93,20 +102,27 @@ func CollectFromContainer(cacheDir string) {
 		if !slices.ContainsFunc(events, func(tracked event) bool { return tracked.Id == e.Id }) {
 			events = append(events, e)
 		}
-		// the run stops at the license, as a native one does, whatever this run does after the container; an
+		// the run stops at the failed step, as a native one does, whatever this run does after the container; an
 		// expired license is told by the exit code of the analysis, as a native one is
-		if e.Id == licenseRejected && e.Data["reject_reason"] != "expired" {
-			failedStage = licenseRejected
+		if slices.Contains(containerFailures, e.Id) && e.Data["reason"] != "expired" {
+			failedStage = e.Id
+		}
+		// the diff the host left to the container ran on the current state
+		if e.Id == gitPrepared && e.Data["start_commit"] == "missing" {
+			scenario = ScenarioStartCommitMissing
 		}
 	}
 	projectId, orgId = cmp.Or(h.ProjectId, projectId), cmp.Or(h.OrgId, orgId)
-	if h.StartCommitMissing {
-		scenario = ScenarioStartCommitMissing
-	}
 	// the reason of the last container: a failure is more precise than its exit code, a success is no failure
 	knownReason = ""
 	if !isSuccess(h.Reason) {
 		knownReason = h.Reason
+	}
+	analysisReason = h.AnalysisReason
+	// an upload fails after the analysis, which is recorded after the container: the run stops at the upload
+	uploadFailed := slices.ContainsFunc(h.Events, func(e event) bool { return e.Id == publishFailed })
+	if h.Reason == ReasonUploadFailed && uploadFailed {
+		failedStage = publishFailed
 	}
 	allowed = allowed && h.Allowed
 }
@@ -117,13 +133,13 @@ func handoverFile() string {
 
 func handOver(file string, h handover) {
 	h.Version = handoverVersion
-	var licenseEvents []event
+	var steps []event
 	for _, e := range h.Events {
-		if e.Id == licenseObtained || e.Id == licenseRejected {
-			licenseEvents = append(licenseEvents, e)
+		if slices.Contains(containerSteps, e.Id) {
+			steps = append(steps, e)
 		}
 	}
-	h.Events = licenseEvents
+	h.Events = steps
 	content, err := json.Marshal(h)
 	if err == nil {
 		err = os.WriteFile(file, content, 0o644)

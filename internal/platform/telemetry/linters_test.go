@@ -53,5 +53,5 @@ func TestLinterEnumCoversProducts(t *testing.T) {
 			}
 		}
 	}
-	assert.Equal(t, 2, checked, "linter.selected and linter.ready")
+	assert.Equal(t, 6, checked, "linter.selected, linter.ready, linter.failed, docker.failed and the analysis results")
 }

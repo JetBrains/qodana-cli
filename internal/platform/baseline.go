@@ -197,7 +197,7 @@ func cloudBaselineFailure(err error) (string, int) {
 
 // downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in a directory of its
 // own in the cache dir. When Qodana Cloud has no baseline to compare the analysis with, it returns
-// NoBaseline, which tells why. The status is the baseline_status of the statistics.
+// NoBaseline, which tells why. The status is the reason of the baseline events of the statistics.
 func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir string) (Baseline, string, error) {
 	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		return nil, "", fmt.Errorf("failed to create the cache dir %s: %w", cacheDir, err)

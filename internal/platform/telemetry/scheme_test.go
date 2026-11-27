@@ -61,7 +61,7 @@ func TestFieldLimit(t *testing.T) {
 func TestOnlyGlobalRuleRefs(t *testing.T) {
 	ref := regexp.MustCompile(`^(enum|regexp)#(.+)$`)
 	global := map[string]bool{
-		"enum#" + enumBoolean: true, "enum#" + enumLicenseType: true,
+		"enum#" + enumBoolean:     true,
 		"regexp#" + regexpInteger: true, "regexp#" + regexpVersion: true,
 	}
 	forEachField(func(group string, event fus.EventDefinition, field fus.FieldDefinition) {
@@ -96,6 +96,21 @@ func forEachField(check func(group string, event fus.EventDefinition, field fus.
 			for _, field := range event.Fields {
 				check(group.ID, event, field)
 			}
+		}
+	}
+}
+
+func TestStageHasEveryStep(t *testing.T) {
+	var stages []string
+	for _, f := range finishFields {
+		if f.Path == "stage" {
+			stages = strings.Split(strings.TrimPrefix(f.Rules[0], "enum:"), "|")
+		}
+	}
+	require.NotEmpty(t, stages)
+	for _, e := range definition.Groups[0].Events {
+		if e.ID != commandSucceeded && e.ID != commandFailed {
+			assert.Contains(t, stages, e.ID, "a step the command can end at")
 		}
 	}
 }

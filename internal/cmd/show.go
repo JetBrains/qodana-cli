@@ -110,7 +110,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 // report that can't be shown sets the reason the run finishes with: a missing one fails it, a port in use only warns.
 func reportShown(target string, err error) {
 	if reason := showFailure(err); reason != "" {
-		telemetry.Fail(reason)
+		telemetry.ShowFailed(reason)
 		return
 	}
 	telemetry.ReportShown(target)

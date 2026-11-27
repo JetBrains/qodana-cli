@@ -53,7 +53,7 @@ func downloadAndInstallIDE(
 
 	releaseDownloadInfo := getIde(analyser)
 	if releaseDownloadInfo == nil {
-		telemetry.Fail(telemetry.ReasonLinterDownload)
+		telemetry.LinterFailed(analyser.GetLinter().ProductCode)
 		log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
 	} else {
 		ideUrl = releaseDownloadInfo.Link
@@ -75,7 +75,7 @@ func downloadAndInstallIDE(
 			}
 		}
 		log.Debugf("IDE already installed to %s, skipping download", installDir)
-		telemetry.LinterDownloaded("native", true, 0)
+		telemetry.LinterPrepared(telemetry.SetupNativeCached, 0)
 		return installDir
 	}
 
@@ -83,7 +83,7 @@ func downloadAndInstallIDE(
 	downloadedIdePath := filepath.Join(baseDir, fileName)
 	err := utils.DownloadFile(downloadedIdePath, ideUrl, getInternalAuth(), spinner)
 	if err != nil {
-		telemetry.Fail(telemetry.ReasonLinterDownload)
+		telemetry.LinterFailed(analyser.GetLinter().ProductCode)
 		log.Fatalf("Error while downloading linter: %v", err)
 	}
 
@@ -129,7 +129,7 @@ func downloadAndInstallIDE(
 		}
 	}
 
-	telemetry.LinterDownloaded("native", false, time.Since(downloadStart))
+	telemetry.LinterPrepared(telemetry.SetupNativeDownloaded, time.Since(downloadStart))
 	return installDir
 }
 

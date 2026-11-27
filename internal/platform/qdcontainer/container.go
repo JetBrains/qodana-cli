@@ -53,7 +53,8 @@ func PrepareContainerEnvSettings() {
 				"running, consider setting DOCKER_HOST variable explicitly.",
 			err,
 		)
-		telemetry.Finish(1, telemetry.ReasonDockerUnavailable)
+		telemetry.DockerFailed(telemetry.ReasonDockerUnavailable)
+		telemetry.Finish(1, "")
 		os.Exit(1)
 	}
 

@@ -50,80 +50,118 @@ func newTestValidator(t *testing.T) *fus.Validator {
 
 func TestEventsMatchScheme(t *testing.T) {
 	validator := newTestValidator(t)
-	ids := map[string]any{"command": "scan", "project_id": testProject, "org_id": testOrg}
+	ids := map[string]any{"project_id": testProject, "org_id": testOrg}
 	system, software := environment()
 	testEvents := []event{
-		{groupRun, started, 0, map[string]any{"ci": "github-actions", "container": false, "interactive": true}},
-		{groupRun, licenseObtained, 0, map[string]any{"kind": "cloud", "plan": "ULTIMATE_PLUS"}},
-		{groupRun, licenseRejected, 0, map[string]any{"reject_reason": "token_declined"}},
 		{
 			groupRun,
-			linterReady,
-			0,
-			map[string]any{"linter": "QDJVM", "version": "2025.3", "paid": true, "eap": false, "mode": "native"},
-		},
-		{
-			groupRun,
-			linterReady,
-			0,
-			map[string]any{"linter": "QDPYC", "version": "latest", "paid": false, "eap": true, "mode": "docker"},
-		},
-		{
-			groupRun,
-			baselineResolved,
-			0,
-			map[string]any{"source": "cloud", "baseline_status": "found", "request_ms": int64(250)},
-		},
-		{
-			groupRun,
-			baselineResolved,
+			"scan" + startedSuffix,
 			0,
 			map[string]any{
-				"source":          "cloud",
-				"baseline_status": "request_failed",
-				"http_status":     403,
-				"request_ms":      int64(25),
+				"ci": "github-actions", "container": false, "interactive": true,
 			},
 		},
-		{groupRun, analysisStarted, 0, map[string]any{}},
+		{groupRun, configResolved, 0, map[string]any{"source": "local_and_global"}},
+		{groupRun, configFailed, 0, map[string]any{}},
+		{groupRun, gitPrepared, 0, map[string]any{"start_commit": "missing"}},
+		{groupRun, gitFailed, 0, map[string]any{}},
+		{groupRun, bootstrapSucceeded, 0, map[string]any{"duration_ms": int64(3000)}},
 		{
 			groupRun,
-			analysisFinished,
+			bootstrapFailed,
+			0,
+			map[string]any{"exit_code": 127, "duration_ms": int64(10)},
+		},
+		{groupRun, licenseObtained, 0, map[string]any{"kind": "cloud", "plan": "ULTIMATE_PLUS"}},
+		{groupRun, licenseRejected, 0, map[string]any{"reason": "token_declined"}},
+		{
+			groupRun,
+			linterReady,
 			0,
 			map[string]any{
-				"exit_code":   255,
+				"linter": "QDJVM", "version": "2025.3", "paid": true, "eap": false,
+				"setup": SetupNativeDownloaded, "download_ms": int64(42000),
+			},
+		},
+		{
+			groupRun,
+			linterReady,
+			0,
+			map[string]any{
+				"linter": "QDPYC", "version": "latest", "paid": false, "eap": true,
+				"setup": SetupDockerPullSkipped, "download_ms": int64(0),
+			},
+		},
+		{
+			groupRun,
+			linterFailed,
+			0,
+			map[string]any{"linter": "QDGO"},
+		},
+		{groupRun, dockerReady, 0, map[string]any{"cpu_count": "8", "ram_gb": "4", "version": "27.3.1"}},
+		{groupRun, dockerFailed, 0, map[string]any{"linter": "QDGO", "reason": ReasonPullFailed}},
+		{groupRun, baselineFound, 0, map[string]any{"source": "cloud", "request_ms": int64(250)}},
+		{groupRun, baselineNone, 0, map[string]any{"reason": "not_connected"}},
+		{
+			groupRun,
+			baselineFailed,
+			0,
+			map[string]any{"source": "cloud", "reason": "request_failed", "http_status": 403, "request_ms": int64(25)},
+		},
+		{groupRun, analysisStarted, 0, map[string]any{"scan_mode": scanIncremental}},
+		{
+			groupRun,
+			analysisSucceeded,
+			0,
+			map[string]any{
+				"exit_code": 255, "result": ReasonFailThreshold, "duration_ms": int64(1234), "scan_mode": scanFull,
+				"linter": "QDJVM", "mode": "docker",
+			},
+		},
+		{
+			groupRun,
+			analysisFailed,
+			0,
+			map[string]any{
+				"exit_code":   1,
 				"reason":      ReasonLinterError,
 				"duration_ms": int64(1234),
+				"scan_mode":   scanIncremental,
 				"scenario":    "reversed-scope",
 			},
 		},
-		{groupRun, linterSelected, 0, map[string]any{"linter": "QDNETC", "preconfigured": false}},
-		{groupRun, linterDownloaded, 0, map[string]any{"mode": "docker", "cached": false, "download_ms": int64(42000)}},
-		{groupRun, licenseRejected, 0, map[string]any{"reject_reason": "expired", "token": "keychain"}},
+		{groupRun, linterSelected, 0, map[string]any{"linter": "QDNETC", "mode": "native", "preconfigured": false}},
+		{groupRun, licenseRejected, 0, map[string]any{"reason": "expired", "token": "keychain"}},
 		{
 			groupRun,
 			problemsFound,
 			0,
 			map[string]any{"total": "100+", "new": "10+", "unchanged": "100+", "absent": "0", "baseline": "applied"},
 		},
-		{groupRun, reportPublished, 0, map[string]any{"publish_status": "uploaded"}},
+		{groupRun, reportPublished, 0, map[string]any{}},
+		{groupRun, publishFailed, 0, map[string]any{}},
 		{groupRun, reportShown, 0, map[string]any{"target": "local"}},
-		{groupRun, contributorsCounted, 0, map[string]any{"contributors": "10+", "repositories": "1+", "days": 90}},
+		{groupRun, showFailed, 0, map[string]any{"reason": ReasonReportMissing}},
+		{groupRun, contributorsCounted, 0, map[string]any{"contributors": "10+", "project_dirs": "1+", "days": 90}},
 		{
 			groupRun,
-			finished,
+			commandSucceeded,
 			0,
 			map[string]any{
-				"exit_code":   -1,
-				"reason":      ReasonImagePull,
-				"success":     false,
-				"stage":       problemsFound,
+				"command": "scan", "exit_code": 0, "result": ReasonSuccess, "stage": problemsFound, "duration_ms": int64(5),
+			},
+		},
+		{
+			groupRun,
+			commandFailed,
+			0,
+			map[string]any{
+				"command": "scan", "exit_code": -1, "reason": ReasonPullFailed, "stage": dockerFailed,
 				"duration_ms": int64(5),
 			},
 		},
 		{groupEnv, "system", 0, system},
 		{groupEnv, "software", 0, software},
-		{groupEnv, dockerEngine, 0, map[string]any{"cpu_count": "8", "ram_gb": "4", "version": "27.3.1"}},
 	}
 	for _, e := range testEvents {
 		t.Run(
@@ -161,23 +199,23 @@ func TestCommandsMatchScheme(t *testing.T) {
 	validator := newTestValidator(t)
 	for _, command := range []string{"init", "scan", "send", "show", "contributors"} {
 		data := map[string]any{
-			"command": command, "exit_code": 0, "reason": ReasonSuccess, "success": true, "stage": reportShown,
+			"command": command, "exit_code": 0, "result": ReasonSuccess, "stage": command + startedSuffix,
 		}
 		validated, dropped := validator.Validate(
-			fus.LogEvent{Group: fus.Group(groupRun, 1), Event: fus.EventAction{ID: finished, Data: data}},
+			fus.LogEvent{Group: fus.Group(groupRun, 1), Event: fus.EventAction{ID: commandSucceeded, Data: data}},
 		)
 		require.False(t, dropped, command)
 		assert.Equal(t, command, validated.Event.Data["command"])
-		assert.Equal(t, reportShown, validated.Event.Data["stage"])
+		assert.Equal(t, command+startedSuffix, validated.Event.Data["stage"])
 	}
 }
 
 func TestReasonsMatchScheme(t *testing.T) {
 	validator := newTestValidator(t)
 	for _, reason := range reasons {
-		data := map[string]any{"command": "show", "exit_code": 1, "reason": reason, "success": false, "stage": started}
+		data := map[string]any{"command": "show", "exit_code": 1, "reason": reason, "stage": "show" + startedSuffix}
 		validated, dropped := validator.Validate(
-			fus.LogEvent{Group: fus.Group(groupRun, 1), Event: fus.EventAction{ID: finished, Data: data}},
+			fus.LogEvent{Group: fus.Group(groupRun, 1), Event: fus.EventAction{ID: commandFailed, Data: data}},
 		)
 		require.False(t, dropped, reason)
 		assert.Equal(t, reason, validated.Event.Data["reason"])
@@ -187,11 +225,14 @@ func TestReasonsMatchScheme(t *testing.T) {
 func TestMissingReportIsNoCrash(t *testing.T) {
 	received := fakeFus(t)
 	Start("show", func() (string, string) { return testDevice, "" }, false, nil)
-	Fail(ReasonReportMissing)
+	ShowFailed(ReasonReportMissing)
 	// the log.Fatal of ShowReport
 	Finish(1, ReasonFatal)
 
-	assert.Equal(t, ReasonReportMissing, lastEvent(<-received, finished)["reason"])
+	report := <-received
+	assert.Equal(t, ReasonReportMissing, lastEvent(report, showFailed)["reason"])
+	assert.Equal(t, ReasonReportMissing, lastEvent(report, commandFailed)["reason"])
+	assert.Equal(t, showFailed, lastEvent(report, commandFailed)["stage"])
 }
 
 func TestShowIsSent(t *testing.T) {
@@ -201,8 +242,9 @@ func TestShowIsSent(t *testing.T) {
 	Finish(0, "")
 
 	report := <-received
-	assert.Equal(t, map[string]any{"command": "show", "target": "cloud"}, lastEvent(report, reportShown))
-	assert.Equal(t, reportShown, lastEvent(report, finished)["stage"])
+	assert.Equal(t, map[string]any{"target": "cloud"}, lastEvent(report, reportShown))
+	assert.Equal(t, reportShown, lastEvent(report, commandSucceeded)["stage"])
+	assert.Equal(t, "show", lastEvent(report, commandSucceeded)["command"])
 }
 
 func TestContributorsAreCounted(t *testing.T) {
@@ -222,7 +264,7 @@ func TestContributorsAreCounted(t *testing.T) {
 	require.Len(t, counted, 2)
 	assert.Equal(
 		t,
-		map[string]any{"command": "contributors", "contributors": "10+", "repositories": "1+", "days": float64(90)},
+		map[string]any{"contributors": "10+", "project_dirs": "1+", "days": float64(90)},
 		counted[0],
 	)
 	assert.Equal(t, float64(0), counted[1]["days"], "a negative period is no period")
@@ -314,10 +356,10 @@ func TestPostHogGetsTheEventsOfFus(t *testing.T) {
 				groupRun,
 				licenseRejected,
 				1700000000001,
-				map[string]any{"command": "scan", "reject_reason": "invented", "org_id": "org hash"},
+				map[string]any{"command": "scan", "reason": "invented", "org_id": "org hash"},
 			},
 			{groupEnv, "system", 1700000000002, map[string]any{"os": "linux"}},
-			{groupEnv, dockerEngine, 1700000000003, map[string]any{"version": "27.3.1"}},
+			{groupRun, dockerReady, 1700000000003, map[string]any{"version": "27.3.1"}},
 		},
 	)
 
@@ -337,7 +379,7 @@ func TestPostHogGetsTheEventsOfFus(t *testing.T) {
 	assert.Equal(t, "ULTIMATE", license.Properties["plan"])
 	assert.Equal(t, "session", license.Properties["session"])
 	rejected := batch.Batch[1]
-	assert.NotEqual(t, "invented", rejected.Properties["reject_reason"], "PostHog gets the values FUS accepts")
+	assert.NotEqual(t, "invented", rejected.Properties["reason"], "PostHog gets the values FUS accepts")
 	assert.NotContains(t, rejected.Properties, "org_id", "a rejected id is no id")
 	assert.Equal(t, map[string]any{"repository": testDevice}, rejected.Properties["$groups"])
 	assert.Equal(t, testDevice, batch.Batch[2].DistinctId, "environment events are of the device of the run")
@@ -357,7 +399,7 @@ func TestContainerHandsTheRunOver(t *testing.T) {
 	t.Setenv(handoverEnv, filepath.Join(cacheDir, handoverName))
 	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
 	LicenseObtained("cloud", "ULTIMATE")
-	SetScenario(ScenarioStartCommitMissing)
+	GitPrepared(false)
 	Allow(false)
 	Finish(1, ReasonLinterError)
 	// the CLI on the host
@@ -367,8 +409,9 @@ func TestContainerHandsTheRunOver(t *testing.T) {
 	CollectFromContainer(cacheDir)
 
 	assert.Equal(t, ScenarioStartCommitMissing, scenario)
-	require.Len(t, events, 1)
+	require.Len(t, events, 2, "the steps the container knows, not its started event")
 	assert.Equal(t, licenseObtained, events[0].Id)
+	assert.Equal(t, gitPrepared, events[1].Id)
 	assert.Equal(t, ReasonLinterError, exitReason(1, ""))
 	assert.False(t, allowed, "a container forbidden to send forbids the run")
 }
@@ -381,7 +424,13 @@ func TestContainerReportsOnlyAMissingStartCommit(t *testing.T) {
 	} {
 		for missing, scenarioReported := range expected {
 			cacheDir := t.TempDir()
-			handOver(filepath.Join(cacheDir, handoverName), handover{Allowed: true, StartCommitMissing: missing})
+			startCommit := map[bool]string{false: "found", true: "missing"}[missing]
+			handOver(
+				filepath.Join(cacheDir, handoverName), handover{
+					Allowed: true,
+					Events:  []event{{groupRun, gitPrepared, 1, map[string]any{"start_commit": startCommit}}},
+				},
+			)
 			reset(t)
 			enabled, scenario = true, requested
 
@@ -398,8 +447,8 @@ func TestContainerHandover(t *testing.T) {
 	handOver(
 		file, handover{
 			Events: []event{
-				{groupRun, started, 1, nil},
-				{groupRun, licenseRejected, 2, map[string]any{"reject_reason": "token_declined"}},
+				{groupRun, "scan" + startedSuffix, 1, nil},
+				{groupRun, licenseRejected, 2, map[string]any{"reason": "token_declined"}},
 			},
 			ProjectId: "project",
 			Reason:    ReasonLicenseRejected,
@@ -411,7 +460,7 @@ func TestContainerHandover(t *testing.T) {
 
 	CollectFromContainer(cacheDir)
 
-	assert.Equal(t, []event{{groupRun, licenseRejected, 2, map[string]any{"reject_reason": "token_declined"}}}, events)
+	assert.Equal(t, []event{{groupRun, licenseRejected, 2, map[string]any{"reason": "token_declined"}}}, events)
 	assert.Equal(t, "project", projectId)
 	assert.Equal(t, ReasonLicenseRejected, exitReason(1, ""))
 	assert.NoFileExists(t, file)
@@ -442,13 +491,13 @@ func TestLicenseRejectedInContainerIsTheStage(t *testing.T) {
 	track(groupRun, analysisStarted, nil)
 	handOver(
 		filepath.Join(cacheDir, handoverName), handover{
-			Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reject_reason": "token_declined"}}},
+			Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reason": "token_declined"}}},
 			Reason: ReasonLicenseRejected,
 		},
 	)
 
 	CollectFromContainer(cacheDir)
-	track(groupRun, analysisFinished, nil)
+	track(groupRun, analysisSucceeded, nil)
 	Finish(1, "")
 
 	assert.Equal(t, licenseRejected, cmp.Or(failedStage, stage))
@@ -458,12 +507,12 @@ func TestExpiredLicenseIsRejected(t *testing.T) {
 	reset(t)
 	enabled = true
 
-	StartAnalysis()(exitcodes.QodanaEapLicenseExpiredExitCode, "")
+	StartAnalysis("")(exitcodes.QodanaEapLicenseExpiredExitCode, "")
 
 	assert.True(
 		t, slices.ContainsFunc(
 			events, func(e event) bool {
-				return e.Id == licenseRejected && e.Data["reject_reason"] == "expired"
+				return e.Id == licenseRejected && e.Data["reason"] == "expired"
 			},
 		),
 	)
@@ -473,11 +522,11 @@ func TestGivenReasonKeepsTheKnownOne(t *testing.T) {
 	reset(t)
 	enabled = true
 
-	StartAnalysis()(0, ReasonEmptyChangeset)
+	StartAnalysis("")(0, ReasonEmptyChangeset)
 	Fail(ReasonLicenseRejected)
-	StartAnalysis()(3, ReasonTimeout)
+	StartAnalysis("")(3, ReasonTimeout)
 
-	assert.Equal(t, ReasonEmptyChangeset, events[1].Data["reason"])
+	assert.Equal(t, ReasonEmptyChangeset, events[1].Data["result"])
 	assert.Equal(t, ReasonLicenseRejected, events[3].Data["reason"], "a container may have handed a failure over")
 }
 
@@ -488,15 +537,15 @@ func TestExpiredLicenseInContainerIsNotTheStage(t *testing.T) {
 	track(groupRun, analysisStarted, nil)
 	handOver(
 		filepath.Join(cacheDir, handoverName), handover{
-			Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reject_reason": "expired"}}},
+			Events: []event{{groupRun, licenseRejected, 1, map[string]any{"reason": "expired"}}},
 			Reason: ReasonLicenseExpired,
 		},
 	)
 
 	CollectFromContainer(cacheDir)
-	track(groupRun, analysisFinished, nil)
+	track(groupRun, analysisFailed, nil)
 
-	assert.Equal(t, analysisFinished, cmp.Or(failedStage, stage), "as in a native run")
+	assert.Equal(t, analysisFailed, cmp.Or(failedStage, stage), "as in a native run")
 }
 
 func TestProblemsFound(t *testing.T) {
@@ -542,8 +591,8 @@ func TestTokenSourceIsTheFirstOne(t *testing.T) {
 }
 
 func TestValuesOutsideEnumsAreOther(t *testing.T) {
-	assert.Equal(t, "ULTIMATE", oneOf("ULTIMATE", globalRules.Enums[enumLicenseType]))
-	assert.Equal(t, other, oneOf("STARTER", globalRules.Enums[enumLicenseType]))
+	assert.Equal(t, "ULTIMATE", oneOf("ULTIMATE", licensePlans))
+	assert.Equal(t, other, oneOf("STARTER", licensePlans))
 	assert.Equal(t, "opensuse", distro("opensuse-leap"))
 	assert.Equal(t, other, distro("gentoo"))
 }
@@ -563,10 +612,377 @@ func TestVersionName(t *testing.T) {
 	enabled = true
 
 	LinterReady("QDJVM", "my-build", true, false, "docker")
+	assert.Equal(t, other, linter["version"])
 	LinterReady("QDJVM", "latest", true, false, "docker")
+	assert.Equal(t, "latest", linter["version"])
+}
 
-	assert.Equal(t, other, events[0].Data["version"])
-	assert.Equal(t, "latest", events[1].Data["version"])
+func TestDockerLinterIsReadyAfterThePull(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	LinterReady("QDJVM", "2025.3", true, false, "docker")
+	assert.Empty(t, events, "the image is not pulled yet")
+	LinterPrepared(SetupDockerCached, 2*time.Second)
+	// a full-history run pulls the image for each commit
+	LinterPrepared(SetupDockerPulled, time.Second)
+
+	require.Len(t, events, 1)
+	assert.Equal(
+		t, map[string]any{
+			"linter": "QDJVM", "version": "2025.3", "paid": true, "eap": false,
+			"setup": SetupDockerCached, "download_ms": int64(2000),
+		}, events[0].Data,
+	)
+}
+
+func TestNativeLinterIsReadyAfterTheDownload(t *testing.T) {
+	for name, tc := range map[string]struct {
+		prepare func()
+		mode    string
+		setup   string
+	}{
+		"downloaded":   {func() { LinterPrepared(SetupNativeDownloaded, time.Second) }, "native", SetupNativeDownloaded},
+		"preinstalled": {func() {}, "native", SetupNativePreinstalled},
+		"third-party":  {func() {}, "third_party", SetupThirdParty},
+	} {
+		t.Run(name, func(t *testing.T) {
+			reset(t)
+			enabled = true
+
+			tc.prepare()
+			LinterReady("QDGO", "2025.3", true, false, tc.mode)
+
+			require.Len(t, events, 1)
+			assert.Equal(t, linterReady, events[0].Id)
+			assert.Equal(t, tc.setup, events[0].Data["setup"])
+		})
+	}
+}
+
+func TestDockerFailedIsTheReason(t *testing.T) {
+	received := fakeFus(t)
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
+	LinterReady("QDJVM", "2025.3", true, false, "docker")
+	DockerFailed(ReasonPullFailed)
+	Finish(1, "")
+
+	report := <-received
+	assert.Equal(t, map[string]any{"linter": "QDJVM", "reason": ReasonPullFailed}, lastEvent(report, dockerFailed))
+	assert.Nil(t, lastEvent(report, linterReady))
+	assert.Equal(t, ReasonPullFailed, lastEvent(report, commandFailed)["reason"])
+	assert.Equal(t, dockerFailed, lastEvent(report, commandFailed)["stage"])
+}
+
+func TestNativeDownloadFailedIsTheReason(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	LinterFailed("QDGO")
+
+	assert.Equal(t, []event{{groupRun, linterFailed, events[0].Time, map[string]any{"linter": "QDGO"}}}, events)
+	assert.Equal(t, ReasonDownloadFailed, knownReason)
+}
+
+func TestBaselineEvents(t *testing.T) {
+	for status, id := range map[string]string{
+		"found": baselineFound, "not_connected": baselineNone, "disabled": baselineNone, "empty": baselineNone,
+		"missing": baselineFailed, "unsupported": baselineFailed, "timeout": baselineFailed,
+		"request_failed": baselineFailed, "invalid_response": baselineFailed, "io_error": baselineFailed,
+	} {
+		reset(t)
+		enabled = true
+
+		BaselineResolved("cloud", status, 0, 0)
+
+		require.Len(t, events, 1, status)
+		assert.Equal(t, id, events[0].Id, status)
+		if id == baselineFound {
+			assert.NotContains(t, events[0].Data, "reason")
+		} else {
+			assert.Equal(t, status, events[0].Data["reason"])
+		}
+		if id == baselineNone {
+			assert.NotContains(t, events[0].Data, "source", "the reason tells it")
+		}
+	}
+}
+
+func TestScanMode(t *testing.T) {
+	for runScenario, expected := range map[string]struct {
+		mode     string
+		scenario any
+	}{
+		"":               {scanFull, nil},
+		"default":        {scanFull, nil},
+		"scope":          {scanIncremental, "scope"},
+		"reversed-scope": {scanIncremental, "reversed-scope"},
+		"full-history":   {scanFullHistory, nil},
+	} {
+		reset(t)
+		enabled = true
+
+		StartAnalysis(runScenario)(1, "")
+
+		assert.Equal(t, expected.mode, events[0].Data["scan_mode"], runScenario)
+		assert.Equal(t, analysisFailed, events[1].Id)
+		assert.Equal(t, expected.mode, events[1].Data["scan_mode"], runScenario)
+		assert.Equal(t, expected.scenario, events[1].Data["scenario"], runScenario)
+	}
+}
+
+func TestAnalysisFailsWithItsReasons(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	StartAnalysis("")(1, ReasonLinterError)
+	// a Docker engine without Linux, which docker.failed tells too
+	StartAnalysis("")(1, ReasonDockerNotLinux)
+	// a linter container hands over the plugins it can't install
+	StartAnalysis("")(1, ReasonPluginsFailed)
+	StartAnalysis("")(1, ReasonCancelled)
+
+	assert.Equal(t, ReasonLinterError, events[1].Data["reason"])
+	assert.Equal(t, ReasonDockerNotLinux, events[3].Data["reason"])
+	assert.Equal(t, ReasonPluginsFailed, events[5].Data["reason"])
+	assert.Equal(t, other, events[7].Data["reason"], "qodana scan is cancelled before the analysis")
+}
+
+func TestMissingStartCommitIsTheScenario(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	finishAnalysis := StartAnalysis("scope")
+	GitPrepared(false)
+	finishAnalysis(0, "")
+
+	assert.Equal(t, map[string]any{"start_commit": "missing"}, events[1].Data)
+	assert.Equal(t, analysisSucceeded, events[2].Id)
+	assert.Equal(t, ScenarioStartCommitMissing, events[2].Data["scenario"])
+	assert.Equal(t, ReasonSuccess, events[2].Data["result"])
+}
+
+func TestConfigSource(t *testing.T) {
+	for source, files := range map[string][2]bool{
+		"none": {false, false}, "local": {true, false}, "global": {false, true}, "local_and_global": {true, true},
+	} {
+		reset(t)
+		enabled = true
+
+		ConfigResolved(files[0], files[1])
+
+		assert.Equal(t, []event{{groupRun, configResolved, events[0].Time, map[string]any{"source": source}}}, events)
+	}
+}
+
+func TestFailedStepsAreTheReason(t *testing.T) {
+	for id, failure := range map[string]struct {
+		fail   func()
+		reason string
+	}{configFailed: {ConfigFailed, ReasonInvalidConfig}, gitFailed: {GitFailed, ReasonGitMissing}} {
+		received := fakeFus(t)
+		Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
+		failure.fail()
+		// the log.Fatal after it
+		Finish(1, ReasonFatal)
+
+		report := <-received
+		assert.Empty(t, lastEvent(report, id), "the event tells the reason")
+		assert.Equal(t, failure.reason, lastEvent(report, commandFailed)["reason"], id)
+		assert.Equal(t, id, lastEvent(report, commandFailed)["stage"])
+	}
+}
+
+func TestBootstrap(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	BootstrapFinished(0, 2*time.Second)
+	// the second commit of a diff
+	BootstrapFinished(0, time.Second)
+	require.Len(t, events, 1)
+	assert.Equal(t, map[string]any{"duration_ms": int64(2000)}, events[0].Data)
+
+	BootstrapFinished(3, time.Second)
+	assert.Equal(
+		t, map[string]any{"exit_code": 3, "duration_ms": int64(1000)}, events[1].Data,
+	)
+	assert.Equal(t, ReasonBootstrapFailed, knownReason)
+}
+
+func TestLinterNameHasNoMode(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	LinterSelected("QDJVM", true, "")
+	LinterSelected("QDJVM", true, "docker")
+
+	assert.Equal(t, map[string]any{"linter": "QDJVM", "preconfigured": true}, events[0].Data, "qodana scan chooses it")
+	assert.Equal(t, "docker", events[1].Data["mode"])
+}
+
+func TestFailureIsRecordedOnce(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	RejectLicense("token_invalid")
+	RejectLicense("token_invalid")
+
+	require.Len(t, events, 1)
+	assert.Equal(t, ReasonLicenseRejected, knownReason)
+}
+
+func TestContainerFailureIsTheStage(t *testing.T) {
+	cacheDir := t.TempDir()
+	reset(t)
+	enabled = true
+	track(groupRun, analysisStarted, nil)
+	handOver(
+		filepath.Join(cacheDir, handoverName), handover{
+			Events: []event{{groupRun, gitFailed, 1, map[string]any{"reason": ReasonGitMissing}}},
+			Reason: ReasonGitMissing,
+		},
+	)
+
+	CollectFromContainer(cacheDir)
+	track(groupRun, analysisFailed, nil)
+
+	assert.Equal(t, gitFailed, cmp.Or(failedStage, stage))
+	assert.Equal(t, ReasonGitMissing, exitReason(1, ""))
+}
+
+func TestFinishClosesTheAnalysis(t *testing.T) {
+	received := fakeFus(t)
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
+	StartAnalysis("")
+	GitFailed()
+	// the log.Fatal after it, which leaves the analysis open
+	Finish(1, ReasonFatal)
+
+	report := <-received
+	assert.Equal(t, ReasonGitMissing, lastEvent(report, analysisFailed)["reason"], "the reason of command.failed")
+	assert.Equal(t, gitFailed, lastEvent(report, commandFailed)["stage"], "the step it failed at")
+}
+
+func TestContainerTellsHowItsAnalysisEnded(t *testing.T) {
+	cacheDir := t.TempDir()
+	reset(t)
+	enabled = true
+	finishAnalysis := StartAnalysis("")
+	handOver(
+		filepath.Join(cacheDir, handoverName), handover{
+			Events:         []event{{groupRun, publishFailed, 1, nil}},
+			Reason:         ReasonUploadFailed,
+			AnalysisReason: ReasonSuccess,
+		},
+	)
+
+	CollectFromContainer(cacheDir)
+	finishAnalysis(1, "")
+	// the host tells another result: the one of the container is kept
+	ReportPublished(true, true)
+
+	assert.Equal(t, []string{analysisStarted, publishFailed, analysisSucceeded}, ids(events), "one publish event")
+	assert.Equal(t, ReasonUploadFailed, exitReason(1, ""), "the reason of command.failed")
+	assert.Equal(t, publishFailed, cmp.Or(failedStage, stage), "as in a native run")
+}
+
+func TestAnalysisTellsTheLinter(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	LinterReady("QDCPP", "2025.3", true, false, "third_party")
+	StartAnalysis("")(0, "")
+
+	assert.Equal(t, "QDCPP", events[2].Data["linter"])
+	assert.Equal(t, "third_party", events[2].Data["mode"])
+}
+
+func TestQodanaImageIsTheContainerMode(t *testing.T) {
+	reset(t)
+	enabled = true
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
+
+	LinterReady("QDJVM", "2025.3", true, false, "native")
+	StartAnalysis("")(0, "")
+
+	assert.Equal(t, SetupNativePreinstalled, events[0].Data["setup"])
+	assert.Equal(t, "container", events[2].Data["mode"])
+}
+
+func TestOlderContainerWithoutTheAnalysisReason(t *testing.T) {
+	cacheDir := t.TempDir()
+	reset(t)
+	enabled = true
+	finishAnalysis := StartAnalysis("")
+	handOver(filepath.Join(cacheDir, handoverName), handover{Reason: ReasonLinterError})
+
+	CollectFromContainer(cacheDir)
+	finishAnalysis(1, "")
+
+	assert.Equal(t, ReasonLinterError, events[1].Data["reason"])
+}
+
+func TestStageIsTheFailedStep(t *testing.T) {
+	received := fakeFus(t)
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
+	StartAnalysis("")
+	BootstrapFinished(2, time.Second)
+	GitPrepared(true)
+	Finish(2, "")
+
+	assert.Equal(t, bootstrapFailed, lastEvent(<-received, commandFailed)["stage"], "not a later event")
+}
+
+func ids(events []event) []string {
+	result := make([]string, 0, len(events))
+	for _, e := range events {
+		result = append(result, e.Id)
+	}
+	return result
+}
+
+func TestAnalysisEndsOnce(t *testing.T) {
+	reset(t)
+	enabled = true
+
+	StartAnalysis("")(1, ReasonLinterError)
+	finishAnalysis(1, ReasonFatal)
+
+	ends := slices.DeleteFunc(slices.Clone(events), func(e event) bool { return e.Id == analysisStarted })
+	require.Len(t, ends, 1)
+	assert.Equal(t, ReasonLinterError, ends[0].Data["reason"])
+}
+
+func TestReportPublished(t *testing.T) {
+	for name, tc := range map[string]struct {
+		hasToken, uploaded bool
+		events             []string
+	}{
+		"uploaded":         {true, true, []string{reportPublished}},
+		"failed to upload": {true, false, []string{publishFailed}},
+		"no token":         {false, false, []string{}},
+	} {
+		reset(t)
+		enabled = true
+
+		ReportPublished(tc.hasToken, tc.uploaded)
+
+		assert.Equal(t, tc.events, ids(events), name)
+	}
+}
+
+func TestCommandIsOfTheStartAndTheFinish(t *testing.T) {
+	received := fakeFus(t)
+	Start("scan", func() (string, string) { return testDevice, "" }, false, nil)
+	LicenseObtained("cloud", "ULTIMATE")
+	Finish(0, "")
+
+	report := <-received
+	assert.NotNil(t, lastEvent(report, "scan"+startedSuffix), "the event tells the command")
+	assert.NotContains(t, lastEvent(report, "scan"+startedSuffix), "command")
+	assert.Equal(t, "scan", lastEvent(report, commandSucceeded)["command"])
+	assert.NotContains(t, lastEvent(report, licenseObtained), "command")
 }
 
 func TestContainerOfAnotherHandoverVersion(t *testing.T) {
@@ -691,7 +1107,7 @@ func TestRunIsSent(t *testing.T) {
 	SetCloudIds(testProject, testOrg)
 	LicenseObtained("cloud", "ULTIMATE")
 	BaselineResolved("cloud", "found", 0, time.Second)
-	finishAnalysis := StartAnalysis()
+	finishAnalysis := StartAnalysis("")
 	finishAnalysis(0, "")
 	Finish(0, "")
 
@@ -703,11 +1119,14 @@ func TestRunIsSent(t *testing.T) {
 	assert.Subset(
 		t,
 		ids,
-		[]string{started, licenseObtained, baselineResolved, analysisStarted, analysisFinished, finished, "system"},
+		[]string{
+			"scan" + startedSuffix, licenseObtained, baselineFound, analysisStarted, analysisSucceeded, commandSucceeded,
+			"system",
+		},
 	)
-	last := lastEvent(report, finished)
-	assert.Equal(t, ReasonSuccess, last["reason"])
-	assert.Equal(t, analysisFinished, last["stage"])
+	last := lastEvent(report, commandSucceeded)
+	assert.Equal(t, ReasonSuccess, last["result"])
+	assert.Equal(t, analysisSucceeded, last["stage"])
 	assert.Equal(t, testProject, last["project_id"], "the ids of Qodana Cloud are sent as they are")
 	assert.Equal(t, testOrg, last["org_id"])
 	assert.Equal(t, testDevice+" 2026.2.3", <-connected, "the device id of the linter, the version of the binary")
@@ -722,7 +1141,7 @@ func TestRejectedLicenseFinishesRun(t *testing.T) {
 	Finish(1, ReasonFatal)
 
 	report := <-received
-	last := lastEvent(report, finished)
+	last := lastEvent(report, commandFailed)
 	assert.Equal(t, ReasonLicenseRejected, last["reason"], "the exit handler reports the rejection")
 	assert.Equal(t, licenseRejected, last["stage"])
 	assert.Equal(t, "prompt", lastEvent(report, licenseRejected)["token"])
@@ -787,12 +1206,14 @@ func TestWithIds(t *testing.T) {
 
 	result := withIds(
 		[]event{
-			{groupRun, started, 1, map[string]any{"ci": "none"}},
+			{groupRun, "scan" + startedSuffix, 1, map[string]any{"ci": "none"}},
 			{groupEnv, "system", 1, map[string]any{"os": "linux"}},
+			{groupRun, commandFailed, 1, map[string]any{"reason": ReasonFatal}},
 		},
 	)
 
-	assert.Equal(t, map[string]any{"command": "scan", "project_id": "project", "ci": "none"}, result[0].Data)
+	assert.Equal(t, map[string]any{"project_id": "project", "ci": "none"}, result[0].Data, "the event tells the command")
+	assert.Equal(t, "scan", result[2].Data["command"])
 	assert.Equal(t, map[string]any{"os": "linux"}, result[1].Data, "environment events are not linked to the run")
 }
 
@@ -801,9 +1222,9 @@ func TestRunEventsHaveTheAnalysisId(t *testing.T) {
 	command = "scan"
 	SetAnalysisId("0f8fad5b-d9cb-469f-a165-70867728950e")
 
-	result := withIds([]event{{groupRun, started, 1, nil}})
+	result := withIds([]event{{groupRun, "scan" + startedSuffix, 1, nil}})
 
-	assert.Equal(t, map[string]any{"command": "scan", "analysis_id": "0f8fad5b-d9cb-469f-a165-70867728950e"}, result[0].Data)
+	assert.Equal(t, map[string]any{"analysis_id": "0f8fad5b-d9cb-469f-a165-70867728950e"}, result[0].Data)
 }
 
 func TestAnalysisIdIsOnlyAUuid(t *testing.T) {
@@ -862,8 +1283,9 @@ func reset(t *testing.T) {
 		disabled, connect, build = true, newSender, version.Version
 		enabled, collectionStarted, allowed, analyzing = false, false, true, false
 		command, projectId, orgId, analysisId, scenario, stage, failedStage, knownReason, tokenSource = "", "", "", "", "", "", "", "", ""
-		baselineKnown, baselineFound = false, false
+		baselineKnown, hasBaseline, analysisMode, analysisDone, analysisReason = false, false, "", false, ""
 		events, senders, collected, startedAt = nil, nil, nil, time.Time{}
+		linter, setup = nil, nil
 		finishOnce = sync.Once{}
 	}
 	t.Cleanup(restore)
@@ -997,7 +1419,7 @@ func TestCustomerRunIsSent(t *testing.T) {
 
 	assert.True(t, Allowed())
 	Finish(0, "")
-	assert.NotNil(t, lastEvent(<-received, finished))
+	assert.NotNil(t, lastEvent(<-received, commandSucceeded))
 }
 
 func TestQodanaCloudOfTheCliIsChecked(t *testing.T) {
