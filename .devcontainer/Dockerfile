@@ -21,8 +21,8 @@ ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \
     CLANG=$CLANG
 ENV CHOCO_VERSION=2.2.2 \
-    GH_VERSION=2.41.0 \
-    GORELEASER_VERSION=2.14.3
+    GH_VERSION=2.103.3 \
+    GORELEASER_VERSION=2.20.2
 ENV MONO_REPO="https://download.mono-project.com/repo/debian"
 
 RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
