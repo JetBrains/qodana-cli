@@ -1,20 +1,26 @@
 package core
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
-	"github.com/docker/docker/api/types/backend"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/api/types/registry"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
 
+	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -311,12 +317,12 @@ func TestExtractDockerVolumes(t *testing.T) {
 func TestGenerateDebugDockerRunCommand(t *testing.T) {
 	tests := []struct {
 		name     string
-		cfg      *backend.ContainerCreateConfig
+		cfg      *client.ContainerCreateOptions
 		contains []string
 	}{
 		{
 			name: "basic config",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -327,7 +333,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with user",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -339,7 +345,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with environment variables",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -351,7 +357,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with auto remove",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -365,7 +371,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with mounts",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -381,7 +387,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with capabilities",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -395,7 +401,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with security opts",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image: "jetbrains/qodana-jvm:latest",
@@ -409,7 +415,7 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 		},
 		{
 			name: "with attach stdout/stderr and tty",
-			cfg: &backend.ContainerCreateConfig{
+			cfg: &client.ContainerCreateOptions{
 				Name: "test-container",
 				Config: &container.Config{
 					Image:        "jetbrains/qodana-jvm:latest",
@@ -433,8 +439,31 @@ func TestGenerateDebugDockerRunCommand(t *testing.T) {
 	}
 }
 
+func TestGetDockerOptionsJvmDebugPort(t *testing.T) {
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+	root := t.TempDir()
+	c := corescan.ContextBuilder{
+		ProjectDir:     root,
+		RepositoryRoot: root,
+		CacheDir:       t.TempDir(),
+		ResultsDir:     t.TempDir(),
+		ReportDir:      t.TempDir(),
+		Analyser:       product.JvmLinter.DockerAnalyzer(),
+		Prod:           product.Product{Version: "2025.3"},
+		JvmDebugPort:   5006,
+	}.Build()
+
+	options := getDockerOptions(c, "jetbrains/qodana-jvm:latest")
+	debugPort := network.MustParsePort("5005")
+
+	assert.Equal(t, network.PortSet{debugPort: struct{}{}}, options.Config.ExposedPorts)
+	assert.Equal(t, network.PortMap{
+		debugPort: {{HostIP: netip.IPv4Unspecified(), HostPort: "5006"}},
+	}, options.HostConfig.PortBindings)
+}
+
 func TestGenerateDebugDockerRunCommand_FiltersTokens(t *testing.T) {
-	cfg := &backend.ContainerCreateConfig{
+	cfg := &client.ContainerCreateOptions{
 		Name: "test-container",
 		Config: &container.Config{
 			Image: "jetbrains/qodana-jvm:latest",
@@ -450,4 +479,63 @@ func TestGenerateDebugDockerRunCommand_FiltersTokens(t *testing.T) {
 	assert.Contains(t, result, "-e SAFE_VAR=value")
 	// QODANA_TOKEN should be filtered out
 	assert.NotContains(t, result, "secret_token")
+}
+
+type immediateExitDockerClient struct {
+	client.APIClient
+	calls      []string
+	waitResult chan container.WaitResponse
+	exited     bool
+}
+
+func (c *immediateExitDockerClient) ContainerCreate(
+	context.Context,
+	client.ContainerCreateOptions,
+) (client.ContainerCreateResult, error) {
+	c.calls = append(c.calls, "create")
+	return client.ContainerCreateResult{ID: "container-id"}, nil
+}
+
+func (c *immediateExitDockerClient) ContainerWait(
+	context.Context,
+	string,
+	client.ContainerWaitOptions,
+) client.ContainerWaitResult {
+	c.calls = append(c.calls, "wait")
+	result := make(chan container.WaitResponse, 1)
+	if !c.exited {
+		c.waitResult = result
+	}
+	return client.ContainerWaitResult{Result: result, Error: make(chan error)}
+}
+
+func (c *immediateExitDockerClient) ContainerStart(
+	context.Context,
+	string,
+	client.ContainerStartOptions,
+) (client.ContainerStartResult, error) {
+	c.calls = append(c.calls, "start")
+	c.exited = true
+	if c.waitResult != nil {
+		c.waitResult <- container.WaitResponse{StatusCode: 3}
+	}
+	return client.ContainerStartResult{}, nil
+}
+
+func TestRunContainerCatchesImmediateExit(t *testing.T) {
+	dockerClient := &immediateExitDockerClient{}
+	waitResult := runContainer(context.Background(), dockerClient, &client.ContainerCreateOptions{})
+
+	exitCode := make(chan int64, 1)
+	go func() {
+		exitCode <- getContainerExitCode(waitResult)
+	}()
+
+	select {
+	case code := <-exitCode:
+		assert.Equal(t, int64(3), code)
+		assert.Equal(t, []string{"create", "wait", "start"}, dockerClient.calls)
+	case <-time.After(time.Second):
+		t.Fatal("ContainerWait missed the container's immediate exit")
+	}
 }
