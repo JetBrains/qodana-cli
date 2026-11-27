@@ -13,9 +13,17 @@ variable "PUSH_BY_DIGEST" {
   default = false
 }
 
+# The branch being built (base.yml sets github.ref_name): a release branch NNN publishes *-NNN tags instead of *-latest,
+# so branches never overwrite each other's bases; internal.Dockerfile's BASE_SUFFIX selects them
+variable "BASE_BRANCH" {
+  default = "main"
+}
+
 function "tags" {
   params = [tag]
-  result = PUSH_BY_DIGEST ? [] : ["${BASE_REPO}:${tag}"]
+  result = PUSH_BY_DIGEST ? [] : [
+    "${BASE_REPO}:${length(regexall("^[0-9]{3}$", BASE_BRANCH)) > 0 ? regex_replace(tag, "-latest$", "-${BASE_BRANCH}") : tag}"
+  ]
 }
 
 target "_base" {

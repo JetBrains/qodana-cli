@@ -1,0 +1,44 @@
+name: '🌿 Branch cut'
+# A new release branch NNN builds its linter images on its own base images (*-NNN, see dockerfiles/base/docker-bake.hcl):
+# build them, then open a PR that points internal.Dockerfile's BASE_SUFFIX at them.
+on:
+  create:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  base-suffix:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    env:
+      BRANCH: ${{ github.event.ref }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check the branch is a release branch
+        id: check
+        run: |
+          if [[ "$BRANCH" =~ ^[0-9]{3}$ ]]; then echo "release=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Checkout
+        if: steps.check.outputs.release == 'true'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.ref }}
+      - name: Build the *-${{ github.event.ref }} base images
+        if: steps.check.outputs.release == 'true'
+        run: gh workflow run base.yml --ref "$BRANCH"
+      - name: Open a PR that switches BASE_SUFFIX to ${{ github.event.ref }}
+        if: steps.check.outputs.release == 'true'
+        run: |
+          sed -i -E "s/^ARG BASE_SUFFIX=\".*\"$/ARG BASE_SUFFIX=\"$BRANCH\"/" dockerfiles/*/internal.Dockerfile
+          git diff --quiet && { echo "BASE_SUFFIX is already $BRANCH"; exit 0; }
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git switch -c "base-suffix/$BRANCH"
+          git commit -am ":construction_worker: QD-17353 Build the $BRANCH linter images on the $BRANCH base images"
+          git push origin "base-suffix/$BRANCH"
+          gh pr create --base "$BRANCH" --head "base-suffix/$BRANCH" \
+            --title ":construction_worker: QD-17353 Build the $BRANCH linter images on the $BRANCH base images" \
+            --body "Merge after the 🐳 Base run on $BRANCH has pushed the *-$BRANCH base images. A PR from this workflow starts no checks: re-run them before merging."
