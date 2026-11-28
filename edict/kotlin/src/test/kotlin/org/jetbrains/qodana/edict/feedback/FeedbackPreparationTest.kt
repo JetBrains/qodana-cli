@@ -76,7 +76,7 @@ class FeedbackPreparationTest {
     val output = project.resolve("feedback")
 
     val failure = assertFailsWith<IllegalArgumentException> {
-      prepareFeedback(EdictLayout(project, stateDirectory), DEFAULT_EDICT_STATE_BRANCH, OWN_PULL_REQUEST, output, FeedbackConfiguration())
+      prepareFeedback(EdictLayout(project, stateDirectory), DEFAULT_EDICT_STATE_BRANCH, PULL_REQUEST, output, FeedbackConfiguration())
     }
 
     assertEquals("The directory for the feedback inspections must be outside the project: $output", failure.message)
@@ -119,7 +119,8 @@ class FeedbackPreparationTest {
 
   /** Prepares the feedback of [event] in a fresh clone of origin. */
   private fun prepare(event: ActionsPullRequest) {
-    prepareFeedback(EdictLayout(origin.clone("ci"), stateDirectory), DEFAULT_EDICT_STATE_BRANCH, event, outputDirectory, FeedbackConfiguration())
+    val review = event.feedbackPullRequest()
+    prepareFeedback(EdictLayout(origin.clone("ci"), stateDirectory), DEFAULT_EDICT_STATE_BRANCH, review, outputDirectory, FeedbackConfiguration())
   }
 
   /** The files of a state holding [cluster], contents by their path in the state. */

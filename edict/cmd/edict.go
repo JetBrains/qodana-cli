@@ -47,12 +47,12 @@ func requireEdictRoutinePlatform(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-// newEdictFeedbackCommand returns the commands a GitHub Actions run uses to show findings of not yet promoted
-// Edict inspections on pull requests, whose answers become Signals.
+// newEdictFeedbackCommand returns the commands a CI run uses to show findings of not yet promoted Edict
+// inspections on reviews: a GitHub Actions run of a pull request, or a TeamCity build of a Space SafePush.
 func newEdictFeedbackCommand() *cobra.Command {
 	command := &cobra.Command{
 		Use:   "feedback",
-		Short: "Show findings of not yet promoted Edict inspections on pull requests",
+		Short: "Show findings of not yet promoted Edict inspections on reviews",
 	}
 	command.AddCommand(newEdictFeedbackPrepareCommand(), newEdictFeedbackPostCommand())
 	return command
@@ -63,15 +63,16 @@ func newEdictFeedbackPrepareCommand() *cobra.Command {
 	var stateDir, outputDir, configFile string
 	prepare := &cobra.Command{
 		Use:   "prepare",
-		Short: "Prepare the Edict inspections to run on a pull request",
-		Long: `In a GitHub Actions run for a pull request between branches of the repository, check the Edict
-state branch (edict.stateBranch, edict/state by default) out at --state-dir and copy into --output-dir,
+		Short: "Prepare the Edict inspections to run on a review",
+		Long: `In a GitHub Actions run for a pull request between branches of the repository, or in a TeamCity
+build of a SafePush when edict.ci is on Space, check the Edict state branch (edict.stateBranch, edict/state by
+default) out at --state-dir, unless CI checked the state out there, and copy into --output-dir,
 outside the project and missing or empty, the generated inspections whose findings may become review comments: the
 most precise of the not yet promoted ones. Pass the directory to 'qodana scan' as
 --property qodana.internal.inspections.kts.dir=<directory>, which runs them without reporting their findings.
 
-Copies nothing when the run gets no feedback: it is for no pull request or for one from a fork, the pull
-request already got all its comments, or no inspection qualifies.`,
+Copies nothing when the run gets no feedback: it is for no pull request or for one from a fork, for no
+SafePush or one of bots only, the review already got all its feedback, or no inspection qualifies.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
@@ -95,15 +96,18 @@ func newEdictFeedbackPostCommand() *cobra.Command {
 	var stateDir, sarifFile, configFile string
 	post := &cobra.Command{
 		Use:   "post",
-		Short: "Comment on a pull request with findings of the inspections 'prepare' selected",
+		Short: "Show a review the findings of the inspections 'prepare' selected",
 		Long: `After 'qodana scan' ran the inspections of 'feedback prepare', reserve their findings in the SARIF
-report on lines the pull request adds, within the comment limits of the pull request and of each inspection,
-by pushing them to the Edict state branch from --state-dir, the checkout of 'prepare'. Then post them as review
-comments, at the commit the report names as analysed, that ask for a reaction.
+report in what the review changes, within the limits of the review and of each inspection, by pushing them to
+the Edict state branch from --state-dir, the checkout of 'prepare'. Then show them at the commit the report
+names as analysed, asking for an answer.
 
-Reads the pull request from GITHUB_EVENT_PATH and the API from GITHUB_API_URL, and comments with GITHUB_TOKEN
-(or GH_TOKEN), which needs to write pull requests; pushing the state needs the checkout's credentials to write
-contents.`,
+On GitHub, comments on the lines the pull request adds: reads the pull request from GITHUB_EVENT_PATH and the
+API from GITHUB_API_URL, and comments with GITHUB_TOKEN (or GH_TOKEN), which needs to write pull requests.
+On Space, notifies the author of the SafePush through the Edict Slack service of the findings in the files
+their commits change, once a week per inspection and lines: reads the build from TEAMCITY_BUILD_PROPERTIES_FILE,
+finds its merge request with SPACE_TOKEN and notifies with EDICT_NOTIFICATION_TOKEN.
+Pushing the state needs the checkout's credentials to write contents.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {

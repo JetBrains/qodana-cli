@@ -5,6 +5,7 @@ import org.jetbrains.qodana.edict.core.EdictLineRange
 import org.jetbrains.qodana.edict.feedback.support.FINDING_MESSAGE
 import org.jetbrains.qodana.edict.feedback.support.HEAD_REVISION
 import org.jetbrains.qodana.edict.feedback.support.internalResult
+import org.jetbrains.qodana.edict.feedback.support.regularResult
 import org.jetbrains.qodana.edict.feedback.support.sarifReport
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -29,6 +30,24 @@ class InternalFindingsTest {
       listOf(
         InternalFinding("rule", "service/src/Main.kt", EdictLineRange(3, 4), FINDING_MESSAGE),
         InternalFinding("other", "service/src/Other.kt", EdictLineRange(7, 7), FINDING_MESSAGE),
+      ),
+      read(report).findings,
+    )
+  }
+
+  @Test
+  fun `leaves out a problem that an inspection of the profile with the same id reports at the same lines`() {
+    val report = sarifReport(
+      internalResult("rule", "src/Main.kt", startLine = 3, endLine = 4),
+      internalResult("rule", "src/Main.kt", startLine = 7),
+      internalResult("other", "src/Main.kt", startLine = 9),
+      regularResults = listOf(regularResult("rule", "src/Main.kt", startLine = 3, endLine = 4), regularResult("rule", "src/Main.kt", startLine = 9)),
+    )
+
+    assertEquals(
+      listOf(
+        InternalFinding("rule", "src/Main.kt", EdictLineRange(7, 7), FINDING_MESSAGE),
+        InternalFinding("other", "src/Main.kt", EdictLineRange(9, 9), FINDING_MESSAGE),
       ),
       read(report).findings,
     )

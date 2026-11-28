@@ -795,6 +795,7 @@ func TestEdictFeedbackPrepareForNoPullRequestCopiesNothingAndLogsOutsideTheProje
 	if err := os.WriteFile(event, []byte(`{"ref": "refs/heads/main"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("GITHUB_ACTIONS", "true")
 	t.Setenv("GITHUB_EVENT_PATH", event)
 	prepare := newEdictFeedbackCommand()
 	output := filepath.Join(t.TempDir(), "inspections")
@@ -827,6 +828,7 @@ func TestEdictFeedbackPostForNoPullRequestPostsNothingAndLogsOutsideTheProject(t
 	if err := os.WriteFile(event, []byte(`{"ref": "refs/heads/main"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("GITHUB_ACTIONS", "true")
 	t.Setenv("GITHUB_EVENT_PATH", event)
 	// Nothing reaches the API: the run is for no pull request.
 	t.Setenv("GITHUB_API_URL", "https://api.github.invalid")

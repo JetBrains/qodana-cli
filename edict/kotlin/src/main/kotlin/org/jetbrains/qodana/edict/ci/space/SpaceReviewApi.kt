@@ -39,11 +39,19 @@ import java.time.ZoneOffset
 import java.util.Base64
 
 /** The client of [repository], with `SPACE_TOKEN` from the server environment. */
-internal fun spaceReviewApi(repository: ReviewRepository, bots: Set<String>): SpaceReviewApi {
+internal fun spaceReviewApi(repository: ReviewRepository, bots: Set<String>): SpaceReviewApi =
+  SpaceReviewApi(repository, spaceTransport(repository), bots)
+
+/** The HTTP API of the Space that hosts [repository], with `SPACE_TOKEN` from the environment. */
+internal fun spaceTransport(repository: ReviewRepository): CiHttpTransport {
   val token = System.getenv("SPACE_TOKEN")
   require(!token.isNullOrBlank()) { "${repository.label()} requires SPACE_TOKEN in the server environment" }
-  return SpaceReviewApi(repository, DefaultCiHttpTransport(CiProviderId.SPACE, "https://${repository.host}/api/http", token), bots)
+  return DefaultCiHttpTransport(CiProviderId.SPACE, "https://${repository.host}/api/http", token)
 }
+
+/** The web page of the review numbered [number] in the project of [repository]. */
+internal fun spaceReviewUrl(repository: ReviewRepository, number: Long): String =
+  "https://${repository.host}/p/${urlPart(repository.owner)}/reviews/$number"
 
 
 internal class SpaceReviewApi(
@@ -167,7 +175,7 @@ internal class SpaceReviewApi(
     }
     return PullRequest(
       number,
-      "https://${repository.host}/p/${urlPart(repository.owner)}/reviews/$number",
+      spaceReviewUrl(repository, number.toLong()),
       value.text("title"),
       value.text("description"),
       pair.obj("targetBranchInfo").text("ref"),
@@ -236,7 +244,7 @@ internal class SpaceReviewApi(
       }
       expectStatus(reviewer, "Space reviewer assignment", 200, 201)
     }
-    return repository.reference(reviewId, "https://${repository.host}/p/${urlPart(repository.owner)}/reviews/$number")
+    return repository.reference(reviewId, spaceReviewUrl(repository, number))
   }
 
   private fun assignReviewer(reviewId: String, identifier: String): CiHttpResponse = http.send(

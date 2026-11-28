@@ -17,16 +17,17 @@ import org.jetbrains.qodana.edict.core.stableSignalId
 import org.jetbrains.qodana.edict.feedback.support.COLLECTED_AT
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST
 import org.jetbrains.qodana.edict.feedback.support.PULL_REQUEST_COMMENTS
+import org.jetbrains.qodana.edict.feedback.support.SPACE_REVIEW
 import org.jetbrains.qodana.edict.feedback.support.commentUrl
 import org.jetbrains.qodana.edict.feedback.support.commentsOf
 import org.jetbrains.qodana.edict.feedback.support.edictComment
 import org.jetbrains.qodana.edict.feedback.support.feedbackRecord
 import org.jetbrains.qodana.edict.feedback.support.feedbackScripted
 import org.jetbrains.qodana.edict.feedback.support.listAnswer
-import org.jetbrains.qodana.edict.feedback.support.listedPullRequest
 import org.jetbrains.qodana.edict.feedback.support.pullRequest
-import org.jetbrains.qodana.edict.feedback.support.recentPullRequests
+import org.jetbrains.qodana.edict.feedback.support.pullRequestAnswer
 import org.jetbrains.qodana.edict.feedback.support.reply
+import org.jetbrains.qodana.edict.feedback.support.stateOf
 import org.jetbrains.qodana.edict.feedback.support.storeActive
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_DIGEST
 import org.jetbrains.qodana.edict.promotion.support.INSPECTION_NAME
@@ -54,7 +55,7 @@ class FeedbackSignalsTest {
       paths.storeActive(*records.toTypedArray())
       // f-03 got both thumbs, f-04 none, and the comment of f-05 is gone.
       val recording = feedbackScripted(
-        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "open")),
+        stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "open"),
         PULL_REQUEST_COMMENTS answeredWith listAnswer(
           edictComment(11, records[0], thumbsUp = 1),
           edictComment(12, records[1], thumbsDown = 2),
@@ -80,7 +81,7 @@ class FeedbackSignalsTest {
       val paths = EdictRepositoryDirectory(store.root)
       paths.storeActive(records[0], records[2], records[4])
       val recording = feedbackScripted(
-        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "closed")),
+        stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "closed"),
         PULL_REQUEST_COMMENTS answeredWith listAnswer(
           edictComment(11, records[0], thumbsUp = 1),
           edictComment(13, records[2], thumbsUp = 1, thumbsDown = 1),
@@ -101,12 +102,9 @@ class FeedbackSignalsTest {
     EdictRepositoryState.open(directory).use { store ->
       val paths = EdictRepositoryDirectory(store.root)
       paths.storeActive(records[0], records[1])
-      // Pull request 7 was last updated eight days before the collection; GitHub lists the most recently updated first.
+      // Pull request 7 was last updated eight days before the collection, so its comments are not read.
       val recording = feedbackScripted(
-        recentPullRequests() answeredWith listAnswer(
-          listedPullRequest(9, "open", updatedAt = "2026-11-09T08:00:00Z"),
-          listedPullRequest(7, "open", updatedAt = "2026-11-02T12:00:00Z"),
-        ),
+        stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "open", updatedAt = "2026-11-02T12:00:00Z"),
       )
 
       val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
@@ -124,8 +122,9 @@ class FeedbackSignalsTest {
       val other = feedbackRecord(6, pullRequest = pullRequest(8))
       paths.storeActive(records[0], other)
       val recording = feedbackScripted(
-        recentPullRequests() answeredWith listAnswer(listedPullRequest(8, "open"), listedPullRequest(7, "closed")),
+        stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "closed"),
         PULL_REQUEST_COMMENTS answeredWith answer(502, """{"message": "Server Error"}"""),
+        stateOf(pullRequest(8)) answeredWith pullRequestAnswer(8, "open"),
         commentsOf(pullRequest(8)) answeredWith listAnswer(edictComment(21, other, thumbsUp = 1)),
       )
 
@@ -143,17 +142,17 @@ class FeedbackSignalsTest {
   }
 
   @Test
-  fun `a repository whose pull requests GitHub cannot list keeps every record active`() {
+  fun `a pull request GitHub cannot read the state of keeps its records active`() {
     EdictRepositoryState.open(directory).use { store ->
       val paths = EdictRepositoryDirectory(store.root)
       paths.storeActive(records[0])
-      val recording = feedbackScripted(recentPullRequests() answeredWith answer(404, """{"message": "Not Found"}"""))
+      val recording = feedbackScripted(stateOf(PULL_REQUEST) answeredWith answer(404, """{"message": "Not Found"}"""))
 
       val collection = recording.replay { feedbackSignals(paths, this, store).collect() }
 
       val unread = UnreadPullRequest(
         PULL_REQUEST.url,
-        "GitHub read of /repos/owner/project/pulls returned HTTP 404: Not Found",
+        "GitHub read of /repos/owner/project/pulls/7 returned HTTP 404: Not Found",
       )
       assertEquals(FeedbackCollection(emptyList(), listOf(unread)), collection)
       assertEquals(listOf(records[0]), FeedbackRecords(paths).active())
@@ -167,7 +166,7 @@ class FeedbackSignalsTest {
       paths.storeActive(records[0])
       val token = feedbackAnalysisToken(store)
       val recording = feedbackScripted(
-        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "open")),
+        stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "open"),
         PULL_REQUEST_COMMENTS answeredWith listAnswer(
           edictComment(11, records[0], thumbsUp = 1),
           reply(12, to = 11, "alice", "It really blocks"),
@@ -211,7 +210,7 @@ class FeedbackSignalsTest {
       paths.storeActive(records[2])
       val token = feedbackAnalysisToken(store)
       val recording = feedbackScripted(
-        recentPullRequests() answeredWith listAnswer(listedPullRequest(7, "open")),
+        stateOf(PULL_REQUEST) answeredWith pullRequestAnswer(7, "open"),
         PULL_REQUEST_COMMENTS answeredWith listAnswer(edictComment(13, records[2], thumbsUp = 1, thumbsDown = 1)),
       )
 
@@ -229,7 +228,26 @@ class FeedbackSignalsTest {
     }
   }
 
-  private fun feedbackSignals(paths: EdictRepositoryDirectory, api: GitHubFeedbackApi, store: EdictRepositoryState) =
+  @Test
+  fun `collecting retires every record of a Space review without reading answers, which the Slack service keeps`() {
+    EdictRepositoryState.open(directory).use { store ->
+      val paths = EdictRepositoryDirectory(store.root)
+      val review = SPACE_REVIEW
+      val spaceRecords = listOf(feedbackRecord(1, pullRequest = review), feedbackRecord(2, pullRequest = review))
+      paths.storeActive(*spaceRecords.toTypedArray())
+
+      // Collecting reads neither the SafePush of a build nor the Slack service.
+      val api = SpaceFeedbackApi(directory, lazy { error("No SafePush is read") }, lazy { error("No Slack service is read") })
+
+      val collection = feedbackSignals(paths, api, store).collect()
+
+      assertEquals(FeedbackCollection(emptyList(), emptyList()), collection)
+      assertEquals(emptyList(), FeedbackRecords(paths).active())
+      assertEquals(spaceRecords, FeedbackRecords(paths).history())
+    }
+  }
+
+  private fun feedbackSignals(paths: EdictRepositoryDirectory, api: FeedbackApi, store: EdictRepositoryState) =
     FeedbackSignals(FeedbackRecords(paths), api, store, Clock.fixed(COLLECTED_AT, ZoneOffset.UTC))
 
   private fun feedbackAnalysisToken(store: EdictRepositoryState): String {

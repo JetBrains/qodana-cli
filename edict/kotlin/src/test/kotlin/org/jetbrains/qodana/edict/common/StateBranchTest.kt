@@ -14,6 +14,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class StateBranchTest {
   @TempDir
@@ -226,6 +227,25 @@ class StateBranchTest {
     val failure = assertFailsWith<IllegalStateException> { state(second).worktree().push("Run 2") }
 
     assertContains(failure.message.orEmpty(), "pre-receive hook declined")
+  }
+
+  @Test
+  fun `a state that CI checked out as a repository of its own reads and resets to its own origin, not the project's`() {
+    val project = origin.clone("project")
+    val stateOrigin = GitOrigin(directory.resolve("state-origin").createDirectories())
+    val state = stateOrigin.clone("state")
+    git(state, "switch", "--quiet", "-c", "main")
+    git(state, "push", "--quiet", "origin", "main")
+    val branch = StateBranch(EdictLayout(project, state), "main")
+    state.resolve("record.json").writeText("{}")
+    git(state, "add", "--all")
+    git(state, "commit", "--quiet", "-m", "Unpushed")
+
+    // The project's origin has no main.
+    assertTrue(branch.onOrigin())
+    branch.worktree().resetToOrigin()
+
+    assertEquals("Add main\n", git(state, "log", "--format=%s"))
   }
 
   @Test

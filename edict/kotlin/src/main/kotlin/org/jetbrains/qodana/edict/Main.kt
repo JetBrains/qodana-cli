@@ -15,11 +15,9 @@ import org.jetbrains.qodana.edict.core.IntellijMcpServerService
 import org.jetbrains.qodana.edict.core.defaultQodanaExecutable
 import org.jetbrains.qodana.edict.feedback.FeedbackInspections
 import org.jetbrains.qodana.edict.feedback.chooseFeedbackInspections
-import org.jetbrains.qodana.edict.feedback.actionsEventPath
-import org.jetbrains.qodana.edict.feedback.actionsFeedbackApi
-import org.jetbrains.qodana.edict.feedback.actionsPullRequest
 import org.jetbrains.qodana.edict.feedback.postFeedback
 import org.jetbrains.qodana.edict.feedback.prepareFeedback
+import org.jetbrains.qodana.edict.feedback.ciRunFeedbackApi
 import org.jetbrains.qodana.edict.feedback.serverFeedbackApi
 import org.jetbrains.qodana.edict.setup.CodexSetup
 import org.jetbrains.qodana.edict.setup.EdictConfig
@@ -69,8 +67,8 @@ fun main(args: Array<String>) {
                 val configuration = EdictYamlConfiguration.load(qodanaYaml(options))
                 val ciReviews = configuration.ci?.let { getReviewAPI(it, configuration.bots) }
                 val promotionReviews = configuration.promotionRepository?.let { getReviewAPI(it, configuration.bots) }
-                val feedbackApi = configuration.ci?.let(::serverFeedbackApi)
                 val layout = EdictLayout.get(configuration.statePath)
+                val feedbackApi = configuration.ci?.let { serverFeedbackApi(it, layout.root) }
                 val portConfig = EdictConfig(configuration.mcpPort).also { CodexSetup.requireInstalled(layout, it) }
                 val port = portConfig.mcpPort
                 // `=` keeps values such as -Xmx8g from being parsed as flags by the Go helper.
@@ -114,7 +112,7 @@ fun main(args: Array<String>) {
                 require(options.keys.all { it in listOf("qodana-yaml", "state-dir", "sarif") }) { "Unknown feedback-post option" }
                 val stateDirectory = requireNotNull(options["state-dir"]) { "feedback-post requires --state-dir" }
                 val sarif = requireNotNull(options["sarif"]) { "feedback-post requires --sarif" }
-                postFeedbackComments(qodanaYaml(options), stateDirectory, Path.of(sarif))
+                postFeedbackFindings(qodanaYaml(options), stateDirectory, Path.of(sarif))
             }
 
             "help", "--help", "-h" -> println(
@@ -127,11 +125,13 @@ fun main(args: Array<String>) {
                     Chooses the inspections whose findings feedback may comment on, then commits the state on edict.stateBranch
                     and pushes it to origin; fails while a server owns the state.
                   edict feedback-prepare --state-dir <path> --output-dir <path> [--qodana-yaml <path>]
-                    For a GitHub Actions run of a pull request of the repository itself: checks edict.stateBranch out at
-                    --state-dir and copies the inspections to run for feedback into --output-dir, outside the project and missing or empty.
+                    For a GitHub Actions run of a pull request of the repository itself, or a TeamCity build of a SafePush when
+                    edict.ci is on Space: checks edict.stateBranch out at --state-dir, unless CI checked it out there, and copies
+                    the inspections to run for feedback into --output-dir, outside the project and missing or empty.
                   edict feedback-post --state-dir <path> --sarif <path> [--qodana-yaml <path>]
-                    After the scan of that run: reserves the findings of those inspections in the SARIF report on lines the pull request
-                    adds, pushing them to edict.stateBranch from --state-dir, and posts them as review comments at the commit it analysed.
+                    After the scan of that run: reserves the findings of those inspections in the SARIF report in what the review
+                    changes, pushing them to edict.stateBranch from --state-dir, and shows them at the commit it analysed: as review
+                    comments on GitHub, as Slack notifications to the author of a SafePush on Space.
                   edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
                     edict.calculatePrice=true enables the manager-only price-report MCP tool and private run report.
@@ -162,23 +162,22 @@ private fun install(qodanaYaml: Path?, deniedPaths: List<Path>) {
     logger.info { stateBranch.describe(checkout) }
 }
 
-/** Copies the inspections the workflow's pull request runs for feedback into [outputDirectory]. */
+/** Copies the inspections that the review of the CI run, if any, runs for feedback into [outputDirectory]. */
 private fun prepareFeedbackInspections(qodanaYaml: Path?, stateDirectory: String, outputDirectory: Path) {
     logOutsideTheProject()
     val configuration = EdictYamlConfiguration.load(qodanaYaml)
-    val event = actionsPullRequest(actionsEventPath())
-    prepareFeedback(EdictLayout.get(stateDirectory), configuration.stateBranch, event, outputDirectory, configuration.feedback)
+    val layout = EdictLayout.get(stateDirectory)
+    val review = ciRunFeedbackApi(configuration.ci, layout.root).analysedReview()
+    prepareFeedback(layout, configuration.stateBranch, review, outputDirectory, configuration.feedback)
 }
 
-/** Comments on the workflow's pull request with the feedback findings of the [sarif] report, reserved in the state first. */
-private fun postFeedbackComments(qodanaYaml: Path?, stateDirectory: String, sarif: Path) {
+/** Shows the review of the CI run the feedback findings of the [sarif] report, reserved in the state first. */
+private fun postFeedbackFindings(qodanaYaml: Path?, stateDirectory: String, sarif: Path) {
     logOutsideTheProject()
     val configuration = EdictYamlConfiguration.load(qodanaYaml)
-    val event = actionsPullRequest(actionsEventPath())
-    postFeedback(
-        EdictLayout.get(stateDirectory), configuration.stateBranch, event, sarif, actionsFeedbackApi(), Clock.systemUTC(),
-        configuration.feedback,
-    )
+    val layout = EdictLayout.get(stateDirectory)
+    val api = ciRunFeedbackApi(configuration.ci, layout.root)
+    postFeedback(layout, configuration.stateBranch, api.analysedReview(), api, sarif, Clock.systemUTC(), configuration.feedback)
 }
 
 /**
