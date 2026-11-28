@@ -1,5 +1,6 @@
 ARG CLANG="16"
-FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-$CLANG-latest
+ARG BASE_SUFFIX="latest"
+FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-$CLANG-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/qodana-clang /opt/qodana/qodana

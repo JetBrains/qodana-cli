@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:python-base-latest
+ARG BASE_SUFFIX="latest"
+FROM registry.jetbrains.team/p/sa/containers/qodana:python-base-$BASE_SUFFIX
 
 ARG TARGETPLATFORM
 ARG DEVICEID

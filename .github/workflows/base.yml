@@ -1,6 +1,11 @@
 name: '🐳 Base'
 on:
   workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Push the images and tags (branch-cut.yml publishes a new release branch this way)'
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -16,6 +21,11 @@ on:
       - '.github/workflows/base.yml'
   schedule:
     - cron: '0 0 * * 1'
+
+env:
+  # docker-bake.hcl: a release branch NNN gets *-NNN tags, main gets *-latest (bake and merge both read it)
+  BASE_BRANCH: ${{ github.ref_name }}
+  PUBLISH: ${{ github.event_name == 'push' || inputs.publish == true }}
 
 # Each bake group is built natively per platform (no QEMU): amd64 on ubuntu-latest,
 # arm64 on ubuntu-24.04-arm. Images are pushed by digest, then the merge job
@@ -66,13 +76,13 @@ jobs:
           registry: dhi.io
           username: ${{ secrets.DHI_USERNAME }}
           password: ${{ secrets.DHI_PASSWORD }}
-      - name: Build${{ github.event_name == 'push' && ' and push by digest' || '' }}
+      - name: Build${{ env.PUBLISH == 'true' && ' and push by digest' || '' }}
         id: bake
         uses: docker/bake-action@v7
         env:
           # See docker-bake.hcl: one platform per native runner; on push, untagged by digest
           BASE_PLATFORMS: ${{ matrix.platform.name }}
-          PUSH_BY_DIGEST: ${{ github.event_name == 'push' }}
+          PUSH_BY_DIGEST: ${{ env.PUBLISH }}
           # Keep the provenance, which carries the GitHub event and its commit messages, out of the metadata output:
           # merge-base-images.py reads only image.name and containerimage.digest, and the next step gets the metadata
           # through an environment variable, which fails above 128 KiB. The images keep their provenance attestations.
@@ -84,14 +94,14 @@ jobs:
             *.cache-from=type=gha,scope=base-${{ matrix.group }}-${{ matrix.platform.arch }}
             *.cache-to=type=gha,scope=base-${{ matrix.group }}-${{ matrix.platform.arch }},mode=max
       - name: Save bake metadata
-        if: github.event_name == 'push'
+        if: env.PUBLISH == 'true'
         env:
           METADATA: ${{ steps.bake.outputs.metadata }}
         run: |
           mkdir -p "$RUNNER_TEMP/digests"
           printf '%s' "$METADATA" > "$RUNNER_TEMP/digests/${{ matrix.group }}-${{ matrix.platform.arch }}.json"
       - name: Upload bake metadata
-        if: github.event_name == 'push'
+        if: env.PUBLISH == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: digests-${{ matrix.group }}-${{ matrix.platform.arch }}
@@ -102,7 +112,8 @@ jobs:
   merge:
     needs: base
     # Run per group even if another group failed; a group with a missing platform fails on its own
-    if: ${{ !cancelled() && github.event_name == 'push' }}
+    # Job-level if can't read env: the same condition as PUBLISH
+    if: ${{ !cancelled() && (github.event_name == 'push' || inputs.publish == true) }}
     strategy:
       fail-fast: false
       matrix:
