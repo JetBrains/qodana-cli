@@ -1,5 +1,5 @@
 ARG BASE_TAG="trixie-debian13-dev"
-ARG NODE_TAG="26-debian13-dev@sha256:a54772ee91034c3340109381226e45b7fb0ede548518ed7b8bfa0d5e5b64b2a0"
+ARG NODE_TAG="26-debian13-dev@sha256:d4d70223ec5fa176c9f19eb98f8bdd14035b166c2dbfb75e4cc71ea44234f911"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM dotnet-community
 
